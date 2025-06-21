@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "ES6"
-    ],
+    "lib": ["dom", "dom.iterable", "ES6"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -24,9 +20,7 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     },
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
@@ -40,7 +34,5 @@
     "dist/types/**/*.ts",
     "out/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }

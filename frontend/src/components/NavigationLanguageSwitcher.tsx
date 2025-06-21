@@ -1,20 +1,20 @@
-'use client'
+"use client";
 
-import { useLanguage, Language } from '@/contexts/LanguageContext'
+import { useLanguage, Language } from "@/contexts/LanguageContext";
 
 const flags = {
   no: {
-    emoji: '🇳🇴',
-    name: 'Norsk'
+    emoji: "🇳🇴",
+    name: "Norsk",
   },
   en: {
-    emoji: '🇬🇧',
-    name: 'English'
-  }
-}
+    emoji: "🇬🇧",
+    name: "English",
+  },
+};
 
 export default function NavigationLanguageSwitcher() {
-  const { language, setLanguage } = useLanguage()
+  const { language, setLanguage } = useLanguage();
 
   return (
     <div className="flex gap-1">
@@ -25,9 +25,10 @@ export default function NavigationLanguageSwitcher() {
           title={flags[lang].name}
           className={`
             relative p-2 rounded-md transition-all duration-200 hover:bg-gray-100
-            ${language === lang
-              ? 'bg-blue-50 ring-2 ring-blue-500 ring-opacity-30'
-              : 'hover:bg-gray-50'
+            ${
+              language === lang
+                ? "bg-blue-50 ring-2 ring-blue-500 ring-opacity-30"
+                : "hover:bg-gray-50"
             }
           `}
         >
@@ -38,5 +39,5 @@ export default function NavigationLanguageSwitcher() {
         </button>
       ))}
     </div>
-  )
+  );
 }

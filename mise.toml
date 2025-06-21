@@ -2,6 +2,7 @@
 node = "20"
 go = "1.21"
 opentofu = "latest"
+firebase = "latest"
 
 # Environment configurations
 [env]
@@ -19,13 +20,34 @@ GOOGLE_CLOUD_PROJECT = "diktator-dev"
 # Next.js development defaults
 NEXT_PUBLIC_API_URL = "http://localhost:8080"
 
+# Firebase Emulator configuration for local development
+NEXT_PUBLIC_FIREBASE_USE_EMULATOR = "true"
+FIREBASE_AUTH_EMULATOR_HOST = "localhost:9099"
+FIRESTORE_EMULATOR_HOST = "localhost:8088"
+
+# Core development tasks
 [tasks.install]
 description = "Install all dependencies"
 run = ["cd frontend && npm install", "cd backend && go mod tidy"]
 
 [tasks.dev]
-description = "Start both frontend and backend in development mode"
+description = "Start full development environment (Firebase emulators + frontend + backend)"
 run = """
+echo "Starting full development environment..."
+echo "This will start:"
+echo "  - Firebase emulators (Auth: :9099, Firestore: :8088, UI: :4000)"
+echo "  - Frontend dev server (:3000)"
+echo "  - Backend API server (:8080)"
+echo ""
+
+# Start Firebase emulators in background
+mise run firebase-emulators &
+FIREBASE_PID=$!
+echo "Firebase emulators started with PID: $FIREBASE_PID"
+
+# Wait for Firebase emulators to start
+sleep 3
+
 # Start backend in background
 cd backend && go run cmd/server/main.go &
 BACKEND_PID=$!
@@ -37,72 +59,60 @@ sleep 2
 # Start frontend (this will block)
 cd frontend && npm run dev
 
-# Cleanup function (won't be reached due to frontend blocking, but good practice)
+# Cleanup function
 cleanup() {
-    echo "Stopping backend (PID: $BACKEND_PID)..."
+    echo "Stopping services..."
+    kill $FIREBASE_PID 2>/dev/null || true
     kill $BACKEND_PID 2>/dev/null || true
 }
 trap cleanup EXIT
 """
 
 [tasks.frontend]
-description = "Start frontend development server"
+description = "Start frontend development server only"
 run = "cd frontend && npm run dev"
 
 [tasks.backend]
-description = "Start backend development server"
+description = "Start backend development server only"
 run = "cd backend && go run cmd/server/main.go"
 
-[tasks.test]
-description = "Run all tests"
+# Quality assurance tasks
+[tasks.lint]
+description = "Run linting for all components"
+run = ["cd frontend && npm run lint", "cd backend && go vet ./..."]
+
+[tasks.format]
+description = "Format all code"
 run = [
-  "cd frontend && npm run lint && npm run type-check",
-  "cd backend && go test ./... && go vet ./...",
+  "cd frontend && npm run format",
+  "cd backend && go fmt ./...",
+  "mise run tofu-fmt",
 ]
 
-[tasks.test-frontend]
-description = "Run frontend tests and linting"
-run = "cd frontend && npm run lint && npm run type-check"
+[tasks.typecheck]
+description = "Run type checking for all components"
+run = [
+  "cd frontend && npm run typecheck",
+  "cd backend && go build -o /dev/null ./...",
+]
 
-[tasks.test-backend]
-description = "Run backend tests"
-run = "cd backend && go test ./... && go vet ./..."
+[tasks.test]
+description = "Run all tests and checks"
+run = ["mise run lint", "mise run typecheck", "cd backend && go test ./..."]
 
+# Build tasks
 [tasks.build]
-description = "Build both frontend and backend"
+description = "Build all components for production"
 run = [
   "cd frontend && npm run build",
   "cd backend && go build -o bin/server cmd/server/main.go",
 ]
 
-[tasks.build-frontend]
-description = "Build frontend for production"
-run = "cd frontend && npm run build"
-
-[tasks.build-backend]
-description = "Build backend binary"
-run = "cd backend && go build -o bin/server cmd/server/main.go"
-
 [tasks.clean]
 description = "Clean build artifacts"
 run = ["rm -rf frontend/.next frontend/out", "rm -rf backend/bin"]
 
-[tasks.terraform-init]
-description = "Initialize OpenTofu"
-run = "cd terraform && tofu init"
-
-[tasks.terraform-plan]
-description = "Plan OpenTofu deployment"
-run = "cd terraform && tofu plan"
-
-[tasks.terraform-apply]
-description = "Apply OpenTofu configuration"
-run = "cd terraform && tofu apply"
-
-[tasks.terraform-destroy]
-description = "Destroy OpenTofu infrastructure"
-run = "cd terraform && tofu destroy"
-
+# Infrastructure tasks
 [tasks.tofu-init]
 description = "Initialize OpenTofu"
 run = "cd terraform && tofu init"
@@ -119,173 +129,41 @@ run = "cd terraform && tofu apply"
 description = "Destroy OpenTofu infrastructure"
 run = "cd terraform && tofu destroy"
 
-[tasks.tofu-output]
-description = "Show OpenTofu outputs"
-run = "cd terraform && tofu output"
+[tasks.tofu-fmt]
+description = "Format OpenTofu configuration files"
+run = "cd terraform && tofu fmt"
 
 [tasks.tofu-validate]
 description = "Validate OpenTofu configuration"
 run = "cd terraform && tofu validate"
 
-[tasks.tofu-fmt]
-description = "Format OpenTofu configuration files"
-run = "cd terraform && tofu fmt"
-
+# Setup and utility tasks
 [tasks.setup]
-description = "Complete project setup including dependencies and infrastructure"
-run = """
-echo "Installing dependencies..."
-mise run install
-echo "Dependencies installed."
-echo ""
-echo "Infrastructure setup options:"
-echo "📋 Option 1 - Automatic (recommended):"
-echo "   mise run tofu-auto-setup    # Uses current gcloud project"
-echo "   mise run tofu-init && mise run tofu-apply"
-echo ""
-echo "📝 Option 2 - Manual:"
-echo "   mise run tofu-setup         # Creates template to edit"
-echo "   # Edit terraform/terraform.tfvars with your settings"
-echo "   mise run tofu-init && mise run tofu-apply"
-echo ""
-echo "After infrastructure setup:"
-echo "1. Load configuration: mise run config-load"
-echo "2. Generate production environment: mise run env-production"
-echo "3. Configure GitHub secrets from OpenTofu outputs"
-echo "4. Start development: mise run dev"
-echo ""
-echo "💡 Use 'mise run config-check' to verify configuration at any time"
-"""
+description = "Complete setup for local development (run this first!)"
+run = "./scripts/setup-dev.sh"
 
-[tasks.logs-backend]
-description = "View backend logs"
-run = "cd backend && go run cmd/server/main.go 2>&1 | tee backend.log"
-
-[tasks.logs-frontend]
-description = "View frontend logs"
-run = "cd frontend && npm run dev 2>&1 | tee frontend.log"
-
-[tasks.deploy-backend]
-description = "Build and deploy backend to Cloud Run"
-run = """
-# Load dynamic configuration
-mise run config-load
-source .mise.env
-
-echo "Building backend Docker image for project: ${DIKTATOR_PROJECT_ID}"
-cd backend
-docker buildx build --platform linux/amd64 --build-arg TARGETOS=linux --build-arg TARGETARCH=amd64 -t gcr.io/${DIKTATOR_PROJECT_ID}/${DIKTATOR_API_SERVICE_NAME}:latest --load .
-echo "Pushing to GCR..."
-docker push gcr.io/${DIKTATOR_PROJECT_ID}/${DIKTATOR_API_SERVICE_NAME}:latest
-echo "Deploying to Cloud Run..."
-gcloud run deploy ${DIKTATOR_API_SERVICE_NAME} \
-  --image gcr.io/${DIKTATOR_PROJECT_ID}/${DIKTATOR_API_SERVICE_NAME}:latest \
-  --region ${DIKTATOR_REGION} \
-  --platform managed \
-  --allow-unauthenticated \
-  --set-env-vars="GOOGLE_CLOUD_PROJECT=${DIKTATOR_PROJECT_ID}"
-echo "Backend deployed successfully!"
-"""
-
-[tasks.deploy-frontend]
-description = "Build and deploy frontend to Cloud Storage"
-run = """
-# Load dynamic configuration
-mise run config-load
-source .mise.env
-
-echo "Building frontend..."
-cd frontend
-
-# Generate production environment file
-mise run env-production
-
-# Source the generated .env.local file to get the environment variables
-if [ -f .env.local ]; then
-  set -a  # automatically export all variables
-  source .env.local
-  set +a  # disable automatic export
-fi
-
-# No asset prefix needed - serving from root domain via load balancer
-export NODE_ENV=production
-export NEXT_PUBLIC_API_URL=${DIKTATOR_API_URL:-"https://${DIKTATOR_API_SERVICE_NAME}-${DIKTATOR_REGION}.run.app"}
-echo "Environment variables set:"
-echo "  NODE_ENV=${NODE_ENV}"
-echo "  NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}"
-echo "  Domain: https://diktator.gc.flaatten.org/"
-npm run build
-echo "Deploying to Cloud Storage bucket: ${DIKTATOR_FRONTEND_BUCKET}"
-gsutil -m cp -r out/* gs://${DIKTATOR_FRONTEND_BUCKET}/
-echo "Setting cache headers..."
-# Set index.html to never cache to ensure immediate updates
-echo "  - Setting index.html to no-cache for immediate updates..."
-gsutil -m setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" -h "Pragma:no-cache" -h "Expires:0" gs://${DIKTATOR_FRONTEND_BUCKET}/index.html || true
-# Set other HTML files to short cache (5 minutes)
-echo "  - Setting other HTML files to 5-minute cache..."
-gsutil -m setmeta -h "Cache-Control:public, max-age=300" gs://${DIKTATOR_FRONTEND_BUCKET}/**/*.html || true
-# Reset index.html to no-cache (in case it was overwritten by the above)
-gsutil -m setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" -h "Pragma:no-cache" -h "Expires:0" gs://${DIKTATOR_FRONTEND_BUCKET}/index.html || true
-echo "  - Setting static assets to long-term cache..."
-gsutil -m setmeta -h "Cache-Control:public, max-age=31536000" gs://${DIKTATOR_FRONTEND_BUCKET}/**/*.js || true
-gsutil -m setmeta -h "Cache-Control:public, max-age=31536000" gs://${DIKTATOR_FRONTEND_BUCKET}/**/*.css || true
-# Only set metadata for image files if they exist
-if gsutil ls gs://${DIKTATOR_FRONTEND_BUCKET}/**/*.png 2>/dev/null; then
-  gsutil -m setmeta -h "Cache-Control:public, max-age=31536000" gs://${DIKTATOR_FRONTEND_BUCKET}/**/*.png
-fi
-if gsutil ls gs://${DIKTATOR_FRONTEND_BUCKET}/**/*.jpg 2>/dev/null; then
-  gsutil -m setmeta -h "Cache-Control:public, max-age=31536000" gs://${DIKTATOR_FRONTEND_BUCKET}/**/*.jpg
-fi
-if gsutil ls gs://${DIKTATOR_FRONTEND_BUCKET}/**/*.svg 2>/dev/null; then
-  gsutil -m setmeta -h "Cache-Control:public, max-age=31536000" gs://${DIKTATOR_FRONTEND_BUCKET}/**/*.svg
-fi
-echo "Frontend deployed successfully!"
-echo ""
-echo "Invalidating CDN cache for updated routes..."
-echo "  - Invalidating cache for / (homepage)"
-gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/" --async || echo "Cache invalidation failed for /"
-echo "  - Invalidating cache for /practice"
-gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/practice" --async || echo "Cache invalidation failed for /practice"
-echo "  - Invalidating cache for /practice/ (with trailing slash)"
-gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/practice/" --async || echo "Cache invalidation failed for /practice/"
-echo "  - Invalidating cache for /about"
-gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/about" --async || echo "Cache invalidation failed for /about"
-echo "  - Invalidating cache for /about/ (with trailing slash)"
-gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/about/" --async || echo "Cache invalidation failed for /about/"
-echo "CDN cache invalidation initiated (will take 2-5 minutes to complete)"
-echo ""
-echo "Frontend URL (Static): https://storage.googleapis.com/${DIKTATOR_FRONTEND_BUCKET}/index.html"
-echo "Frontend URL (Website): http://${DIKTATOR_FRONTEND_BUCKET}.storage.googleapis.com"
-echo "Frontend URL (Load Balancer): https://diktator.gc.flaatten.org"
-echo ""
-echo "💡 For production, use the Load Balancer URL which provides:"
-echo "   - HTTPS support with managed SSL certificates"
-echo "   - CDN caching for better performance"
-echo "   - Proper SPA routing with URL rewrites"
-echo "   - Custom domain support (diktator.gc.flaatten.org)"
-echo ""
-echo "🔧 DNS Setup Required:"
-echo "   Create A record: diktator.gc.flaatten.org → [Load Balancer IP]"
-echo "   Run 'mise run lb-status' for detailed instructions"
-"""
-
-[tasks.ci-test-backend]
-description = "Run backend tests for CI"
+# Docker tasks
+[tasks.docker-build]
+description = "Build Docker image locally"
 run = """
 cd backend
-go mod tidy
-go test ./...
-go vet ./...
+docker build -t diktator-api:local .
+echo "Docker image built: diktator-api:local"
 """
 
-[tasks.ci-test-frontend]
-description = "Run frontend tests for CI"
+[tasks.docker-run]
+description = "Run backend Docker container locally"
 run = """
-cd frontend
-npm ci
-npm run lint
-npm run type-check
+docker run -p 8080:8080 -e GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-diktator-dev} diktator-api:local
 """
+
+# CI/CD tasks
+[tasks.ci-test]
+description = "Run all tests for CI (both frontend and backend)"
+run = [
+  "cd frontend && npm ci && npm run lint && npm run typecheck",
+  "cd backend && go mod tidy && go test ./... && go vet ./...",
+]
 
 [tasks.ci-build-backend]
 description = "Build backend for CI/CD"
@@ -310,7 +188,6 @@ description = "Build frontend for CI/CD"
 run = """
 cd frontend
 npm ci
-# No asset prefix needed - serving from root domain via load balancer
 export NODE_ENV=production
 npm run build
 """
@@ -342,16 +219,11 @@ description = "Deploy frontend for CI/CD"
 run = """
 gsutil -m cp -r frontend/out/* gs://${GCP_FRONTEND_BUCKET}/
 echo "Setting cache headers for deployed files..."
-# Set index.html to never cache to ensure immediate updates
 gsutil -m setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" -h "Pragma:no-cache" -h "Expires:0" gs://${GCP_FRONTEND_BUCKET}/index.html
-# Set other HTML files to short cache (5 minutes)
 gsutil -m setmeta -h "Cache-Control:public, max-age=300" gs://${GCP_FRONTEND_BUCKET}/**/*.html
-# Reset index.html to no-cache (in case it was overwritten by the above)
 gsutil -m setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" -h "Pragma:no-cache" -h "Expires:0" gs://${GCP_FRONTEND_BUCKET}/index.html
-# Set static assets to long-term cache
 gsutil -m setmeta -h "Cache-Control:public, max-age=31536000" gs://${GCP_FRONTEND_BUCKET}/**/*.{js,css,png,jpg,jpeg,gif,ico,svg}
 echo "Invalidating CDN cache for key routes..."
-# Use GCP_PROJECT_ID in CI environment
 PROJECT_ID=${GOOGLE_CLOUD_PROJECT:-${GCP_PROJECT_ID}}
 gcloud compute url-maps invalidate-cdn-cache ${PROJECT_ID}-frontend-url-map --path="/" --async || echo "Cache invalidation failed for /"
 gcloud compute url-maps invalidate-cdn-cache ${PROJECT_ID}-frontend-url-map --path="/practice" --async || echo "Cache invalidation failed for /practice"
@@ -361,47 +233,55 @@ gcloud compute url-maps invalidate-cdn-cache ${PROJECT_ID}-frontend-url-map --pa
 echo "CDN cache invalidation initiated"
 """
 
-[tasks.docker-build]
-description = "Build Docker image locally"
+# Deployment tasks for local development
+[tasks.deploy-backend]
+description = "Deploy backend to Cloud Run (local development)"
 run = """
+mise run config-load
+source .mise.env
 cd backend
-docker build -t diktator-api:local .
-echo "Docker image built: diktator-api:local"
+docker buildx build --platform linux/amd64 -t gcr.io/${DIKTATOR_PROJECT_ID}/${DIKTATOR_API_SERVICE_NAME}:latest --load .
+docker push gcr.io/${DIKTATOR_PROJECT_ID}/${DIKTATOR_API_SERVICE_NAME}:latest
+gcloud run deploy ${DIKTATOR_API_SERVICE_NAME} \
+  --image gcr.io/${DIKTATOR_PROJECT_ID}/${DIKTATOR_API_SERVICE_NAME}:latest \
+  --region ${DIKTATOR_REGION} \
+  --platform managed \
+  --allow-unauthenticated \
+  --set-env-vars="GOOGLE_CLOUD_PROJECT=${DIKTATOR_PROJECT_ID}"
 """
 
-[tasks.docker-run]
-description = "Run backend Docker container locally"
+[tasks.deploy-frontend]
+description = "Deploy frontend to Cloud Storage (local development)"
 run = """
-docker run -p 8080:8080 -e GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-diktator-dev} diktator-api:local
+mise run config-load
+source .mise.env
+cd frontend
+mise run env-production
+npm run build
+gsutil -m cp -r out/* gs://${DIKTATOR_FRONTEND_BUCKET}/
+# Cache headers and CDN invalidation
+gsutil -m setmeta -h "Cache-Control:no-cache" gs://${DIKTATOR_FRONTEND_BUCKET}/index.html
+gsutil -m setmeta -h "Cache-Control:public, max-age=31536000" gs://${DIKTATOR_FRONTEND_BUCKET}/**/*.{js,css}
+gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/" --async
 """
 
-[tasks.dev-backend-only]
-description = "Start only the backend development server"
-run = "cd backend && go run cmd/server/main.go"
-
-[tasks.dev-frontend-only]
-description = "Start only the frontend development server"
-run = "cd frontend && npm run dev"
-
+# Additional development utilities
 [tasks.check]
-description = "Run all checks (lint, type-check, test)"
+description = "Alias for test - run all quality checks"
 run = "mise run test"
 
 [tasks.fmt]
-description = "Format all code"
-run = """
-echo "Formatting Go code..."
-cd backend && go fmt ./...
-echo "Formatting frontend code..."
-cd frontend && npm run lint --fix 2>/dev/null || echo "Frontend formatting complete"
-"""
+description = "Alias for format - format all code"
+run = "mise run format"
 
+# Google Cloud setup tasks
 [tasks.gcloud-auth]
 description = "Authenticate with Google Cloud"
 run = """
-echo "Authenticating with Google Cloud..."
+echo "Starting Google Cloud authentication..."
 gcloud auth login
-gcloud config list project
+gcloud auth application-default login
+echo "Authentication completed!"
 """
 
 [tasks.gcloud-set-project]
@@ -436,353 +316,240 @@ gcloud services enable \
 echo "APIs enabled successfully!"
 """
 
-[tasks.env-check]
-description = "Check environment variables (alias for config-check)"
-run = "mise run config-check"
-
-[tasks.env-setup]
-description = "Set up environment files for development"
+# Firebase setup
+[tasks.firebase-setup]
+description = "Set up Firebase emulators and configuration"
 run = """
-echo "Setting up environment files..."
+echo "Setting up Firebase for local development..."
 
-# Frontend environment
-if [ ! -f frontend/.env.local ]; then
-  echo "Creating frontend/.env.local from template..."
-  cp frontend/.env.example frontend/.env.local
-  echo "✅ Frontend .env.local created from template"
-  echo "📝 Edit frontend/.env.local to customize your settings"
-else
-  echo "ℹ️  Frontend .env.local already exists"
+# Check if Firebase CLI is installed
+if ! command -v firebase &> /dev/null; then
+    echo "Installing Firebase CLI..."
+    npm install -g firebase-tools
 fi
 
-# Backend environment (if needed)
-if [ ! -f backend/.env ]; then
-  echo "Creating backend/.env..."
-  cat > backend/.env << 'EOF'
-# Backend environment variables
-GOOGLE_CLOUD_PROJECT=diktator-dev
-PORT=8080
+# Initialize Firebase in frontend directory if not already done
+cd frontend
+
+if [ ! -f firebase.json ]; then
+    echo "Firebase configuration not found. Setting up Firebase emulators..."
+
+    # Create basic firebase.json for emulators
+    cat > firebase.json << 'EOF'
+{
+  "emulators": {
+    "auth": {
+      "port": 9099
+    },
+    "firestore": {
+      "port": 8088
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4000
+    }
+  }
+}
 EOF
-  echo "✅ Backend .env created"
-else
-  echo "ℹ️  Backend .env already exists"
+    echo "✅ firebase.json created"
 fi
 
-echo ""
-echo "Environment setup complete! 🎉"
-echo "Run 'mise run env-check' to verify your configuration"
-"""
+if [ ! -f firestore.rules ]; then
+    cat > firestore.rules << 'EOF'
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow users to read and write their own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
 
-[tasks.tofu-setup]
-description = "Set up OpenTofu configuration with your project details"
-run = """
-cd terraform
-
-if [ ! -f terraform.tfvars ]; then
-  echo "Creating terraform.tfvars from template..."
-  cp terraform.tfvars.example terraform.tfvars
-  echo "✅ terraform.tfvars created!"
-  echo ""
-  echo "📝 Please edit terraform/terraform.tfvars with your project details:"
-  echo "   1. Set your project_id (required)"
-  echo "   2. Optionally change region (default: europe-north1)"
-  echo "   3. Optionally change bucket_location (default: EU)"
-  echo "   4. Optionally set domain if you have one"
-  echo ""
-  echo "💡 You can get your current gcloud project with:"
-  echo "   gcloud config get-value project"
-else
-  echo "ℹ️  terraform.tfvars already exists"
-fi
-
-echo ""
-echo "Current terraform.tfvars content:"
-echo "================================="
-cat terraform.tfvars
-echo "================================="
-echo ""
-echo "Next steps:"
-echo "1. Edit terraform/terraform.tfvars if needed"
-echo "2. Run: mise run tofu-init"
-echo "3. Run: mise run tofu-plan"
-echo "4. Run: mise run tofu-apply"
-"""
-
-[tasks.tofu-auto-setup]
-description = "Automatically set up terraform.tfvars using current gcloud project"
-run = """
-cd terraform
-
-PROJECT_ID=$(gcloud config get-value project 2>/dev/null)
-if [ -z "$PROJECT_ID" ]; then
-  echo "❌ No Google Cloud project is currently set"
-  echo "Please run: gcloud config set project YOUR_PROJECT_ID"
-  echo "Or run: mise run gcloud-set-project -- YOUR_PROJECT_ID"
-  exit 1
-fi
-
-REGION=${1:-${DIKTATOR_DEFAULT_REGION}}
-
-echo "Creating terraform.tfvars with your current gcloud settings..."
-cat > terraform.tfvars << EOF
-# OpenTofu variables - auto-generated from gcloud config
-project_id      = "$PROJECT_ID"
-region          = "$REGION"
-bucket_location = "${DIKTATOR_BUCKET_LOCATION}"
-
-# Optional: Uncomment and set if you have a custom domain
-# domain = "yourdomain.com"
+    // Allow users to read and write their own test results
+    match /testResults/{resultId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+  }
+}
 EOF
-
-echo "✅ terraform.tfvars created with:"
-echo "   project_id = $PROJECT_ID"
-echo "   region     = $REGION"
-echo "   bucket_location = ${DIKTATOR_BUCKET_LOCATION}"
-echo ""
-echo "📝 Edit terraform/terraform.tfvars if you want to change any settings"
-echo ""
-echo "Next steps:"
-echo "1. Run: mise run tofu-init"
-echo "2. Run: mise run tofu-plan"
-echo "3. Run: mise run tofu-apply"
-echo "4. Run: mise run config-load  # Load the new configuration"
-"""
-
-[tasks.setup-buildx]
-description = "Set up Docker buildx for cross-platform builds"
-run = """
-./scripts/setup-buildx.sh
-"""
-
-[tasks.env-production]
-description = "Generate .env file from OpenTofu outputs"
-run = """
-echo "Generating .env from OpenTofu outputs..."
-
-# Load dynamic configuration
-mise run config-load
-source .mise.env
-
-# Check if we have the required configuration
-if [ -z "$DIKTATOR_FRONTEND_BUCKET" ] || [ -z "$DIKTATOR_PROJECT_ID" ]; then
-  echo "❌ Could not load configuration. Make sure infrastructure is deployed with 'mise run tofu-apply'"
-  exit 1
+    echo "✅ firestore.rules created"
 fi
 
-# Refresh API URL in case it wasn't available during config-load
-if [ -z "$DIKTATOR_API_URL" ]; then
-  echo "⚠️  Trying to get API URL from Cloud Run..."
-  DIKTATOR_API_URL=$(gcloud run services describe ${DIKTATOR_API_SERVICE_NAME} --region=${DIKTATOR_REGION} --format='value(status.url)' 2>/dev/null || echo "")
-fi
-
-if [ -z "$DIKTATOR_API_URL" ]; then
-  echo "⚠️  Could not get backend URL from Cloud Run. Using placeholder."
-  DIKTATOR_API_URL="https://${DIKTATOR_API_SERVICE_NAME}-XXXXXXXXX.${DIKTATOR_REGION}.run.app"
-fi
-
-# Generate .env.local
-cat > frontend/.env.local << EOF
-# Production environment variables - Auto-generated from configuration
-# Generated on: $(date)
-
-# Backend API URL (from Cloud Run)
-NEXT_PUBLIC_API_URL=${DIKTATOR_API_URL}
-
-# No asset prefix needed - serving from root domain via Global external Application Load Balancer
-# Domain: https://diktator.gc.flaatten.org/
-
-# Firebase configuration (optional - only needed if using Firebase features)
-# NEXT_PUBLIC_FIREBASE_API_KEY=your-firebase-api-key
-# NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-# NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-firebase-project-id
-# NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-# NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
-# NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789:web:abcdef123456
-
-# Google Cloud Project (for production)
-GOOGLE_CLOUD_PROJECT=${DIKTATOR_PROJECT_ID}
+if [ ! -f firestore.indexes.json ]; then
+    cat > firestore.indexes.json << 'EOF'
+{
+  "indexes": [
+    {
+      "collectionGroup": "testResults",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "completedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
 EOF
+    echo "✅ firestore.indexes.json created"
+fi
 
-echo "✅ Generated frontend/.env.local with:"
-echo "   NEXT_PUBLIC_API_URL=${DIKTATOR_API_URL}"
-echo "   Domain: https://diktator.gc.flaatten.org/"
-echo "   GOOGLE_CLOUD_PROJECT=${DIKTATOR_PROJECT_ID}"
+# Create environment file if it doesn't exist
+if [ ! -f .env.local ]; then
+    if [ -f .env.local.example ]; then
+        cp .env.local.example .env.local
+        echo "✅ .env.local created from example"
+    else
+        echo "Creating basic .env.local for Firebase emulators..."
+        cat > .env.local << 'EOF'
+# Firebase Emulator Configuration
+NEXT_PUBLIC_FIREBASE_USE_EMULATOR=true
+NEXT_PUBLIC_FIREBASE_API_KEY=demo-api-key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=demo-diktator.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-diktator
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=demo-diktator.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=demo-sender-id
+NEXT_PUBLIC_FIREBASE_APP_ID=demo-app-id
+EOF
+        echo "✅ .env.local created with emulator configuration"
+    fi
+fi
+
 echo ""
-echo "🌍 Frontend URLs:"
-echo "   Production: https://diktator.gc.flaatten.org/"
-echo "   Load Balancer IP: ${DIKTATOR_FRONTEND_LB_IP}"
-echo ""
-echo "�💡 .env.local is automatically used by Next.js and overrides .env values"
+echo "Firebase setup complete! You can now run 'mise run firebase-emulators' to start the emulators."
 """
 
+[tasks.firebase-emulators]
+description = "Start Firebase emulators"
+run = """
+cd frontend
+echo "Starting Firebase emulators..."
+echo "This will start:"
+echo "  - Authentication emulator on port 9099"
+echo "  - Firestore emulator on port 8088"
+echo "  - Emulator UI on port 4000"
+echo ""
+echo "Press Ctrl+C to stop the emulators"
+firebase emulators:start
+"""
+
+# Configuration management tasks
 [tasks.config-load]
-description = "Load configuration from terraform outputs and set environment variables"
+description = "Load dynamic configuration from terraform outputs"
 run = """
-echo "Loading configuration from terraform outputs..."
+echo "Loading dynamic configuration..."
+cd terraform
 
 # Check if terraform is initialized
-if [ ! -d "terraform" ] || [ ! -f "terraform/.terraform.lock.hcl" ]; then
-  echo "⚠️  OpenTofu not initialized. Some dynamic config will use defaults."
-  echo "   Run 'mise run tofu-init && mise run tofu-apply' to enable dynamic config."
-  exit 0
+if [ ! -d .terraform ]; then
+    echo "Terraform not initialized. Run 'mise run tofu-init' first."
+    exit 1
 fi
 
-# Read dynamic configuration from terraform outputs
-cd terraform
-export DIKTATOR_PROJECT_ID=$(tofu output -raw project_id 2>/dev/null || echo "${GOOGLE_CLOUD_PROJECT:-diktator-dev}")
-export DIKTATOR_REGION=$(tofu output -raw region 2>/dev/null || echo "${DIKTATOR_DEFAULT_REGION}")
-export DIKTATOR_FRONTEND_BUCKET=$(tofu output -raw frontend_bucket 2>/dev/null || echo "${DIKTATOR_PROJECT_ID}-${DIKTATOR_APP_NAME}-frontend")
+# Check if tfstate exists
+if [ ! -f terraform.tfstate ]; then
+    echo "No terraform state found. Infrastructure may not be deployed yet."
+    echo "Run 'mise run tofu-apply' to deploy infrastructure first."
+    exit 1
+fi
 
-# Try to get Cloud Run service URL
-export DIKTATOR_API_URL=$(gcloud run services describe ${DIKTATOR_API_SERVICE_NAME} --region=${DIKTATOR_REGION} --format='value(status.url)' 2>/dev/null || echo "")
+# Extract outputs and create .mise.env
+echo "Extracting terraform outputs..."
+cat > ../.mise.env << EOF
+# Auto-generated from terraform outputs - do not edit manually
+DIKTATOR_PROJECT_ID=$(tofu output -raw project_id 2>/dev/null || echo "")
+DIKTATOR_REGION=$(tofu output -raw region 2>/dev/null || echo "${DIKTATOR_DEFAULT_REGION}")
+DIKTATOR_FRONTEND_BUCKET=$(tofu output -raw frontend_bucket_name 2>/dev/null || echo "")
+DIKTATOR_API_URL=$(tofu output -raw api_url 2>/dev/null || echo "")
 
-cd ..
+# Firebase configuration from terraform outputs
+DIKTATOR_FIREBASE_API_KEY=$(tofu output -json firebase_config 2>/dev/null | jq -r '.apiKey' 2>/dev/null || echo "")
+DIKTATOR_FIREBASE_AUTH_DOMAIN=$(tofu output -json firebase_config 2>/dev/null | jq -r '.authDomain' 2>/dev/null || echo "")
+DIKTATOR_FIREBASE_STORAGE_BUCKET=$(tofu output -json firebase_config 2>/dev/null | jq -r '.storageBucket' 2>/dev/null || echo "")
+DIKTATOR_FIREBASE_MESSAGING_SENDER_ID=$(tofu output -json firebase_config 2>/dev/null | jq -r '.messagingSenderId' 2>/dev/null || echo "")
+DIKTATOR_FIREBASE_APP_ID=$(tofu output -json firebase_config 2>/dev/null | jq -r '.appId' 2>/dev/null || echo "")
+EOF
 
-echo "Configuration loaded:"
-echo "  Project ID: ${DIKTATOR_PROJECT_ID}"
-echo "  Region: ${DIKTATOR_REGION}"
-echo "  Frontend Bucket: ${DIKTATOR_FRONTEND_BUCKET}"
-echo "  API URL: ${DIKTATOR_API_URL:-'Not deployed yet'}"
-
-# Export for use by other tasks
-echo "export DIKTATOR_PROJECT_ID='${DIKTATOR_PROJECT_ID}'" > .mise.env
-echo "export DIKTATOR_REGION='${DIKTATOR_REGION}'" >> .mise.env
-echo "export DIKTATOR_FRONTEND_BUCKET='${DIKTATOR_FRONTEND_BUCKET}'" >> .mise.env
-echo "export DIKTATOR_API_URL='${DIKTATOR_API_URL}'" >> .mise.env
-echo "export GOOGLE_CLOUD_PROJECT='${DIKTATOR_PROJECT_ID}'" >> .mise.env
-echo "export GCP_FRONTEND_BUCKET='${DIKTATOR_FRONTEND_BUCKET}'" >> .mise.env
-echo "export GCP_REGION='${DIKTATOR_REGION}'" >> .mise.env
-
-echo "✅ Configuration saved to .mise.env"
+echo "Configuration loaded to .mise.env"
 """
 
 [tasks.config-check]
-description = "Check current configuration from all sources"
+description = "Check all configuration values"
 run = """
-echo "=== Mise Environment Configuration ==="
+echo "=== Static Configuration (mise.toml) ==="
 echo "DIKTATOR_APP_NAME: ${DIKTATOR_APP_NAME}"
 echo "DIKTATOR_API_SERVICE_NAME: ${DIKTATOR_API_SERVICE_NAME}"
 echo "DIKTATOR_DEFAULT_REGION: ${DIKTATOR_DEFAULT_REGION}"
 echo "DIKTATOR_DEFAULT_PORT: ${DIKTATOR_DEFAULT_PORT}"
 echo "DIKTATOR_BUCKET_LOCATION: ${DIKTATOR_BUCKET_LOCATION}"
-echo "DIKTATOR_ENV: ${DIKTATOR_ENV:-not set}"
 echo ""
 
-# Load dynamic config if available
-if [ -f ".mise.env" ]; then
-  echo "=== Dynamic Configuration (from .mise.env) ==="
-  source .mise.env
-  echo "DIKTATOR_PROJECT_ID: ${DIKTATOR_PROJECT_ID}"
-  echo "DIKTATOR_REGION: ${DIKTATOR_REGION}"
-  echo "DIKTATOR_FRONTEND_BUCKET: ${DIKTATOR_FRONTEND_BUCKET}"
-  echo "DIKTATOR_API_URL: ${DIKTATOR_API_URL}"
-  echo ""
+if [ -f .mise.env ]; then
+    echo "=== Dynamic Configuration (.mise.env) ==="
+    source .mise.env
+    echo "DIKTATOR_PROJECT_ID: ${DIKTATOR_PROJECT_ID:-'Not set'}"
+    echo "DIKTATOR_REGION: ${DIKTATOR_REGION:-'Not set'}"
+    echo "DIKTATOR_FRONTEND_BUCKET: ${DIKTATOR_FRONTEND_BUCKET:-'Not set'}"
+    echo "DIKTATOR_API_URL: ${DIKTATOR_API_URL:-'Not set'}"
+    echo ""
+    echo "=== Firebase Configuration ==="
+    echo "API Key: ${DIKTATOR_FIREBASE_API_KEY:-'Not set'}"
+    echo "Auth Domain: ${DIKTATOR_FIREBASE_AUTH_DOMAIN:-'Not set'}"
+    echo "Storage Bucket: ${DIKTATOR_FIREBASE_STORAGE_BUCKET:-'Not set'}"
+    echo "Messaging Sender ID: ${DIKTATOR_FIREBASE_MESSAGING_SENDER_ID:-'Not set'}"
+    echo "App ID: ${DIKTATOR_FIREBASE_APP_ID:-'Not set'}"
 else
-  echo "=== Dynamic Configuration ==="
-  echo "⚠️  No .mise.env found. Run 'mise run config-load' to generate dynamic config."
-  echo ""
+    echo "=== Dynamic Configuration ==="
+    echo "No .mise.env file found. Run 'mise run config-load' to generate it."
 fi
 
-echo "=== Current Environment Variables ==="
-echo "NODE_ENV: ${NODE_ENV:-Not set}"
-echo "GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT:-Not set}"
-echo "NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-Not set}"
-echo "Production Domain: https://diktator.gc.flaatten.org/"
-echo "GCP_FRONTEND_BUCKET: ${GCP_FRONTEND_BUCKET:-Not set (CI only)}"
-echo "GCP_REGION: ${GCP_REGION:-Not set (CI only)}"
 echo ""
-
-echo "=== Google Cloud Status ==="
-echo "Current gcloud project: $(gcloud config get-value project 2>/dev/null || echo 'Not set')"
-echo "Authenticated as: $(gcloud config get-value account 2>/dev/null || echo 'Not authenticated')"
+echo "=== Environment Variables ==="
+echo "NODE_ENV: ${NODE_ENV}"
+echo "GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}"
+echo "NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}"
+echo "NEXT_PUBLIC_FIREBASE_USE_EMULATOR: ${NEXT_PUBLIC_FIREBASE_USE_EMULATOR}"
 """
 
-[tasks.open-frontend]
-description = "Open the frontend website in the browser"
+[tasks.env-production]
+description = "Generate production environment file for frontend"
 run = """
-# Load dynamic configuration
-source .mise.env
-
-if [ -z "$DIKTATOR_FRONTEND_BUCKET" ]; then
-  echo "❌ Frontend bucket not configured. Run 'mise run config-load' first."
-  exit 1
-fi
-
-WEBSITE_URL="http://${DIKTATOR_FRONTEND_BUCKET}.storage.googleapis.com"
-echo "Opening frontend website: ${WEBSITE_URL}"
-open "${WEBSITE_URL}"
-"""
-
-[tasks.lb-status]
-description = "Check load balancer and domain status"
-run = """
-# Load dynamic configuration
-source .mise.env
-
-if [ ! -d "terraform" ] || [ ! -f "terraform/.terraform.lock.hcl" ]; then
-  echo "❌ OpenTofu not initialized. Run 'mise run tofu-init' first."
-  exit 1
-fi
-
-cd terraform
-echo "🌐 Load Balancer Status:"
-echo "========================"
-
-# Get load balancer IP
-LB_IP=$(tofu output -raw frontend_lb_ip 2>/dev/null || echo "Not deployed")
-echo "Load Balancer IP: ${LB_IP}"
-
-# Get domain
-DOMAIN="diktator.gc.flaatten.org"
-echo "Domain: ${DOMAIN}"
-
-if [ "${LB_IP}" != "Not deployed" ]; then
-  echo ""
-  echo "📋 DNS Setup Instructions:"
-  echo "=========================="
-  echo "Create the following DNS A record:"
-  echo "  Name: diktator.gc.flaatten.org"
-  echo "  Type: A"
-  echo "  Value: ${LB_IP}"
-  echo "  TTL: 300 (or your preferred value)"
-  echo ""
-  echo "3. Check certificate status:"
-  echo "   gcloud compute ssl-certificates describe diktator-app-frontend-ssl --global"
-  echo ""
-  echo "🔍 Test URLs:"
-  echo "   HTTP (redirects to HTTPS): http://${LB_IP}"
-  echo "   HTTPS: https://${DOMAIN}"
+# Load dynamic configuration first
+if [ -f .mise.env ]; then
+    source .mise.env
 else
-  echo ""
-  echo "⚠️  Load balancer not deployed. Run 'mise run tofu-apply' to create it."
-fi
-"""
-
-[tasks.invalidate-cdn]
-description = "Invalidate CDN cache for frontend routes"
-run = """
-source .mise.env || true
-PROJECT_ID=${DIKTATOR_PROJECT_ID:-${GOOGLE_CLOUD_PROJECT}}
-
-if [ -z "$PROJECT_ID" ]; then
-  echo "Error: Project ID not found. Make sure to run 'mise run config-load' first."
-  exit 1
+    echo "Warning: .mise.env not found. Run 'mise run config-load' first."
 fi
 
-echo "Invalidating CDN cache for all frontend routes..."
-echo "Project: ${PROJECT_ID}"
-echo "URL Map: ${PROJECT_ID}-frontend-url-map"
-echo ""
+cd frontend
 
-# Main routes
-echo "🔄 Invalidating cache for key routes:"
-gcloud compute url-maps invalidate-cdn-cache ${PROJECT_ID}-frontend-url-map --path="/" --async && echo "  ✅ / (homepage)" || echo "  ❌ / failed"
-gcloud compute url-maps invalidate-cdn-cache ${PROJECT_ID}-frontend-url-map --path="/practice" --async && echo "  ✅ /practice" || echo "  ❌ /practice failed"
-gcloud compute url-maps invalidate-cdn-cache ${PROJECT_ID}-frontend-url-map --path="/practice/" --async && echo "  ✅ /practice/" || echo "  ❌ /practice/ failed"
-gcloud compute url-maps invalidate-cdn-cache ${PROJECT_ID}-frontend-url-map --path="/about" --async && echo "  ✅ /about" || echo "  ❌ /about failed"
-gcloud compute url-maps invalidate-cdn-cache ${PROJECT_ID}-frontend-url-map --path="/about/" --async && echo "  ✅ /about/" || echo "  ❌ /about/ failed"
+echo "Generating production .env.local..."
+cat > .env.local << EOF
+# Production environment - auto-generated
+NODE_ENV=production
+NEXT_PUBLIC_API_URL=${DIKTATOR_API_URL:-"https://${DIKTATOR_API_SERVICE_NAME}-${DIKTATOR_REGION:-${DIKTATOR_DEFAULT_REGION}}.run.app"}
 
+# Firebase Production Configuration
+NEXT_PUBLIC_FIREBASE_USE_EMULATOR=false
+NEXT_PUBLIC_FIREBASE_API_KEY=${DIKTATOR_FIREBASE_API_KEY:-""}
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${DIKTATOR_FIREBASE_AUTH_DOMAIN:-""}
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=${DIKTATOR_PROJECT_ID:-""}
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${DIKTATOR_FIREBASE_STORAGE_BUCKET:-""}
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${DIKTATOR_FIREBASE_MESSAGING_SENDER_ID:-""}
+NEXT_PUBLIC_FIREBASE_APP_ID=${DIKTATOR_FIREBASE_APP_ID:-""}
+EOF
+
+echo "Production .env.local generated"
+echo "API URL: ${DIKTATOR_API_URL:-"https://${DIKTATOR_API_SERVICE_NAME}-${DIKTATOR_REGION:-${DIKTATOR_DEFAULT_REGION}}.run.app"}"
 echo ""
-echo "⏱️  CDN cache invalidation initiated. Changes will be visible in 2-5 minutes."
-echo "🌍 Production URL: https://diktator.gc.flaatten.org/"
+echo "Firebase Configuration:"
+echo "  Project ID: ${DIKTATOR_PROJECT_ID:-'Not set'}"
+echo "  Auth Domain: ${DIKTATOR_FIREBASE_AUTH_DOMAIN:-'Not set'}"
+echo "  App ID: ${DIKTATOR_FIREBASE_APP_ID:-'Not set'}"
 """

@@ -17,8 +17,8 @@ jobs:
       - name: Setup mise
         uses: jdx/mise-action@v2
 
-      - name: Run frontend tests
-        run: mise run ci-test-frontend
+      - name: Run tests
+        run: mise run ci-test
 
   deploy:
     if: github.ref == 'refs/heads/main'

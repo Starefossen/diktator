@@ -1,11 +1,13 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from "react";
 
 // Simple hook to demonstrate API integration in SPA mode
 export function useApiStatus() {
-  const [status, setStatus] = useState<'loading' | 'connected' | 'error'>('loading')
-  const [message, setMessage] = useState('')
+  const [status, setStatus] = useState<"loading" | "connected" | "error">(
+    "loading",
+  );
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     const checkApi = async () => {
@@ -13,25 +15,25 @@ export function useApiStatus() {
         const response = await fetch(
           process.env.NEXT_PUBLIC_API_URL
             ? `${process.env.NEXT_PUBLIC_API_URL}/health`
-            : 'http://localhost:8080/health'
-        )
+            : "http://localhost:8080/health",
+        );
 
         if (response.ok) {
-          const data = await response.json()
-          setStatus('connected')
-          setMessage(data.message || 'API is healthy')
+          const data = await response.json();
+          setStatus("connected");
+          setMessage(data.message || "API is healthy");
         } else {
-          setStatus('error')
-          setMessage('API returned an error')
+          setStatus("error");
+          setMessage("API returned an error");
         }
-      } catch (error) {
-        setStatus('error')
-        setMessage('Could not connect to API')
+      } catch {
+        setStatus("error");
+        setMessage("Could not connect to API");
       }
-    }
+    };
 
-    checkApi()
-  }, [])
+    checkApi();
+  }, []);
 
-  return { status, message }
+  return { status, message };
 }
