@@ -1,0 +1,48 @@
+name: Deploy Frontend to Cloud Storage
+
+on:
+  push:
+    branches: [main]
+    paths: ['frontend/**']
+  pull_request:
+    branches: [main]
+    paths: ['frontend/**']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup mise
+        uses: jdx/mise-action@v2
+
+      - name: Run frontend tests
+        run: mise run ci-test-frontend
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup mise
+        uses: jdx/mise-action@v2
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Build frontend
+        run: mise run ci-build-frontend
+
+      - name: Deploy to Cloud Storage
+        env:
+          GCP_FRONTEND_BUCKET: ${{ secrets.GCP_FRONTEND_BUCKET }}
+          GCP_REGION: ${{ secrets.GCP_REGION }}
+        run: mise run ci-deploy-frontend
