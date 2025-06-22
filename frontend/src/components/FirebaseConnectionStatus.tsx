@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { auth, db } from "@/lib/firebase";
+import { Icons } from "@/components/Icons";
 
 export function FirebaseConnectionStatus() {
   const [authStatus, setAuthStatus] = useState<
@@ -71,11 +72,13 @@ export function FirebaseConnectionStatus() {
           ></span>
           <span className="text-xs">
             Auth:{" "}
-            {authStatus === "connected"
-              ? "✓"
-              : authStatus === "error"
-                ? "✗"
-                : "⏳"}
+            {authStatus === "connected" ? (
+              <Icons.success className="inline w-3 h-3 ml-1" />
+            ) : authStatus === "error" ? (
+              <Icons.error className="inline w-3 h-3 ml-1" />
+            ) : (
+              <Icons.loading className="inline w-3 h-3 ml-1" />
+            )}
           </span>
         </div>
 
@@ -91,7 +94,13 @@ export function FirebaseConnectionStatus() {
           ></span>
           <span className="text-xs">
             DB:{" "}
-            {dbStatus === "connected" ? "✓" : dbStatus === "error" ? "✗" : "⏳"}
+            {dbStatus === "connected" ? (
+              <Icons.success className="inline w-3 h-3 ml-1" />
+            ) : dbStatus === "error" ? (
+              <Icons.error className="inline w-3 h-3 ml-1" />
+            ) : (
+              <Icons.loading className="inline w-3 h-3 ml-1" />
+            )}
           </span>
         </div>
 

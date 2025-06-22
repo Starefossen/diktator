@@ -1,27 +1,26 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { HomeIcon } from "@heroicons/react/24/outline";
 
 export default function NotFound() {
-  const router = useRouter();
-
-  useEffect(() => {
-    // Only redirect in browser environment, not during build
-    if (typeof window !== "undefined") {
-      // In SPA mode, redirect all unknown routes to the home page
-      // This allows client-side routing to handle the navigation
-      router.replace("/");
-    }
-  }, [router]);
-
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Redirecting...
-        </h1>
-        <p className="text-gray-600">Taking you to the home page.</p>
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="text-center px-4">
+        <h1 className="text-6xl font-bold text-gray-400 mb-4">404</h1>
+        <h2 className="text-2xl font-bold mb-4 text-gray-800">
+          Page Not Found
+        </h2>
+        <p className="text-gray-600 mb-8">
+          The page you&apos;re looking for doesn&apos;t exist.
+        </p>
+        <Link
+          href="/"
+          className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200"
+        >
+          <HomeIcon className="h-5 w-5 mr-2" />
+          Go Home
+        </Link>
       </div>
     </div>
   );

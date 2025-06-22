@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Static export enabled - all dynamic routes have been migrated to query parameters
   output: "export",
   trailingSlash: true, // Use trailing slashes for clean directory-based URLs
   distDir: "out", // Standard directory for static exports
@@ -8,6 +9,8 @@ const nextConfig = {
   images: {
     unoptimized: true, // Required for static export
   },
+  // Skip build-time static generation for error pages that might cause issues
+  skipTrailingSlashRedirect: true,
   env: {
     NEXT_PUBLIC_API_URL:
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",

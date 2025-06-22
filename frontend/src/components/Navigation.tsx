@@ -66,14 +66,24 @@ export function Navigation() {
                   {t("nav.home")}
                 </Link>
                 <Link
-                  href="/practice/"
+                  href="/wordsets/"
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    pathname.startsWith("/practice")
+                    pathname.startsWith("/wordsets")
                       ? "bg-blue-100 text-blue-700 shadow-sm"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                   }`}
                 >
-                  {t("nav.practice")}
+                  {t("nav.wordsets")}
+                </Link>
+                <Link
+                  href="/results/"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    pathname.startsWith("/results")
+                      ? "bg-blue-100 text-blue-700 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
+                >
+                  {t("nav.results")}
                 </Link>
                 <Link
                   href="/about/"

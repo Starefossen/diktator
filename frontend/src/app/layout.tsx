@@ -3,6 +3,7 @@ import { Navigation } from "@/components/Navigation";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { FirebaseConnectionStatus } from "@/components/FirebaseConnectionStatus";
+import { ClientSideRouter } from "@/components/ClientSideRouter";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,11 +18,21 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-gray-50 min-h-screen">
+      <body className="min-h-screen bg-gray-50 preload">
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              setTimeout(() => {
+                document.body.classList.remove('preload');
+              }, 100);
+            `,
+          }}
+        />
         <AuthProvider>
           <LanguageProvider>
+            <ClientSideRouter />
             <Navigation />
-            <main>{children}</main>
+            <main className="pb-8">{children}</main>
             <FirebaseConnectionStatus />
           </LanguageProvider>
         </AuthProvider>

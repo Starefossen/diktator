@@ -30,6 +30,7 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.tsconfig.tsbuildinfo
 
 # Runtime data
 pids/
@@ -77,6 +78,7 @@ coverage/
 *.out
 go.work
 go.work.sum
+*/tmp/
 
 # Docker
 .dockerignore
@@ -88,6 +90,8 @@ go.work.sum
 # Firebase
 .firebase/
 firebase-debug.log
+firebase-emulator-data/
+# Optionally commit firebase-emulator-data/ to persist data in git if desired
 
 # Terraform & OpenTofu
 *.tfstate

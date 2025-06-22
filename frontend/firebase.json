@@ -15,10 +15,12 @@
     },
     "logging": {
       "port": 4500
-    }
+    },
+    "singleProjectMode": true
   },
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
-  }
+  },
+  "emulators-data": "./firebase-emulator-data"
 }

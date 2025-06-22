@@ -1,0 +1,44 @@
+# Air configuration for Go hot reloading
+root = "."
+tmp_dir = "tmp"
+
+[build]
+# Main file or directory to build
+main = "./cmd/server"
+# Binary output path
+bin = "./tmp/main"
+# Build command to use
+cmd = "go build -o ./tmp/main ./cmd/server/main.go"
+# Arguments to pass to the binary
+full_bin = ""
+# Include files for watching
+include_ext = ["go", "tpl", "tmpl", "html"]
+# Exclude files/directories
+exclude_dir = ["assets", "tmp", "vendor", "frontend", "node_modules"]
+# Include directories for watching
+include_dir = []
+# Commands to run before build
+pre_cmd = []
+# Commands to run after build
+post_cmd = []
+# Delay after triggering restart (ms)
+delay = 1000
+# Stop running old binary when build errors occur
+stop_on_error = true
+# Send signal to process when killing it (darwin, freebsd, linux, windows)
+send_interrupt = false
+# Delay after sending signal (ms)
+kill_delay = 500
+
+[color]
+main = "magenta"
+watcher = "cyan"
+build = "yellow"
+runner = "green"
+
+[log]
+time = false
+
+[misc]
+# Delete tmp directory on exit
+clean_on_exit = true

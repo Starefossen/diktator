@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -11,6 +13,23 @@ import (
 )
 
 func main() {
+	// Initialize services
+	if err := handlers.InitializeServices(); err != nil {
+		log.Fatalf("Failed to initialize services: %v", err)
+	}
+
+	// Set up graceful shutdown
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		log.Println("Shutting down gracefully...")
+		if err := handlers.CloseServices(); err != nil {
+			log.Printf("Error closing services: %v", err)
+		}
+		os.Exit(0)
+	}()
+
 	// Get port from environment or default to 8080
 	port := os.Getenv("PORT")
 	if port == "" {
