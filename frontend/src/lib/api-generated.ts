@@ -4,6 +4,7 @@
  */
 
 import { auth } from "@/lib/firebase";
+import { onAuthStateChanged, User } from "firebase/auth";
 import {
   Configuration,
   ChildrenApi,
@@ -18,19 +19,45 @@ import {
   ModelsChildAccount,
 } from "@/generated";
 
+// Wait for auth state to be ready
+const waitForAuthState = (): Promise<User | null> => {
+  return new Promise((resolve) => {
+    // If we already have a current user, return immediately
+    if (auth.currentUser) {
+      resolve(auth.currentUser);
+      return;
+    }
+
+    // Otherwise, wait for the auth state to be determined
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      unsubscribe();
+      resolve(user);
+    });
+  });
+};
+
 // Create a configuration that automatically includes Firebase auth token
-const createConfiguration = async (): Promise<Configuration> => {
-  const user = auth.currentUser;
+const createConfiguration = async (
+  requireAuth = true,
+): Promise<Configuration> => {
   const authHeaders: Record<string, string> = {
     "Content-Type": "application/json",
   };
 
-  if (user) {
-    try {
-      const idToken = await user.getIdToken();
-      authHeaders["Authorization"] = `Bearer ${idToken}`;
-    } catch (error) {
-      console.error("Failed to get Firebase auth token:", error);
+  if (requireAuth) {
+    // Wait for auth state to be ready
+    const user = await waitForAuthState();
+
+    if (user) {
+      try {
+        const idToken = await user.getIdToken();
+        authHeaders["Authorization"] = `Bearer ${idToken}`;
+      } catch (error) {
+        console.error("Failed to get Firebase auth token:", error);
+        throw new Error("Authentication failed");
+      }
+    } else {
+      throw new Error("User not authenticated");
     }
   }
 
@@ -43,8 +70,8 @@ const createConfiguration = async (): Promise<Configuration> => {
 };
 
 // Create API client instances with authentication
-const createApiInstances = async () => {
-  const config = await createConfiguration();
+const createApiInstances = async (requireAuth = true) => {
+  const config = await createConfiguration(requireAuth);
 
   return {
     childrenApi: new ChildrenApi(config),
@@ -152,9 +179,9 @@ export const generatedApiClient = {
     return familiesApi.apiFamiliesResultsGet();
   },
 
-  // Health check
+  // Health check (doesn't require auth)
   async getHealth() {
-    const { healthApi } = await createApiInstances();
+    const { healthApi } = await createApiInstances(false);
     return healthApi.healthGet();
   },
 };

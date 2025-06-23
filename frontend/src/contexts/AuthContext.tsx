@@ -176,13 +176,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     } catch (err: unknown) {
       console.error("Sign in error:", err);
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : (err as { code?: string; message?: string })?.code ||
-            (err as { code?: string; message?: string })?.message ||
-            "An unknown error occurred";
-      setError(getErrorMessage(errorMessage));
+
+      // Extract error code/message for proper categorization
+      let errorCode = "";
+      let errorMessage = "";
+
+      if (err && typeof err === "object" && "code" in err) {
+        errorCode = (err as { code: string }).code;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (err && typeof err === "object" && "message" in err) {
+        errorMessage = (err as { message: string }).message;
+      }
+
+      // Use error code if available, otherwise use message
+      const finalErrorKey =
+        errorCode || errorMessage || "An unknown error occurred";
+      setError(getErrorMessage(finalErrorKey));
       throw err;
     } finally {
       setLoading(false);
@@ -246,13 +256,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     } catch (err: unknown) {
       console.error("Sign up error:", err);
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : (err as { code?: string; message?: string })?.code ||
-            (err as { code?: string; message?: string })?.message ||
-            "An unknown error occurred";
-      setError(getErrorMessage(errorMessage));
+
+      // Extract error code/message for proper categorization
+      let errorCode = "";
+      let errorMessage = "";
+
+      if (err && typeof err === "object" && "code" in err) {
+        errorCode = (err as { code: string }).code;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (err && typeof err === "object" && "message" in err) {
+        errorMessage = (err as { message: string }).message;
+      }
+
+      // Use error code if available, otherwise use message
+      const finalErrorKey =
+        errorCode || errorMessage || "An unknown error occurred";
+      setError(getErrorMessage(finalErrorKey));
       throw err;
     } finally {
       setLoading(false);
@@ -265,13 +285,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setError(null);
       await signOut(auth);
       setUserData(null);
+      // Don't redirect here - let the calling component handle redirect
+      // to avoid React state update during render issues
     } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : (err as { code?: string; message?: string })?.code ||
-            "An unknown error occurred";
-      setError(getErrorMessage(errorMessage));
+      let errorCode = "";
+      let errorMessage = "";
+
+      if (err && typeof err === "object" && "code" in err) {
+        errorCode = (err as { code: string }).code;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (err && typeof err === "object" && "message" in err) {
+        errorMessage = (err as { message: string }).message;
+      }
+
+      const finalErrorKey =
+        errorCode || errorMessage || "An unknown error occurred";
+      setError(getErrorMessage(finalErrorKey));
       throw err;
     }
   };
@@ -331,44 +361,62 @@ export function useAuth() {
 // Helper function to get user-friendly error messages
 function getErrorMessage(errorCode: string): string {
   switch (errorCode) {
+    // Authentication credential errors
     case "auth/user-not-found":
-      return "No user found with this email address.";
+      return "No account found with this email address. Please check your email or sign up for a new account.";
     case "auth/wrong-password":
-      return "Incorrect password.";
-    case "auth/email-already-in-use":
-      return "An account with this email already exists.";
-    case "auth/weak-password":
-      return "Password should be at least 6 characters.";
+      return "Incorrect password. Please check your password and try again.";
+    case "auth/invalid-credential":
+      return "Invalid email or password. Please check your credentials and try again.";
     case "auth/invalid-email":
       return "Please enter a valid email address.";
-    case "auth/network-request-failed":
-      return "Network error. Please check your connection and try again.";
-    case "auth/too-many-requests":
-      return "Too many failed attempts. Please try again later.";
-    case "auth/operation-not-allowed":
-      return "Email/password authentication is not enabled. Please contact support.";
     case "auth/user-disabled":
       return "This account has been disabled. Please contact support.";
-    case "auth/invalid-credential":
-      return "Invalid login credentials. Please check your email and password.";
+    case "auth/too-many-requests":
+      return "Too many failed login attempts. Please wait a few minutes before trying again.";
+
+    // Account creation errors
+    case "auth/email-already-in-use":
+      return "An account with this email already exists. Please sign in instead.";
+    case "auth/weak-password":
+      return "Password should be at least 6 characters long.";
+    case "auth/operation-not-allowed":
+      return "Email/password authentication is not enabled. Please contact support.";
+
+    // Connection and service errors
+    case "auth/network-request-failed":
+      return "Network connection failed. Please check your internet connection and try again.";
     case "auth/internal-error":
-      return "An internal error occurred. Please try again later.";
+      return "Authentication service temporarily unavailable. Please try again in a moment.";
     case "auth/emulator-config-failed":
-      return "Firebase emulator connection failed. Please ensure emulators are running.";
-    // Handle Firebase connection errors
+      return "Development environment connection failed. Please ensure Firebase emulators are running.";
     case "Firebase Auth is not initialized. Please check your Firebase configuration.":
-      return "Cannot connect to authentication service. Please check your internet connection or try starting Firebase emulators.";
+      return "Authentication service unavailable. Please check your connection or restart the development environment.";
+
     default:
       // Handle generic errors or unknown error codes
       if (errorCode && errorCode.includes("Firebase")) {
-        return "Firebase connection error. Please ensure Firebase emulators are running or check your internet connection.";
+        return "Authentication service connection error. Please check your internet connection or development environment.";
       }
-      if (errorCode && errorCode.includes("network")) {
-        return "Network connection error. Please check your internet connection.";
+      if (
+        errorCode &&
+        (errorCode.includes("network") || errorCode.includes("Network"))
+      ) {
+        return "Network connection error. Please check your internet connection and try again.";
       }
       if (errorCode && errorCode.includes("emulator")) {
-        return "Firebase emulator connection failed. Please start emulators with: mise run firebase-emulators";
+        return "Development environment error. Please ensure Firebase emulators are running.";
       }
-      return errorCode || "An unexpected error occurred. Please try again.";
+      if (
+        errorCode &&
+        (errorCode.includes("timeout") || errorCode.includes("Timeout"))
+      ) {
+        return "Connection timeout. Please check your internet connection and try again.";
+      }
+
+      // For truly unknown errors, provide a helpful fallback
+      return errorCode && errorCode.length > 0
+        ? `Authentication error: ${errorCode}. Please try again or contact support if the problem persists.`
+        : "An unexpected error occurred during authentication. Please try again.";
   }
 }

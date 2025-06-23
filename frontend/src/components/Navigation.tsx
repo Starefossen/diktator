@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import NavigationLanguageSwitcher from "./NavigationLanguageSwitcher";
 
 export function Navigation() {
   const pathname = usePathname();
+  const router = useRouter();
   const { t } = useLanguage();
   const { user, userData, logOut } = useAuth();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -31,10 +32,14 @@ export function Navigation() {
 
   const handleLogout = async () => {
     try {
-      await logOut();
       setIsUserMenuOpen(false);
-    } catch {
-      console.error("Logout error occurred");
+      await logOut();
+      // Use setTimeout to defer navigation until after render is complete
+      setTimeout(() => {
+        router.push("/");
+      }, 0);
+    } catch (error) {
+      console.error("Logout error occurred:", error);
     }
   };
 
@@ -53,18 +58,31 @@ export function Navigation() {
           </Link>{" "}
           {/* Navigation Links and Language Switcher */}
           <div className="flex items-center space-x-1">
+            {/* Public navigation links - always visible */}
+            <Link
+              href="/"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                pathname === "/"
+                  ? "bg-blue-100 text-blue-700 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              }`}
+            >
+              {t("nav.home")}
+            </Link>
+            <Link
+              href="/about/"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                pathname.startsWith("/about")
+                  ? "bg-blue-100 text-blue-700 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              }`}
+            >
+              {t("nav.about")}
+            </Link>
+
+            {/* Authenticated user navigation links */}
             {user && (
               <>
-                <Link
-                  href="/"
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    pathname === "/"
-                      ? "bg-blue-100 text-blue-700 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
-                >
-                  {t("nav.home")}
-                </Link>
                 <Link
                   href="/wordsets/"
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -90,31 +108,38 @@ export function Navigation() {
                   </Link>
                 )}
 
-                <Link
-                  href="/results/"
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    pathname.startsWith("/results")
-                      ? "bg-blue-100 text-blue-700 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
-                >
-                  {t("nav.results")}
-                </Link>
-                <Link
-                  href="/about/"
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    pathname.startsWith("/about")
-                      ? "bg-blue-100 text-blue-700 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
-                >
-                  {t("nav.about")}
-                </Link>
+                {/* Results - Only for children */}
+                {userData?.role === "child" && (
+                  <Link
+                    href="/results/"
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      pathname.startsWith("/results")
+                        ? "bg-blue-100 text-blue-700 shadow-sm"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    }`}
+                  >
+                    {t("nav.results")}
+                  </Link>
+                )}
               </>
             )}
 
+            {/* Sign In link for unauthenticated users */}
+            {!user && (
+              <Link
+                href="/auth"
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  pathname.startsWith("/auth")
+                    ? "bg-blue-100 text-blue-700 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                }`}
+              >
+                {t("auth.signin.title")}
+              </Link>
+            )}
+
             {/* Language Switcher */}
-            <div className="flex items-center ml-4 pl-4 border-l border-gray-200">
+            <div className="flex items-center pl-4 ml-4 border-l border-gray-200">
               <NavigationLanguageSwitcher />
             </div>
 
@@ -122,13 +147,13 @@ export function Navigation() {
             {user && (
               <div
                 ref={userMenuRef}
-                className="relative ml-4 pl-4 border-l border-gray-200"
+                className="relative pl-4 ml-4 border-l border-gray-200"
               >
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-900 transition-colors px-3 py-2 rounded-md hover:bg-gray-100"
+                  className="flex items-center px-3 py-2 space-x-2 text-sm text-gray-600 transition-colors rounded-md hover:text-gray-900 hover:bg-gray-100"
                 >
-                  <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600">
                     <span className="text-xs font-medium text-white">
                       {(userData?.displayName || user.email)
                         ?.charAt(0)
@@ -155,12 +180,12 @@ export function Navigation() {
 
                 {/* Dropdown Menu */}
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                  <div className="absolute right-0 z-50 w-48 mt-2 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
                     <div className="py-1">
                       <Link
                         href="/profile"
                         onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100"
                       >
                         <svg
                           className="w-4 h-4 mr-3"
@@ -180,7 +205,7 @@ export function Navigation() {
                       <hr className="my-1" />
                       <button
                         onClick={handleLogout}
-                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100"
                       >
                         <svg
                           className="w-4 h-4 mr-3"

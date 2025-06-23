@@ -1,11 +1,16 @@
 export const family = {
-  "family.title": "Familieadministrasjon",
+  "family.title": "Min Familie",
   "family.subtitle": "Administrer familiemedlemmer og følg deres fremgang",
   "family.loading": "Laster familiedata...",
   "family.stats.members": "Totalt medlemmer",
   "family.stats.children": "Barn",
   "family.stats.testsCompleted": "Tester fullført",
   "family.stats.averageScore": "Gjennomsnittlig poengsum",
+  "family.stats.totalWords": "Totalt ord",
+  "family.stats.wordsCorrect": "Ord riktig",
+
+  // Navigation
+  "family.back": "← Tilbake til Familie",
 
   // Child Account Management
   "family.child.create.title": "Opprett barnekonto",
@@ -34,6 +39,11 @@ export const family = {
   "family.child.progress.tests": "Tester fullført",
   "family.child.progress.avgScore": "Gjennomsnittlig poengsum",
   "family.child.progress.correctWords": "Ord riktig",
+  "family.child.progress.words": "Ord",
+  "family.child.progress.accuracy": "Nøyaktighet",
+
+  // Test Results
+  "family.test.title": "Ordsett-test",
 
   // Children List
   "family.children.title": "Barn",

@@ -345,6 +345,7 @@ func (s *Service) GetFamilyChildren(familyID string) ([]models.ChildAccount, err
 // GetFamilyProgress retrieves progress data for all family children (not parents)
 func (s *Service) GetFamilyProgress(familyID string) ([]models.FamilyProgress, error) {
 	var progress []models.FamilyProgress
+	userIDMap := make(map[string]bool) // Track processed user IDs to avoid duplicates
 
 	// Get children from the "children" collection (created via CreateChild)
 	childrenIter := s.client.Collection("children").
@@ -364,6 +365,12 @@ func (s *Service) GetFamilyProgress(familyID string) ([]models.FamilyProgress, e
 			continue
 		}
 		child.ID = doc.Ref.ID
+
+		// Skip if we've already processed this user ID
+		if userIDMap[child.ID] {
+			continue
+		}
+		userIDMap[child.ID] = true
 
 		// Get test results for this child
 		results, err := s.GetTestResults(child.ID)
@@ -432,6 +439,12 @@ func (s *Service) GetFamilyProgress(familyID string) ([]models.FamilyProgress, e
 			continue
 		}
 		user.ID = doc.Ref.ID
+
+		// Skip if we've already processed this user ID
+		if userIDMap[user.ID] {
+			continue
+		}
+		userIDMap[user.ID] = true
 
 		// Get test results for this child user
 		results, err := s.GetTestResults(user.ID)

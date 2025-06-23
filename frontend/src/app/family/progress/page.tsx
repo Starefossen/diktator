@@ -104,7 +104,7 @@ export default function FamilyProgressPage() {
               onClick={() => router.push("/family")}
               className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              ← Back to Family
+              {t("family.back")}
             </button>
           </div>
 
@@ -143,7 +143,7 @@ export default function FamilyProgressPage() {
                 <HeroBookIcon className="w-8 h-8 text-green-500" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">
-                    Total Words
+                    {t("family.stats.totalWords")}
                   </p>
                   <p className="text-2xl font-bold text-gray-900">
                     {totalWords}
@@ -157,7 +157,7 @@ export default function FamilyProgressPage() {
                 <HeroTrophyIcon className="w-8 h-8 text-purple-500" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">
-                    Words Correct
+                    {t("family.stats.wordsCorrect")}
                   </p>
                   <p className="text-2xl font-bold text-gray-900">
                     {totalCorrectWords}
@@ -206,13 +206,17 @@ export default function FamilyProgressPage() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-gray-600">Words</p>
+                        <p className="text-gray-600">
+                          {t("family.child.progress.words")}
+                        </p>
                         <p className="font-bold">
                           {member.correctWords}/{member.totalWords}
                         </p>
                       </div>
                       <div>
-                        <p className="text-gray-600">Accuracy</p>
+                        <p className="text-gray-600">
+                          {t("family.child.progress.accuracy")}
+                        </p>
                         <p className="font-bold">
                           {member.totalWords > 0
                             ? Math.round(
@@ -239,11 +243,9 @@ export default function FamilyProgressPage() {
               <div className="py-12 text-center">
                 <HeroBookIcon className="w-16 h-16 mx-auto mb-4 text-gray-400" />
                 <h3 className="mb-2 text-xl font-semibold text-gray-600">
-                  {t("results.noResults")}
+                  {t("results.history.noResults")}
                 </h3>
-                <p className="text-gray-500">
-                  {t("results.noResults.subtitle")}
-                </p>
+                <p className="text-gray-500">{t("results.empty.subtitle")}</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -257,7 +259,7 @@ export default function FamilyProgressPage() {
                         <ScoreIcon score={result.score} className="w-10 h-10" />
                         <div>
                           <h3 className="font-semibold text-gray-800">
-                            Word Set Test
+                            {t("family.test.title")}
                           </h3>
                           <p className="text-sm text-gray-600">
                             {formatDate(result.completedAt)}
@@ -269,7 +271,7 @@ export default function FamilyProgressPage() {
                         <div className="flex items-center space-x-6">
                           <div className="text-center">
                             <p className="text-sm text-gray-600">
-                              {t("results.score")}
+                              {t("results.history.score")}
                             </p>
                             <p className="text-lg font-bold text-gray-900">
                               {Math.round(result.score)}%
@@ -277,7 +279,7 @@ export default function FamilyProgressPage() {
                           </div>
                           <div className="text-center">
                             <p className="text-sm text-gray-600">
-                              {t("results.words")}
+                              {t("results.history.words")}
                             </p>
                             <p className="text-lg font-bold text-gray-900">
                               {result.correctWords}/{result.totalWords}
@@ -285,7 +287,7 @@ export default function FamilyProgressPage() {
                           </div>
                           <div className="text-center">
                             <p className="text-sm text-gray-600">
-                              {t("results.time")}
+                              {t("results.history.time")}
                             </p>
                             <p className="text-lg font-bold text-gray-900">
                               {formatTime(result.timeSpent)}
@@ -300,7 +302,7 @@ export default function FamilyProgressPage() {
                       result.incorrectWords.length > 0 && (
                         <div className="mt-4 pt-4 border-t border-gray-100">
                           <p className="text-sm font-medium text-gray-700 mb-2">
-                            {t("results.wordsToPractice")}:
+                            {t("results.details.incorrectWords")}:
                           </p>
                           <div className="flex flex-wrap gap-2">
                             {result.incorrectWords.map((word, index) => (

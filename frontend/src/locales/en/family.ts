@@ -1,11 +1,16 @@
 export const family = {
-  "family.title": "Family Management",
+  "family.title": "My Family",
   "family.subtitle": "Manage your family members and track their progress",
   "family.loading": "Loading family data...",
   "family.stats.members": "Total Members",
   "family.stats.children": "Children",
   "family.stats.testsCompleted": "Tests Completed",
   "family.stats.averageScore": "Average Score",
+  "family.stats.totalWords": "Total Words",
+  "family.stats.wordsCorrect": "Words Correct",
+
+  // Navigation
+  "family.back": "← Back to Family",
 
   // Child Account Management
   "family.child.create.title": "Create Child Account",
@@ -35,6 +40,11 @@ export const family = {
   "family.child.progress.tests": "Tests Completed",
   "family.child.progress.avgScore": "Average Score",
   "family.child.progress.correctWords": "Words Correct",
+  "family.child.progress.words": "Words",
+  "family.child.progress.accuracy": "Accuracy",
+
+  // Test Results
+  "family.test.title": "Word Set Test",
 
   // Children List
   "family.children.title": "Children",

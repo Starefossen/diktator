@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -13,7 +14,45 @@ interface AuthFormProps {
 export default function AuthForm({ onToggleMode, isSignUp }: AuthFormProps) {
   const { signIn, signUp, error, clearError } = useAuth();
   const { t } = useLanguage();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Determine error type for better styling
+  const getErrorType = (
+    errorMessage: string,
+  ): "credential" | "connection" | "validation" => {
+    if (!errorMessage) return "credential";
+
+    const lowerError = errorMessage.toLowerCase();
+
+    // Connection/service errors
+    if (
+      lowerError.includes("network") ||
+      lowerError.includes("connection") ||
+      lowerError.includes("service") ||
+      lowerError.includes("emulator") ||
+      lowerError.includes("firebase") ||
+      lowerError.includes("development environment") ||
+      lowerError.includes("timeout")
+    ) {
+      return "connection";
+    }
+
+    // Validation errors
+    if (
+      lowerError.includes("valid email") ||
+      lowerError.includes("password should be") ||
+      lowerError.includes("required")
+    ) {
+      return "validation";
+    }
+
+    // Default to credential errors
+    return "credential";
+  };
+
+  const errorType = error ? getErrorType(error) : "credential";
 
   const [formData, setFormData] = useState({
     email: "",
@@ -38,6 +77,26 @@ export default function AuthForm({ onToggleMode, isSignUp }: AuthFormProps) {
       } else {
         await signIn(formData.email, formData.password);
       }
+
+      // Redirect after successful authentication
+      // Check if there's a redirect URL in the query params, otherwise go to wordsets
+      const redirectParam = searchParams.get("redirect");
+      let redirectTo = "/wordsets/";
+
+      // Validate redirect URL to prevent open redirect vulnerabilities
+      if (
+        redirectParam &&
+        redirectParam.startsWith("/") &&
+        !redirectParam.startsWith("//") &&
+        !redirectParam.includes("..")
+      ) {
+        redirectTo = redirectParam;
+      }
+
+      // Use setTimeout to defer navigation until after render is complete
+      setTimeout(() => {
+        router.push(redirectTo);
+      }, 0);
     } catch {
       // Error is handled by the auth context
     } finally {
@@ -48,6 +107,11 @@ export default function AuthForm({ onToggleMode, isSignUp }: AuthFormProps) {
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
+    // Clear error when user starts typing
+    if (error) {
+      clearError();
+    }
+
     setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
@@ -55,8 +119,8 @@ export default function AuthForm({ onToggleMode, isSignUp }: AuthFormProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 px-4">
-      <div className="max-w-md w-full space-y-8">
+    <div className="flex items-center justify-center min-h-screen px-4 bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <div className="flex items-center justify-center mb-6">
             <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
@@ -72,12 +136,87 @@ export default function AuthForm({ onToggleMode, isSignUp }: AuthFormProps) {
         </div>
 
         <form
-          className="mt-8 space-y-6 bg-white p-8 rounded-xl shadow-lg"
+          className="p-8 mt-8 space-y-6 bg-white shadow-lg rounded-xl"
           onSubmit={handleSubmit}
         >
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-4">
-              <p className="text-red-600 text-sm">{error}</p>
+            <div
+              className={`border rounded-md p-4 ${
+                errorType === "connection"
+                  ? "bg-yellow-50 border-yellow-200"
+                  : errorType === "validation"
+                    ? "bg-blue-50 border-blue-200"
+                    : "bg-red-50 border-red-200"
+              }`}
+            >
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  {errorType === "connection" ? (
+                    <svg
+                      className="w-5 h-5 text-yellow-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 18.5c-.77.833.192 2.5 1.732 2.5z"
+                      />
+                    </svg>
+                  ) : errorType === "validation" ? (
+                    <svg
+                      className="w-5 h-5 text-blue-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      className="w-5 h-5 text-red-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  )}
+                </div>
+                <div className="ml-3">
+                  <p
+                    className={`text-sm ${
+                      errorType === "connection"
+                        ? "text-yellow-700"
+                        : errorType === "validation"
+                          ? "text-blue-700"
+                          : "text-red-700"
+                    }`}
+                  >
+                    {error}
+                  </p>
+                  {errorType === "connection" && (
+                    <p className="mt-1 text-xs text-yellow-600">
+                      If you&apos;re in development mode, try running:{" "}
+                      <code className="px-1 bg-yellow-100 rounded">
+                        mise run firebase-emulators
+                      </code>
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
@@ -86,7 +225,7 @@ export default function AuthForm({ onToggleMode, isSignUp }: AuthFormProps) {
               <div>
                 <label
                   htmlFor="displayName"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block mb-1 text-sm font-medium text-gray-700"
                 >
                   {t("auth.displayName")}
                 </label>
@@ -106,7 +245,7 @@ export default function AuthForm({ onToggleMode, isSignUp }: AuthFormProps) {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block mb-1 text-sm font-medium text-gray-700"
               >
                 {t("auth.email")}
               </label>
@@ -125,7 +264,7 @@ export default function AuthForm({ onToggleMode, isSignUp }: AuthFormProps) {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block mb-1 text-sm font-medium text-gray-700"
               >
                 {t("auth.password")}
               </label>
@@ -145,7 +284,7 @@ export default function AuthForm({ onToggleMode, isSignUp }: AuthFormProps) {
               <div>
                 <label
                   htmlFor="role"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block mb-1 text-sm font-medium text-gray-700"
                 >
                   {t("auth.role")}
                 </label>
@@ -167,7 +306,7 @@ export default function AuthForm({ onToggleMode, isSignUp }: AuthFormProps) {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              className="flex justify-center w-full px-4 py-3 text-sm font-medium text-white transition-all duration-200 border border-transparent rounded-md shadow-sm bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <LoadingSpinner size="sm" />
@@ -183,7 +322,7 @@ export default function AuthForm({ onToggleMode, isSignUp }: AuthFormProps) {
             <button
               type="button"
               onClick={onToggleMode}
-              className="text-sm text-blue-600 hover:text-blue-500 transition-colors"
+              className="text-sm text-blue-600 transition-colors hover:text-blue-500"
             >
               {isSignUp
                 ? t("auth.signup.switchToSignin")

@@ -2,12 +2,16 @@ import { auth } from "./auth";
 import { family } from "./family";
 import { wordsets } from "./wordsets";
 import { common } from "./common";
+import { profile } from "./profile";
+import { results } from "./results";
 
 export const en = {
   ...auth,
   ...family,
   ...wordsets,
   ...common,
+  ...profile,
+  ...results,
 
   // Home page
   "home.welcome": "Welcome to Diktator!",

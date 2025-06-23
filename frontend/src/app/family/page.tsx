@@ -77,6 +77,13 @@ export default function FamilyPage() {
     loadFamilyData();
   }, [loadFamilyData]);
 
+  // Redirect non-parents to profile page using useEffect to avoid render-time navigation
+  useEffect(() => {
+    if (!loading && !isParent) {
+      router.push("/profile");
+    }
+  }, [loading, isParent, router]);
+
   const handleCreateChild = async (e: React.FormEvent) => {
     e.preventDefault();
     if (
@@ -142,7 +149,6 @@ export default function FamilyPage() {
 
   // Redirect non-parents to profile page
   if (!loading && !isParent) {
-    router.push("/profile");
     return null;
   }
 
