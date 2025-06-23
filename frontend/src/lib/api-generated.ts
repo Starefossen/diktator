@@ -22,11 +22,14 @@ import {
 // Create a configuration that automatically includes Firebase auth token
 const createConfiguration = async (): Promise<Configuration> => {
   const user = auth.currentUser;
-  let accessToken = "";
+  let authHeaders: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
 
   if (user) {
     try {
-      accessToken = await user.getIdToken();
+      const idToken = await user.getIdToken();
+      authHeaders["Authorization"] = `Bearer ${idToken}`;
     } catch (error) {
       console.error("Failed to get Firebase auth token:", error);
     }
@@ -34,11 +37,8 @@ const createConfiguration = async (): Promise<Configuration> => {
 
   return new Configuration({
     basePath: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
-    accessToken,
     baseOptions: {
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: authHeaders,
     },
   });
 };
