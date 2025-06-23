@@ -9,7 +9,6 @@ import {
   ChildrenApi,
   FamiliesApi,
   HealthApi,
-  ResultsApi,
   UsersApi,
   WordsetsApi,
   ModelsCreateChildAccountRequest,
@@ -22,7 +21,7 @@ import {
 // Create a configuration that automatically includes Firebase auth token
 const createConfiguration = async (): Promise<Configuration> => {
   const user = auth.currentUser;
-  let authHeaders: Record<string, string> = {
+  const authHeaders: Record<string, string> = {
     "Content-Type": "application/json",
   };
 
@@ -51,7 +50,6 @@ const createApiInstances = async () => {
     childrenApi: new ChildrenApi(config),
     familiesApi: new FamiliesApi(config),
     healthApi: new HealthApi(config),
-    resultsApi: new ResultsApi(config),
     usersApi: new UsersApi(config),
     wordsetsApi: new WordsetsApi(config),
   };
@@ -139,13 +137,19 @@ export const generatedApiClient = {
 
   // Results management
   async getResults() {
-    const { resultsApi } = await createApiInstances();
-    return resultsApi.apiResultsGet();
+    const { usersApi } = await createApiInstances();
+    return usersApi.apiUsersResultsGet();
   },
 
   async saveResult(request: ModelsSaveResultRequest) {
-    const { resultsApi } = await createApiInstances();
-    return resultsApi.apiResultsPost(request);
+    const { usersApi } = await createApiInstances();
+    return usersApi.apiUsersResultsPost(request);
+  },
+
+  // Family results
+  async getFamilyResults() {
+    const { familiesApi } = await createApiInstances();
+    return familiesApi.apiFamiliesResultsGet();
   },
 
   // Health check

@@ -128,15 +128,20 @@ func main() {
 				wordsets.POST("/:id/audio", handlers.GenerateAudio)
 			}
 
-			// Test results
-			protected.POST("/results", handlers.SaveResult)
-			protected.GET("/results", handlers.GetResults)
+			// User-specific test results
+			users := protected.Group("/users")
+			{
+				users.POST("/results", handlers.SaveResult)
+				users.GET("/results", handlers.GetResults)
+			}
 
-			// Family management
+			// Family management - RESTRICTED: Parent access only for most endpoints
 			families := protected.Group("/families")
+			families.Use(middleware.RequireParentRole())
 			{
 				families.GET("", handlers.GetFamily)
 				families.GET("/stats", handlers.GetFamilyStats)
+				families.GET("/results", handlers.GetFamilyResults)
 
 				// Parent-only routes
 				parentOnly := families.Group("")

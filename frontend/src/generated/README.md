@@ -59,12 +59,13 @@ Class | Method | HTTP request | Description
 *FamiliesApi* | [**apiFamiliesChildrenGet**](docs/FamiliesApi.md#apifamilieschildrenget) | **GET** /api/families/children | Get Family Children
 *FamiliesApi* | [**apiFamiliesGet**](docs/FamiliesApi.md#apifamiliesget) | **GET** /api/families | Get Family Information
 *FamiliesApi* | [**apiFamiliesProgressGet**](docs/FamiliesApi.md#apifamiliesprogressget) | **GET** /api/families/progress | Get Family Progress
+*FamiliesApi* | [**apiFamiliesResultsGet**](docs/FamiliesApi.md#apifamiliesresultsget) | **GET** /api/families/results | Get Family Results
 *FamiliesApi* | [**apiFamiliesStatsGet**](docs/FamiliesApi.md#apifamiliesstatsget) | **GET** /api/families/stats | Get Family Statistics
 *HealthApi* | [**healthGet**](docs/HealthApi.md#healthget) | **GET** /health | Health Check
-*ResultsApi* | [**apiResultsGet**](docs/ResultsApi.md#apiresultsget) | **GET** /api/results | Get Test Results
-*ResultsApi* | [**apiResultsPost**](docs/ResultsApi.md#apiresultspost) | **POST** /api/results | Save Test Result
 *UsersApi* | [**apiUsersPost**](docs/UsersApi.md#apiuserspost) | **POST** /api/users | Create User
 *UsersApi* | [**apiUsersProfileGet**](docs/UsersApi.md#apiusersprofileget) | **GET** /api/users/profile | Get User Profile
+*UsersApi* | [**apiUsersResultsGet**](docs/UsersApi.md#apiusersresultsget) | **GET** /api/users/results | Get Test Results
+*UsersApi* | [**apiUsersResultsPost**](docs/UsersApi.md#apiusersresultspost) | **POST** /api/users/results | Save Test Result
 *WordsetsApi* | [**apiWordsetsGet**](docs/WordsetsApi.md#apiwordsetsget) | **GET** /api/wordsets | Get Word Sets
 *WordsetsApi* | [**apiWordsetsIdDelete**](docs/WordsetsApi.md#apiwordsetsiddelete) | **DELETE** /api/wordsets/{id} | Delete Word Set
 *WordsetsApi* | [**apiWordsetsIdGenerateAudioPost**](docs/WordsetsApi.md#apiwordsetsidgenerateaudiopost) | **POST** /api/wordsets/{id}/generate-audio | Generate Audio

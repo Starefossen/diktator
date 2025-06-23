@@ -260,7 +260,7 @@ func GenerateAudio(c *gin.Context) {
 
 // @Summary		Save Test Result
 // @Description	Save a test result for the authenticated user
-// @Tags			results
+// @Tags			users
 // @Accept			json
 // @Produce		json
 // @Param			request	body		models.SaveResultRequest	true	"Test result data"
@@ -269,7 +269,7 @@ func GenerateAudio(c *gin.Context) {
 // @Failure		401		{object}	models.APIResponse			"User authentication required"
 // @Failure		500		{object}	models.APIResponse			"Failed to save test result"
 // @Security		BearerAuth
-// @Router			/api/results [post]
+// @Router			/api/users/results [post]
 func SaveResult(c *gin.Context) {
 	var req models.SaveResultRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -326,14 +326,14 @@ func SaveResult(c *gin.Context) {
 
 // @Summary		Get Test Results
 // @Description	Get test results for the authenticated user
-// @Tags			results
+// @Tags			users
 // @Accept			json
 // @Produce		json
 // @Success		200	{object}	models.APIResponse	"Test results"
 // @Failure		401	{object}	models.APIResponse	"User authentication required"
 // @Failure		500	{object}	models.APIResponse	"Failed to retrieve test results"
 // @Security		BearerAuth
-// @Router			/api/results [get]
+// @Router			/api/users/results [get]
 func GetResults(c *gin.Context) {
 	// Get userID from authenticated context
 	userID, exists := c.Get("userID")
@@ -444,6 +444,46 @@ func GetFamilyStats(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.APIResponse{
 		Data: stats,
+	})
+}
+
+// @Summary		Get Family Results
+// @Description	Get test results for all members of the authenticated user's family
+// @Tags			families
+// @Accept			json
+// @Produce		json
+// @Success		200	{object}	models.APIResponse	"Family test results"
+// @Failure		401	{object}	models.APIResponse	"Family access validation required"
+// @Failure		500	{object}	models.APIResponse	"Failed to retrieve family results"
+// @Security		BearerAuth
+// @Router			/api/families/results [get]
+func GetFamilyResults(c *gin.Context) {
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
+	familyID, exists := c.Get("validatedFamilyID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "Family access validation required",
+		})
+		return
+	}
+
+	familyResults, err := serviceManager.Firestore.GetFamilyResults(familyID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to retrieve family results",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Data: familyResults,
 	})
 }
 
@@ -591,6 +631,30 @@ func CreateChildAccount(c *gin.Context) {
 		_ = serviceManager.Auth.DeleteUser(context.Background(), firebaseUserRecord.UID)
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to create child account",
+		})
+		return
+	}
+
+	// IMPORTANT: Also create a User record so the child can log in
+	childUser := &models.User{
+		ID:           firebaseUserRecord.UID,
+		FirebaseUID:  firebaseUserRecord.UID,
+		Email:        req.Email,
+		DisplayName:  req.DisplayName,
+		FamilyID:     familyID.(string),
+		Role:         "child",
+		ParentID:     &[]string{userID.(string)}[0], // Convert string to *string
+		IsActive:     true,
+		CreatedAt:    time.Now(),
+		LastActiveAt: time.Now(),
+	}
+
+	if err := serviceManager.Firestore.CreateUser(childUser); err != nil {
+		// If user creation fails, clean up both child account and Firebase user
+		_ = serviceManager.Firestore.DeleteChild(firebaseUserRecord.UID)
+		_ = serviceManager.Auth.DeleteUser(context.Background(), firebaseUserRecord.UID)
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to create child user record",
 		})
 		return
 	}

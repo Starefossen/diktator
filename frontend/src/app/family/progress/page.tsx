@@ -33,7 +33,7 @@ export default function FamilyProgressPage() {
       // Load family progress and stats
       const [progressResponse, resultsResponse] = await Promise.all([
         generatedApiClient.getFamilyProgress(),
-        generatedApiClient.getResults(),
+        generatedApiClient.getFamilyResults(),
       ]);
 
       if (progressResponse.data?.data)

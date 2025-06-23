@@ -803,6 +803,39 @@ export const FamiliesApiAxiosParamCreator = function (configuration?: Configurat
             };
         },
         /**
+         * Get test results for all members of the authenticated user\'s family
+         * @summary Get Family Results
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiFamiliesResultsGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/families/results`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Get statistical data for the authenticated user\'s family
          * @summary Get Family Statistics
          * @param {*} [options] Override http request option.
@@ -882,6 +915,18 @@ export const FamiliesApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * Get test results for all members of the authenticated user\'s family
+         * @summary Get Family Results
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiFamiliesResultsGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAPIResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiFamiliesResultsGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['FamiliesApi.apiFamiliesResultsGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Get statistical data for the authenticated user\'s family
          * @summary Get Family Statistics
          * @param {*} [options] Override http request option.
@@ -931,6 +976,15 @@ export const FamiliesApiFactory = function (configuration?: Configuration, baseP
             return localVarFp.apiFamiliesProgressGet(options).then((request) => request(axios, basePath));
         },
         /**
+         * Get test results for all members of the authenticated user\'s family
+         * @summary Get Family Results
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiFamiliesResultsGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
+            return localVarFp.apiFamiliesResultsGet(options).then((request) => request(axios, basePath));
+        },
+        /**
          * Get statistical data for the authenticated user\'s family
          * @summary Get Family Statistics
          * @param {*} [options] Override http request option.
@@ -974,6 +1028,15 @@ export interface FamiliesApiInterface {
      * @memberof FamiliesApiInterface
      */
     apiFamiliesProgressGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Get test results for all members of the authenticated user\'s family
+     * @summary Get Family Results
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FamiliesApiInterface
+     */
+    apiFamiliesResultsGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
 
     /**
      * Get statistical data for the authenticated user\'s family
@@ -1024,6 +1087,17 @@ export class FamiliesApi extends BaseAPI implements FamiliesApiInterface {
      */
     public apiFamiliesProgressGet(options?: RawAxiosRequestConfig) {
         return FamiliesApiFp(this.configuration).apiFamiliesProgressGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get test results for all members of the authenticated user\'s family
+     * @summary Get Family Results
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FamiliesApi
+     */
+    public apiFamiliesResultsGet(options?: RawAxiosRequestConfig) {
+        return FamiliesApiFp(this.configuration).apiFamiliesResultsGet(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -1159,211 +1233,6 @@ export class HealthApi extends BaseAPI implements HealthApiInterface {
 
 
 /**
- * ResultsApi - axios parameter creator
- * @export
- */
-export const ResultsApiAxiosParamCreator = function (configuration?: Configuration) {
-    return {
-        /**
-         * Get test results for the authenticated user
-         * @summary Get Test Results
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiResultsGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/results`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Save a test result for the authenticated user
-         * @summary Save Test Result
-         * @param {ModelsSaveResultRequest} request Test result data
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiResultsPost: async (request: ModelsSaveResultRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'request' is not null or undefined
-            assertParamExists('apiResultsPost', 'request', request)
-            const localVarPath = `/api/results`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(request, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-    }
-};
-
-/**
- * ResultsApi - functional programming interface
- * @export
- */
-export const ResultsApiFp = function(configuration?: Configuration) {
-    const localVarAxiosParamCreator = ResultsApiAxiosParamCreator(configuration)
-    return {
-        /**
-         * Get test results for the authenticated user
-         * @summary Get Test Results
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiResultsGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAPIResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiResultsGet(options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['ResultsApi.apiResultsGet']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Save a test result for the authenticated user
-         * @summary Save Test Result
-         * @param {ModelsSaveResultRequest} request Test result data
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiResultsPost(request: ModelsSaveResultRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAPIResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiResultsPost(request, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['ResultsApi.apiResultsPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-    }
-};
-
-/**
- * ResultsApi - factory interface
- * @export
- */
-export const ResultsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
-    const localVarFp = ResultsApiFp(configuration)
-    return {
-        /**
-         * Get test results for the authenticated user
-         * @summary Get Test Results
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiResultsGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
-            return localVarFp.apiResultsGet(options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Save a test result for the authenticated user
-         * @summary Save Test Result
-         * @param {ModelsSaveResultRequest} request Test result data
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiResultsPost(request: ModelsSaveResultRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
-            return localVarFp.apiResultsPost(request, options).then((request) => request(axios, basePath));
-        },
-    };
-};
-
-/**
- * ResultsApi - interface
- * @export
- * @interface ResultsApi
- */
-export interface ResultsApiInterface {
-    /**
-     * Get test results for the authenticated user
-     * @summary Get Test Results
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof ResultsApiInterface
-     */
-    apiResultsGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
-
-    /**
-     * Save a test result for the authenticated user
-     * @summary Save Test Result
-     * @param {ModelsSaveResultRequest} request Test result data
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof ResultsApiInterface
-     */
-    apiResultsPost(request: ModelsSaveResultRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
-
-}
-
-/**
- * ResultsApi - object-oriented interface
- * @export
- * @class ResultsApi
- * @extends {BaseAPI}
- */
-export class ResultsApi extends BaseAPI implements ResultsApiInterface {
-    /**
-     * Get test results for the authenticated user
-     * @summary Get Test Results
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof ResultsApi
-     */
-    public apiResultsGet(options?: RawAxiosRequestConfig) {
-        return ResultsApiFp(this.configuration).apiResultsGet(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Save a test result for the authenticated user
-     * @summary Save Test Result
-     * @param {ModelsSaveResultRequest} request Test result data
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof ResultsApi
-     */
-    public apiResultsPost(request: ModelsSaveResultRequest, options?: RawAxiosRequestConfig) {
-        return ResultsApiFp(this.configuration).apiResultsPost(request, options).then((request) => request(this.axios, this.basePath));
-    }
-}
-
-
-
-/**
  * UsersApi - axios parameter creator
  * @export
  */
@@ -1441,6 +1310,78 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
                 options: localVarRequestOptions,
             };
         },
+        /**
+         * Get test results for the authenticated user
+         * @summary Get Test Results
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiUsersResultsGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/users/results`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Save a test result for the authenticated user
+         * @summary Save Test Result
+         * @param {ModelsSaveResultRequest} request Test result data
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiUsersResultsPost: async (request: ModelsSaveResultRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'request' is not null or undefined
+            assertParamExists('apiUsersResultsPost', 'request', request)
+            const localVarPath = `/api/users/results`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(request, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
     }
 };
 
@@ -1476,6 +1417,31 @@ export const UsersApiFp = function(configuration?: Configuration) {
             const localVarOperationServerBasePath = operationServerMap['UsersApi.apiUsersProfileGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
+        /**
+         * Get test results for the authenticated user
+         * @summary Get Test Results
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiUsersResultsGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAPIResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiUsersResultsGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['UsersApi.apiUsersResultsGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Save a test result for the authenticated user
+         * @summary Save Test Result
+         * @param {ModelsSaveResultRequest} request Test result data
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiUsersResultsPost(request: ModelsSaveResultRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAPIResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiUsersResultsPost(request, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['UsersApi.apiUsersResultsPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
     }
 };
 
@@ -1505,6 +1471,25 @@ export const UsersApiFactory = function (configuration?: Configuration, basePath
         apiUsersProfileGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
             return localVarFp.apiUsersProfileGet(options).then((request) => request(axios, basePath));
         },
+        /**
+         * Get test results for the authenticated user
+         * @summary Get Test Results
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiUsersResultsGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
+            return localVarFp.apiUsersResultsGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Save a test result for the authenticated user
+         * @summary Save Test Result
+         * @param {ModelsSaveResultRequest} request Test result data
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiUsersResultsPost(request: ModelsSaveResultRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
+            return localVarFp.apiUsersResultsPost(request, options).then((request) => request(axios, basePath));
+        },
     };
 };
 
@@ -1532,6 +1517,25 @@ export interface UsersApiInterface {
      * @memberof UsersApiInterface
      */
     apiUsersProfileGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Get test results for the authenticated user
+     * @summary Get Test Results
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof UsersApiInterface
+     */
+    apiUsersResultsGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Save a test result for the authenticated user
+     * @summary Save Test Result
+     * @param {ModelsSaveResultRequest} request Test result data
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof UsersApiInterface
+     */
+    apiUsersResultsPost(request: ModelsSaveResultRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
 
 }
 
@@ -1563,6 +1567,29 @@ export class UsersApi extends BaseAPI implements UsersApiInterface {
      */
     public apiUsersProfileGet(options?: RawAxiosRequestConfig) {
         return UsersApiFp(this.configuration).apiUsersProfileGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get test results for the authenticated user
+     * @summary Get Test Results
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof UsersApi
+     */
+    public apiUsersResultsGet(options?: RawAxiosRequestConfig) {
+        return UsersApiFp(this.configuration).apiUsersResultsGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Save a test result for the authenticated user
+     * @summary Save Test Result
+     * @param {ModelsSaveResultRequest} request Test result data
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof UsersApi
+     */
+    public apiUsersResultsPost(request: ModelsSaveResultRequest, options?: RawAxiosRequestConfig) {
+        return UsersApiFp(this.configuration).apiUsersResultsPost(request, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

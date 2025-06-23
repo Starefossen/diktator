@@ -433,6 +433,46 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/families/results": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get test results for all members of the authenticated user's family",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "families"
+                ],
+                "summary": "Get Family Results",
+                "responses": {
+                    "200": {
+                        "description": "Family test results",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Family access validation required",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve family results",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/families/stats": {
             "get": {
                 "security": [
@@ -466,101 +506,6 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Failed to retrieve family stats",
-                        "schema": {
-                            "$ref": "#/definitions/models.APIResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/results": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Get test results for the authenticated user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "results"
-                ],
-                "summary": "Get Test Results",
-                "responses": {
-                    "200": {
-                        "description": "Test results",
-                        "schema": {
-                            "$ref": "#/definitions/models.APIResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "User authentication required",
-                        "schema": {
-                            "$ref": "#/definitions/models.APIResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to retrieve test results",
-                        "schema": {
-                            "$ref": "#/definitions/models.APIResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Save a test result for the authenticated user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "results"
-                ],
-                "summary": "Save Test Result",
-                "parameters": [
-                    {
-                        "description": "Test result data",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.SaveResultRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Test result saved successfully",
-                        "schema": {
-                            "$ref": "#/definitions/models.APIResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request data",
-                        "schema": {
-                            "$ref": "#/definitions/models.APIResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "User authentication required",
-                        "schema": {
-                            "$ref": "#/definitions/models.APIResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to save test result",
                         "schema": {
                             "$ref": "#/definitions/models.APIResponse"
                         }
@@ -672,6 +617,101 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/results": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get test results for the authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get Test Results",
+                "responses": {
+                    "200": {
+                        "description": "Test results",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "User authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve test results",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Save a test result for the authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Save Test Result",
+                "parameters": [
+                    {
+                        "description": "Test result data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.SaveResultRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Test result saved successfully",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request data",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "User authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to save test result",
                         "schema": {
                             "$ref": "#/definitions/models.APIResponse"
                         }

@@ -109,12 +109,19 @@ func (m *MockFirestoreService) VerifyWordSetAccess(familyID, wordSetID string) e
 func (m *MockFirestoreService) GetTestResults(userID string) ([]models.TestResult, error) {
 	args := m.Called(userID)
 
-	// Check if we should return an error first (mock takes precedence)
+	// If error is mocked, return it
 	if args.Error(1) != nil {
 		return []models.TestResult{}, args.Error(1)
 	}
 
-	// If no error is mocked, check internal storage
+	// If results are mocked, return them
+	if mockResults := args.Get(0); mockResults != nil {
+		if results, ok := mockResults.([]models.TestResult); ok {
+			return results, nil
+		}
+	}
+
+	// If no mock is set up, check internal storage
 	if results, exists := m.results[userID]; exists {
 		return results, nil
 	}
@@ -169,6 +176,32 @@ func (m *MockFirestoreService) GetFamilyStats(familyID string) (*models.FamilySt
 	args := m.Called(familyID)
 	// Simplified implementation for testing
 	return &models.FamilyStats{}, args.Error(1)
+}
+
+func (m *MockFirestoreService) GetFamilyResults(familyID string) ([]models.TestResult, error) {
+	args := m.Called(familyID)
+
+	// If error is mocked, return it
+	if args.Error(1) != nil {
+		return []models.TestResult{}, args.Error(1)
+	}
+
+	// If results are mocked, return them
+	if mockResults := args.Get(0); mockResults != nil {
+		if results, ok := mockResults.([]models.TestResult); ok {
+			return results, nil
+		}
+	}
+
+	// If no mock is set up, collect results from all family members
+	var allResults []models.TestResult
+	for userID, results := range m.results {
+		if user, exists := m.users[userID]; exists && user.FamilyID == familyID {
+			allResults = append(allResults, results...)
+		}
+	}
+
+	return allResults, nil
 }
 
 // Security verification methods

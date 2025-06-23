@@ -359,6 +359,31 @@ paths:
       summary: Get Family Progress
       tags:
       - families
+  /api/families/results:
+    get:
+      consumes:
+      - application/json
+      description: Get test results for all members of the authenticated user's family
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Family test results
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "401":
+          description: Family access validation required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to retrieve family results
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Family Results
+      tags:
+      - families
   /api/families/stats:
     get:
       consumes:
@@ -384,66 +409,6 @@ paths:
       summary: Get Family Statistics
       tags:
       - families
-  /api/results:
-    get:
-      consumes:
-      - application/json
-      description: Get test results for the authenticated user
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Test results
-          schema:
-            $ref: '#/definitions/models.APIResponse'
-        "401":
-          description: User authentication required
-          schema:
-            $ref: '#/definitions/models.APIResponse'
-        "500":
-          description: Failed to retrieve test results
-          schema:
-            $ref: '#/definitions/models.APIResponse'
-      security:
-      - BearerAuth: []
-      summary: Get Test Results
-      tags:
-      - results
-    post:
-      consumes:
-      - application/json
-      description: Save a test result for the authenticated user
-      parameters:
-      - description: Test result data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/models.SaveResultRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Test result saved successfully
-          schema:
-            $ref: '#/definitions/models.APIResponse'
-        "400":
-          description: Invalid request data
-          schema:
-            $ref: '#/definitions/models.APIResponse'
-        "401":
-          description: User authentication required
-          schema:
-            $ref: '#/definitions/models.APIResponse'
-        "500":
-          description: Failed to save test result
-          schema:
-            $ref: '#/definitions/models.APIResponse'
-      security:
-      - BearerAuth: []
-      summary: Save Test Result
-      tags:
-      - results
   /api/users:
     post:
       consumes:
@@ -512,6 +477,66 @@ paths:
       security:
       - BearerAuth: []
       summary: Get User Profile
+      tags:
+      - users
+  /api/users/results:
+    get:
+      consumes:
+      - application/json
+      description: Get test results for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Test results
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "401":
+          description: User authentication required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to retrieve test results
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Test Results
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: Save a test result for the authenticated user
+      parameters:
+      - description: Test result data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.SaveResultRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Test result saved successfully
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "400":
+          description: Invalid request data
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "401":
+          description: User authentication required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to save test result
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Save Test Result
       tags:
       - users
   /api/wordsets:

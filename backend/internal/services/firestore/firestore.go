@@ -150,6 +150,41 @@ func (s *Service) GetTestResults(userID string) ([]models.TestResult, error) {
 	return results, nil
 }
 
+// GetFamilyResults retrieves test results for all members of a family
+func (s *Service) GetFamilyResults(familyID string) ([]models.TestResult, error) {
+	var allResults []models.TestResult
+
+	// First, get all family members (parent + children)
+	familyMembers, err := s.GetFamilyChildren(familyID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Add the parent user ID - get it from the family record
+	family, err := s.GetFamily(familyID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Collect all user IDs (parent + children)
+	userIDs := []string{family.CreatedBy}
+	for _, child := range familyMembers {
+		userIDs = append(userIDs, child.ID)
+	}
+
+	// Get results for all family members
+	for _, userID := range userIDs {
+		userResults, err := s.GetTestResults(userID)
+		if err != nil {
+			// Continue with other users if one fails
+			continue
+		}
+		allResults = append(allResults, userResults...)
+	}
+
+	return allResults, nil
+}
+
 // SaveAudioFile saves audio file metadata
 func (s *Service) SaveAudioFile(audioFile *models.AudioFile) error {
 	_, err := s.client.Collection("audiofiles").Doc(audioFile.ID).Set(s.ctx, audioFile)
