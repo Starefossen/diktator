@@ -12,6 +12,7 @@ import {
   validateTestConfiguration,
 } from "@/types";
 import { generatedApiClient } from "@/lib/api-generated";
+import { playWordAudio, getWordSetAudioStats } from "@/lib/audioPlayer";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import {
   HeroBookIcon,
@@ -138,12 +139,12 @@ export default function WordSetsPage() {
 
         if (updatedWordSet) {
           // Check if audio was actually generated
-          const wordsWithAudio = updatedWordSet.words.filter(w => w.audio?.audioUrl);
+          const audioStats = getWordSetAudioStats(updatedWordSet);
 
-          if (wordsWithAudio.length > 0) {
+          if (audioStats.hasAnyAudio) {
             setAudioGenerationStatus(prev => ({
               ...prev,
-              [wordSetId]: `Audio generated for ${wordsWithAudio.length}/${updatedWordSet.words.length} words!`
+              [wordSetId]: `Audio generated for ${audioStats.wordsWithAudio}/${audioStats.totalWords} words!`
             }));
 
             // Update only the specific wordset in the list
@@ -193,37 +194,23 @@ export default function WordSetsPage() {
   };
 
   const handleWordClick = async (word: string, wordSet: WordSet) => {
-    // Find the word item in the words array
+    // Only play if audio is available
     const wordItem = wordSet.words.find(w => w.word === word);
-    const audioInfo = wordItem?.audio;
-
-    if (!audioInfo || !audioInfo.audioId) {
+    if (!wordItem?.audio?.audioId) {
       return; // No audio available
     }
 
-    try {
-      setPlayingAudio(word);
+    setPlayingAudio(word);
 
-      // Use the new audio streaming API endpoint with wordset ID and audio ID
-      // Use the configured API base URL to avoid domain issues
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-      const audioUrl = `${apiBaseUrl}/api/wordsets/${wordSet.id}/audio/${audioInfo.audioId}`;
-      const audio = new Audio(audioUrl);
-
-      audio.onended = () => {
+    await playWordAudio(word, wordSet, {
+      onEnd: () => {
         setPlayingAudio(null);
-      };
-
-      audio.onerror = () => {
+      },
+      onError: (error) => {
         setPlayingAudio(null);
-        console.error("Failed to play audio for word:", word);
-      };
-
-      await audio.play();
-    } catch (error) {
-      setPlayingAudio(null);
-      console.error("Failed to play audio for word:", word, error);
-    }
+        console.error("Failed to play audio for word:", word, error);
+      }
+    });
   };
 
   const openSettingsModal = (wordSet: WordSet) => {
@@ -475,10 +462,10 @@ export default function WordSetsPage() {
                       ? t("results.word")
                       : t("wordsets.words.count")}
                     {(() => {
-                      const wordsWithAudio = wordSet.words.filter(w => w.audio?.audioUrl);
-                      return wordsWithAudio.length > 0 && (
+                      const audioStats = getWordSetAudioStats(wordSet);
+                      return audioStats.hasAnyAudio && (
                         <span className="ml-2 text-sm text-blue-600">
-                          • {wordsWithAudio.length} with audio
+                          • {audioStats.wordsWithAudio} with audio
                         </span>
                       );
                     })()}
@@ -547,46 +534,57 @@ export default function WordSetsPage() {
                       <HeroPlayIcon className="w-4 h-4 mr-2 text-white" />
                       {t("wordsets.startTest")}
                     </button>
-                    <button
-                      onClick={() => handleGenerateAudio(wordSet.id)}
-                      disabled={
-                        generatingAudio.has(wordSet.id) ||
-                        audioGenerationStatus[wordSet.id]?.includes('generated') ||
-                        wordSet.words.every(w => w.audio?.audioUrl) // Disable if all words have audio
-                      }
-                      className={`flex items-center justify-center px-4 py-3 font-medium text-white transition-all duration-200 rounded-lg shadow-md hover:shadow-lg hover:scale-105 disabled:opacity-75 disabled:cursor-not-allowed disabled:hover:scale-100 ${generatingAudio.has(wordSet.id)
-                        ? 'bg-purple-500 animate-pulse'
-                        : audioGenerationStatus[wordSet.id]?.includes('generated') || wordSet.words.every(w => w.audio?.audioUrl)
-                          ? 'bg-green-500'
-                          : audioGenerationStatus[wordSet.id]?.includes('Failed')
-                            ? 'bg-red-500 hover:bg-red-600'
-                            : 'bg-purple-500 hover:bg-purple-600'
-                        }`}
-                      title={
-                        generatingAudio.has(wordSet.id)
-                          ? audioGenerationStatus[wordSet.id] || "Generating audio..."
-                          : audioGenerationStatus[wordSet.id]?.includes('generated') || wordSet.words.every(w => w.audio?.audioUrl)
-                            ? "All audio has been generated"
-                            : t("wordsets.generateAudio")
-                      }
-                    >
-                      {generatingAudio.has(wordSet.id) ? (
-                        <>
-                          <div className="w-4 h-4 mr-2 border-2 border-white rounded-full border-t-transparent animate-spin"></div>
-                          <span className="text-xs">
-                            {audioGenerationStatus[wordSet.id]?.includes('Starting') ? 'Starting...' :
-                              audioGenerationStatus[wordSet.id]?.includes('Checking') ? 'Checking...' : 'Generating...'}
-                          </span>
-                        </>
-                      ) : audioGenerationStatus[wordSet.id] || wordSet.words.every(w => w.audio?.audioUrl) ? (
-                        <span className="text-xs text-center">
-                          {audioGenerationStatus[wordSet.id]?.includes('generated') || wordSet.words.every(w => w.audio?.audioUrl) ? '✓' :
-                            audioGenerationStatus[wordSet.id]?.includes('Failed') ? '✗' : '⚠'}
-                        </span>
-                      ) : (
-                        <HeroVolumeIcon className="w-4 h-4 text-white" />
-                      )}
-                    </button>
+                    {(() => {
+                      const audioStats = getWordSetAudioStats(wordSet);
+                      const isGenerating = generatingAudio.has(wordSet.id);
+                      const statusMessage = audioGenerationStatus[wordSet.id];
+                      const hasCompleteAudio = audioStats.hasAllAudio;
+                      const hasGeneratedStatus = statusMessage?.includes('generated');
+                      const hasFailedStatus = statusMessage?.includes('Failed');
+                      
+                      return (
+                        <button
+                          onClick={() => handleGenerateAudio(wordSet.id)}
+                          disabled={
+                            isGenerating ||
+                            hasGeneratedStatus ||
+                            hasCompleteAudio
+                          }
+                          className={`flex items-center justify-center px-4 py-3 font-medium text-white transition-all duration-200 rounded-lg shadow-md hover:shadow-lg hover:scale-105 disabled:opacity-75 disabled:cursor-not-allowed disabled:hover:scale-100 ${isGenerating
+                            ? 'bg-purple-500 animate-pulse'
+                            : hasGeneratedStatus || hasCompleteAudio
+                              ? 'bg-green-500'
+                              : hasFailedStatus
+                                ? 'bg-red-500 hover:bg-red-600'
+                                : 'bg-purple-500 hover:bg-purple-600'
+                            }`}
+                          title={
+                            isGenerating
+                              ? statusMessage || "Generating audio..."
+                              : hasGeneratedStatus || hasCompleteAudio
+                                ? "All audio has been generated"
+                                : t("wordsets.generateAudio")
+                          }
+                        >
+                          {isGenerating ? (
+                            <>
+                              <div className="w-4 h-4 mr-2 border-2 border-white rounded-full border-t-transparent animate-spin"></div>
+                              <span className="text-xs">
+                                {statusMessage?.includes('Starting') ? 'Starting...' :
+                                  statusMessage?.includes('Checking') ? 'Checking...' : 'Generating...'}
+                              </span>
+                            </>
+                          ) : statusMessage || hasCompleteAudio ? (
+                            <span className="text-xs text-center">
+                              {hasGeneratedStatus || hasCompleteAudio ? '✓' :
+                                hasFailedStatus ? '✗' : '⚠'}
+                            </span>
+                          ) : (
+                            <HeroVolumeIcon className="w-4 h-4 text-white" />
+                          )}
+                        </button>
+                      );
+                    })()}
                     <button
                       onClick={() => openSettingsModal(wordSet)}
                       className="flex items-center justify-center px-4 py-3 font-medium text-white transition-all duration-200 bg-gray-500 rounded-lg shadow-md hover:bg-gray-600 hover:shadow-lg hover:scale-105"

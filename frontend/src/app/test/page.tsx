@@ -15,6 +15,7 @@ import {
   playErrorSound,
   playCompletionTone,
 } from "@/lib/audioTones";
+import { playWordAudio as playWordAudioHelper, stopAudio } from "@/lib/audioPlayer";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { HeroVolumeIcon, ScoreIcon } from "@/components/Icons";
 
@@ -128,39 +129,30 @@ function TestPageContent() {
     }
   }, [loadWordSet, wordSetId]);
 
-  // Audio functionality - isolated and stable
+  // Audio functionality - using centralized audio player
   const playWordAudio = useCallback((word: string, autoDelay = 0) => {
     if (isPlayingAudioRef.current) return;
 
     const currentWordSet = wordSetRef.current;
-    if (!currentWordSet || !("speechSynthesis" in window)) return;
+    if (!currentWordSet) return;
 
-    const playFn = () => {
-      speechSynthesis.cancel();
-      isPlayingAudioRef.current = true;
-      setIsAudioPlaying(true);
-
-      const utterance = new SpeechSynthesisUtterance(word);
-      utterance.lang = currentWordSet.language === "no" ? "nb-NO" : "en-US";
-      utterance.rate = 0.8;
-
-      utterance.onend = () => {
+    playWordAudioHelper(word, currentWordSet, {
+      onStart: () => {
+        isPlayingAudioRef.current = true;
+        setIsAudioPlaying(true);
+      },
+      onEnd: () => {
         isPlayingAudioRef.current = false;
         setIsAudioPlaying(false);
-      };
-      utterance.onerror = () => {
+      },
+      onError: (error) => {
+        console.error("Audio playback error:", error);
         isPlayingAudioRef.current = false;
         setIsAudioPlaying(false);
-      };
-
-      speechSynthesis.speak(utterance);
-    };
-
-    if (autoDelay > 0) {
-      setTimeout(playFn, autoDelay);
-    } else {
-      playFn();
-    }
+      },
+      autoDelay,
+      speechRate: 0.8
+    });
   }, []);
 
   const playCurrentWord = useCallback(() => {
@@ -312,7 +304,7 @@ function TestPageContent() {
     // Reset audio tracking
     isPlayingAudioRef.current = false;
     lastAutoPlayIndexRef.current = -1;
-    speechSynthesis.cancel();
+    stopAudio();
   };
 
   const goBackToWordSets = () => {
@@ -445,8 +437,8 @@ function TestPageContent() {
                   <button
                     onClick={() => playWordAudio(answer.word)}
                     className={`px-3 py-1 transition-colors rounded ${answer.isCorrect
-                        ? "text-green-700 bg-green-100 hover:bg-green-200"
-                        : "text-red-700 bg-red-100 hover:bg-red-200"
+                      ? "text-green-700 bg-green-100 hover:bg-green-200"
+                      : "text-red-700 bg-red-100 hover:bg-red-200"
                       }`}
                   >
                     <HeroVolumeIcon
@@ -525,8 +517,8 @@ function TestPageContent() {
               {showFeedback ? (
                 <div
                   className={`p-4 rounded-lg animate-in fade-in-0 slide-in-from-top-2 duration-300 ${lastAnswerCorrect
-                      ? "bg-green-100 border border-green-300"
-                      : "bg-red-100 border border-red-300"
+                    ? "bg-green-100 border border-green-300"
+                    : "bg-red-100 border border-red-300"
                     }`}
                 >
                   <p
