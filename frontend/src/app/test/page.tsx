@@ -3,14 +3,13 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAuth } from "@/contexts/AuthContext";
 import {
   WordSet,
   TestAnswer,
   SaveResultRequest,
   getEffectiveTestConfig,
 } from "@/types";
-import { apiClient } from "@/lib/api";
+import { generatedApiClient } from "@/lib/api-generated";
 import {
   playSuccessTone,
   playErrorSound,
@@ -29,7 +28,6 @@ export default function TestPage() {
 
 function TestPageContent() {
   const { t } = useLanguage();
-  const { user, userData } = useAuth();
   const router = useRouter();
 
   // State management
@@ -57,8 +55,6 @@ function TestPageContent() {
 
   // Derived values
   const testConfig = wordSet ? getEffectiveTestConfig(wordSet) : null;
-  const familyId = userData?.familyId || "family-default";
-  const userId = user?.uid || "";
 
   // URL parameter extraction and routing
   useEffect(() => {
@@ -89,10 +85,12 @@ function TestPageContent() {
 
     try {
       setLoading(true);
-      const response = await apiClient.getWordSets(familyId);
+      const response = await generatedApiClient.getWordSets();
 
-      if (response.data) {
-        const foundWordSet = response.data.find((ws) => ws.id === wordSetId);
+      if (response.data?.data) {
+        const foundWordSet = (response.data.data as WordSet[]).find(
+          (ws: WordSet) => ws.id === wordSetId,
+        );
 
         if (foundWordSet) {
           setWordSet(foundWordSet);
@@ -121,7 +119,7 @@ function TestPageContent() {
     } finally {
       setLoading(false);
     }
-  }, [wordSetId, familyId, router]);
+  }, [wordSetId, router]);
 
   useEffect(() => {
     if (wordSetId) {
@@ -287,7 +285,7 @@ function TestPageContent() {
         timeSpent: totalTimeSpent,
       };
 
-      await apiClient.saveResult(resultData, userId);
+      await generatedApiClient.saveResult(resultData);
     } catch (error) {
       console.error("Failed to save test result:", error);
     }

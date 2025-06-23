@@ -1,5 +1,102 @@
 // src/types/index.ts - Enhanced for Phase 2
 
+// Family Management Types
+export interface Family {
+  id: string;
+  name: string;
+  createdBy: string; // Parent's user ID
+  members: string[]; // Array of user IDs in the family
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChildAccount {
+  id: string;
+  email: string;
+  displayName: string;
+  familyId: string;
+  parentId: string; // The parent who created this child account
+  role: "child";
+  isActive: boolean; // Parents can deactivate child accounts
+  createdAt: string;
+  lastActiveAt: string;
+}
+
+export interface ParentUser {
+  id: string;
+  email: string;
+  displayName: string;
+  familyId: string;
+  role: "parent";
+  children: string[]; // Array of child user IDs
+  createdAt: string;
+  lastActiveAt: string;
+}
+
+// Enhanced User data interface to support family management
+export interface EnhancedUserData {
+  id: string;
+  email: string;
+  displayName: string;
+  familyId: string;
+  role: "parent" | "child";
+  parentId?: string; // Only for child accounts
+  children?: string[]; // Only for parent accounts
+  isActive: boolean;
+  createdAt: string;
+  lastActiveAt: string;
+}
+
+// Family invitation system
+export interface FamilyInvitation {
+  id: string;
+  familyId: string;
+  email: string;
+  role: "child" | "parent";
+  invitedBy: string;
+  status: "pending" | "accepted" | "declined" | "expired";
+  createdAt: string;
+  expiresAt: string;
+}
+
+// Progress tracking for family members
+export interface FamilyProgress {
+  userId: string;
+  userName: string;
+  role: "parent" | "child";
+  totalTests: number;
+  averageScore: number;
+  totalWords: number;
+  correctWords: number;
+  lastActivity: string;
+  recentResults: TestResult[];
+}
+
+// Family statistics
+export interface FamilyStats {
+  totalMembers: number;
+  totalChildren: number;
+  totalWordSets: number;
+  totalTestsCompleted: number;
+  averageFamilyScore: number;
+  mostActiveChild?: string;
+  lastActivity: string;
+}
+
+// API Request types for family management
+export interface CreateChildAccountRequest {
+  email: string;
+  displayName: string;
+  password: string;
+}
+
+export interface InviteFamilyMemberRequest {
+  email: string;
+  role: "child" | "parent";
+  familyId: string;
+}
+
+// Existing User, WordSet, TestResult, AudioFile, and other types...
 export interface User {
   id: string;
   email: string;

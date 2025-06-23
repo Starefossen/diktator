@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAuth } from "@/contexts/AuthContext";
 import {
   WordSet,
   CreateWordSetRequest,
@@ -12,7 +11,7 @@ import {
   DEFAULT_TEST_CONFIG,
   validateTestConfiguration,
 } from "@/types";
-import { apiClient } from "@/lib/api";
+import { generatedApiClient } from "@/lib/api-generated";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import {
   HeroBookIcon,
@@ -25,7 +24,6 @@ import {
 
 export default function WordSetsPage() {
   const { t, language } = useLanguage();
-  const { user, userData } = useAuth();
   const router = useRouter();
   const [wordSets, setWordSets] = useState<WordSet[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,10 +31,6 @@ export default function WordSetsPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [settingsWordSet, setSettingsWordSet] = useState<WordSet | null>(null);
-
-  // Use real user data from auth context
-  const familyId = userData?.familyId || "family-default";
-  const userId = user?.uid || "";
 
   // Create form state
   const [formData, setFormData] = useState<CreateWordSetRequest>({
@@ -54,16 +48,16 @@ export default function WordSetsPage() {
   const loadWordSets = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await apiClient.getWordSets(familyId);
-      if (response.data) {
-        setWordSets(response.data);
+      const response = await generatedApiClient.getWordSets();
+      if (response.data?.data) {
+        setWordSets(response.data.data as WordSet[]);
       }
     } catch (error) {
       console.error("Failed to load word sets:", error);
     } finally {
       setLoading(false);
     }
-  }, [familyId]);
+  }, []);
 
   useEffect(() => {
     loadWordSets();
@@ -78,13 +72,9 @@ export default function WordSetsPage() {
 
     try {
       setCreating(true);
-      const response = await apiClient.createWordSet(
-        formData,
-        familyId,
-        userId,
-      );
-      if (response.data) {
-        setWordSets([response.data, ...wordSets]);
+      const response = await generatedApiClient.createWordSet(formData);
+      if (response.data?.data) {
+        setWordSets([response.data.data as WordSet, ...wordSets]);
         setFormData({ name: "", words: [], language: language as Language });
         setShowCreateForm(false);
         alert(t("wordsets.createSuccess"));
@@ -103,7 +93,7 @@ export default function WordSetsPage() {
     }
 
     try {
-      await apiClient.deleteWordSet(id);
+      await generatedApiClient.deleteWordSet(id);
       setWordSets(wordSets.filter((ws) => ws.id !== id));
       alert(t("wordsets.deleteSuccess"));
     } catch (error) {
@@ -114,7 +104,7 @@ export default function WordSetsPage() {
 
   const handleGenerateAudio = async (wordSetId: string) => {
     try {
-      await apiClient.generateAudio(wordSetId);
+      await generatedApiClient.generateAudio(wordSetId);
       alert(t("wordsets.audioGeneration"));
     } catch (error) {
       console.error("Failed to generate audio:", error);

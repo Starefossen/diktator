@@ -4,12 +4,19 @@ import (
 	"time"
 )
 
-// User represents a user in the system
+// User represents a user in the system - Enhanced for family management
 type User struct {
-	ID        string    `firestore:"id" json:"id"`
-	Email     string    `firestore:"email" json:"email"`
-	FamilyID  string    `firestore:"familyId" json:"familyId"`
-	CreatedAt time.Time `firestore:"createdAt" json:"createdAt"`
+	ID           string    `firestore:"id" json:"id"`
+	FirebaseUID  string    `firestore:"firebaseUID" json:"firebaseUID"`
+	Email        string    `firestore:"email" json:"email"`
+	DisplayName  string    `firestore:"displayName" json:"displayName"`
+	FamilyID     string    `firestore:"familyId" json:"familyId"`
+	Role         string    `firestore:"role" json:"role"`                             // "parent" or "child"
+	ParentID     *string   `firestore:"parentId,omitempty" json:"parentId,omitempty"` // Only for child accounts
+	Children     []string  `firestore:"children,omitempty" json:"children,omitempty"` // Only for parent accounts
+	IsActive     bool      `firestore:"isActive" json:"isActive"`
+	CreatedAt    time.Time `firestore:"createdAt" json:"createdAt"`
+	LastActiveAt time.Time `firestore:"lastActiveAt" json:"lastActiveAt"`
 }
 
 // WordSet represents a collection of words for spelling tests
@@ -71,4 +78,78 @@ type APIResponse struct {
 	Data    interface{} `json:"data,omitempty"`
 	Message string      `json:"message,omitempty"`
 	Error   string      `json:"error,omitempty"`
+}
+
+// Family represents a family group
+type Family struct {
+	ID        string    `firestore:"id" json:"id"`
+	Name      string    `firestore:"name" json:"name"`
+	CreatedBy string    `firestore:"createdBy" json:"createdBy"` // Parent's user ID
+	Members   []string  `firestore:"members" json:"members"`     // Array of user IDs in the family
+	CreatedAt time.Time `firestore:"createdAt" json:"createdAt"`
+	UpdatedAt time.Time `firestore:"updatedAt" json:"updatedAt"`
+}
+
+// ChildAccount represents a child user account managed by a parent
+type ChildAccount struct {
+	ID           string    `firestore:"id" json:"id"`
+	Email        string    `firestore:"email" json:"email"`
+	DisplayName  string    `firestore:"displayName" json:"displayName"`
+	FamilyID     string    `firestore:"familyId" json:"familyId"`
+	ParentID     string    `firestore:"parentId" json:"parentId"` // The parent who created this child account
+	Role         string    `firestore:"role" json:"role"`         // Always "child"
+	IsActive     bool      `firestore:"isActive" json:"isActive"` // Parents can deactivate child accounts
+	CreatedAt    time.Time `firestore:"createdAt" json:"createdAt"`
+	LastActiveAt time.Time `firestore:"lastActiveAt" json:"lastActiveAt"`
+}
+
+// FamilyInvitation represents an invitation to join a family
+type FamilyInvitation struct {
+	ID        string    `firestore:"id" json:"id"`
+	FamilyID  string    `firestore:"familyId" json:"familyId"`
+	Email     string    `firestore:"email" json:"email"`
+	Role      string    `firestore:"role" json:"role"` // "child" or "parent"
+	InvitedBy string    `firestore:"invitedBy" json:"invitedBy"`
+	Status    string    `firestore:"status" json:"status"` // "pending", "accepted", "declined", "expired"
+	CreatedAt time.Time `firestore:"createdAt" json:"createdAt"`
+	ExpiresAt time.Time `firestore:"expiresAt" json:"expiresAt"`
+}
+
+// FamilyProgress represents progress tracking for family members
+type FamilyProgress struct {
+	UserID        string       `firestore:"userId" json:"userId"`
+	UserName      string       `firestore:"userName" json:"userName"`
+	Role          string       `firestore:"role" json:"role"`
+	TotalTests    int          `firestore:"totalTests" json:"totalTests"`
+	AverageScore  float64      `firestore:"averageScore" json:"averageScore"`
+	TotalWords    int          `firestore:"totalWords" json:"totalWords"`
+	CorrectWords  int          `firestore:"correctWords" json:"correctWords"`
+	LastActivity  time.Time    `firestore:"lastActivity" json:"lastActivity"`
+	RecentResults []TestResult `firestore:"recentResults" json:"recentResults"`
+}
+
+// FamilyStats represents aggregated statistics for a family
+type FamilyStats struct {
+	TotalMembers        int       `firestore:"totalMembers" json:"totalMembers"`
+	TotalChildren       int       `firestore:"totalChildren" json:"totalChildren"`
+	TotalWordSets       int       `firestore:"totalWordSets" json:"totalWordSets"`
+	TotalTestsCompleted int       `firestore:"totalTestsCompleted" json:"totalTestsCompleted"`
+	AverageFamilyScore  float64   `firestore:"averageFamilyScore" json:"averageFamilyScore"`
+	MostActiveChild     *string   `firestore:"mostActiveChild,omitempty" json:"mostActiveChild,omitempty"`
+	LastActivity        time.Time `firestore:"lastActivity" json:"lastActivity"`
+}
+
+// CreateChildAccountRequest represents a request to create a child account
+type CreateChildAccountRequest struct {
+	Email       string `json:"email" binding:"required,email"`
+	DisplayName string `json:"displayName" binding:"required"`
+	Password    string `json:"password" binding:"required,min=6"`
+	FamilyID    string `json:"familyId" binding:"required"`
+}
+
+// InviteFamilyMemberRequest represents a request to invite someone to join a family
+type InviteFamilyMemberRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Role     string `json:"role" binding:"required,oneof=child parent"`
+	FamilyID string `json:"familyId" binding:"required"`
 }

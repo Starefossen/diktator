@@ -1,7 +1,12 @@
 "use client";
 
 import { useLanguage } from "@/contexts/LanguageContext";
-import { HeroCheckIcon, HeroRocketIcon, HeroBookIcon, HeroVolumeIcon } from "@/components/Icons";
+import {
+  HeroCheckIcon,
+  HeroRocketIcon,
+  HeroBookIcon,
+  HeroVolumeIcon,
+} from "@/components/Icons";
 
 export default function AboutPage() {
   const { t } = useLanguage();
@@ -39,7 +44,9 @@ export default function AboutPage() {
               <div className="mb-4">
                 <HeroRocketIcon className="w-10 h-10 text-emerald-500" />
               </div>
-              <h3 className="mb-3 text-lg font-semibold text-gray-900">Interactive Learning</h3>
+              <h3 className="mb-3 text-lg font-semibold text-gray-900">
+                Interactive Learning
+              </h3>
               <ul className="space-y-2">
                 <li className="flex items-start text-sm text-gray-600">
                   <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-emerald-500 flex-shrink-0" />
@@ -57,7 +64,9 @@ export default function AboutPage() {
               <div className="mb-4">
                 <HeroVolumeIcon className="w-10 h-10 text-blue-500" />
               </div>
-              <h3 className="mb-3 text-lg font-semibold text-gray-900">Audio Experience</h3>
+              <h3 className="mb-3 text-lg font-semibold text-gray-900">
+                Audio Experience
+              </h3>
               <ul className="space-y-2">
                 <li className="flex items-start text-sm text-gray-600">
                   <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-blue-500 flex-shrink-0" />
@@ -79,7 +88,9 @@ export default function AboutPage() {
               <div className="mb-4">
                 <HeroCheckIcon className="w-10 h-10 text-purple-500" />
               </div>
-              <h3 className="mb-3 text-lg font-semibold text-gray-900">Modern Design</h3>
+              <h3 className="mb-3 text-lg font-semibold text-gray-900">
+                Modern Design
+              </h3>
               <ul className="space-y-2">
                 <li className="flex items-start text-sm text-gray-600">
                   <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-purple-500 flex-shrink-0" />
@@ -99,7 +110,9 @@ export default function AboutPage() {
 
           {/* Additional Features */}
           <div className="p-6 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl">
-            <h3 className="mb-4 text-lg font-semibold text-gray-900 text-center">Additional Features</h3>
+            <h3 className="mb-4 text-lg font-semibold text-gray-900 text-center">
+              Additional Features
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center">
                 <HeroCheckIcon className="w-5 h-5 mr-3 text-emerald-500" />

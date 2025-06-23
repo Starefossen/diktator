@@ -15,16 +15,19 @@ import {
   onAuthStateChanged,
   updateProfile,
 } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
+import { generatedApiClient } from "@/lib/api-generated";
 
-// User data interface
+// User data interface - Enhanced for family management
 export interface UserData {
   id: string;
   email: string;
   displayName: string;
   familyId: string;
   role: "parent" | "child";
+  parentId?: string; // Only for child accounts
+  children?: string[]; // Only for parent accounts
+  isActive: boolean;
   createdAt: string;
   lastActiveAt: string;
 }
@@ -43,6 +46,7 @@ interface AuthContextType {
   ) => Promise<void>;
   logOut: () => Promise<void>;
   clearError: () => void;
+  refreshUserData: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -57,13 +61,107 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Load user data from backend
+  const loadUserData = async (firebaseUser: User) => {
+    try {
+      // Call backend to get user profile
+      const userProfileResponse = await generatedApiClient.getUserProfile();
+      if (userProfileResponse.data?.data) {
+        setUserData(userProfileResponse.data.data as UserData);
+      }
+    } catch (err: unknown) {
+      console.error("Error loading user data:", err);
+
+      // Check if the error indicates the user needs registration
+      if (err && typeof err === "object" && "response" in err) {
+        const apiError = err as {
+          response?: {
+            status?: number;
+            data?: { error?: string; needsRegistration?: boolean };
+          };
+        };
+
+        // Handle 401 errors that indicate user not found in backend system
+        if (
+          apiError.response?.status === 401 &&
+          apiError.response?.data?.error?.includes("User not found in system")
+        ) {
+          console.log(
+            "User exists in Firebase but not in backend, creating user...",
+          );
+          try {
+            // Automatically create the user in the backend with default role "parent"
+            const userData = await generatedApiClient.createUser({
+              displayName:
+                firebaseUser.displayName || firebaseUser.email || "User",
+              role: "parent",
+            });
+
+            if (userData.data?.data) {
+              setUserData(userData.data.data as UserData);
+              console.log("User successfully created in backend");
+              return;
+            }
+          } catch (createError) {
+            console.error("Failed to create user in backend:", createError);
+          }
+        }
+
+        // Handle 404 errors with needsRegistration flag
+        if (
+          apiError.response?.status === 404 &&
+          apiError.response?.data?.needsRegistration
+        ) {
+          console.log(
+            "User needs to complete registration in backend, creating user...",
+          );
+          try {
+            // Automatically create the user in the backend with default role "parent"
+            const userData = await generatedApiClient.createUser({
+              displayName:
+                firebaseUser.displayName || firebaseUser.email || "User",
+              role: "parent",
+            });
+
+            if (userData.data?.data) {
+              setUserData(userData.data.data as UserData);
+              console.log("User successfully created in backend");
+              return;
+            }
+          } catch (createError) {
+            console.error("Failed to create user in backend:", createError);
+          }
+        }
+      }
+
+      // For other errors, create a basic user data object from Firebase user as fallback
+      const basicUserData: UserData = {
+        id: firebaseUser.uid,
+        email: firebaseUser.email || "",
+        displayName: firebaseUser.displayName || "",
+        familyId: "family-" + firebaseUser.uid,
+        role: "parent",
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        lastActiveAt: new Date().toISOString(),
+      };
+      setUserData(basicUserData);
+    }
+  };
+
+  // Refresh user data from backend
+  const refreshUserData = async () => {
+    if (user) {
+      await loadUserData(user);
+    }
+  };
+
   // Sign in function
   const signIn = async (email: string, password: string) => {
     try {
       setError(null);
-      // Don't set loading here - let onAuthStateChanged handle it
+      setLoading(true);
 
-      // Check if Firebase is properly initialized
       if (!auth) {
         throw new Error(
           "Firebase Auth is not initialized. Please check your Firebase configuration.",
@@ -72,20 +170,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       const result = await signInWithEmailAndPassword(auth, email, password);
 
-      // Update last active time
-      if (result.user && db) {
-        try {
-          await setDoc(
-            doc(db, "users", result.user.uid),
-            {
-              lastActiveAt: new Date().toISOString(),
-            },
-            { merge: true },
-          );
-        } catch (dbError: unknown) {
-          console.warn("Failed to update last active time:", dbError);
-          // Don't fail login if we can't update the timestamp
-        }
+      // Load user data from backend
+      if (result.user) {
+        await loadUserData(result.user);
       }
     } catch (err: unknown) {
       console.error("Sign in error:", err);
@@ -96,8 +183,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
             (err as { code?: string; message?: string })?.message ||
             "An unknown error occurred";
       setError(getErrorMessage(errorMessage));
-      setLoading(false); // Only set loading false on error
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -106,13 +194,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     email: string,
     password: string,
     displayName: string,
-    role: "parent" | "child",
+    role: "parent" | "child" = "parent",
   ) => {
     try {
       setError(null);
-      // Don't set loading here - let onAuthStateChanged handle it
+      setLoading(true);
 
-      // Check if Firebase is properly initialized
       if (!auth) {
         throw new Error(
           "Firebase Auth is not initialized. Please check your Firebase configuration.",
@@ -126,34 +213,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
       );
 
       if (result.user) {
+        // Update Firebase profile
+        await updateProfile(result.user, {
+          displayName: displayName,
+        });
+
+        // Create user in backend
         try {
-          // Update user profile
-          await updateProfile(result.user, { displayName });
+          const userData = await generatedApiClient.createUser({
+            displayName,
+            role,
+          });
 
-          // Create user document in Firestore
-          if (db) {
-            const newUserData: UserData = {
-              id: result.user.uid,
-              email: result.user.email!,
-              displayName,
-              familyId: result.user.uid, // For now, user creates their own family
-              role,
-              createdAt: new Date().toISOString(),
-              lastActiveAt: new Date().toISOString(),
-            };
-
-            await setDoc(doc(db, "users", result.user.uid), newUserData);
-          } else {
-            console.warn(
-              "Firestore is not initialized, user document not created",
-            );
+          if (userData.data?.data) {
+            setUserData(userData.data.data as UserData);
           }
-        } catch (profileError: unknown) {
-          console.error(
-            "Error updating profile or creating user document:",
-            profileError,
-          );
-          // Don't fail signup if profile update fails - user is still created
+        } catch (apiError) {
+          console.error("Error creating user in backend:", apiError);
+          // Create basic user data as fallback
+          const basicUserData: UserData = {
+            id: result.user.uid,
+            email: result.user.email || "",
+            displayName,
+            familyId: "family-" + result.user.uid,
+            role,
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            lastActiveAt: new Date().toISOString(),
+          };
+          setUserData(basicUserData);
         }
       }
     } catch (err: unknown) {
@@ -165,8 +253,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
             (err as { code?: string; message?: string })?.message ||
             "An unknown error occurred";
       setError(getErrorMessage(errorMessage));
-      setLoading(false); // Only set loading false on error
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -192,26 +281,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setError(null);
   };
 
-  // Load user data from Firestore
-  const loadUserData = async (user: User) => {
-    if (!db) {
-      console.warn("Firestore is not initialized, cannot load user data");
-      return;
-    }
-
-    try {
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (userDoc.exists()) {
-        setUserData(userDoc.data() as UserData);
-      } else {
-        console.warn("User document does not exist in Firestore");
-      }
-    } catch (err: unknown) {
-      console.error("Error loading user data:", err);
-      // Don't set error state for user data loading as it's not critical for auth
-    }
-  };
-
   // Listen for auth state changes
   useEffect(() => {
     if (!auth) {
@@ -219,18 +288,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
 
-      if (user) {
-        // Set loading to false immediately after setting user
-        // Load user data in the background without blocking UI
-        setLoading(false);
-        loadUserData(user); // Don't await this - let it run in background
+      if (firebaseUser) {
+        // Load user data from backend
+        await loadUserData(firebaseUser);
       } else {
         setUserData(null);
-        setLoading(false);
       }
+
+      setLoading(false);
     });
 
     return unsubscribe;
@@ -245,6 +313,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     signUp,
     logOut,
     clearError,
+    refreshUserData,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

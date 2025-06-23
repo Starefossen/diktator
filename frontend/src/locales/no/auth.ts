@@ -1,0 +1,21 @@
+export const auth = {
+  "auth.signin.title": "Logg inn",
+  "auth.signin.subtitle":
+    "Velkommen tilbake! Logg inn for å fortsette din stavereise.",
+  "auth.signin.button": "Logg inn",
+  "auth.signin.switchToSignup": "Har du ikke en konto? Registrer deg",
+  "auth.signup.title": "Opprett konto",
+  "auth.signup.subtitle": "Bli med i Diktator og start ditt staveeventyr!",
+  "auth.signup.button": "Opprett konto",
+  "auth.signup.switchToSignin": "Har du allerede en konto? Logg inn",
+  "auth.email": "E-postadresse",
+  "auth.email.placeholder": "Skriv inn din e-post",
+  "auth.password": "Passord",
+  "auth.password.placeholder": "Skriv inn ditt passord",
+  "auth.displayName": "Visningsnavn",
+  "auth.displayName.placeholder": "Skriv inn ditt navn",
+  "auth.role": "Kontotype",
+  "auth.role.child": "Elev",
+  "auth.role.parent": "Forelder/Lærer",
+  "auth.logout": "Logg ut",
+};

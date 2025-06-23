@@ -26,6 +26,8 @@ import {
   CalendarIcon,
   RocketLaunchIcon,
   BoltIcon,
+  UsersIcon,
+  UserPlusIcon,
 } from "@heroicons/react/24/outline";
 
 // Icon mapping object for easy reference
@@ -207,6 +209,46 @@ export function HeroSettingsIcon({
   className?: string;
 }) {
   return <Cog6ToothIcon className={className} />;
+}
+
+export function HeroUsersIcon({
+  className = "w-6 h-6 text-blue-500",
+}: {
+  className?: string;
+}) {
+  return <UsersIcon className={className} />;
+}
+
+export function HeroUserPlusIcon({
+  className = "w-5 h-5 text-white",
+}: {
+  className?: string;
+}) {
+  return <UserPlusIcon className={className} />;
+}
+
+export function HeroUserIcon({
+  className = "w-6 h-6 text-gray-500",
+}: {
+  className?: string;
+}) {
+  return <UserIcon className={className} />;
+}
+
+export function HeroEyeIcon({
+  className = "w-5 h-5 text-white",
+}: {
+  className?: string;
+}) {
+  return <EyeIcon className={className} />;
+}
+
+export function HeroChartBarIcon({
+  className = "w-6 h-6 text-purple-500",
+}: {
+  className?: string;
+}) {
+  return <ChartBarIcon className={className} />;
 }
 
 // Score-based icon component

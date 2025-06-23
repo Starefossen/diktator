@@ -1,0 +1,669 @@
+basePath: /api
+definitions:
+  models.APIResponse:
+    properties:
+      data: {}
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.ChildAccount:
+    properties:
+      createdAt:
+        type: string
+      displayName:
+        type: string
+      email:
+        type: string
+      familyId:
+        type: string
+      id:
+        type: string
+      isActive:
+        description: Parents can deactivate child accounts
+        type: boolean
+      lastActiveAt:
+        type: string
+      parentId:
+        description: The parent who created this child account
+        type: string
+      role:
+        description: Always "child"
+        type: string
+    type: object
+  models.CreateChildAccountRequest:
+    properties:
+      displayName:
+        type: string
+      email:
+        type: string
+      familyId:
+        type: string
+      password:
+        minLength: 6
+        type: string
+    required:
+    - displayName
+    - email
+    - familyId
+    - password
+    type: object
+  models.CreateWordSetRequest:
+    properties:
+      language:
+        type: string
+      name:
+        type: string
+      words:
+        items:
+          type: string
+        type: array
+    required:
+    - language
+    - name
+    - words
+    type: object
+  models.SaveResultRequest:
+    properties:
+      correctWords:
+        type: integer
+      incorrectWords:
+        items:
+          type: string
+        type: array
+      score:
+        type: number
+      timeSpent:
+        type: integer
+      totalWords:
+        type: integer
+      wordSetId:
+        type: string
+    required:
+    - correctWords
+    - score
+    - totalWords
+    - wordSetId
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@diktator.app
+    name: Diktator Support
+    url: https://github.com/starefossen/diktator
+  description: A family-friendly spelling test application API
+  license:
+    name: MIT
+    url: https://github.com/starefossen/diktator/blob/main/LICENSE
+  termsOfService: http://swagger.io/terms/
+  title: Diktator API
+  version: "1.0"
+paths:
+  /api/families:
+    get:
+      consumes:
+      - application/json
+      description: Get information about the user's family
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Family information
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "401":
+          description: Family access validation required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Service unavailable or failed to retrieve family
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Family Information
+      tags:
+      - families
+  /api/families/children:
+    get:
+      consumes:
+      - application/json
+      description: Get all children in the authenticated user's family
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of family children
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "401":
+          description: Family access validation required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to retrieve children
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Family Children
+      tags:
+      - families
+    post:
+      consumes:
+      - application/json
+      description: Create a new child account (parent only)
+      parameters:
+      - description: Child account creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateChildAccountRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Child account created successfully
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "400":
+          description: Invalid request data
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "403":
+          description: Parent role required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Service unavailable or failed to create child account
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Create Child Account
+      tags:
+      - children
+  /api/families/children/{childId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a child account (parent only)
+      parameters:
+      - description: Child ID
+        in: path
+        name: childId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Child account deleted successfully
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "401":
+          description: Parent access required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "404":
+          description: Child not found
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to delete child account
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete Child Account
+      tags:
+      - children
+    put:
+      consumes:
+      - application/json
+      description: Update an existing child account (parent only)
+      parameters:
+      - description: Child ID
+        in: path
+        name: childId
+        required: true
+        type: string
+      - description: Updated child account data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.ChildAccount'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Child account updated successfully
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "400":
+          description: Invalid request data
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "401":
+          description: Parent access required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "404":
+          description: Child not found
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to update child account
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update Child Account
+      tags:
+      - children
+  /api/families/children/{childId}/progress:
+    get:
+      consumes:
+      - application/json
+      description: Get progress data for a specific child
+      parameters:
+      - description: Child ID
+        in: path
+        name: childId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Child progress data
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "401":
+          description: Parent access required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "404":
+          description: Child not found
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to retrieve child progress
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Child Progress
+      tags:
+      - children
+  /api/families/children/{childId}/results:
+    get:
+      consumes:
+      - application/json
+      description: Get test results for a specific child
+      parameters:
+      - description: Child ID
+        in: path
+        name: childId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Child test results
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "401":
+          description: Parent access required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "404":
+          description: Child not found
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to retrieve child results
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Child Results
+      tags:
+      - children
+  /api/families/progress:
+    get:
+      consumes:
+      - application/json
+      description: Get progress data for all family members
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Family progress data
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "401":
+          description: Family access validation required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to retrieve family progress
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Family Progress
+      tags:
+      - families
+  /api/families/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get statistical data for the authenticated user's family
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Family statistics
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "401":
+          description: Family access validation required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to retrieve family stats
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Family Statistics
+      tags:
+      - families
+  /api/results:
+    get:
+      consumes:
+      - application/json
+      description: Get test results for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Test results
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "401":
+          description: User authentication required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to retrieve test results
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Test Results
+      tags:
+      - results
+    post:
+      consumes:
+      - application/json
+      description: Save a test result for the authenticated user
+      parameters:
+      - description: Test result data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.SaveResultRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Test result saved successfully
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "400":
+          description: Invalid request data
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "401":
+          description: User authentication required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to save test result
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Save Test Result
+      tags:
+      - results
+  /api/users:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account after Firebase authentication
+      parameters:
+      - description: User creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            displayName:
+              type: string
+            role:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User created successfully
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "400":
+          description: Invalid request data
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "401":
+          description: Firebase UID not found in token
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Create User
+      tags:
+      - users
+  /api/users/profile:
+    get:
+      consumes:
+      - application/json
+      description: Get the current user's profile information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User profile data
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "401":
+          description: User not authenticated
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "404":
+          description: User not found - needs registration
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get User Profile
+      tags:
+      - users
+  /api/wordsets:
+    get:
+      consumes:
+      - application/json
+      description: Get word sets for the authenticated user's family
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Word sets for the family
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "401":
+          description: Family access validation required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Service unavailable or failed to retrieve word sets
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Word Sets
+      tags:
+      - wordsets
+    post:
+      consumes:
+      - application/json
+      description: Create a new word set for practice
+      parameters:
+      - description: Word set creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateWordSetRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Word set created successfully
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "400":
+          description: Invalid request data
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "401":
+          description: User authentication required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to create word set
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Create Word Set
+      tags:
+      - wordsets
+  /api/wordsets/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a word set by ID
+      parameters:
+      - description: Word Set ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Word set deleted successfully
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "400":
+          description: Word set ID is required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "404":
+          description: Word set not found
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to delete word set
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete Word Set
+      tags:
+      - wordsets
+  /api/wordsets/{id}/generate-audio:
+    post:
+      consumes:
+      - application/json
+      description: Generate TTS audio for all words in a word set
+      parameters:
+      - description: Word Set ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Audio generation started
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "400":
+          description: Word set ID is required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "404":
+          description: Word set not found
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to start audio generation
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Generate Audio
+      tags:
+      - wordsets
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: Returns the health status of the API
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Health status
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Health Check
+      tags:
+      - health
+securityDefinitions:
+  BearerAuth:
+    description: 'Firebase JWT token. Format: "Bearer {token}"'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

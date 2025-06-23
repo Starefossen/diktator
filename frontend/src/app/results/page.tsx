@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAuth } from "@/contexts/AuthContext";
 import { TestResult, WordSet } from "@/types";
-import { apiClient } from "@/lib/api";
+import { generatedApiClient } from "@/lib/api-generated";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import {
   HeroChartIcon,
@@ -15,14 +14,9 @@ import {
 
 export default function ResultsPage() {
   const { t } = useLanguage();
-  const { user, userData } = useAuth();
   const [results, setResults] = useState<TestResult[]>([]);
   const [wordSets, setWordSets] = useState<WordSet[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Use real user data from auth context
-  const familyId = userData?.familyId || "family-default";
-  const userId = user?.uid || "";
 
   const loadData = useCallback(async () => {
     try {
@@ -30,23 +24,23 @@ export default function ResultsPage() {
 
       // Load both results and word sets
       const [resultsResponse, wordSetsResponse] = await Promise.all([
-        apiClient.getResults(userId),
-        apiClient.getWordSets(familyId),
+        generatedApiClient.getResults(),
+        generatedApiClient.getWordSets(),
       ]);
 
-      if (resultsResponse.data) {
-        setResults(resultsResponse.data);
+      if (resultsResponse.data?.data) {
+        setResults(resultsResponse.data.data as TestResult[]);
       }
 
-      if (wordSetsResponse.data) {
-        setWordSets(wordSetsResponse.data);
+      if (wordSetsResponse.data?.data) {
+        setWordSets(wordSetsResponse.data.data as WordSet[]);
       }
     } catch (error) {
       console.error("Failed to load data:", error);
     } finally {
       setLoading(false);
     }
-  }, [familyId, userId]);
+  }, []);
 
   useEffect(() => {
     loadData();

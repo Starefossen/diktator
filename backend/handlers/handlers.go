@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"time"
 
+	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/starefossen/diktator/backend/internal/models"
@@ -27,7 +29,13 @@ func CloseServices() error {
 	return nil
 }
 
-// HealthCheck returns a simple health check response
+// @Summary		Health Check
+// @Description	Returns the health status of the API
+// @Tags			health
+// @Accept			json
+// @Produce		json
+// @Success		200	{object}	map[string]interface{}	"Health status"
+// @Router			/health [get]
 func HealthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "healthy",
@@ -36,18 +44,53 @@ func HealthCheck(c *gin.Context) {
 	})
 }
 
-// GetWordSets returns word sets for the user's family
+// GetServiceManager retrieves the service manager from context or returns the global one
+func GetServiceManager(c *gin.Context) *services.Manager {
+	if sm, exists := c.Get("serviceManager"); exists {
+		if realSM, ok := sm.(*services.Manager); ok {
+			return realSM
+		}
+	}
+	return serviceManager
+}
+
+// @Summary		Get Word Sets
+// @Description	Get word sets for the authenticated user's family
+// @Tags			wordsets
+// @Accept			json
+// @Produce		json
+// @Success		200	{object}	models.APIResponse	"Word sets for the family"
+// @Failure		401	{object}	models.APIResponse	"Family access validation required"
+// @Failure		500	{object}	models.APIResponse	"Service unavailable or failed to retrieve word sets"
+// @Security		BearerAuth
+// @Router			/api/wordsets [get]
 func GetWordSets(c *gin.Context) {
-	// TODO: Get familyID from authenticated user
-	familyID := c.Query("familyId")
-	if familyID == "" {
-		c.JSON(http.StatusBadRequest, models.APIResponse{
-			Error: "familyId is required",
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
 		})
 		return
 	}
 
-	wordSets, err := serviceManager.Firestore.GetWordSets(familyID)
+	// Get family ID from authenticated context (set by middleware)
+	familyID, exists := c.Get("validatedFamilyID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "Family access validation required",
+		})
+		return
+	}
+
+	familyIDStr, ok := familyID.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Invalid family ID",
+		})
+		return
+	}
+
+	wordSets, err := serviceManager.Firestore.GetWordSets(familyIDStr)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve word sets",
@@ -61,7 +104,28 @@ func GetWordSets(c *gin.Context) {
 }
 
 // CreateWordSet creates a new word set
+//
+//	@Summary		Create Word Set
+//	@Description	Create a new word set for practice
+//	@Tags			wordsets
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		models.CreateWordSetRequest	true	"Word set creation request"
+//	@Success		201		{object}	models.APIResponse			"Word set created successfully"
+//	@Failure		400		{object}	models.APIResponse			"Invalid request data"
+//	@Failure		401		{object}	models.APIResponse			"User authentication required"
+//	@Failure		500		{object}	models.APIResponse			"Failed to create word set"
+//	@Security		BearerAuth
+//	@Router			/api/wordsets [post]
 func CreateWordSet(c *gin.Context) {
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
 	var req models.CreateWordSetRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, models.APIResponse{
@@ -70,12 +134,19 @@ func CreateWordSet(c *gin.Context) {
 		return
 	}
 
-	// TODO: Get familyID and userID from authenticated user
-	familyID := c.Query("familyId")
-	userID := c.Query("userId")
-	if familyID == "" || userID == "" {
-		c.JSON(http.StatusBadRequest, models.APIResponse{
-			Error: "familyId and userId are required",
+	// Get authenticated user info from context
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "User authentication required",
+		})
+		return
+	}
+
+	familyID, exists := c.Get("validatedFamilyID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "Family access validation required",
 		})
 		return
 	}
@@ -85,8 +156,8 @@ func CreateWordSet(c *gin.Context) {
 		ID:        uuid.New().String(),
 		Name:      req.Name,
 		Words:     req.Words,
-		FamilyID:  familyID,
-		CreatedBy: userID,
+		FamilyID:  familyID.(string),
+		CreatedBy: userID.(string),
 		Language:  req.Language,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -107,6 +178,19 @@ func CreateWordSet(c *gin.Context) {
 }
 
 // DeleteWordSet deletes a word set
+//
+//	@Summary		Delete Word Set
+//	@Description	Delete a word set by ID
+//	@Tags			wordsets
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"Word Set ID"
+//	@Success		200	{object}	models.APIResponse	"Word set deleted successfully"
+//	@Failure		400	{object}	models.APIResponse	"Word set ID is required"
+//	@Failure		404	{object}	models.APIResponse	"Word set not found"
+//	@Failure		500	{object}	models.APIResponse	"Failed to delete word set"
+//	@Security		BearerAuth
+//	@Router			/api/wordsets/{id} [delete]
 func DeleteWordSet(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -116,7 +200,15 @@ func DeleteWordSet(c *gin.Context) {
 		return
 	}
 
-	err := serviceManager.Firestore.DeleteWordSet(id)
+	sm := GetServiceManager(c)
+	if sm == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service manager not available",
+		})
+		return
+	}
+
+	err := sm.Firestore.DeleteWordSet(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to delete word set",
@@ -129,7 +221,18 @@ func DeleteWordSet(c *gin.Context) {
 	})
 }
 
-// GenerateAudio generates TTS audio for all words in a set
+// @Summary		Generate Audio
+// @Description	Generate TTS audio for all words in a word set
+// @Tags			wordsets
+// @Accept			json
+// @Produce		json
+// @Param			id	path		string	true	"Word Set ID"
+// @Success		202	{object}	models.APIResponse	"Audio generation started"
+// @Failure		400	{object}	models.APIResponse	"Word set ID is required"
+// @Failure		404	{object}	models.APIResponse	"Word set not found"
+// @Failure		500	{object}	models.APIResponse	"Failed to start audio generation"
+// @Security		BearerAuth
+// @Router			/api/wordsets/{id}/generate-audio [post]
 func GenerateAudio(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -155,7 +258,18 @@ func GenerateAudio(c *gin.Context) {
 	})
 }
 
-// SaveResult saves a test result
+// @Summary		Save Test Result
+// @Description	Save a test result for the authenticated user
+// @Tags			results
+// @Accept			json
+// @Produce		json
+// @Param			request	body		models.SaveResultRequest	true	"Test result data"
+// @Success		201		{object}	models.APIResponse			"Test result saved successfully"
+// @Failure		400		{object}	models.APIResponse			"Invalid request data"
+// @Failure		401		{object}	models.APIResponse			"User authentication required"
+// @Failure		500		{object}	models.APIResponse			"Failed to save test result"
+// @Security		BearerAuth
+// @Router			/api/results [post]
 func SaveResult(c *gin.Context) {
 	var req models.SaveResultRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -165,11 +279,19 @@ func SaveResult(c *gin.Context) {
 		return
 	}
 
-	// TODO: Get userID from authenticated user
-	userID := c.Query("userId")
-	if userID == "" {
-		c.JSON(http.StatusBadRequest, models.APIResponse{
-			Error: "userId is required",
+	// Get userID from authenticated context
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "User authentication required",
+		})
+		return
+	}
+
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service manager not available",
 		})
 		return
 	}
@@ -178,7 +300,7 @@ func SaveResult(c *gin.Context) {
 	result := &models.TestResult{
 		ID:             uuid.New().String(),
 		WordSetID:      req.WordSetID,
-		UserID:         userID,
+		UserID:         userID.(string),
 		Score:          req.Score,
 		TotalWords:     req.TotalWords,
 		CorrectWords:   req.CorrectWords,
@@ -202,18 +324,35 @@ func SaveResult(c *gin.Context) {
 	})
 }
 
-// GetResults returns test results for the user
+// @Summary		Get Test Results
+// @Description	Get test results for the authenticated user
+// @Tags			results
+// @Accept			json
+// @Produce		json
+// @Success		200	{object}	models.APIResponse	"Test results"
+// @Failure		401	{object}	models.APIResponse	"User authentication required"
+// @Failure		500	{object}	models.APIResponse	"Failed to retrieve test results"
+// @Security		BearerAuth
+// @Router			/api/results [get]
 func GetResults(c *gin.Context) {
-	// TODO: Get userID from authenticated user
-	userID := c.Query("userId")
-	if userID == "" {
-		c.JSON(http.StatusBadRequest, models.APIResponse{
-			Error: "userId is required",
+	// Get userID from authenticated context
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "User authentication required",
 		})
 		return
 	}
 
-	results, err := serviceManager.Firestore.GetTestResults(userID)
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service manager not available",
+		})
+		return
+	}
+
+	results, err := serviceManager.Firestore.GetTestResults(userID.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve test results",
@@ -223,5 +362,559 @@ func GetResults(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.APIResponse{
 		Data: results,
+	})
+}
+
+// Family management handlers
+
+// @Summary		Get Family Information
+// @Description	Get information about the user's family
+// @Tags			families
+// @Accept			json
+// @Produce		json
+// @Success		200	{object}	models.APIResponse	"Family information"
+// @Failure		401	{object}	models.APIResponse	"Family access validation required"
+// @Failure		500	{object}	models.APIResponse	"Service unavailable or failed to retrieve family"
+// @Security		BearerAuth
+// @Router			/api/families [get]
+func GetFamily(c *gin.Context) {
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
+	familyID, exists := c.Get("validatedFamilyID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "Family access validation required",
+		})
+		return
+	}
+
+	family, err := serviceManager.Firestore.GetFamily(familyID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to retrieve family",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Data: family,
+	})
+}
+
+// @Summary		Get Family Statistics
+// @Description	Get statistical data for the authenticated user's family
+// @Tags			families
+// @Accept			json
+// @Produce		json
+// @Success		200	{object}	models.APIResponse	"Family statistics"
+// @Failure		401	{object}	models.APIResponse	"Family access validation required"
+// @Failure		500	{object}	models.APIResponse	"Failed to retrieve family stats"
+// @Security		BearerAuth
+// @Router			/api/families/stats [get]
+func GetFamilyStats(c *gin.Context) {
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
+	familyID, exists := c.Get("validatedFamilyID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "Family access validation required",
+		})
+		return
+	}
+
+	stats, err := serviceManager.Firestore.GetFamilyStats(familyID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to retrieve family stats",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Data: stats,
+	})
+}
+
+// @Summary		Get Family Children
+// @Description	Get all children in the authenticated user's family
+// @Tags			families
+// @Accept			json
+// @Produce		json
+// @Success		200	{object}	models.APIResponse	"List of family children"
+// @Failure		401	{object}	models.APIResponse	"Family access validation required"
+// @Failure		500	{object}	models.APIResponse	"Failed to retrieve children"
+// @Security		BearerAuth
+// @Router			/api/families/children [get]
+func GetFamilyChildren(c *gin.Context) {
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
+	familyID, exists := c.Get("validatedFamilyID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "Family access validation required",
+		})
+		return
+	}
+
+	children, err := serviceManager.Firestore.GetFamilyChildren(familyID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to retrieve children",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Data: children,
+	})
+}
+
+// @Summary		Get Family Progress
+// @Description	Get progress data for all family members
+// @Tags			families
+// @Accept			json
+// @Produce		json
+// @Success		200	{object}	models.APIResponse	"Family progress data"
+// @Failure		401	{object}	models.APIResponse	"Family access validation required"
+// @Failure		500	{object}	models.APIResponse	"Failed to retrieve family progress"
+// @Security		BearerAuth
+// @Router			/api/families/progress [get]
+func GetFamilyProgress(c *gin.Context) {
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
+	familyID, exists := c.Get("validatedFamilyID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "Family access validation required",
+		})
+		return
+	}
+
+	progress, err := serviceManager.Firestore.GetFamilyProgress(familyID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to retrieve family progress",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Data: progress,
+	})
+}
+
+// @Summary		Create Child Account
+// @Description	Create a new child account (parent only)
+// @Tags			children
+// @Accept			json
+// @Produce		json
+// @Param			request	body		models.CreateChildAccountRequest	true	"Child account creation request"
+// @Success		201		{object}	models.APIResponse					"Child account created successfully"
+// @Failure		400		{object}	models.APIResponse					"Invalid request data"
+// @Failure		403		{object}	models.APIResponse					"Parent role required"
+// @Failure		500		{object}	models.APIResponse					"Service unavailable or failed to create child account"
+// @Security		BearerAuth
+// @Router			/api/families/children [post]
+func CreateChildAccount(c *gin.Context) {
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
+	var req models.CreateChildAccountRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Invalid request data: " + err.Error(),
+		})
+		return
+	}
+
+	userID, _ := c.Get("userID")
+	familyID, _ := c.Get("validatedFamilyID")
+
+	// Create child account using Firebase Auth
+	createRequest := (&auth.UserToCreate{}).
+		Email(req.Email).
+		DisplayName(req.DisplayName).
+		Password(req.Password)
+
+	firebaseUserRecord, err := serviceManager.Auth.CreateUser(context.Background(), createRequest)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to create Firebase user: " + err.Error(),
+		})
+		return
+	}
+
+	// Create child record in our database
+	child := &models.ChildAccount{
+		ID:           firebaseUserRecord.UID,
+		Email:        req.Email,
+		DisplayName:  req.DisplayName,
+		FamilyID:     familyID.(string),
+		ParentID:     userID.(string),
+		Role:         "child",
+		IsActive:     true,
+		CreatedAt:    time.Now(),
+		LastActiveAt: time.Now(),
+	}
+
+	if err := serviceManager.Firestore.CreateChild(child); err != nil {
+		// If database creation fails, clean up Firebase user
+		_ = serviceManager.Auth.DeleteUser(context.Background(), firebaseUserRecord.UID)
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to create child account",
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, models.APIResponse{
+		Data: child,
+	})
+}
+
+// @Summary		Update Child Account
+// @Description	Update an existing child account (parent only)
+// @Tags			children
+// @Accept			json
+// @Produce		json
+// @Param			childId	path		string				true	"Child ID"
+// @Param			request	body		models.ChildAccount	true	"Updated child account data"
+// @Success		200		{object}	models.APIResponse	"Child account updated successfully"
+// @Failure		400		{object}	models.APIResponse	"Invalid request data"
+// @Failure		401		{object}	models.APIResponse	"Parent access required"
+// @Failure		404		{object}	models.APIResponse	"Child not found"
+// @Failure		500		{object}	models.APIResponse	"Failed to update child account"
+// @Security		BearerAuth
+// @Router			/api/families/children/{childId} [put]
+func UpdateChildAccount(c *gin.Context) {
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
+	childID := c.Param("childId")
+	var child models.ChildAccount
+	if err := c.ShouldBindJSON(&child); err != nil {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Invalid request data",
+		})
+		return
+	}
+
+	child.ID = childID
+
+	if err := serviceManager.Firestore.UpdateChild(&child); err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to update child account",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Data: child,
+	})
+}
+
+// @Summary		Delete Child Account
+// @Description	Delete a child account (parent only)
+// @Tags			children
+// @Accept			json
+// @Produce		json
+// @Param			childId	path		string	true	"Child ID"
+// @Success		200		{object}	models.APIResponse	"Child account deleted successfully"
+// @Failure		401		{object}	models.APIResponse	"Parent access required"
+// @Failure		404		{object}	models.APIResponse	"Child not found"
+// @Failure		500		{object}	models.APIResponse	"Failed to delete child account"
+// @Security		BearerAuth
+// @Router			/api/families/children/{childId} [delete]
+func DeleteChildAccount(c *gin.Context) {
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
+	childID := c.Param("childId")
+
+	if err := serviceManager.Firestore.DeleteChild(childID); err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to delete child account",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Message: "Child account deleted successfully",
+	})
+}
+
+// @Summary		Get Child Progress
+// @Description	Get progress data for a specific child
+// @Tags			children
+// @Accept			json
+// @Produce		json
+// @Param			childId	path		string	true	"Child ID"
+// @Success		200		{object}	models.APIResponse	"Child progress data"
+// @Failure		401		{object}	models.APIResponse	"Parent access required"
+// @Failure		404		{object}	models.APIResponse	"Child not found"
+// @Failure		500		{object}	models.APIResponse	"Failed to retrieve child progress"
+// @Security		BearerAuth
+// @Router			/api/families/children/{childId}/progress [get]
+func GetChildProgress(c *gin.Context) {
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
+	childID := c.Param("childId")
+
+	progress, err := serviceManager.Firestore.GetUserProgress(childID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to retrieve child progress",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Data: progress,
+	})
+}
+
+// @Summary		Get Child Results
+// @Description	Get test results for a specific child
+// @Tags			children
+// @Accept			json
+// @Produce		json
+// @Param			childId	path		string	true	"Child ID"
+// @Success		200		{object}	models.APIResponse	"Child test results"
+// @Failure		401		{object}	models.APIResponse	"Parent access required"
+// @Failure		404		{object}	models.APIResponse	"Child not found"
+// @Failure		500		{object}	models.APIResponse	"Failed to retrieve child results"
+// @Security		BearerAuth
+// @Router			/api/families/children/{childId}/results [get]
+func GetChildResults(c *gin.Context) {
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
+	childID := c.Param("childId")
+
+	results, err := serviceManager.Firestore.GetTestResults(childID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to retrieve child results",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Data: results,
+	})
+}
+
+// User management handlers
+
+// @Summary		Create User
+// @Description	Create a new user account after Firebase authentication
+// @Tags			users
+// @Accept			json
+// @Produce		json
+// @Param			request	body		object{displayName=string,role=string}	true	"User creation request"
+// @Success		201		{object}	models.APIResponse						"User created successfully"
+// @Failure		400		{object}	models.APIResponse						"Invalid request data"
+// @Failure		401		{object}	models.APIResponse						"Firebase UID not found in token"
+// @Failure		500		{object}	models.APIResponse						"Internal server error"
+// @Security		BearerAuth
+// @Router			/api/users [post]
+func CreateUser(c *gin.Context) {
+	var req struct {
+		DisplayName string `json:"displayName" binding:"required"`
+		Role        string `json:"role" binding:"required,oneof=parent child"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Invalid request data: " + err.Error(),
+		})
+		return
+	}
+
+	// Get Firebase user info from middleware context
+	firebaseUID, exists := c.Get("firebaseUID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "Firebase UID not found in token",
+		})
+		return
+	}
+
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service manager not available",
+		})
+		return
+	}
+
+	// Get user record from Firebase to get email
+	userRecord, err := serviceManager.Auth.GetUser(context.Background(), firebaseUID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to get user information from Firebase",
+		})
+		return
+	}
+	email := userRecord.Email
+
+	// Create family for parent users
+	var familyID string
+	if req.Role == "parent" {
+		family := &models.Family{
+			ID:        "family-" + firebaseUID.(string),
+			Name:      req.DisplayName + "'s Family",
+			CreatedBy: firebaseUID.(string),
+			Members:   []string{firebaseUID.(string)},
+			CreatedAt: time.Now(),
+		}
+
+		if err := serviceManager.Firestore.CreateFamily(family); err != nil {
+			c.JSON(http.StatusInternalServerError, models.APIResponse{
+				Error: "Failed to create family",
+			})
+			return
+		}
+		familyID = family.ID
+	}
+
+	// Create user
+	newUser := &models.User{
+		ID:           firebaseUID.(string),
+		FirebaseUID:  firebaseUID.(string),
+		Email:        email,
+		DisplayName:  req.DisplayName,
+		FamilyID:     familyID,
+		Role:         req.Role,
+		IsActive:     true,
+		CreatedAt:    time.Now(),
+		LastActiveAt: time.Now(),
+	}
+
+	if err := serviceManager.Firestore.CreateUser(newUser); err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to create user",
+		})
+		return
+	}
+
+	// Return user data
+	c.JSON(http.StatusCreated, models.APIResponse{
+		Data: map[string]interface{}{
+			"id":           newUser.ID,
+			"email":        newUser.Email,
+			"displayName":  newUser.DisplayName,
+			"familyId":     newUser.FamilyID,
+			"role":         newUser.Role,
+			"isActive":     newUser.IsActive,
+			"createdAt":    newUser.CreatedAt.Format(time.RFC3339),
+			"lastActiveAt": newUser.LastActiveAt.Format(time.RFC3339),
+		},
+	})
+}
+
+// @Summary		Get User Profile
+// @Description	Get the current user's profile information
+// @Tags			users
+// @Accept			json
+// @Produce		json
+// @Success		200	{object}	models.APIResponse	"User profile data"
+// @Failure		401	{object}	models.APIResponse	"User not authenticated"
+// @Failure		404	{object}	models.APIResponse	"User not found - needs registration"
+// @Failure		500	{object}	models.APIResponse	"Internal server error"
+// @Security		BearerAuth
+// @Router			/api/users/profile [get]
+func GetUserProfile(c *gin.Context) {
+	// Check if user exists in context from BasicAuthMiddleware
+	user, exists := c.Get("user")
+	if !exists {
+		// User doesn't exist in our database yet, try to get from Firebase
+		firebaseUID, exists := c.Get("firebaseUID")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, models.APIResponse{
+				Error: "User not authenticated",
+			})
+			return
+		}
+
+		c.JSON(http.StatusNotFound, models.APIResponse{
+			Error: "User not found in system. Please complete registration.",
+			Data: map[string]interface{}{
+				"firebaseUID":       firebaseUID,
+				"needsRegistration": true,
+			},
+		})
+		return
+	}
+
+	userData, ok := user.(*models.User)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Invalid user data",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Data: map[string]interface{}{
+			"id":           userData.ID,
+			"email":        userData.Email,
+			"displayName":  userData.DisplayName,
+			"familyId":     userData.FamilyID,
+			"role":         userData.Role,
+			"parentId":     userData.ParentID,
+			"isActive":     userData.IsActive,
+			"createdAt":    userData.CreatedAt.Format(time.RFC3339),
+			"lastActiveAt": userData.LastActiveAt.Format(time.RFC3339),
+		},
 	})
 }

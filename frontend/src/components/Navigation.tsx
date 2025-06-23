@@ -75,6 +75,21 @@ export function Navigation() {
                 >
                   {t("nav.wordsets")}
                 </Link>
+
+                {/* Family Management - Only for parents */}
+                {userData?.role === "parent" && (
+                  <Link
+                    href="/family/"
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      pathname.startsWith("/family")
+                        ? "bg-blue-100 text-blue-700 shadow-sm"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    }`}
+                  >
+                    {t("nav.family")}
+                  </Link>
+                )}
+
                 <Link
                   href="/results/"
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${

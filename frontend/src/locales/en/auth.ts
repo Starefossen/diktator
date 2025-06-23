@@ -1,0 +1,21 @@
+export const auth = {
+  "auth.signin.title": "Sign In",
+  "auth.signin.subtitle":
+    "Welcome back! Sign in to continue your spelling journey.",
+  "auth.signin.button": "Sign In",
+  "auth.signin.switchToSignup": "Don't have an account? Sign up",
+  "auth.signup.title": "Create Account",
+  "auth.signup.subtitle": "Join Diktator and start your spelling adventure!",
+  "auth.signup.button": "Create Account",
+  "auth.signup.switchToSignin": "Already have an account? Sign in",
+  "auth.email": "Email Address",
+  "auth.email.placeholder": "Enter your email",
+  "auth.password": "Password",
+  "auth.password.placeholder": "Enter your password",
+  "auth.displayName": "Display Name",
+  "auth.displayName.placeholder": "Enter your name",
+  "auth.role": "Account Type",
+  "auth.role.child": "Student",
+  "auth.role.parent": "Parent/Teacher",
+  "auth.logout": "Sign Out",
+};

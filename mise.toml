@@ -5,6 +5,8 @@ opentofu = "latest"
 firebase = "latest"
 # Air for Go hot reloading
 air = "latest"
+# OpenAPI tools
+"npm:@openapitools/openapi-generator-cli" = "latest"
 
 # Environment configurations
 [env]
@@ -38,7 +40,11 @@ FIRESTORE_EMULATOR_HOST = "localhost:8088"
 # Core development tasks
 [tasks.install]
 description = "Install all dependencies"
-run = ["cd frontend && npm install", "cd backend && go mod tidy"]
+run = [
+  "cd frontend && npm install",
+  "cd backend && go mod tidy",
+  "go install github.com/swaggo/swag/cmd/swag@latest",
+]
 
 [tasks.dev]
 description = "Start full development environment (Firebase emulators + frontend + backend with auto-reload)"
@@ -110,17 +116,90 @@ run = [
 description = "Run all tests and checks"
 run = ["mise run lint", "mise run typecheck", "cd backend && go test ./..."]
 
+# OpenAPI tasks
+[tasks.swagger-gen]
+description = "Generate OpenAPI documentation from Go annotations"
+run = """
+echo "🔨 Generating OpenAPI specification..."
+cd backend
+# Install swag if not available
+if ! command -v swag &> /dev/null; then
+    echo "Installing swag..."
+    go install github.com/swaggo/swag/cmd/swag@latest
+fi
+# Generate swagger docs
+swag init -g cmd/server/main.go --output docs --parseInternal
+echo "✅ OpenAPI spec generated in backend/docs/"
+"""
+
+[tasks.client-gen]
+description = "Generate TypeScript client from OpenAPI spec"
+run = """
+echo "🚀 Generating TypeScript client from OpenAPI spec..."
+
+# Check if backend is running
+if ! curl -s -f "http://localhost:8080/health" > /dev/null; then
+    echo "❌ Backend is not running on http://localhost:8080"
+    echo "   Please start it with: mise run backend"
+    exit 1
+fi
+
+echo "✅ Backend is running"
+
+# Download OpenAPI spec
+echo "📥 Downloading OpenAPI spec..."
+curl -s "http://localhost:8080/swagger/doc.json" > /tmp/diktator-api.json
+
+# Check if spec was downloaded successfully
+if [ ! -s /tmp/diktator-api.json ]; then
+    echo "❌ Failed to download OpenAPI spec"
+    exit 1
+fi
+
+echo "✅ OpenAPI spec downloaded"
+
+# Create output directory
+mkdir -p frontend/src/generated
+
+# Generate TypeScript client
+echo "🔨 Generating TypeScript client..."
+cd frontend
+npx @openapitools/openapi-generator-cli generate \
+    -i /tmp/diktator-api.json \
+    -g typescript-axios \
+    -o src/generated \
+    --additional-properties=npmName=diktator-api-client,npmVersion=1.0.0,supportsES6=true,withInterfaces=true
+
+echo "✅ TypeScript client generated in frontend/src/generated"
+"""
+
+[tasks.api-setup]
+description = "Complete OpenAPI setup: generate docs and client"
+run = [
+  "mise run swagger-gen",
+  "echo 'Starting backend for client generation...'",
+  "cd backend && PORT=8080 go run cmd/server/main.go &",
+  "sleep 3",
+  "mise run client-gen",
+  "pkill -f 'go run cmd/server/main.go' || true",
+]
+
 # Build tasks
 [tasks.build]
 description = "Build all components for production"
 run = [
+  "mise run swagger-gen",
   "cd frontend && NODE_ENV=production npm run build",
   "cd backend && go build -o bin/server cmd/server/main.go",
 ]
 
 [tasks.clean]
 description = "Clean build artifacts"
-run = ["rm -rf frontend/.next frontend/out", "rm -rf backend/bin"]
+run = [
+  "rm -rf frontend/.next frontend/out",
+  "rm -rf backend/bin",
+  "rm -rf frontend/src/generated",
+]
 
 # Infrastructure tasks
 [tasks.tofu-init]

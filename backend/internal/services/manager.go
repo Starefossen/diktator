@@ -1,13 +1,18 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
+	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/auth"
 	"github.com/starefossen/diktator/backend/internal/services/firestore"
 	"github.com/starefossen/diktator/backend/internal/services/storage"
 	"github.com/starefossen/diktator/backend/internal/services/tts"
+	"google.golang.org/api/option"
 )
 
 // Manager coordinates all services
@@ -15,10 +20,52 @@ type Manager struct {
 	Firestore *firestore.Service
 	TTS       *tts.Service
 	Storage   *storage.Service
+	Firebase  *firebase.App
+	Auth      *auth.Client
 }
 
 // NewManager creates a new service manager
 func NewManager() (*Manager, error) {
+	ctx := context.Background()
+
+	// Initialize Firebase App
+	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
+	if projectID == "" {
+		projectID = "diktator-dev" // fallback for development
+	}
+
+	var firebaseApp *firebase.App
+	var err error
+
+	// Check if we're running with Firebase emulators
+	isEmulator := os.Getenv("FIREBASE_AUTH_EMULATOR_HOST") != "" ||
+		os.Getenv("FIRESTORE_EMULATOR_HOST") != ""
+
+	if isEmulator {
+		log.Println("🔥 Initializing Firebase with emulator support")
+		// For emulator mode, we can initialize without credentials
+		config := &firebase.Config{ProjectID: projectID}
+		firebaseApp, err = firebase.NewApp(ctx, config)
+	} else if credsPath := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"); credsPath != "" {
+		log.Println("🔥 Initializing Firebase with service account credentials")
+		config := &firebase.Config{ProjectID: projectID}
+		firebaseApp, err = firebase.NewApp(ctx, config, option.WithCredentialsFile(credsPath))
+	} else {
+		log.Println("🔥 Initializing Firebase with default credentials")
+		config := &firebase.Config{ProjectID: projectID}
+		firebaseApp, err = firebase.NewApp(ctx, config)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize Firebase app: %v", err)
+	}
+
+	// Initialize Firebase Auth client
+	authClient, err := firebaseApp.Auth(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize Firebase Auth: %v", err)
+	}
+
 	// Initialize Firestore service
 	firestoreService, err := firestore.NewService()
 	if err != nil {
@@ -45,6 +92,8 @@ func NewManager() (*Manager, error) {
 		Firestore: firestoreService,
 		TTS:       ttsService,
 		Storage:   storageService,
+		Firebase:  firebaseApp,
+		Auth:      authClient,
 	}, nil
 }
 
