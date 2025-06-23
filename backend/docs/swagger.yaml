@@ -603,7 +603,7 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Delete a word set by ID
+      description: Delete a word set by ID and all associated audio files from storage
       parameters:
       - description: Word Set ID
         in: path
@@ -614,7 +614,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Word set deleted successfully
+          description: Word set and audio files deleted successfully
           schema:
             $ref: '#/definitions/models.APIResponse'
         "400":
@@ -632,6 +632,46 @@ paths:
       security:
       - BearerAuth: []
       summary: Delete Word Set
+      tags:
+      - wordsets
+  /api/wordsets/{id}/audio/{audioId}:
+    get:
+      consumes:
+      - application/json
+      description: Stream audio file for a specific audio ID within a wordset
+      parameters:
+      - description: WordSet ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Audio ID to stream
+        in: path
+        name: audioId
+        required: true
+        type: string
+      produces:
+      - audio/mpeg
+      responses:
+        "200":
+          description: Audio file content
+          schema:
+            type: file
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "404":
+          description: Audio file not found
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Stream Audio File by ID
       tags:
       - wordsets
   /api/wordsets/{id}/generate-audio:
@@ -667,6 +707,39 @@ paths:
       security:
       - BearerAuth: []
       summary: Generate Audio
+      tags:
+      - wordsets
+  /api/wordsets/voices:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of available Text-to-Speech voices for a specific language
+      parameters:
+      - description: Language code (e.g., 'en', 'nb-NO')
+        in: query
+        name: language
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of available voices
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                data:
+                  items:
+                    type: object
+                  type: array
+              type: object
+        "500":
+          description: Failed to retrieve voices
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: List available TTS voices
       tags:
       - wordsets
   /health:

@@ -5,11 +5,13 @@ import (
 	"crypto/md5"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	texttospeech "cloud.google.com/go/texttospeech/apiv1"
 	"cloud.google.com/go/texttospeech/apiv1/texttospeechpb"
 	"github.com/starefossen/diktator/backend/internal/models"
+	"google.golang.org/api/option"
 )
 
 type Service struct {
@@ -22,19 +24,88 @@ type VoiceConfig struct {
 	LanguageCode string
 	VoiceName    string
 	Gender       texttospeechpb.SsmlVoiceGender
+	SpeakingRate float64
+	Pitch        float64
 }
 
-// DefaultVoices contains default voice configurations
+// Enhanced voice configurations with child-friendly options
 var DefaultVoices = map[string]VoiceConfig{
 	"en": {
 		LanguageCode: "en-US",
-		VoiceName:    "en-US-Neural2-A", // Child-friendly female voice
+		VoiceName:    "en-US-Neural2-F", // Child-friendly female voice
 		Gender:       texttospeechpb.SsmlVoiceGender_FEMALE,
+		SpeakingRate: 0.85, // Slower for children
+		Pitch:        2.0,  // Slightly higher pitch for children
+	},
+	"en-US": {
+		LanguageCode: "en-US",
+		VoiceName:    "en-US-Neural2-F",
+		Gender:       texttospeechpb.SsmlVoiceGender_FEMALE,
+		SpeakingRate: 0.85,
+		Pitch:        2.0,
+	},
+	"en-GB": {
+		LanguageCode: "en-GB",
+		VoiceName:    "en-GB-Neural2-A",
+		Gender:       texttospeechpb.SsmlVoiceGender_FEMALE,
+		SpeakingRate: 0.85,
+		Pitch:        2.0,
 	},
 	"no": {
 		LanguageCode: "nb-NO",
 		VoiceName:    "nb-NO-Wavenet-A", // Norwegian female voice
 		Gender:       texttospeechpb.SsmlVoiceGender_FEMALE,
+		SpeakingRate: 0.8, // Slower for Norwegian children
+		Pitch:        1.5,
+	},
+	"nb": {
+		LanguageCode: "nb-NO",
+		VoiceName:    "nb-NO-Wavenet-A",
+		Gender:       texttospeechpb.SsmlVoiceGender_FEMALE,
+		SpeakingRate: 0.8,
+		Pitch:        1.5,
+	},
+	"nb-NO": {
+		LanguageCode: "nb-NO",
+		VoiceName:    "nb-NO-Wavenet-A",
+		Gender:       texttospeechpb.SsmlVoiceGender_FEMALE,
+		SpeakingRate: 0.8,
+		Pitch:        1.5,
+	},
+	"da": {
+		LanguageCode: "da-DK",
+		VoiceName:    "da-DK-Wavenet-A",
+		Gender:       texttospeechpb.SsmlVoiceGender_FEMALE,
+		SpeakingRate: 0.85,
+		Pitch:        1.8,
+	},
+	"sv": {
+		LanguageCode: "sv-SE",
+		VoiceName:    "sv-SE-Wavenet-A",
+		Gender:       texttospeechpb.SsmlVoiceGender_FEMALE,
+		SpeakingRate: 0.85,
+		Pitch:        1.8,
+	},
+	"de": {
+		LanguageCode: "de-DE",
+		VoiceName:    "de-DE-Neural2-A",
+		Gender:       texttospeechpb.SsmlVoiceGender_FEMALE,
+		SpeakingRate: 0.85,
+		Pitch:        2.0,
+	},
+	"fr": {
+		LanguageCode: "fr-FR",
+		VoiceName:    "fr-FR-Neural2-A",
+		Gender:       texttospeechpb.SsmlVoiceGender_FEMALE,
+		SpeakingRate: 0.85,
+		Pitch:        2.0,
+	},
+	"es": {
+		LanguageCode: "es-ES",
+		VoiceName:    "es-ES-Neural2-A",
+		Gender:       texttospeechpb.SsmlVoiceGender_FEMALE,
+		SpeakingRate: 0.85,
+		Pitch:        2.0,
 	},
 }
 
@@ -42,7 +113,14 @@ var DefaultVoices = map[string]VoiceConfig{
 func NewService() (*Service, error) {
 	ctx := context.Background()
 
-	client, err := texttospeech.NewClient(ctx)
+	// Get quota project from environment
+	var clientOptions []option.ClientOption
+	if quotaProject := os.Getenv("GOOGLE_CLOUD_QUOTA_PROJECT"); quotaProject != "" {
+		clientOptions = append(clientOptions, option.WithQuotaProject(quotaProject))
+		log.Printf("Using Google Cloud quota project: %s", quotaProject)
+	}
+
+	client, err := texttospeech.NewClient(ctx, clientOptions...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create TTS client: %v", err)
 	}
@@ -58,33 +136,36 @@ func (s *Service) Close() error {
 	return s.client.Close()
 }
 
-// GenerateAudio generates audio for a word using Text-to-Speech
+// GenerateAudio generates audio for a word using Text-to-Speech with optimal voice selection
 func (s *Service) GenerateAudio(word, language string) ([]byte, *models.AudioFile, error) {
-	// Get voice configuration for language
-	voiceConfig, exists := DefaultVoices[language]
-	if !exists {
-		voiceConfig = DefaultVoices["en"] // fallback to English
-	}
+	// Normalize language code and get voice configuration
+	voiceConfig := s.getOptimalVoiceConfig(language)
 
-	// Create the synthesis input
+	log.Printf("Generating audio for word '%s' in language '%s' using voice '%s'",
+		word, language, voiceConfig.VoiceName)
+
+	// Create the synthesis input with word normalization
+	normalizedWord := s.normalizeTextForTTS(word)
 	input := &texttospeechpb.SynthesisInput{
 		InputSource: &texttospeechpb.SynthesisInput_Text{
-			Text: word,
+			Text: normalizedWord,
 		},
 	}
 
-	// Build the voice request
+	// Build the voice request with optimal settings
 	voice := &texttospeechpb.VoiceSelectionParams{
 		LanguageCode: voiceConfig.LanguageCode,
 		Name:         voiceConfig.VoiceName,
 		SsmlGender:   voiceConfig.Gender,
 	}
 
-	// Select the type of audio file
+	// Configure audio for child-friendly output
 	audioConfig := &texttospeechpb.AudioConfig{
-		AudioEncoding: texttospeechpb.AudioEncoding_MP3,
-		SpeakingRate:  0.9, // Slightly slower for children
-		Pitch:         0.0, // Normal pitch
+		AudioEncoding:   texttospeechpb.AudioEncoding_MP3,
+		SpeakingRate:    voiceConfig.SpeakingRate,
+		Pitch:           voiceConfig.Pitch,
+		VolumeGainDb:    2.0,   // Slightly louder for clarity
+		SampleRateHertz: 22050, // Good quality for speech
 	}
 
 	// Perform the text-to-speech request
@@ -96,7 +177,22 @@ func (s *Service) GenerateAudio(word, language string) ([]byte, *models.AudioFil
 
 	resp, err := s.client.SynthesizeSpeech(s.ctx, req)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to synthesize speech: %v", err)
+		// Try fallback voice if the primary voice fails
+		fallbackConfig := s.getFallbackVoiceConfig(language)
+		if fallbackConfig.VoiceName != voiceConfig.VoiceName {
+			log.Printf("Primary voice failed, trying fallback voice: %s", fallbackConfig.VoiceName)
+			voice.Name = fallbackConfig.VoiceName
+			voice.LanguageCode = fallbackConfig.LanguageCode
+			req.Voice = voice
+
+			resp, err = s.client.SynthesizeSpeech(s.ctx, req)
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to synthesize speech with both primary and fallback voices: %v", err)
+			}
+			voiceConfig = fallbackConfig // Update for metadata
+		} else {
+			return nil, nil, fmt.Errorf("failed to synthesize speech: %v", err)
+		}
 	}
 
 	// Generate a unique filename
@@ -118,10 +214,7 @@ func (s *Service) GenerateAudio(word, language string) ([]byte, *models.AudioFil
 
 // GenerateAudioWithSSML generates audio using SSML for custom pronunciation
 func (s *Service) GenerateAudioWithSSML(ssml, language string) ([]byte, error) {
-	voiceConfig, exists := DefaultVoices[language]
-	if !exists {
-		voiceConfig = DefaultVoices["en"]
-	}
+	voiceConfig := s.getOptimalVoiceConfig(language)
 
 	input := &texttospeechpb.SynthesisInput{
 		InputSource: &texttospeechpb.SynthesisInput_Ssml{
@@ -136,9 +229,11 @@ func (s *Service) GenerateAudioWithSSML(ssml, language string) ([]byte, error) {
 	}
 
 	audioConfig := &texttospeechpb.AudioConfig{
-		AudioEncoding: texttospeechpb.AudioEncoding_MP3,
-		SpeakingRate:  0.9,
-		Pitch:         0.0,
+		AudioEncoding:   texttospeechpb.AudioEncoding_MP3,
+		SpeakingRate:    voiceConfig.SpeakingRate,
+		Pitch:           voiceConfig.Pitch,
+		VolumeGainDb:    2.0,
+		SampleRateHertz: 22050,
 	}
 
 	req := &texttospeechpb.SynthesizeSpeechRequest{
@@ -181,4 +276,228 @@ func (s *Service) ListAvailableVoices(languageCode string) ([]*texttospeechpb.Vo
 	}
 
 	return resp.Voices, nil
+}
+
+// GetChildFriendlyVoices returns available child-friendly voices for a language
+func (s *Service) GetChildFriendlyVoices(languageCode string) ([]*texttospeechpb.Voice, error) {
+	voices, err := s.ListAvailableVoices(languageCode)
+	if err != nil {
+		return nil, err
+	}
+
+	var childFriendlyVoices []*texttospeechpb.Voice
+
+	// Filter for voices that are good for children
+	for _, voice := range voices {
+		// Prefer Neural2 voices (highest quality)
+		if strings.Contains(voice.Name, "Neural2") {
+			childFriendlyVoices = append(childFriendlyVoices, voice)
+			continue
+		}
+
+		// Then Wavenet voices (good quality)
+		if strings.Contains(voice.Name, "Wavenet") {
+			childFriendlyVoices = append(childFriendlyVoices, voice)
+			continue
+		}
+
+		// Then Studio voices
+		if strings.Contains(voice.Name, "Studio") {
+			childFriendlyVoices = append(childFriendlyVoices, voice)
+			continue
+		}
+	}
+
+	// If no premium voices found, return all available voices
+	if len(childFriendlyVoices) == 0 {
+		return voices, nil
+	}
+
+	return childFriendlyVoices, nil
+}
+
+// ValidateVoice checks if a specific voice is available for a language
+func (s *Service) ValidateVoice(languageCode, voiceName string) (bool, error) {
+	voices, err := s.ListAvailableVoices(languageCode)
+	if err != nil {
+		return false, err
+	}
+
+	for _, voice := range voices {
+		if voice.Name == voiceName {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// GetOptimalVoiceForWord selects the best voice for a specific word and language
+func (s *Service) GetOptimalVoiceForWord(word, language string) VoiceConfig {
+	baseConfig := s.getOptimalVoiceConfig(language)
+
+	// For short words or single letters, use slightly slower speech
+	if len(word) <= 2 {
+		baseConfig.SpeakingRate *= 0.9
+		baseConfig.Pitch += 0.5
+	}
+
+	// For longer words, use normal or slightly faster speech
+	if len(word) > 8 {
+		baseConfig.SpeakingRate *= 1.1
+		if baseConfig.SpeakingRate > 1.0 {
+			baseConfig.SpeakingRate = 1.0
+		}
+	}
+
+	return baseConfig
+}
+
+// getOptimalVoiceConfig returns the best voice configuration for a language
+func (s *Service) getOptimalVoiceConfig(language string) VoiceConfig {
+	// Try exact match first
+	if config, exists := DefaultVoices[language]; exists {
+		return config
+	}
+
+	// Try language code without region (e.g., "en" from "en-US")
+	if len(language) > 2 {
+		baseLanguage := language[:2]
+		if config, exists := DefaultVoices[baseLanguage]; exists {
+			return config
+		}
+	}
+
+	// Try with common region variants
+	commonVariants := map[string][]string{
+		"en": {"en-US", "en-GB"},
+		"no": {"nb-NO", "nb"},
+		"nb": {"nb-NO", "no"},
+		"da": {"da-DK"},
+		"sv": {"sv-SE"},
+		"de": {"de-DE"},
+		"fr": {"fr-FR"},
+		"es": {"es-ES"},
+	}
+
+	if variants, exists := commonVariants[language]; exists {
+		for _, variant := range variants {
+			if config, exists := DefaultVoices[variant]; exists {
+				return config
+			}
+		}
+	}
+
+	// Fallback to English
+	return DefaultVoices["en"]
+}
+
+// getFallbackVoiceConfig returns a fallback voice configuration
+func (s *Service) getFallbackVoiceConfig(language string) VoiceConfig {
+	// For Norwegian, try different Norwegian variants
+	if strings.HasPrefix(language, "nb") || strings.HasPrefix(language, "no") {
+		fallbacks := []string{"nb-NO", "nb", "no"}
+		for _, fallback := range fallbacks {
+			if config, exists := DefaultVoices[fallback]; exists {
+				return config
+			}
+		}
+	}
+
+	// For English, try different English variants
+	if strings.HasPrefix(language, "en") {
+		fallbacks := []string{"en-US", "en-GB", "en"}
+		for _, fallback := range fallbacks {
+			if config, exists := DefaultVoices[fallback]; exists {
+				return config
+			}
+		}
+	}
+
+	// Try using Wavenet voices as fallback (more widely available)
+	wavenetFallbacks := map[string]VoiceConfig{
+		"nb": {
+			LanguageCode: "nb-NO",
+			VoiceName:    "nb-NO-Wavenet-A",
+			Gender:       texttospeechpb.SsmlVoiceGender_FEMALE,
+			SpeakingRate: 0.8,
+			Pitch:        1.5,
+		},
+		"en": {
+			LanguageCode: "en-US",
+			VoiceName:    "en-US-Wavenet-F",
+			Gender:       texttospeechpb.SsmlVoiceGender_FEMALE,
+			SpeakingRate: 0.85,
+			Pitch:        2.0,
+		},
+	}
+
+	baseLanguage := language
+	if len(language) > 2 {
+		baseLanguage = language[:2]
+	}
+
+	if config, exists := wavenetFallbacks[baseLanguage]; exists {
+		return config
+	}
+
+	// Ultimate fallback to English Wavenet
+	return wavenetFallbacks["en"]
+}
+
+// normalizeTextForTTS normalizes text for better TTS pronunciation
+func (s *Service) normalizeTextForTTS(text string) string {
+	// Clean up the text for better pronunciation
+	normalized := strings.TrimSpace(text)
+
+	// Remove extra spaces
+	normalized = strings.ReplaceAll(normalized, "  ", " ")
+
+	// Handle common abbreviations and special cases
+	replacements := map[string]string{
+		"&": "and",
+		"@": "at",
+		"%": "percent",
+		"#": "number",
+		"$": "dollar",
+		"€": "euro",
+		"£": "pound",
+		"+": "plus",
+		"=": "equals",
+		"<": "less than",
+		">": "greater than",
+		"_": " ",
+		"-": " ",
+	}
+
+	for old, new := range replacements {
+		normalized = strings.ReplaceAll(normalized, old, new)
+	}
+
+	// Handle numbers - convert to words for better pronunciation
+	// This is a basic implementation; for production, consider using a number-to-words library
+	numberReplacements := map[string]string{
+		"0": "zero",
+		"1": "one",
+		"2": "two",
+		"3": "three",
+		"4": "four",
+		"5": "five",
+		"6": "six",
+		"7": "seven",
+		"8": "eight",
+		"9": "nine",
+	}
+
+	// Only replace single digits to avoid issues with larger numbers
+	words := strings.Fields(normalized)
+	for i, word := range words {
+		if len(word) == 1 {
+			if replacement, exists := numberReplacements[word]; exists {
+				words[i] = replacement
+			}
+		}
+	}
+
+	return strings.Join(words, " ")
 }

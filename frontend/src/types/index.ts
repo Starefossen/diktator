@@ -104,10 +104,18 @@ export interface User {
   createdAt: string;
 }
 
+export interface WordAudio {
+  word: string;
+  audioUrl: string;
+  audioId: string;
+  voiceId: string;
+  createdAt: string;
+}
+
 export interface WordSet {
   id: string;
   name: string;
-  words: string[];
+  words: WordItem[]; // Array of word objects instead of strings
   familyId: string;
   createdBy: string;
   language: "en" | "no";
@@ -115,6 +123,12 @@ export interface WordSet {
   updatedAt: string;
   // Test configuration for this wordset
   testConfiguration?: TestConfiguration;
+}
+
+export interface WordItem {
+  word: string;
+  definition?: string;
+  audio?: WordAudio; // Audio info for this specific word
 }
 
 export interface TestResult {
@@ -143,7 +157,7 @@ export interface AudioFile {
 // API Request types
 export interface CreateWordSetRequest {
   name: string;
-  words: string[];
+  words: string[]; // Frontend still sends simple strings, backend converts to WordItem
   language: "en" | "no";
   testConfiguration?: TestConfiguration;
 }

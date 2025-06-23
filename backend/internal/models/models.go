@@ -19,11 +19,24 @@ type User struct {
 	LastActiveAt time.Time `firestore:"lastActiveAt" json:"lastActiveAt"`
 }
 
+// WordAudio represents audio information for a word
+type WordAudio struct {
+	Word      string    `firestore:"word" json:"word"`
+	AudioURL  string    `firestore:"audioUrl" json:"audioUrl"`
+	AudioID   string    `firestore:"audioId" json:"audioId"`
+	VoiceID   string    `firestore:"voiceId" json:"voiceId"`
+	CreatedAt time.Time `firestore:"createdAt" json:"createdAt"`
+}
+
 // WordSet represents a collection of words for spelling tests
 type WordSet struct {
-	ID        string    `firestore:"id" json:"id"`
-	Name      string    `firestore:"name" json:"name"`
-	Words     []string  `firestore:"words" json:"words"`
+	ID    string `firestore:"id" json:"id"`
+	Name  string `firestore:"name" json:"name"`
+	Words []struct {
+		Word       string    `firestore:"word" json:"word"`                                 // The word itself
+		Audio      WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`           // Optional audio info for the word
+		Definition string    `firestore:"definition,omitempty" json:"definition,omitempty"` // Optional definition for the word
+	} `firestore:"words" json:"words"`
 	FamilyID  string    `firestore:"familyId" json:"familyId"`
 	CreatedBy string    `firestore:"createdBy" json:"createdBy"`
 	Language  string    `firestore:"language" json:"language"` // 'en' or 'no'

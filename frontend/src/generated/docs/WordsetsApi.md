@@ -5,9 +5,11 @@ All URIs are relative to *http://localhost:8080/api*
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|
 |[**apiWordsetsGet**](#apiwordsetsget) | **GET** /api/wordsets | Get Word Sets|
+|[**apiWordsetsIdAudioAudioIdGet**](#apiwordsetsidaudioaudioidget) | **GET** /api/wordsets/{id}/audio/{audioId} | Stream Audio File by ID|
 |[**apiWordsetsIdDelete**](#apiwordsetsiddelete) | **DELETE** /api/wordsets/{id} | Delete Word Set|
 |[**apiWordsetsIdGenerateAudioPost**](#apiwordsetsidgenerateaudiopost) | **POST** /api/wordsets/{id}/generate-audio | Generate Audio|
 |[**apiWordsetsPost**](#apiwordsetspost) | **POST** /api/wordsets | Create Word Set|
+|[**apiWordsetsVoicesGet**](#apiwordsetsvoicesget) | **GET** /api/wordsets/voices | List available TTS voices|
 
 # **apiWordsetsGet**
 > ModelsAPIResponse apiWordsetsGet()
@@ -55,10 +57,67 @@ This endpoint does not have any parameters.
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **apiWordsetsIdAudioAudioIdGet**
+> File apiWordsetsIdAudioAudioIdGet()
+
+Stream audio file for a specific audio ID within a wordset
+
+### Example
+
+```typescript
+import {
+    WordsetsApi,
+    Configuration
+} from 'diktator-api-client';
+
+const configuration = new Configuration();
+const apiInstance = new WordsetsApi(configuration);
+
+let id: string; //WordSet ID (default to undefined)
+let audioId: string; //Audio ID to stream (default to undefined)
+
+const { status, data } = await apiInstance.apiWordsetsIdAudioAudioIdGet(
+    id,
+    audioId
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**string**] | WordSet ID | defaults to undefined|
+| **audioId** | [**string**] | Audio ID to stream | defaults to undefined|
+
+
+### Return type
+
+**File**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: audio/mpeg
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Audio file content |  -  |
+|**400** | Invalid request |  -  |
+|**404** | Audio file not found |  -  |
+|**500** | Internal server error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **apiWordsetsIdDelete**
 > ModelsAPIResponse apiWordsetsIdDelete()
 
-Delete a word set by ID
+Delete a word set by ID and all associated audio files from storage
 
 ### Example
 
@@ -102,7 +161,7 @@ const { status, data } = await apiInstance.apiWordsetsIdDelete(
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-|**200** | Word set deleted successfully |  -  |
+|**200** | Word set and audio files deleted successfully |  -  |
 |**400** | Word set ID is required |  -  |
 |**404** | Word set not found |  -  |
 |**500** | Failed to delete word set |  -  |
@@ -215,6 +274,58 @@ const { status, data } = await apiInstance.apiWordsetsPost(
 |**400** | Invalid request data |  -  |
 |**401** | User authentication required |  -  |
 |**500** | Failed to create word set |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiWordsetsVoicesGet**
+> ApiWordsetsVoicesGet200Response apiWordsetsVoicesGet()
+
+Get a list of available Text-to-Speech voices for a specific language
+
+### Example
+
+```typescript
+import {
+    WordsetsApi,
+    Configuration
+} from 'diktator-api-client';
+
+const configuration = new Configuration();
+const apiInstance = new WordsetsApi(configuration);
+
+let language: string; //Language code (e.g., \'en\', \'nb-NO\') (optional) (default to undefined)
+
+const { status, data } = await apiInstance.apiWordsetsVoicesGet(
+    language
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **language** | [**string**] | Language code (e.g., \&#39;en\&#39;, \&#39;nb-NO\&#39;) | (optional) defaults to undefined|
+
+
+### Return type
+
+**ApiWordsetsVoicesGet200Response**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | List of available voices |  -  |
+|**500** | Failed to retrieve voices |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

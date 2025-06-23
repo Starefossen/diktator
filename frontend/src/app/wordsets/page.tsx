@@ -31,6 +31,12 @@ export default function WordSetsPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [settingsWordSet, setSettingsWordSet] = useState<WordSet | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteWordSet, setDeleteWordSet] = useState<WordSet | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [generatingAudio, setGeneratingAudio] = useState<Set<string>>(new Set()); // Track which wordsets are generating audio
+  const [playingAudio, setPlayingAudio] = useState<string | null>(null); // Track which word is currently playing
+  const [audioGenerationStatus, setAudioGenerationStatus] = useState<{ [key: string]: string }>({}); // Track status messages
 
   // Create form state
   const [formData, setFormData] = useState<CreateWordSetRequest>({
@@ -44,6 +50,7 @@ export default function WordSetsPage() {
   // Settings form state
   const [settingsConfig, setSettingsConfig] =
     useState<TestConfiguration>(DEFAULT_TEST_CONFIG);
+  const [formError, setFormError] = useState<string>("");
 
   const loadWordSets = useCallback(async () => {
     try {
@@ -65,8 +72,10 @@ export default function WordSetsPage() {
 
   const handleCreateWordSet = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError("");
+
     if (!formData.name.trim() || formData.words.length === 0) {
-      alert(t("wordsets.nameRequired"));
+      setFormError(t("wordsets.nameRequired"));
       return;
     }
 
@@ -75,40 +84,145 @@ export default function WordSetsPage() {
       const response = await generatedApiClient.createWordSet(formData);
       if (response.data?.data) {
         setWordSets([response.data.data as WordSet, ...wordSets]);
-        setFormData({ name: "", words: [], language: language as Language });
+        setFormData({ name: "", words: [], language: language as Language, testConfiguration: DEFAULT_TEST_CONFIG });
+        setFormError("");
         setShowCreateForm(false);
-        alert(t("wordsets.createSuccess"));
+        // Success feedback - could add a toast notification here instead of alert
+        console.log("Word set created successfully");
       }
     } catch (error) {
       console.error("Failed to create word set:", error);
-      alert(t("wordsets.createError"));
+      setFormError(t("wordsets.createError"));
     } finally {
       setCreating(false);
     }
   };
 
-  const handleDeleteWordSet = async (id: string) => {
-    if (!confirm(t("wordsets.deleteConfirm"))) {
-      return;
-    }
+  const openDeleteModal = (wordSet: WordSet) => {
+    setDeleteWordSet(wordSet);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteWordSet = async () => {
+    if (!deleteWordSet) return;
 
     try {
-      await generatedApiClient.deleteWordSet(id);
-      setWordSets(wordSets.filter((ws) => ws.id !== id));
-      alert(t("wordsets.deleteSuccess"));
+      setDeleting(true);
+      await generatedApiClient.deleteWordSet(deleteWordSet.id);
+      setWordSets(wordSets.filter((ws) => ws.id !== deleteWordSet.id));
+      setShowDeleteModal(false);
+      setDeleteWordSet(null);
+      console.log("Word set deleted successfully");
     } catch (error) {
       console.error("Failed to delete word set:", error);
-      alert(t("wordsets.deleteError"));
+      // Could show error message in the modal
+    } finally {
+      setDeleting(false);
     }
   };
 
   const handleGenerateAudio = async (wordSetId: string) => {
     try {
+      setGeneratingAudio(prev => new Set([...prev, wordSetId]));
+      setAudioGenerationStatus(prev => ({ ...prev, [wordSetId]: "Starting audio generation..." }));
+
       await generatedApiClient.generateAudio(wordSetId);
-      alert(t("wordsets.audioGeneration"));
+
+      setAudioGenerationStatus(prev => ({ ...prev, [wordSetId]: "Checking audio files..." }));
+
+      // Instead of refreshing all wordsets, fetch just the updated one
+      const response = await generatedApiClient.getWordSets();
+      if (response.data?.data) {
+        const updatedWordSets = response.data.data as WordSet[];
+        const updatedWordSet = updatedWordSets.find(ws => ws.id === wordSetId);
+
+        if (updatedWordSet) {
+          // Check if audio was actually generated
+          const wordsWithAudio = updatedWordSet.words.filter(w => w.audio?.audioUrl);
+
+          if (wordsWithAudio.length > 0) {
+            setAudioGenerationStatus(prev => ({
+              ...prev,
+              [wordSetId]: `Audio generated for ${wordsWithAudio.length}/${updatedWordSet.words.length} words!`
+            }));
+
+            // Update only the specific wordset in the list
+            setWordSets(prevWordSets =>
+              prevWordSets.map(ws => ws.id === wordSetId ? updatedWordSet : ws)
+            );
+          } else {
+            setAudioGenerationStatus(prev => ({
+              ...prev,
+              [wordSetId]: "Audio generation completed, but no audio files were created."
+            }));
+          }
+        }
+      }
+
+      // Clear status message after 3 seconds
+      setTimeout(() => {
+        setAudioGenerationStatus(prev => {
+          const newStatus = { ...prev };
+          delete newStatus[wordSetId];
+          return newStatus;
+        });
+      }, 3000);
+
     } catch (error) {
       console.error("Failed to generate audio:", error);
-      alert(t("wordsets.audioError"));
+      setAudioGenerationStatus(prev => ({
+        ...prev,
+        [wordSetId]: "Failed to generate audio. Please try again."
+      }));
+
+      // Clear error message after 5 seconds
+      setTimeout(() => {
+        setAudioGenerationStatus(prev => {
+          const newStatus = { ...prev };
+          delete newStatus[wordSetId];
+          return newStatus;
+        });
+      }, 5000);
+    } finally {
+      setGeneratingAudio(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(wordSetId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleWordClick = async (word: string, wordSet: WordSet) => {
+    // Find the word item in the words array
+    const wordItem = wordSet.words.find(w => w.word === word);
+    const audioInfo = wordItem?.audio;
+
+    if (!audioInfo || !audioInfo.audioId) {
+      return; // No audio available
+    }
+
+    try {
+      setPlayingAudio(word);
+
+      // Use the new audio streaming API endpoint with wordset ID and audio ID
+      // Use the configured API base URL to avoid domain issues
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const audioUrl = `${apiBaseUrl}/api/wordsets/${wordSet.id}/audio/${audioInfo.audioId}`;
+      const audio = new Audio(audioUrl);
+
+      audio.onended = () => {
+        setPlayingAudio(null);
+      };
+
+      audio.onerror = () => {
+        setPlayingAudio(null);
+        console.error("Failed to play audio for word:", word);
+      };
+
+      await audio.play();
+    } catch (error) {
+      setPlayingAudio(null);
+      console.error("Failed to play audio for word:", word, error);
     }
   };
 
@@ -192,10 +306,13 @@ export default function WordSetsPage() {
           {/* Create New Word Set Button */}
           <div className="mb-8">
             <button
-              onClick={() => setShowCreateForm(!showCreateForm)}
+              onClick={() => {
+                setShowCreateForm(!showCreateForm);
+                setFormError("");
+              }}
               className="flex items-center px-6 py-3 font-semibold text-white transition-all duration-200 rounded-lg shadow-lg bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 hover:shadow-xl hover:scale-105"
             >
-              <span className="text-lg mr-2">{showCreateForm ? "✕" : "+"}</span>
+              <span className="mr-2 text-lg">{showCreateForm ? "✕" : "+"}</span>
               {showCreateForm ? t("wordsets.cancel") : t("wordsets.create")}
             </button>
           </div>
@@ -206,6 +323,12 @@ export default function WordSetsPage() {
               <h2 className="mb-4 text-2xl font-semibold text-gray-800">
                 {t("wordsets.create")}
               </h2>
+
+              {formError && (
+                <div className="p-3 mb-4 text-red-700 bg-red-100 border border-red-300 rounded-lg">
+                  {formError}
+                </div>
+              )}
 
               <form onSubmit={handleCreateWordSet} className="space-y-4">
                 <div>
@@ -296,7 +419,7 @@ export default function WordSetsPage() {
                   >
                     {creating ? (
                       <>
-                        <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <div className="w-4 h-4 mr-2 border-2 border-white rounded-full border-t-transparent animate-spin"></div>
                         {t("wordsets.creating")}
                       </>
                     ) : (
@@ -351,23 +474,70 @@ export default function WordSetsPage() {
                     {wordSet.words.length === 1
                       ? t("results.word")
                       : t("wordsets.words.count")}
+                    {(() => {
+                      const wordsWithAudio = wordSet.words.filter(w => w.audio?.audioUrl);
+                      return wordsWithAudio.length > 0 && (
+                        <span className="ml-2 text-sm text-blue-600">
+                          • {wordsWithAudio.length} with audio
+                        </span>
+                      );
+                    })()}
                   </p>
 
                   <div className="flex flex-wrap gap-1 mb-4 overflow-y-auto max-h-20">
-                    {wordSet.words.slice(0, 10).map((word, index) => (
-                      <span
-                        key={index}
-                        className="px-2 py-1 text-sm text-gray-700 bg-gray-100 rounded"
-                      >
-                        {word}
-                      </span>
-                    ))}
+                    {wordSet.words.slice(0, 10).map((wordItem, index) => {
+                      const hasAudio = wordItem.audio?.audioUrl;
+                      const isPlaying = playingAudio === wordItem.word;
+
+                      return (
+                        <span
+                          key={index}
+                          onClick={() => hasAudio ? handleWordClick(wordItem.word, wordSet) : undefined}
+                          className={`inline-flex items-center px-2 py-1 text-sm rounded transition-all duration-200 ${hasAudio
+                            ? 'text-blue-700 bg-blue-100 cursor-pointer hover:bg-blue-200 hover:shadow-sm'
+                            : 'text-gray-700 bg-gray-100'
+                            } ${isPlaying ? 'ring-2 ring-blue-500 shadow-md' : ''}`}
+                          title={hasAudio ? t("wordsets.clickToPlay") : t("wordsets.noAudio")}
+                        >
+                          {hasAudio && (
+                            <HeroVolumeIcon className={`w-3 h-3 mr-1 ${isPlaying ? 'text-blue-600' : 'text-blue-500'}`} />
+                          )}
+                          {wordItem.word}
+                        </span>
+                      );
+                    })}
                     {wordSet.words.length > 10 && (
                       <span className="px-2 py-1 text-sm text-gray-600 bg-gray-200 rounded">
                         +{wordSet.words.length - 10} {t("wordsets.moreWords")}
                       </span>
                     )}
                   </div>
+
+                  {/* Progress indicator during audio generation */}
+                  {generatingAudio.has(wordSet.id) && (
+                    <div className="mb-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm text-gray-600">
+                          {audioGenerationStatus[wordSet.id] || "Generating audio..."}
+                        </span>
+                      </div>
+                      <div className="w-full h-2 bg-gray-200 rounded-full">
+                        <div className="h-2 bg-purple-500 rounded-full animate-pulse" style={{ width: '100%' }}></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Status message for audio generation */}
+                  {audioGenerationStatus[wordSet.id] && (
+                    <div className={`p-2 mb-3 text-sm rounded-lg ${audioGenerationStatus[wordSet.id].includes('generated')
+                      ? 'bg-green-100 text-green-800 border border-green-200'
+                      : audioGenerationStatus[wordSet.id].includes('Failed')
+                        ? 'bg-red-100 text-red-800 border border-red-200'
+                        : 'bg-blue-100 text-blue-800 border border-blue-200'
+                      }`}>
+                      {audioGenerationStatus[wordSet.id]}
+                    </div>
+                  )}
 
                   <div className="flex flex-wrap gap-2">
                     <button
@@ -379,10 +549,43 @@ export default function WordSetsPage() {
                     </button>
                     <button
                       onClick={() => handleGenerateAudio(wordSet.id)}
-                      className="flex items-center justify-center px-4 py-3 font-medium text-white transition-all duration-200 bg-purple-500 rounded-lg shadow-md hover:bg-purple-600 hover:shadow-lg hover:scale-105"
-                      title={t("wordsets.generateAudio")}
+                      disabled={
+                        generatingAudio.has(wordSet.id) ||
+                        audioGenerationStatus[wordSet.id]?.includes('generated') ||
+                        wordSet.words.every(w => w.audio?.audioUrl) // Disable if all words have audio
+                      }
+                      className={`flex items-center justify-center px-4 py-3 font-medium text-white transition-all duration-200 rounded-lg shadow-md hover:shadow-lg hover:scale-105 disabled:opacity-75 disabled:cursor-not-allowed disabled:hover:scale-100 ${generatingAudio.has(wordSet.id)
+                        ? 'bg-purple-500 animate-pulse'
+                        : audioGenerationStatus[wordSet.id]?.includes('generated') || wordSet.words.every(w => w.audio?.audioUrl)
+                          ? 'bg-green-500'
+                          : audioGenerationStatus[wordSet.id]?.includes('Failed')
+                            ? 'bg-red-500 hover:bg-red-600'
+                            : 'bg-purple-500 hover:bg-purple-600'
+                        }`}
+                      title={
+                        generatingAudio.has(wordSet.id)
+                          ? audioGenerationStatus[wordSet.id] || "Generating audio..."
+                          : audioGenerationStatus[wordSet.id]?.includes('generated') || wordSet.words.every(w => w.audio?.audioUrl)
+                            ? "All audio has been generated"
+                            : t("wordsets.generateAudio")
+                      }
                     >
-                      <HeroVolumeIcon className="w-4 h-4 text-white" />
+                      {generatingAudio.has(wordSet.id) ? (
+                        <>
+                          <div className="w-4 h-4 mr-2 border-2 border-white rounded-full border-t-transparent animate-spin"></div>
+                          <span className="text-xs">
+                            {audioGenerationStatus[wordSet.id]?.includes('Starting') ? 'Starting...' :
+                              audioGenerationStatus[wordSet.id]?.includes('Checking') ? 'Checking...' : 'Generating...'}
+                          </span>
+                        </>
+                      ) : audioGenerationStatus[wordSet.id] || wordSet.words.every(w => w.audio?.audioUrl) ? (
+                        <span className="text-xs text-center">
+                          {audioGenerationStatus[wordSet.id]?.includes('generated') || wordSet.words.every(w => w.audio?.audioUrl) ? '✓' :
+                            audioGenerationStatus[wordSet.id]?.includes('Failed') ? '✗' : '⚠'}
+                        </span>
+                      ) : (
+                        <HeroVolumeIcon className="w-4 h-4 text-white" />
+                      )}
                     </button>
                     <button
                       onClick={() => openSettingsModal(wordSet)}
@@ -392,7 +595,7 @@ export default function WordSetsPage() {
                       <HeroSettingsIcon className="w-4 h-4 text-white" />
                     </button>
                     <button
-                      onClick={() => handleDeleteWordSet(wordSet.id)}
+                      onClick={() => openDeleteModal(wordSet)}
                       className="flex items-center justify-center px-4 py-3 font-medium text-white transition-all duration-200 bg-red-500 rounded-lg shadow-md hover:bg-red-600 hover:shadow-lg hover:scale-105"
                       title={t("wordsets.delete")}
                     >
@@ -450,7 +653,7 @@ export default function WordSetsPage() {
                           autoPlayAudio: e.target.checked,
                         })
                       }
-                      className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="mr-2 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
                     <span className="text-sm text-gray-700">
                       {t("wordsets.config.autoPlayAudio")}
@@ -467,7 +670,7 @@ export default function WordSetsPage() {
                           shuffleWords: e.target.checked,
                         })
                       }
-                      className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="mr-2 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
                     <span className="text-sm text-gray-700">
                       {t("wordsets.config.shuffleWords")}
@@ -484,7 +687,7 @@ export default function WordSetsPage() {
                           showCorrectAnswer: e.target.checked,
                         })
                       }
-                      className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="mr-2 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
                     <span className="text-sm text-gray-700">
                       {t("wordsets.config.showCorrectAnswer")}
@@ -501,7 +704,7 @@ export default function WordSetsPage() {
                           autoAdvance: e.target.checked,
                         })
                       }
-                      className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="mr-2 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
                     <span className="text-sm text-gray-700">
                       {t("wordsets.config.autoAdvance")}
@@ -548,6 +751,73 @@ export default function WordSetsPage() {
                   className="px-4 py-2 font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700"
                 >
                   {t("wordsets.saveSettings")}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && deleteWordSet && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="w-full max-w-md p-6 mx-4 bg-white rounded-lg shadow-xl">
+              <div className="flex items-center mb-4">
+                <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full">
+                  <HeroTrashIcon className="w-6 h-6 text-red-600" />
+                </div>
+              </div>
+
+              <div className="text-center">
+                <h3 className="mb-2 text-lg font-semibold text-gray-900">
+                  {t("wordsets.deleteConfirm")}
+                </h3>
+                <p className="mb-4 text-sm text-gray-500">
+                  Are you sure you want to delete &quot;{deleteWordSet.name}&quot;? This action cannot be undone.
+                </p>
+
+                <div className="p-3 mb-4 border border-yellow-200 rounded-lg bg-yellow-50">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <svg className="w-5 h-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-yellow-700">
+                        This will permanently delete the wordset and all its associated data including audio files.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeleteWordSet(null);
+                  }}
+                  disabled={deleting}
+                  className="px-4 py-2 font-medium text-gray-700 transition-colors bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {t("wordsets.cancel")}
+                </button>
+                <button
+                  onClick={handleDeleteWordSet}
+                  disabled={deleting}
+                  className="flex items-center px-4 py-2 font-medium text-white transition-colors bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {deleting ? (
+                    <>
+                      <div className="w-4 h-4 mr-2 border-2 border-white rounded-full border-t-transparent animate-spin"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <HeroTrashIcon className="w-4 h-4 mr-2 text-white" />
+                      {t("wordsets.delete")}
+                    </>
+                  )}
                 </button>
               </div>
             </div>

@@ -82,31 +82,106 @@ func (s *Service) GetWordSets(familyID string) ([]models.WordSet, error) {
 			break
 		}
 
+		// Try to deserialize as new format first
 		var wordSet models.WordSet
 		if err := doc.DataTo(&wordSet); err != nil {
-			continue
+			// If that fails, try to handle legacy format
+			var legacyData map[string]interface{}
+			if err := doc.DataTo(&legacyData); err != nil {
+				continue // Skip invalid documents
+			}
+
+			// Convert legacy format to new format
+			wordSet, err = s.convertLegacyWordSet(legacyData, doc.Ref.ID)
+			if err != nil {
+				continue // Skip invalid documents
+			}
+		} else {
+			wordSet.ID = doc.Ref.ID
 		}
-		wordSet.ID = doc.Ref.ID
+
 		wordSets = append(wordSets, wordSet)
 	}
 
 	return wordSets, nil
 }
 
-// GetWordSet retrieves a single word set by ID
+// GetWordSet retrieves a single word set by ID with migration support
 func (s *Service) GetWordSet(id string) (*models.WordSet, error) {
 	doc, err := s.client.Collection("wordsets").Doc(id).Get(s.ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	// Try to deserialize as new format first
 	var wordSet models.WordSet
 	if err := doc.DataTo(&wordSet); err != nil {
-		return nil, err
+		// If that fails, try to handle legacy format
+		var legacyData map[string]interface{}
+		if err := doc.DataTo(&legacyData); err != nil {
+			return nil, err
+		}
+
+		// Convert legacy format to new format
+		wordSet, err = s.convertLegacyWordSet(legacyData, doc.Ref.ID)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		wordSet.ID = doc.Ref.ID
 	}
-	wordSet.ID = doc.Ref.ID
 
 	return &wordSet, nil
+}
+
+// convertLegacyWordSet converts old WordSet format to new format
+func (s *Service) convertLegacyWordSet(data map[string]interface{}, id string) (models.WordSet, error) {
+	wordSet := models.WordSet{
+		ID: id,
+	}
+
+	// Handle basic fields
+	if name, ok := data["name"].(string); ok {
+		wordSet.Name = name
+	}
+	if familyID, ok := data["familyId"].(string); ok {
+		wordSet.FamilyID = familyID
+	}
+	if createdBy, ok := data["createdBy"].(string); ok {
+		wordSet.CreatedBy = createdBy
+	}
+	if language, ok := data["language"].(string); ok {
+		wordSet.Language = language
+	}
+
+	// Handle timestamp fields
+	if createdAt, ok := data["createdAt"].(time.Time); ok {
+		wordSet.CreatedAt = createdAt
+	}
+	if updatedAt, ok := data["updatedAt"].(time.Time); ok {
+		wordSet.UpdatedAt = updatedAt
+	}
+
+	// Handle words - convert from []string to []WordItem
+	if wordsInterface, ok := data["words"]; ok {
+		switch words := wordsInterface.(type) {
+		case []interface{}:
+			// Legacy format: array of strings
+			for _, wordInterface := range words {
+				if wordStr, ok := wordInterface.(string); ok {
+					wordSet.Words = append(wordSet.Words, struct {
+						Word       string           `firestore:"word" json:"word"`
+						Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
+						Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
+					}{
+						Word: wordStr,
+					})
+				}
+			}
+		}
+	}
+
+	return wordSet, nil
 }
 
 // DeleteWordSet deletes a word set
@@ -724,6 +799,13 @@ func (s *Service) GetUserProgress(userID string) (*models.FamilyProgress, error)
 	}
 
 	return &progress, nil
+}
+
+// UpdateWordSet updates an existing word set
+func (s *Service) UpdateWordSet(wordSet *models.WordSet) error {
+	wordSet.UpdatedAt = time.Now()
+	_, err := s.client.Collection("wordsets").Doc(wordSet.ID).Set(s.ctx, wordSet)
+	return err
 }
 
 // Custom errors for security validation

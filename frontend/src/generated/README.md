@@ -67,14 +67,17 @@ Class | Method | HTTP request | Description
 *UsersApi* | [**apiUsersResultsGet**](docs/UsersApi.md#apiusersresultsget) | **GET** /api/users/results | Get Test Results
 *UsersApi* | [**apiUsersResultsPost**](docs/UsersApi.md#apiusersresultspost) | **POST** /api/users/results | Save Test Result
 *WordsetsApi* | [**apiWordsetsGet**](docs/WordsetsApi.md#apiwordsetsget) | **GET** /api/wordsets | Get Word Sets
+*WordsetsApi* | [**apiWordsetsIdAudioAudioIdGet**](docs/WordsetsApi.md#apiwordsetsidaudioaudioidget) | **GET** /api/wordsets/{id}/audio/{audioId} | Stream Audio File by ID
 *WordsetsApi* | [**apiWordsetsIdDelete**](docs/WordsetsApi.md#apiwordsetsiddelete) | **DELETE** /api/wordsets/{id} | Delete Word Set
 *WordsetsApi* | [**apiWordsetsIdGenerateAudioPost**](docs/WordsetsApi.md#apiwordsetsidgenerateaudiopost) | **POST** /api/wordsets/{id}/generate-audio | Generate Audio
 *WordsetsApi* | [**apiWordsetsPost**](docs/WordsetsApi.md#apiwordsetspost) | **POST** /api/wordsets | Create Word Set
+*WordsetsApi* | [**apiWordsetsVoicesGet**](docs/WordsetsApi.md#apiwordsetsvoicesget) | **GET** /api/wordsets/voices | List available TTS voices
 
 
 ### Documentation For Models
 
  - [ApiUsersPostRequest](docs/ApiUsersPostRequest.md)
+ - [ApiWordsetsVoicesGet200Response](docs/ApiWordsetsVoicesGet200Response.md)
  - [ModelsAPIResponse](docs/ModelsAPIResponse.md)
  - [ModelsChildAccount](docs/ModelsChildAccount.md)
  - [ModelsCreateChildAccountRequest](docs/ModelsCreateChildAccountRequest.md)

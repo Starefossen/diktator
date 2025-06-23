@@ -6,6 +6,9 @@
     "firestore": {
       "port": 8088
     },
+    "storage": {
+      "port": 9199
+    },
     "ui": {
       "enabled": true,
       "port": 4000
@@ -21,6 +24,9 @@
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
   },
   "emulators-data": "./firebase-emulator-data"
 }

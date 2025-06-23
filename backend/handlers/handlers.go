@@ -2,7 +2,10 @@ package handlers
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"firebase.google.com/go/v4/auth"
@@ -15,10 +18,9 @@ import (
 var serviceManager *services.Manager
 
 // InitializeServices initializes the service manager
-func InitializeServices() error {
-	var err error
-	serviceManager, err = services.NewManager()
-	return err
+func InitializeServices(manager *services.Manager) error {
+	serviceManager = manager
+	return nil
 }
 
 // CloseServices closes all services
@@ -151,11 +153,28 @@ func CreateWordSet(c *gin.Context) {
 		return
 	}
 
+	// Convert string words to WordItem structs
+	words := make([]struct {
+		Word       string           `firestore:"word" json:"word"`
+		Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
+		Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
+	}, len(req.Words))
+
+	for i, word := range req.Words {
+		words[i] = struct {
+			Word       string           `firestore:"word" json:"word"`
+			Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
+			Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
+		}{
+			Word: word,
+		}
+	}
+
 	// Create new word set
 	wordSet := &models.WordSet{
 		ID:        uuid.New().String(),
 		Name:      req.Name,
-		Words:     req.Words,
+		Words:     words,
 		FamilyID:  familyID.(string),
 		CreatedBy: userID.(string),
 		Language:  req.Language,
@@ -177,15 +196,15 @@ func CreateWordSet(c *gin.Context) {
 	})
 }
 
-// DeleteWordSet deletes a word set
+// DeleteWordSet deletes a word set and all associated audio files
 //
 //	@Summary		Delete Word Set
-//	@Description	Delete a word set by ID
+//	@Description	Delete a word set by ID and all associated audio files from storage
 //	@Tags			wordsets
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"Word Set ID"
-//	@Success		200	{object}	models.APIResponse	"Word set deleted successfully"
+//	@Success		200	{object}	models.APIResponse	"Word set and audio files deleted successfully"
 //	@Failure		400	{object}	models.APIResponse	"Word set ID is required"
 //	@Failure		404	{object}	models.APIResponse	"Word set not found"
 //	@Failure		500	{object}	models.APIResponse	"Failed to delete word set"
@@ -208,7 +227,7 @@ func DeleteWordSet(c *gin.Context) {
 		return
 	}
 
-	err := sm.Firestore.DeleteWordSet(id)
+	err := sm.DeleteWordSetWithAudio(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to delete word set",
@@ -217,7 +236,7 @@ func DeleteWordSet(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, models.APIResponse{
-		Message: "Word set deleted successfully",
+		Message: "Word set and associated audio files deleted successfully",
 	})
 }
 
@@ -242,14 +261,35 @@ func GenerateAudio(c *gin.Context) {
 		return
 	}
 
+	// Check if serviceManager is properly initialized
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service manager not initialized",
+		})
+		return
+	}
+
+	// Capture serviceManager in closure to avoid nil pointer issues
+	manager := serviceManager
+
 	// Start audio generation in background
 	go func() {
-		err := serviceManager.GenerateAudioForWordSet(id)
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("Panic in audio generation goroutine: %v", r)
+			}
+		}()
+
+		if manager == nil {
+			log.Printf("Error: Service manager is nil in goroutine")
+			return
+		}
+
+		err := manager.GenerateAudioForWordSet(id)
 		if err != nil {
-			// Log error but don't fail the request since it's async
-			// In a production app, you might want to use a job queue
-			// and provide status updates to the client
-			c.Header("X-Generation-Error", err.Error())
+			log.Printf("Error generating audio for word set %s: %v", id, err)
+		} else {
+			log.Printf("Successfully completed audio generation for word set %s", id)
 		}
 	}()
 
@@ -981,4 +1021,181 @@ func GetUserProfile(c *gin.Context) {
 			"lastActiveAt": userData.LastActiveAt.Format(time.RFC3339),
 		},
 	})
+}
+
+// ListVoices godoc
+// @Summary		List available TTS voices
+// @Description	Get a list of available Text-to-Speech voices for a specific language
+// @Tags			wordsets
+// @Accept			json
+// @Produce		json
+// @Param			language	query		string	false	"Language code (e.g., 'en', 'nb-NO')"
+// @Success		200			{object}	models.APIResponse{data=[]interface{}}	"List of available voices"
+// @Failure		500			{object}	models.APIResponse						"Failed to retrieve voices"
+// @Security		BearerAuth
+// @Router			/api/wordsets/voices [get]
+func ListVoices(c *gin.Context) {
+	language := c.Query("language")
+	if language == "" {
+		language = "en-US" // Default to English
+	}
+
+	// Get available voices for the language
+	voices, err := serviceManager.TTS.GetChildFriendlyVoices(language)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: fmt.Sprintf("Failed to retrieve voices: %v", err),
+		})
+		return
+	}
+
+	// Convert to a more user-friendly format
+	type VoiceInfo struct {
+		Name         string   `json:"name"`
+		LanguageCode string   `json:"languageCode"`
+		Gender       string   `json:"gender"`
+		Type         string   `json:"type"`
+		SampleRate   int32    `json:"sampleRate"`
+		Languages    []string `json:"supportedLanguages"`
+	}
+
+	var voiceList []VoiceInfo
+	for _, voice := range voices {
+		var genderStr string
+		switch voice.SsmlGender {
+		case 1:
+			genderStr = "male"
+		case 2:
+			genderStr = "female"
+		default:
+			genderStr = "neutral"
+		}
+
+		var voiceType string
+		if strings.Contains(voice.Name, "Neural2") {
+			voiceType = "neural2"
+		} else if strings.Contains(voice.Name, "Wavenet") {
+			voiceType = "wavenet"
+		} else if strings.Contains(voice.Name, "Studio") {
+			voiceType = "studio"
+		} else {
+			voiceType = "standard"
+		}
+
+		voiceInfo := VoiceInfo{
+			Name:         voice.Name,
+			LanguageCode: voice.LanguageCodes[0], // Primary language
+			Gender:       genderStr,
+			Type:         voiceType,
+			SampleRate:   voice.NaturalSampleRateHertz,
+			Languages:    voice.LanguageCodes,
+		}
+		voiceList = append(voiceList, voiceInfo)
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Message: fmt.Sprintf("Found %d voices for language %s", len(voiceList), language),
+		Data:    voiceList,
+	})
+}
+
+// @Summary		Stream Audio File by ID
+// @Description	Stream audio file for a specific audio ID within a wordset
+// @Tags			wordsets
+// @Accept			json
+// @Produce		audio/mpeg
+// @Param			id			path		string	true	"WordSet ID"
+// @Param			audioId		path		string	true	"Audio ID to stream"
+// @Success		200			{file}		audio	"Audio file content"
+// @Failure		400			{object}	models.APIResponse	"Invalid request"
+// @Failure		404			{object}	models.APIResponse	"Audio file not found"
+// @Failure		500			{object}	models.APIResponse	"Internal server error"
+// @Security		BearerAuth
+// @Router			/api/wordsets/{id}/audio/{audioId} [get]
+func StreamAudioByID(c *gin.Context) {
+	wordSetID := c.Param("id")
+	audioID := c.Param("audioId")
+
+	if wordSetID == "" {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "WordSet ID parameter is required",
+		})
+		return
+	}
+
+	if audioID == "" {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Audio ID parameter is required",
+		})
+		return
+	}
+
+	// Check if serviceManager is properly initialized
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service manager not initialized",
+		})
+		return
+	}
+
+	// Use the global service manager for public endpoints
+	sm := serviceManager
+
+	// Get the wordset to verify access and find the audio
+	wordSet, err := sm.Firestore.GetWordSet(wordSetID)
+	if err != nil {
+		log.Printf("StreamAudioByID: Error getting wordset '%s': %v", wordSetID, err)
+		c.JSON(http.StatusNotFound, models.APIResponse{
+			Error: "WordSet not found",
+		})
+		return
+	}
+
+	log.Printf("StreamAudioByID: Found wordset '%s' with %d words", wordSet.Name, len(wordSet.Words))
+
+	// Find the audio file in the wordset
+	var audioFile *models.WordAudio
+	var word string
+	for i, wordItem := range wordSet.Words {
+		log.Printf("StreamAudioByID: Checking word %d: '%s', audioID='%s'", i, wordItem.Word, wordItem.Audio.AudioID)
+		if wordItem.Audio.AudioID == audioID {
+			audioFile = &wordItem.Audio
+			word = wordItem.Word
+			log.Printf("StreamAudioByID: Found matching audio for word '%s'", word)
+			break
+		}
+	}
+
+	if audioFile == nil || audioFile.AudioID == "" {
+		log.Printf("StreamAudioByID: Audio file with ID '%s' not found in wordset", audioID)
+		c.JSON(http.StatusNotFound, models.APIResponse{
+			Error: fmt.Sprintf("Audio file with ID '%s' not found in wordset", audioID),
+		})
+		return
+	}
+
+	// Get the audio file data from storage using the audioId (which is the filename)
+	storagePath := fmt.Sprintf("audio/%s", audioID)
+	log.Printf("StreamAudioByID: Attempting to get audio data from storage path: '%s'", storagePath)
+	audioData, err := sm.Storage.GetAudioData(storagePath)
+	if err != nil {
+		log.Printf("StreamAudioByID: Error getting audio data for audio ID '%s' from path '%s': %v", audioID, storagePath, err)
+		c.JSON(http.StatusNotFound, models.APIResponse{
+			Error: fmt.Sprintf("Audio file not found in storage for ID '%s'", audioID),
+		})
+		return
+	}
+
+	log.Printf("StreamAudioByID: Successfully retrieved audio data, size: %d bytes", len(audioData))
+
+	// Determine content type based on file extension
+	contentType := "audio/mpeg" // Default to MP3
+
+	// Set appropriate headers
+	c.Header("Content-Type", contentType)
+	c.Header("Cache-Control", "public, max-age=3600") // Cache for 1 hour
+	c.Header("Content-Disposition", fmt.Sprintf("inline; filename=\"%s_%s.mp3\"", word, wordSet.Language))
+
+	// Stream the audio data
+	c.Data(http.StatusOK, contentType, audioData)
 }

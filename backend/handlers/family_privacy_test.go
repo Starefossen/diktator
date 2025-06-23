@@ -232,6 +232,13 @@ type MockServiceManager struct {
 	Firestore *MockFirestoreService
 }
 
+// DeleteWordSetWithAudio mock implementation for testing
+func (m *MockServiceManager) DeleteWordSetWithAudio(wordSetID string) error {
+	// For testing, we'll just call the Firestore DeleteWordSet method
+	// In a more sophisticated test, we could mock the storage operations too
+	return m.Firestore.DeleteWordSet(wordSetID)
+}
+
 // MockGetWordSets is a test-specific wrapper for GetWordSets that handles mock services
 func MockGetWordSets(c *gin.Context) {
 	// Get mock service manager
@@ -381,7 +388,7 @@ func MockDeleteWordSet(c *gin.Context) {
 
 	sm := c.MustGet("serviceManager").(*MockServiceManager)
 
-	err := sm.Firestore.DeleteWordSet(id)
+	err := sm.DeleteWordSetWithAudio(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{Error: "Failed to delete word set"})
 		return
@@ -512,10 +519,31 @@ func setupTestData(mockFirestore *MockFirestoreService) {
 	mockFirestore.users["child-johnson-1"] = childJohnson1
 
 	// Word sets for each family
+	// Helper function to convert strings to WordItems
+	stringToWordItems := func(words []string) []struct {
+		Word       string           `firestore:"word" json:"word"`
+		Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
+		Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
+	} {
+		result := make([]struct {
+			Word       string           `firestore:"word" json:"word"`
+			Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
+			Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
+		}, len(words))
+		for i, word := range words {
+			result[i] = struct {
+				Word       string           `firestore:"word" json:"word"`
+				Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
+				Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
+			}{Word: word}
+		}
+		return result
+	}
+
 	wordSetSmith := &models.WordSet{
 		ID:        "wordset-smith-1",
 		Name:      "Smith Family Words",
-		Words:     []string{"apple", "banana", "cherry"},
+		Words:     stringToWordItems([]string{"apple", "banana", "cherry"}),
 		FamilyID:  "family-smith",
 		CreatedBy: "parent-smith",
 		Language:  "en",
@@ -526,7 +554,7 @@ func setupTestData(mockFirestore *MockFirestoreService) {
 	wordSetJohnson := &models.WordSet{
 		ID:        "wordset-johnson-1",
 		Name:      "Johnson Family Words",
-		Words:     []string{"dog", "cat", "bird"},
+		Words:     stringToWordItems([]string{"dog", "cat", "bird"}),
 		FamilyID:  "family-johnson",
 		CreatedBy: "parent-johnson",
 		Language:  "en",

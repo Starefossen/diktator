@@ -66,6 +66,12 @@ func main() {
 		log.Fatalf("Failed to initialize services: %v", err)
 	}
 
+	// Initialize handlers with the service manager
+	err = handlers.InitializeServices(serviceManager)
+	if err != nil {
+		log.Fatalf("Failed to initialize handlers: %v", err)
+	}
+
 	// Set up graceful shutdown
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -82,6 +88,11 @@ func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
+	}
+
+	// Set GIN mode based on environment
+	if os.Getenv("GIN_MODE") == "release" || os.Getenv("TEST_MODE") == "1" {
+		gin.SetMode(gin.ReleaseMode)
 	}
 
 	// Create Gin router
@@ -101,6 +112,9 @@ func main() {
 
 	// Swagger documentation
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	// Truly public audio streaming (no auth required for browser playback)
+	r.GET("/api/wordsets/:id/audio/:audioId", handlers.StreamAudioByID)
 
 	// API routes
 	api := r.Group("/api")
@@ -125,7 +139,8 @@ func main() {
 				wordsets.GET("", handlers.GetWordSets)
 				wordsets.POST("", handlers.CreateWordSet)
 				wordsets.DELETE("/:id", handlers.DeleteWordSet)
-				wordsets.POST("/:id/audio", handlers.GenerateAudio)
+				wordsets.POST("/:id/generate-audio", handlers.GenerateAudio)
+				wordsets.GET("/voices", handlers.ListVoices)
 			}
 
 			// User-specific test results

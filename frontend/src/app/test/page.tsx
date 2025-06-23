@@ -97,9 +97,10 @@ function TestPageContent() {
 
           // Process words based on configuration
           const config = getEffectiveTestConfig(foundWordSet);
+          const wordStrings = foundWordSet.words.map(w => w.word);
           const words = config.shuffleWords
-            ? [...foundWordSet.words].sort(() => Math.random() - 0.5)
-            : foundWordSet.words;
+            ? [...wordStrings].sort(() => Math.random() - 0.5)
+            : wordStrings;
 
           setProcessedWords(words);
 
@@ -388,16 +389,14 @@ function TestPageContent() {
               {answers.map((answer, index) => (
                 <div
                   key={index}
-                  className={`flex items-center justify-between p-3 rounded-lg ${
-                    answer.isCorrect ? "bg-green-50" : "bg-red-50"
-                  }`}
+                  className={`flex items-center justify-between p-3 rounded-lg ${answer.isCorrect ? "bg-green-50" : "bg-red-50"
+                    }`}
                 >
                   <div className="flex items-center">
                     {/* Green checkmark or red X */}
                     <div
-                      className={`w-6 h-6 rounded-full mr-3 flex items-center justify-center ${
-                        answer.isCorrect ? "bg-green-500" : "bg-red-500"
-                      }`}
+                      className={`w-6 h-6 rounded-full mr-3 flex items-center justify-center ${answer.isCorrect ? "bg-green-500" : "bg-red-500"
+                        }`}
                     >
                       {answer.isCorrect ? (
                         <svg
@@ -431,9 +430,8 @@ function TestPageContent() {
                     </div>
                     <div>
                       <span
-                        className={`font-medium ${
-                          answer.isCorrect ? "text-green-800" : "text-red-800"
-                        }`}
+                        className={`font-medium ${answer.isCorrect ? "text-green-800" : "text-red-800"
+                          }`}
                       >
                         {answer.word}
                       </span>
@@ -446,16 +444,14 @@ function TestPageContent() {
                   </div>
                   <button
                     onClick={() => playWordAudio(answer.word)}
-                    className={`px-3 py-1 transition-colors rounded ${
-                      answer.isCorrect
+                    className={`px-3 py-1 transition-colors rounded ${answer.isCorrect
                         ? "text-green-700 bg-green-100 hover:bg-green-200"
                         : "text-red-700 bg-red-100 hover:bg-red-200"
-                    }`}
+                      }`}
                   >
                     <HeroVolumeIcon
-                      className={`w-4 h-4 ${
-                        answer.isCorrect ? "text-green-700" : "text-red-700"
-                      }`}
+                      className={`w-4 h-4 ${answer.isCorrect ? "text-green-700" : "text-red-700"
+                        }`}
                     />
                   </button>
                 </div>
@@ -528,16 +524,14 @@ function TestPageContent() {
             <div className="flex flex-col justify-center mb-6">
               {showFeedback ? (
                 <div
-                  className={`p-4 rounded-lg animate-in fade-in-0 slide-in-from-top-2 duration-300 ${
-                    lastAnswerCorrect
+                  className={`p-4 rounded-lg animate-in fade-in-0 slide-in-from-top-2 duration-300 ${lastAnswerCorrect
                       ? "bg-green-100 border border-green-300"
                       : "bg-red-100 border border-red-300"
-                  }`}
+                    }`}
                 >
                   <p
-                    className={`font-semibold text-lg ${
-                      lastAnswerCorrect ? "text-green-800" : "text-red-800"
-                    }`}
+                    className={`font-semibold text-lg ${lastAnswerCorrect ? "text-green-800" : "text-red-800"
+                      }`}
                   >
                     {lastAnswerCorrect
                       ? t("test.correct")

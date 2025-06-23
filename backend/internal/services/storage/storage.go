@@ -21,25 +21,56 @@ type Service struct {
 func NewService() (*Service, error) {
 	ctx := context.Background()
 
-	client, err := storage.NewClient(ctx)
+	var client *storage.Client
+	var err error
+
+	// Check if we're using the Firebase Storage emulator
+	emulatorHost := os.Getenv("FIREBASE_STORAGE_EMULATOR_HOST")
+	if emulatorHost == "" {
+		// Also check the legacy STORAGE_EMULATOR_HOST for backwards compatibility
+		emulatorHost = os.Getenv("STORAGE_EMULATOR_HOST")
+	}
+
+	if emulatorHost != "" {
+		log.Printf("Using Firebase Storage emulator at %s", emulatorHost)
+		// Set the emulator host for the client
+		os.Setenv("STORAGE_EMULATOR_HOST", emulatorHost)
+		client, err = storage.NewClient(ctx)
+	} else {
+		// Production mode
+		client, err = storage.NewClient(ctx)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to create storage client: %v", err)
 	}
 
-	bucketName := os.Getenv("STORAGE_BUCKET")
-	if bucketName == "" {
-		projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
-		if projectID == "" {
-			projectID = "diktator-dev"
+	// Determine bucket name based on environment
+	var bucketName string
+	if emulatorHost != "" {
+		// Use emulator bucket name
+		bucketName = "diktator-dev.appspot.com"
+		log.Printf("Using emulator bucket: %s", bucketName)
+	} else {
+		// Use production bucket from environment variable
+		bucketName = os.Getenv("STORAGE_BUCKET")
+		if bucketName == "" {
+			projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
+			if projectID == "" {
+				projectID = "diktator-dev"
+			}
+			bucketName = projectID + ".appspot.com"
 		}
-		bucketName = projectID + "-audio"
+		log.Printf("Using production bucket: %s", bucketName)
 	}
 
-	return &Service{
+	service := &Service{
 		client:     client,
 		bucketName: bucketName,
 		ctx:        ctx,
-	}, nil
+	}
+
+	return service, nil
 }
 
 // Close closes the storage client
@@ -68,8 +99,8 @@ func (s *Service) UploadAudio(data []byte, filename string) (string, error) {
 		return "", fmt.Errorf("failed to close writer: %v", err)
 	}
 
-	// Generate the public URL
-	url := fmt.Sprintf("https://storage.googleapis.com/%s/%s", s.bucketName, filename)
+	// Generate the appropriate URL based on environment
+	url := s.GetAudioURL(filename)
 
 	log.Printf("Uploaded audio file: %s", url)
 	return url, nil
@@ -77,6 +108,12 @@ func (s *Service) UploadAudio(data []byte, filename string) (string, error) {
 
 // GetAudioURL returns the public URL for an audio file
 func (s *Service) GetAudioURL(filename string) string {
+	// Check if we're using the emulator
+	if emulatorHost := os.Getenv("STORAGE_EMULATOR_HOST"); emulatorHost != "" {
+		// Use emulator URL format
+		return fmt.Sprintf("http://%s/v0/b/%s/o/%s?alt=media", emulatorHost, s.bucketName, filename)
+	}
+	// Production URL
 	return fmt.Sprintf("https://storage.googleapis.com/%s/%s", s.bucketName, filename)
 }
 

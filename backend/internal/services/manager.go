@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
+	"github.com/starefossen/diktator/backend/internal/models"
 	"github.com/starefossen/diktator/backend/internal/services/firestore"
 	"github.com/starefossen/diktator/backend/internal/services/storage"
 	"github.com/starefossen/diktator/backend/internal/services/tts"
@@ -130,14 +132,40 @@ func (m *Manager) GenerateAudioForWordSet(wordSetID string) error {
 
 	log.Printf("Generating audio for word set '%s' with %d words", wordSet.Name, len(wordSet.Words))
 
-	// Generate audio for each word
-	for _, word := range wordSet.Words {
-		err := m.GenerateAudioForWord(word, wordSet.Language)
+	// Keep track of whether we updated any audio files
+	updated := false
+
+	// Generate audio for each word in the word set
+	for i, wordItem := range wordSet.Words {
+		audioFile, err := m.GenerateAudioForWord(wordItem.Word, wordSet.Language)
 		if err != nil {
-			log.Printf("Failed to generate audio for word '%s': %v", word, err)
+			log.Printf("Failed to generate audio for word '%s': %v", wordItem.Word, err)
 			// Continue with other words even if one fails
 			continue
 		}
+
+		// Update the word item with audio file information (both new and existing)
+		if audioFile != nil {
+			wordSet.Words[i].Audio = models.WordAudio{
+				Word:      wordItem.Word,
+				AudioURL:  audioFile.URL,
+				AudioID:   audioFile.ID,
+				VoiceID:   audioFile.VoiceID,
+				CreatedAt: audioFile.CreatedAt,
+			}
+			updated = true
+			log.Printf("Updated audio reference for word '%s'", wordItem.Word)
+		}
+	}
+
+	// Update the word set if any audio files were added
+	if updated {
+		err = m.Firestore.UpdateWordSet(wordSet)
+		if err != nil {
+			log.Printf("Failed to update word set with audio references: %v", err)
+			return fmt.Errorf("failed to update word set: %v", err)
+		}
+		log.Printf("Updated word set '%s' with audio file references", wordSet.Name)
 	}
 
 	log.Printf("Completed audio generation for word set '%s'", wordSet.Name)
@@ -145,28 +173,32 @@ func (m *Manager) GenerateAudioForWordSet(wordSetID string) error {
 }
 
 // GenerateAudioForWord generates and stores audio for a single word
-func (m *Manager) GenerateAudioForWord(word, language string) error {
+// Returns the audio file if generated, nil if already exists, or error
+func (m *Manager) GenerateAudioForWord(word, language string) (*models.AudioFile, error) {
+	// Get optimal voice configuration for this word and language
+	voiceConfig := m.TTS.GetOptimalVoiceForWord(word, language)
+
 	// Check if audio already exists
-	existingAudio, err := m.Firestore.GetAudioFile(word, language, tts.DefaultVoices[language].VoiceName)
+	existingAudio, err := m.Firestore.GetAudioFile(word, language, voiceConfig.VoiceName)
 	if err == nil && existingAudio != nil {
 		// Audio already exists, check if file exists in storage
 		exists, err := m.Storage.AudioExists(existingAudio.StoragePath)
 		if err == nil && exists {
 			log.Printf("Audio already exists for word '%s' in language '%s'", word, language)
-			return nil
+			return existingAudio, nil // Return existing audio file
 		}
 	}
 
 	// Generate new audio
 	audioData, audioFile, err := m.TTS.GenerateAudio(word, language)
 	if err != nil {
-		return fmt.Errorf("failed to generate TTS audio: %v", err)
+		return nil, fmt.Errorf("failed to generate TTS audio: %v", err)
 	}
 
 	// Upload to storage
 	url, err := m.Storage.UploadAudio(audioData, audioFile.StoragePath)
 	if err != nil {
-		return fmt.Errorf("failed to upload audio: %v", err)
+		return nil, fmt.Errorf("failed to upload audio: %v", err)
 	}
 
 	// Update audio file metadata with URL
@@ -181,7 +213,7 @@ func (m *Manager) GenerateAudioForWord(word, language string) error {
 	}
 
 	log.Printf("Generated and stored audio for word '%s' in language '%s'", word, language)
-	return nil
+	return audioFile, nil
 }
 
 // GetAudioURL gets the URL for a word's audio file
@@ -207,4 +239,69 @@ func (m *Manager) GetAudioURL(word, language string) (string, error) {
 	}
 
 	return audioFile.URL, nil
+}
+
+// GetAudioFile retrieves audio file data from storage
+func (m *Manager) GetAudioFile(word, language string) ([]byte, string, error) {
+	// Get optimal voice configuration for this word and language
+	voiceConfig := m.TTS.GetOptimalVoiceForWord(word, language)
+
+	// Get the audio file metadata from Firestore
+	audioFile, err := m.Firestore.GetAudioFile(word, language, voiceConfig.VoiceName)
+	if err != nil {
+		return nil, "", fmt.Errorf("audio file metadata not found: %v", err)
+	}
+
+	// Download the audio file from storage
+	audioData, err := m.Storage.GetAudioData(audioFile.StoragePath)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to download audio file: %v", err)
+	}
+
+	// Determine content type based on file extension
+	contentType := "audio/mpeg" // Default to MP3
+	if strings.HasSuffix(audioFile.StoragePath, ".wav") {
+		contentType = "audio/wav"
+	} else if strings.HasSuffix(audioFile.StoragePath, ".ogg") {
+		contentType = "audio/ogg"
+	}
+
+	return audioData, contentType, nil
+}
+
+// DeleteWordSetWithAudio deletes a wordset and all its associated audio files
+func (m *Manager) DeleteWordSetWithAudio(wordSetID string) error {
+	// First, get the wordset to retrieve all audio file IDs
+	wordSet, err := m.Firestore.GetWordSet(wordSetID)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve wordset: %v", err)
+	}
+
+	// Collect all audio file IDs that need to be deleted
+	var audioFilesToDelete []string
+	for _, word := range wordSet.Words {
+		if word.Audio.AudioID != "" {
+			// The AudioID is the filename in storage
+			audioFilesToDelete = append(audioFilesToDelete, fmt.Sprintf("audio/%s", word.Audio.AudioID))
+		}
+	}
+
+	// Delete all audio files from storage
+	for _, audioPath := range audioFilesToDelete {
+		err := m.Storage.DeleteAudio(audioPath)
+		if err != nil {
+			// Log the error but continue with deletion
+			// We don't want to fail the entire operation if one audio file fails to delete
+			log.Printf("Warning: Failed to delete audio file %s: %v", audioPath, err)
+		}
+	}
+
+	// Finally, delete the wordset document from Firestore
+	err = m.Firestore.DeleteWordSet(wordSetID)
+	if err != nil {
+		return fmt.Errorf("failed to delete wordset from database: %v", err)
+	}
+
+	log.Printf("Successfully deleted wordset %s and %d associated audio files", wordSetID, len(audioFilesToDelete))
+	return nil
 }

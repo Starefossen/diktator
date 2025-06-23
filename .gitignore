@@ -80,6 +80,7 @@ coverage/
 go.work
 go.work.sum
 */tmp/
+/bin/*
 
 # Docker
 .dockerignore

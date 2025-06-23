@@ -45,6 +45,31 @@ export interface ApiUsersPostRequest {
 /**
  * 
  * @export
+ * @interface ApiWordsetsVoicesGet200Response
+ */
+export interface ApiWordsetsVoicesGet200Response {
+    /**
+     * 
+     * @type {Array<object>}
+     * @memberof ApiWordsetsVoicesGet200Response
+     */
+    'data'?: Array<object>;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiWordsetsVoicesGet200Response
+     */
+    'error'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiWordsetsVoicesGet200Response
+     */
+    'message'?: string;
+}
+/**
+ * 
+ * @export
  * @interface ModelsAPIResponse
  */
 export interface ModelsAPIResponse {
@@ -1635,7 +1660,48 @@ export const WordsetsApiAxiosParamCreator = function (configuration?: Configurat
             };
         },
         /**
-         * Delete a word set by ID
+         * Stream audio file for a specific audio ID within a wordset
+         * @summary Stream Audio File by ID
+         * @param {string} id WordSet ID
+         * @param {string} audioId Audio ID to stream
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiWordsetsIdAudioAudioIdGet: async (id: string, audioId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('apiWordsetsIdAudioAudioIdGet', 'id', id)
+            // verify required parameter 'audioId' is not null or undefined
+            assertParamExists('apiWordsetsIdAudioAudioIdGet', 'audioId', audioId)
+            const localVarPath = `/api/wordsets/{id}/audio/{audioId}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
+                .replace(`{${"audioId"}}`, encodeURIComponent(String(audioId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Delete a word set by ID and all associated audio files from storage
          * @summary Delete Word Set
          * @param {string} id Word Set ID
          * @param {*} [options] Override http request option.
@@ -1747,6 +1813,44 @@ export const WordsetsApiAxiosParamCreator = function (configuration?: Configurat
                 options: localVarRequestOptions,
             };
         },
+        /**
+         * Get a list of available Text-to-Speech voices for a specific language
+         * @summary List available TTS voices
+         * @param {string} [language] Language code (e.g., \&#39;en\&#39;, \&#39;nb-NO\&#39;)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiWordsetsVoicesGet: async (language?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/wordsets/voices`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+            if (language !== undefined) {
+                localVarQueryParameter['language'] = language;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
     }
 };
 
@@ -1770,7 +1874,21 @@ export const WordsetsApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Delete a word set by ID
+         * Stream audio file for a specific audio ID within a wordset
+         * @summary Stream Audio File by ID
+         * @param {string} id WordSet ID
+         * @param {string} audioId Audio ID to stream
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiWordsetsIdAudioAudioIdGet(id: string, audioId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiWordsetsIdAudioAudioIdGet(id, audioId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WordsetsApi.apiWordsetsIdAudioAudioIdGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Delete a word set by ID and all associated audio files from storage
          * @summary Delete Word Set
          * @param {string} id Word Set ID
          * @param {*} [options] Override http request option.
@@ -1808,6 +1926,19 @@ export const WordsetsApiFp = function(configuration?: Configuration) {
             const localVarOperationServerBasePath = operationServerMap['WordsetsApi.apiWordsetsPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
+        /**
+         * Get a list of available Text-to-Speech voices for a specific language
+         * @summary List available TTS voices
+         * @param {string} [language] Language code (e.g., \&#39;en\&#39;, \&#39;nb-NO\&#39;)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiWordsetsVoicesGet(language?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiWordsetsVoicesGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiWordsetsVoicesGet(language, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WordsetsApi.apiWordsetsVoicesGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
     }
 };
 
@@ -1828,7 +1959,18 @@ export const WordsetsApiFactory = function (configuration?: Configuration, baseP
             return localVarFp.apiWordsetsGet(options).then((request) => request(axios, basePath));
         },
         /**
-         * Delete a word set by ID
+         * Stream audio file for a specific audio ID within a wordset
+         * @summary Stream Audio File by ID
+         * @param {string} id WordSet ID
+         * @param {string} audioId Audio ID to stream
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiWordsetsIdAudioAudioIdGet(id: string, audioId: string, options?: RawAxiosRequestConfig): AxiosPromise<File> {
+            return localVarFp.apiWordsetsIdAudioAudioIdGet(id, audioId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Delete a word set by ID and all associated audio files from storage
          * @summary Delete Word Set
          * @param {string} id Word Set ID
          * @param {*} [options] Override http request option.
@@ -1857,6 +1999,16 @@ export const WordsetsApiFactory = function (configuration?: Configuration, baseP
         apiWordsetsPost(request: ModelsCreateWordSetRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
             return localVarFp.apiWordsetsPost(request, options).then((request) => request(axios, basePath));
         },
+        /**
+         * Get a list of available Text-to-Speech voices for a specific language
+         * @summary List available TTS voices
+         * @param {string} [language] Language code (e.g., \&#39;en\&#39;, \&#39;nb-NO\&#39;)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiWordsetsVoicesGet(language?: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiWordsetsVoicesGet200Response> {
+            return localVarFp.apiWordsetsVoicesGet(language, options).then((request) => request(axios, basePath));
+        },
     };
 };
 
@@ -1876,7 +2028,18 @@ export interface WordsetsApiInterface {
     apiWordsetsGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
 
     /**
-     * Delete a word set by ID
+     * Stream audio file for a specific audio ID within a wordset
+     * @summary Stream Audio File by ID
+     * @param {string} id WordSet ID
+     * @param {string} audioId Audio ID to stream
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WordsetsApiInterface
+     */
+    apiWordsetsIdAudioAudioIdGet(id: string, audioId: string, options?: RawAxiosRequestConfig): AxiosPromise<File>;
+
+    /**
+     * Delete a word set by ID and all associated audio files from storage
      * @summary Delete Word Set
      * @param {string} id Word Set ID
      * @param {*} [options] Override http request option.
@@ -1905,6 +2068,16 @@ export interface WordsetsApiInterface {
      */
     apiWordsetsPost(request: ModelsCreateWordSetRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
 
+    /**
+     * Get a list of available Text-to-Speech voices for a specific language
+     * @summary List available TTS voices
+     * @param {string} [language] Language code (e.g., \&#39;en\&#39;, \&#39;nb-NO\&#39;)
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WordsetsApiInterface
+     */
+    apiWordsetsVoicesGet(language?: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiWordsetsVoicesGet200Response>;
+
 }
 
 /**
@@ -1926,7 +2099,20 @@ export class WordsetsApi extends BaseAPI implements WordsetsApiInterface {
     }
 
     /**
-     * Delete a word set by ID
+     * Stream audio file for a specific audio ID within a wordset
+     * @summary Stream Audio File by ID
+     * @param {string} id WordSet ID
+     * @param {string} audioId Audio ID to stream
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WordsetsApi
+     */
+    public apiWordsetsIdAudioAudioIdGet(id: string, audioId: string, options?: RawAxiosRequestConfig) {
+        return WordsetsApiFp(this.configuration).apiWordsetsIdAudioAudioIdGet(id, audioId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Delete a word set by ID and all associated audio files from storage
      * @summary Delete Word Set
      * @param {string} id Word Set ID
      * @param {*} [options] Override http request option.
@@ -1959,6 +2145,18 @@ export class WordsetsApi extends BaseAPI implements WordsetsApiInterface {
      */
     public apiWordsetsPost(request: ModelsCreateWordSetRequest, options?: RawAxiosRequestConfig) {
         return WordsetsApiFp(this.configuration).apiWordsetsPost(request, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get a list of available Text-to-Speech voices for a specific language
+     * @summary List available TTS voices
+     * @param {string} [language] Language code (e.g., \&#39;en\&#39;, \&#39;nb-NO\&#39;)
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WordsetsApi
+     */
+    public apiWordsetsVoicesGet(language?: string, options?: RawAxiosRequestConfig) {
+        return WordsetsApiFp(this.configuration).apiWordsetsVoicesGet(language, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

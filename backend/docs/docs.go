@@ -814,6 +814,63 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/wordsets/voices": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a list of available Text-to-Speech voices for a specific language",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wordsets"
+                ],
+                "summary": "List available TTS voices",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Language code (e.g., 'en', 'nb-NO')",
+                        "name": "language",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of available voices",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve voices",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/wordsets/{id}": {
             "delete": {
                 "security": [
@@ -821,7 +878,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Delete a word set by ID",
+                "description": "Delete a word set by ID and all associated audio files from storage",
                 "consumes": [
                     "application/json"
                 ],
@@ -843,7 +900,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Word set deleted successfully",
+                        "description": "Word set and audio files deleted successfully",
                         "schema": {
                             "$ref": "#/definitions/models.APIResponse"
                         }
@@ -862,6 +919,68 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Failed to delete word set",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/wordsets/{id}/audio/{audioId}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Stream audio file for a specific audio ID within a wordset",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "audio/mpeg"
+                ],
+                "tags": [
+                    "wordsets"
+                ],
+                "summary": "Stream Audio File by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "WordSet ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Audio ID to stream",
+                        "name": "audioId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Audio file content",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Audio file not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
                         "schema": {
                             "$ref": "#/definitions/models.APIResponse"
                         }

@@ -6,6 +6,7 @@ base.ts
 common.ts
 configuration.ts
 docs/ApiUsersPostRequest.md
+docs/ApiWordsetsVoicesGet200Response.md
 docs/ChildrenApi.md
 docs/FamiliesApi.md
 docs/HealthApi.md

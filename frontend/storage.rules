@@ -1,0 +1,36 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules for Diktator App
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Audio files - accessible to authenticated family members
+    match /audio/{audioFile} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null &&
+                     request.auth.token.role == "parent";
+    }
+
+    // Family-specific audio files
+    match /families/{familyId}/audio/{audioFile} {
+      allow read: if request.auth != null &&
+                    request.auth.token.familyId == familyId;
+      allow write: if request.auth != null &&
+                     request.auth.token.role == "parent" &&
+                     request.auth.token.familyId == familyId;
+    }
+
+    // User profile images
+    match /profiles/{userId}/{imageFile} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null &&
+                     (request.auth.uid == userId ||
+                      request.auth.token.role == "parent");
+    }
+
+    // Allow all access in emulator mode for development
+    match /{allPaths=**} {
+      allow read, write: if true; // Only for emulator
+    }
+  }
+}

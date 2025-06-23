@@ -19,12 +19,18 @@ DIKTATOR_BUCKET_LOCATION = "EU"
 # Development environment defaults
 NODE_ENV = "development"
 GOOGLE_CLOUD_PROJECT = "diktator-dev"
-STORAGE_BUCKET = "diktator-dev-audio"
+GOOGLE_CLOUD_QUOTA_PROJECT = "diktator-app"
+STORAGE_BUCKET = "diktator-dev.appspot.com"
+
+# Firebase Emulator configuration for local development
+FIREBASE_AUTH_EMULATOR_HOST = "localhost:9099"
+FIRESTORE_EMULATOR_HOST = "localhost:8088"
+FIREBASE_STORAGE_EMULATOR_HOST = "localhost:9199"
 
 # Next.js development defaults
 NEXT_PUBLIC_API_URL = "http://localhost:8080"
 
-# Firebase configuration for development
+# Firebase configuration for development (emulator)
 NEXT_PUBLIC_FIREBASE_USE_EMULATOR = "true"
 NEXT_PUBLIC_FIREBASE_API_KEY = "demo-key"
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN = "diktator-dev.firebaseapp.com"
@@ -32,10 +38,6 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID = "diktator-dev"
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET = "diktator-dev.appspot.com"
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID = "123456789"
 NEXT_PUBLIC_FIREBASE_APP_ID = "1:123456789:web:abcdef"
-
-# Firebase Emulator configuration for local development
-FIREBASE_AUTH_EMULATOR_HOST = "localhost:9099"
-FIRESTORE_EMULATOR_HOST = "localhost:8088"
 
 # Core development tasks
 [tasks.install]
@@ -397,25 +399,6 @@ fi
 echo "Setting Google Cloud project to: $1"
 gcloud config set project "$1"
 echo "Project set successfully!"
-"""
-
-[tasks.gcloud-enable-apis]
-description = "Enable required Google Cloud APIs"
-run = """
-PROJECT_ID=$(gcloud config get-value project 2>/dev/null)
-if [ -z "$PROJECT_ID" ]; then
-  echo "Error: No Google Cloud project set. Run 'mise run gcloud-set-project -- YOUR_PROJECT_ID' first"
-  exit 1
-fi
-
-echo "Enabling APIs for project: $PROJECT_ID"
-gcloud services enable \
-  run.googleapis.com \
-  containerregistry.googleapis.com \
-  storage.googleapis.com \
-  iam.googleapis.com \
-  cloudresourcemanager.googleapis.com
-echo "APIs enabled successfully!"
 """
 
 # Firebase setup
