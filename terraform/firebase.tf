@@ -61,3 +61,67 @@ resource "google_firestore_database" "default" {
     google_project_service.required_apis
   ]
 }
+
+# Firestore composite indexes
+# Index for wordsets collection: familyId + createdAt (descending)
+resource "google_firestore_index" "wordsets_family_created" {
+  provider = google-beta
+  project  = var.project_id
+  database = google_firestore_database.default.name
+
+  collection = "wordsets"
+
+  fields {
+    field_path = "familyId"
+    order      = "ASCENDING"
+  }
+
+  fields {
+    field_path = "createdAt"
+    order      = "DESCENDING"
+  }
+
+  depends_on = [google_firestore_database.default]
+}
+
+# Index for results collection: userId + completedAt (descending)
+resource "google_firestore_index" "results_user_completed" {
+  provider = google-beta
+  project  = var.project_id
+  database = google_firestore_database.default.name
+
+  collection = "results"
+
+  fields {
+    field_path = "userId"
+    order      = "ASCENDING"
+  }
+
+  fields {
+    field_path = "completedAt"
+    order      = "DESCENDING"
+  }
+
+  depends_on = [google_firestore_database.default]
+}
+
+# Index for users collection: familyId + role (for backward compatibility)
+resource "google_firestore_index" "users_family_role" {
+  provider = google-beta
+  project  = var.project_id
+  database = google_firestore_database.default.name
+
+  collection = "users"
+
+  fields {
+    field_path = "familyId"
+    order      = "ASCENDING"
+  }
+
+  fields {
+    field_path = "role"
+    order      = "ASCENDING"
+  }
+
+  depends_on = [google_firestore_database.default]
+}

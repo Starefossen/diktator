@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthForm from "@/components/AuthForm";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
-export default function AuthPage() {
+// Force dynamic rendering for this page since it uses client-side authentication
+export const dynamic = 'force-dynamic';
+
+function AuthFormWrapper() {
   const [isSignUp, setIsSignUp] = useState(false);
   const { clearError } = useAuth();
 
@@ -15,4 +19,12 @@ export default function AuthPage() {
   };
 
   return <AuthForm onToggleMode={toggleMode} isSignUp={isSignUp} />;
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <AuthFormWrapper />
+    </Suspense>
+  );
 }

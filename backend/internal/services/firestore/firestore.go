@@ -3,6 +3,7 @@ package firestore
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -61,6 +62,11 @@ func (s *Service) Close() error {
 
 // CreateWordSet creates a new word set
 func (s *Service) CreateWordSet(wordSet *models.WordSet) error {
+	// Ensure timestamps are set
+	now := time.Now()
+	wordSet.CreatedAt = now
+	wordSet.UpdatedAt = now
+
 	_, err := s.client.Collection("wordsets").Doc(wordSet.ID).Set(s.ctx, wordSet)
 	return err
 }
@@ -79,109 +85,43 @@ func (s *Service) GetWordSets(familyID string) ([]models.WordSet, error) {
 	for {
 		doc, err := iter.Next()
 		if err != nil {
-			break
+			// Check if this is end of iteration (normal) or an actual error
+			if err.Error() == "no more items in iterator" {
+				break
+			}
+			// Return actual errors from Firestore
+			return nil, fmt.Errorf("error iterating documents: %w", err)
 		}
 
-		// Try to deserialize as new format first
 		var wordSet models.WordSet
 		if err := doc.DataTo(&wordSet); err != nil {
-			// If that fails, try to handle legacy format
-			var legacyData map[string]interface{}
-			if err := doc.DataTo(&legacyData); err != nil {
-				continue // Skip invalid documents
-			}
-
-			// Convert legacy format to new format
-			wordSet, err = s.convertLegacyWordSet(legacyData, doc.Ref.ID)
-			if err != nil {
-				continue // Skip invalid documents
-			}
-		} else {
-			wordSet.ID = doc.Ref.ID
+			// Log the error but continue with other documents
+			log.Printf("Warning: Failed to deserialize wordset %s: %v", doc.Ref.ID, err)
+			continue
 		}
 
+		// Set the ID from the document reference
+		wordSet.ID = doc.Ref.ID
 		wordSets = append(wordSets, wordSet)
 	}
 
 	return wordSets, nil
 }
 
-// GetWordSet retrieves a single word set by ID with migration support
+// GetWordSet retrieves a single word set by ID
 func (s *Service) GetWordSet(id string) (*models.WordSet, error) {
 	doc, err := s.client.Collection("wordsets").Doc(id).Get(s.ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// Try to deserialize as new format first
 	var wordSet models.WordSet
 	if err := doc.DataTo(&wordSet); err != nil {
-		// If that fails, try to handle legacy format
-		var legacyData map[string]interface{}
-		if err := doc.DataTo(&legacyData); err != nil {
-			return nil, err
-		}
-
-		// Convert legacy format to new format
-		wordSet, err = s.convertLegacyWordSet(legacyData, doc.Ref.ID)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		wordSet.ID = doc.Ref.ID
+		return nil, fmt.Errorf("failed to deserialize wordset %s: %w", id, err)
 	}
 
+	wordSet.ID = doc.Ref.ID
 	return &wordSet, nil
-}
-
-// convertLegacyWordSet converts old WordSet format to new format
-func (s *Service) convertLegacyWordSet(data map[string]interface{}, id string) (models.WordSet, error) {
-	wordSet := models.WordSet{
-		ID: id,
-	}
-
-	// Handle basic fields
-	if name, ok := data["name"].(string); ok {
-		wordSet.Name = name
-	}
-	if familyID, ok := data["familyId"].(string); ok {
-		wordSet.FamilyID = familyID
-	}
-	if createdBy, ok := data["createdBy"].(string); ok {
-		wordSet.CreatedBy = createdBy
-	}
-	if language, ok := data["language"].(string); ok {
-		wordSet.Language = language
-	}
-
-	// Handle timestamp fields
-	if createdAt, ok := data["createdAt"].(time.Time); ok {
-		wordSet.CreatedAt = createdAt
-	}
-	if updatedAt, ok := data["updatedAt"].(time.Time); ok {
-		wordSet.UpdatedAt = updatedAt
-	}
-
-	// Handle words - convert from []string to []WordItem
-	if wordsInterface, ok := data["words"]; ok {
-		switch words := wordsInterface.(type) {
-		case []interface{}:
-			// Legacy format: array of strings
-			for _, wordInterface := range words {
-				if wordStr, ok := wordInterface.(string); ok {
-					wordSet.Words = append(wordSet.Words, struct {
-						Word       string           `firestore:"word" json:"word"`
-						Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
-						Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
-					}{
-						Word: wordStr,
-					})
-				}
-			}
-		}
-	}
-
-	return wordSet, nil
 }
 
 // DeleteWordSet deletes a word set

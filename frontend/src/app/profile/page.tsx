@@ -58,9 +58,9 @@ export default function ProfilePage() {
   const averageScore =
     totalTests > 0
       ? Math.round(
-          recentResults.reduce((sum, result) => sum + result.score, 0) /
-            totalTests,
-        )
+        recentResults.reduce((sum, result) => sum + result.score, 0) /
+        totalTests,
+      )
       : 0;
 
   const formatDate = (dateString: string) => {
@@ -141,14 +141,14 @@ export default function ProfilePage() {
 
               <div className="flex flex-col space-y-3">
                 <button
-                  onClick={() => router.push("/results/")}
+                  onClick={() => router.push("/results")}
                   className="px-4 py-2 text-white transition-colors bg-blue-500 rounded-lg hover:bg-blue-600"
                 >
                   {t("profile.viewAllResults")}
                 </button>
                 {isParent && (
                   <button
-                    onClick={() => router.push("/family/")}
+                    onClick={() => router.push("/family")}
                     className="px-4 py-2 text-white transition-colors bg-purple-500 rounded-lg hover:bg-purple-600"
                   >
                     {t("profile.manageFamily")}
@@ -232,7 +232,7 @@ export default function ProfilePage() {
                   {t("profile.recentActivity")}
                 </h3>
                 <button
-                  onClick={() => router.push("/results/")}
+                  onClick={() => router.push("/results")}
                   className="font-medium text-blue-600 hover:text-blue-700"
                 >
                   {t("profile.activity.viewAll")}
@@ -255,13 +255,12 @@ export default function ProfilePage() {
                     </div>
                     <div className="text-right">
                       <div
-                        className={`inline-block px-3 py-1 rounded-full font-semibold ${
-                          result.score >= 90
-                            ? "text-green-600 bg-green-50"
-                            : result.score >= 70
-                              ? "text-yellow-600 bg-yellow-50"
-                              : "text-red-600 bg-red-50"
-                        }`}
+                        className={`inline-block px-3 py-1 rounded-full font-semibold ${result.score >= 90
+                          ? "text-green-600 bg-green-50"
+                          : result.score >= 70
+                            ? "text-yellow-600 bg-yellow-50"
+                            : "text-red-600 bg-red-50"
+                          }`}
                       >
                         {result.score}%
                       </div>
@@ -321,11 +320,10 @@ export default function ProfilePage() {
                             {child.displayName}
                           </span>
                           <span
-                            className={`text-xs px-2 py-1 rounded ${
-                              child.isActive
-                                ? "bg-green-100 text-green-700"
-                                : "bg-gray-100 text-gray-600"
-                            }`}
+                            className={`text-xs px-2 py-1 rounded ${child.isActive
+                              ? "bg-green-100 text-green-700"
+                              : "bg-gray-100 text-gray-600"
+                              }`}
                           >
                             {child.isActive
                               ? t("profile.family.active")
@@ -346,7 +344,7 @@ export default function ProfilePage() {
                   )}
 
                   <button
-                    onClick={() => router.push("/family/")}
+                    onClick={() => router.push("/family")}
                     className="w-full px-3 py-2 mt-3 text-sm text-blue-600 rounded bg-blue-50 hover:bg-blue-100"
                   >
                     {t("profile.family.manageChildren")}
@@ -363,19 +361,19 @@ export default function ProfilePage() {
 
                   <div className="space-y-2">
                     <button
-                      onClick={() => router.push("/wordsets/")}
+                      onClick={() => router.push("/wordsets")}
                       className="w-full px-3 py-2 text-sm text-left rounded bg-gray-50 hover:bg-gray-100"
                     >
                       {t("profile.family.browseWordSets")}
                     </button>
                     <button
-                      onClick={() => router.push("/family/")}
+                      onClick={() => router.push("/family")}
                       className="w-full px-3 py-2 text-sm text-left rounded bg-gray-50 hover:bg-gray-100"
                     >
                       {t("profile.family.addNewChild")}
                     </button>
                     <button
-                      onClick={() => router.push("/results/")}
+                      onClick={() => router.push("/results")}
                       className="w-full px-3 py-2 text-sm text-left rounded bg-gray-50 hover:bg-gray-100"
                     >
                       {t("profile.family.familyProgress")}

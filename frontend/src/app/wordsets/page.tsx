@@ -265,7 +265,7 @@ export default function WordSetsPage() {
   };
 
   const startTest = (wordSetId: string) => {
-    router.push(`/test?id=${wordSetId}`);
+    router.push(`/test#${wordSetId}`);
   };
 
   if (loading) {
@@ -541,7 +541,7 @@ export default function WordSetsPage() {
                       const hasCompleteAudio = audioStats.hasAllAudio;
                       const hasGeneratedStatus = statusMessage?.includes('generated');
                       const hasFailedStatus = statusMessage?.includes('Failed');
-                      
+
                       return (
                         <button
                           onClick={() => handleGenerateAudio(wordSet.id)}

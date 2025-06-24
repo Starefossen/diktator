@@ -2,7 +2,7 @@
 const nextConfig = {
   // Static export enabled - all dynamic routes have been migrated to query parameters
   output: "export",
-  trailingSlash: true, // Use trailing slashes for clean directory-based URLs
+  trailingSlash: false, // Disable trailing slashes to avoid index.html redirects
   distDir: "out", // Standard directory for static exports
   // No asset prefix needed - serving from root domain via load balancer
   assetPrefix: "",

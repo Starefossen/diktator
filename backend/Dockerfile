@@ -1,5 +1,5 @@
 # Use the official Golang image for the target platform
-FROM --platform=$BUILDPLATFORM golang:1.21-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.23-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git

@@ -76,7 +76,7 @@ output "firebase_config" {
     apiKey            = data.google_firebase_web_app_config.default.api_key
     authDomain        = data.google_firebase_web_app_config.default.auth_domain
     projectId         = var.project_id
-    storageBucket     = "${var.project_id}.appspot.com"
+    storageBucket     = "${var.project_id}.firebasestorage.app"
     messagingSenderId = data.google_firebase_web_app_config.default.messaging_sender_id
     appId             = google_firebase_web_app.default.app_id
   }

@@ -1041,7 +1041,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.23'
 
       - name: Run tests
         working-directory: ./backend
@@ -1198,7 +1198,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.23'
 
       - name: Run backend tests
         working-directory: ./backend

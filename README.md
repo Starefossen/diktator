@@ -27,7 +27,7 @@ Diktator is a web application designed to help children learn Norwegian vocabula
 ### 1. Prerequisites
 
 - Node.js 20+
-- Go 1.21+
+- Go 1.23+
 - [mise](https://mise.jdx.dev/) (recommended for tool management)
 - Firebase CLI (installed automatically)
 

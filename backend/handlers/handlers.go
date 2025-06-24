@@ -84,6 +84,16 @@ func GetWordSets(c *gin.Context) {
 		return
 	}
 
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "User authentication required",
+		})
+		return
+	}
+	log.Default().Printf("User ID: %s", userID)
+	log.Default().Printf("Family ID: %s", familyID)
+
 	familyIDStr, ok := familyID.(string)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{

@@ -93,7 +93,7 @@ export default function FamilyProgressPage() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
         <div className="container px-4 py-8 mx-auto">
           {/* Header */}
-          <div className="mb-8 flex items-center justify-between">
+          <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="mb-4 text-4xl font-bold text-transparent bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text">
                 {t("family.title")}
@@ -102,7 +102,7 @@ export default function FamilyProgressPage() {
             </div>
             <button
               onClick={() => router.push("/family")}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+              className="px-4 py-2 text-gray-600 transition-colors rounded-lg hover:text-gray-800 hover:bg-gray-100"
             >
               {t("family.back")}
             </button>
@@ -169,18 +169,18 @@ export default function FamilyProgressPage() {
 
           {/* Family Members Progress */}
           {familyMembers.length > 0 && (
-            <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+            <div className="p-6 mb-8 bg-white rounded-lg shadow-lg">
+              <h2 className="mb-6 text-2xl font-semibold text-gray-800">
                 {t("family.children.title")} ({familyMembers.length})
               </h2>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {familyMembers.map((member) => (
                   <div
                     key={member.userId}
-                    className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
+                    className="p-4 transition-shadow border border-gray-200 rounded-lg hover:shadow-md"
                   >
-                    <div className="flex items-center space-x-3 mb-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                    <div className="flex items-center mb-3 space-x-3">
+                      <div className="flex items-center justify-center w-10 h-10 font-bold text-white rounded-full bg-gradient-to-br from-blue-500 to-purple-500">
                         {member.userName.charAt(0).toUpperCase()}
                       </div>
                       <div>
@@ -220,8 +220,8 @@ export default function FamilyProgressPage() {
                         <p className="font-bold">
                           {member.totalWords > 0
                             ? Math.round(
-                                (member.correctWords / member.totalWords) * 100,
-                              )
+                              (member.correctWords / member.totalWords) * 100,
+                            )
                             : 0}
                           %
                         </p>
@@ -234,8 +234,8 @@ export default function FamilyProgressPage() {
           )}
 
           {/* Recent Test Results */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+          <div className="p-6 bg-white rounded-lg shadow-lg">
+            <h2 className="mb-6 text-2xl font-semibold text-gray-800">
               {t("results.title")} ({results.length})
             </h2>
 
@@ -252,7 +252,7 @@ export default function FamilyProgressPage() {
                 {results.slice(0, 10).map((result) => (
                   <div
                     key={result.id}
-                    className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
+                    className="p-4 transition-shadow border border-gray-200 rounded-lg hover:shadow-md"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
@@ -300,15 +300,15 @@ export default function FamilyProgressPage() {
                     {/* Show incorrect words if any */}
                     {result.incorrectWords &&
                       result.incorrectWords.length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-gray-100">
-                          <p className="text-sm font-medium text-gray-700 mb-2">
+                        <div className="pt-4 mt-4 border-t border-gray-100">
+                          <p className="mb-2 text-sm font-medium text-gray-700">
                             {t("results.details.incorrectWords")}:
                           </p>
                           <div className="flex flex-wrap gap-2">
                             {result.incorrectWords.map((word, index) => (
                               <span
                                 key={index}
-                                className="px-2 py-1 text-sm bg-red-100 text-red-800 rounded"
+                                className="px-2 py-1 text-sm text-red-800 bg-red-100 rounded"
                               >
                                 {word}
                               </span>

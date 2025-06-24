@@ -81,7 +81,7 @@ export default function AuthForm({ onToggleMode, isSignUp }: AuthFormProps) {
       // Redirect after successful authentication
       // Check if there's a redirect URL in the query params, otherwise go to wordsets
       const redirectParam = searchParams.get("redirect");
-      let redirectTo = "/wordsets/";
+      let redirectTo = "/wordsets";
 
       // Validate redirect URL to prevent open redirect vulnerabilities
       if (
@@ -141,13 +141,12 @@ export default function AuthForm({ onToggleMode, isSignUp }: AuthFormProps) {
         >
           {error && (
             <div
-              className={`border rounded-md p-4 ${
-                errorType === "connection"
+              className={`border rounded-md p-4 ${errorType === "connection"
                   ? "bg-yellow-50 border-yellow-200"
                   : errorType === "validation"
                     ? "bg-blue-50 border-blue-200"
                     : "bg-red-50 border-red-200"
-              }`}
+                }`}
             >
               <div className="flex items-start">
                 <div className="flex-shrink-0">
@@ -197,13 +196,12 @@ export default function AuthForm({ onToggleMode, isSignUp }: AuthFormProps) {
                 </div>
                 <div className="ml-3">
                   <p
-                    className={`text-sm ${
-                      errorType === "connection"
+                    className={`text-sm ${errorType === "connection"
                         ? "text-yellow-700"
                         : errorType === "validation"
                           ? "text-blue-700"
                           : "text-red-700"
-                    }`}
+                      }`}
                   >
                     {error}
                   </p>

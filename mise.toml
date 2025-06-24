@@ -343,15 +343,28 @@ description = "Deploy backend to Cloud Run (local development)"
 run = """
 mise run config-load
 source .mise.env
+
+# Validate required environment variables
+if [ -z "${DIKTATOR_PROJECT_ID}" ]; then
+    echo "ERROR: DIKTATOR_PROJECT_ID is not set. Run 'mise run config-load' first."
+    exit 1
+fi
+
 cd backend
+echo "Building backend Docker image..."
 docker buildx build --platform linux/amd64 -t gcr.io/${DIKTATOR_PROJECT_ID}/${DIKTATOR_API_SERVICE_NAME}:latest --load .
 docker push gcr.io/${DIKTATOR_PROJECT_ID}/${DIKTATOR_API_SERVICE_NAME}:latest
+
+echo "Deploying backend to Cloud Run..."
 gcloud run deploy ${DIKTATOR_API_SERVICE_NAME} \
   --image gcr.io/${DIKTATOR_PROJECT_ID}/${DIKTATOR_API_SERVICE_NAME}:latest \
   --region ${DIKTATOR_REGION} \
   --platform managed \
   --allow-unauthenticated \
-  --set-env-vars="GOOGLE_CLOUD_PROJECT=${DIKTATOR_PROJECT_ID}"
+  --set-env-vars="GOOGLE_CLOUD_PROJECT=${DIKTATOR_PROJECT_ID},GOOGLE_CLOUD_QUOTA_PROJECT=${GOOGLE_CLOUD_QUOTA_PROJECT:-${DIKTATOR_PROJECT_ID}},STORAGE_BUCKET=${DIKTATOR_FIREBASE_STORAGE_BUCKET:-${DIKTATOR_PROJECT_ID}.appspot.com},GIN_MODE=release"
+
+echo "Backend deployment completed successfully!"
+echo "API URL: https://${DIKTATOR_API_SERVICE_NAME}-${DIKTATOR_REGION}.run.app"
 """
 
 [tasks.deploy-frontend]
@@ -359,14 +372,40 @@ description = "Deploy frontend to Cloud Storage (local development)"
 run = """
 mise run config-load
 source .mise.env
-cd frontend
+
 mise run env-production
-npm run build
+
+cd frontend
+# Verify production environment is set
+if [ ! -f .env.local ]; then
+    echo "ERROR: .env.local not found. Production environment setup failed."
+    exit 1
+fi
+
+echo "Building frontend with production environment..."
+source .env.local
+NODE_ENV=production npm run build
+
+# Verify build was successful
+if [ ! -d "out" ]; then
+    echo "ERROR: Build failed. 'out' directory not found."
+    exit 1
+fi
+
+env
+
+echo "Deploying to Cloud Storage..."
 gsutil -m cp -r out/* gs://${DIKTATOR_FRONTEND_BUCKET}/
 # Cache headers and CDN invalidation
 gsutil -m setmeta -h "Cache-Control:no-cache" gs://${DIKTATOR_FRONTEND_BUCKET}/index.html
 gsutil -m setmeta -h "Cache-Control:public, max-age=31536000" gs://${DIKTATOR_FRONTEND_BUCKET}/**/*.{js,css}
 gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/" --async
+gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/wordsets/" --async
+gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/about/" --async
+gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/auth/" --async
+gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/test/" --async
+
+echo "Frontend deployment completed successfully!"
 """
 
 # Additional development utilities
@@ -640,10 +679,23 @@ fi
 cd frontend
 
 echo "Generating production .env.local..."
+
+# Validate required environment variables
+if [ -z "${DIKTATOR_PROJECT_ID}" ]; then
+    echo "ERROR: DIKTATOR_PROJECT_ID is not set. Run 'mise run config-load' first."
+    exit 1
+fi
+
+if [ -z "${DIKTATOR_FIREBASE_API_KEY}" ]; then
+    echo "WARNING: DIKTATOR_FIREBASE_API_KEY is not set. Firebase authentication may not work."
+fi
+
 cat > .env.local << EOF
 # Production environment - auto-generated
-NODE_ENV=production
 NEXT_PUBLIC_API_URL=${DIKTATOR_API_URL:-"https://${DIKTATOR_API_SERVICE_NAME}-${DIKTATOR_REGION:-${DIKTATOR_DEFAULT_REGION}}.run.app"}
+
+# Additional production optimizations
+NEXT_TELEMETRY_DISABLED=1
 
 # Firebase Production Configuration
 NEXT_PUBLIC_FIREBASE_USE_EMULATOR=false
@@ -655,11 +707,17 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${DIKTATOR_FIREBASE_MESSAGING_SENDER_ID
 NEXT_PUBLIC_FIREBASE_APP_ID=${DIKTATOR_FIREBASE_APP_ID:-""}
 EOF
 
-echo "Production .env.local generated"
+echo "Production .env.local generated successfully"
+echo ""
+echo "=== Production Environment Configuration ==="
+echo "NODE_ENV: production"
 echo "API URL: ${DIKTATOR_API_URL:-"https://${DIKTATOR_API_SERVICE_NAME}-${DIKTATOR_REGION:-${DIKTATOR_DEFAULT_REGION}}.run.app"}"
+echo "Telemetry: Disabled"
 echo ""
 echo "Firebase Configuration:"
+echo "  Use Emulator: false"
 echo "  Project ID: ${DIKTATOR_PROJECT_ID:-'Not set'}"
 echo "  Auth Domain: ${DIKTATOR_FIREBASE_AUTH_DOMAIN:-'Not set'}"
 echo "  App ID: ${DIKTATOR_FIREBASE_APP_ID:-'Not set'}"
+echo ""
 """

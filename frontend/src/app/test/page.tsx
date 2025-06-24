@@ -61,15 +61,20 @@ function TestPageContent() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const id = urlParams.get("id");
+    // Try to get ID from URL hash first, then fall back to query parameters
+    let id = window.location.hash.substring(1); // Remove the # prefix
+
+    if (!id) {
+      const urlParams = new URLSearchParams(window.location.search);
+      id = urlParams.get("id") || "";
+    }
 
     if (id) {
       setWordSetId(id);
     } else {
       const timer = setTimeout(() => {
         console.log("No test ID found, redirecting to wordsets");
-        router.push("/wordsets/");
+        router.push("/wordsets");
       }, 1000);
       return () => clearTimeout(timer);
     }
@@ -112,12 +117,12 @@ function TestPageContent() {
           console.log(
             `Word set ${wordSetId} not found, redirecting to wordsets`,
           );
-          router.push("/wordsets/");
+          router.push("/wordsets");
         }
       }
     } catch (error) {
       console.error("Failed to load word set:", error);
-      router.push("/wordsets/");
+      router.push("/wordsets");
     } finally {
       setLoading(false);
     }

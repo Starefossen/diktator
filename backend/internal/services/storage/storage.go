@@ -59,7 +59,7 @@ func NewService() (*Service, error) {
 			if projectID == "" {
 				projectID = "diktator-dev"
 			}
-			bucketName = projectID + ".appspot.com"
+			bucketName = projectID + ".firebasestorage.app"
 		}
 		log.Printf("Using production bucket: %s", bucketName)
 	}
