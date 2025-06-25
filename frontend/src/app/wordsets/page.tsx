@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
   WordSet,
@@ -10,9 +9,17 @@ import {
   TestConfiguration,
   DEFAULT_TEST_CONFIG,
   validateTestConfiguration,
+  TestAnswer,
+  SaveResultRequest,
+  getEffectiveTestConfig,
 } from "@/types";
 import { generatedApiClient } from "@/lib/api-generated";
-import { playWordAudio, getWordSetAudioStats } from "@/lib/audioPlayer";
+import { playWordAudio as playWordAudioHelper, getWordSetAudioStats, stopAudio } from "@/lib/audioPlayer";
+import {
+  playSuccessTone,
+  playErrorSound,
+  playCompletionTone,
+} from "@/lib/audioTones";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import {
   HeroBookIcon,
@@ -21,11 +28,11 @@ import {
   HeroTrashIcon,
   HeroSaveIcon,
   HeroSettingsIcon,
+  ScoreIcon,
 } from "@/components/Icons";
 
 export default function WordSetsPage() {
   const { t, language } = useLanguage();
-  const router = useRouter();
   const [wordSets, setWordSets] = useState<WordSet[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -38,6 +45,27 @@ export default function WordSetsPage() {
   const [generatingAudio, setGeneratingAudio] = useState<Set<string>>(new Set()); // Track which wordsets are generating audio
   const [playingAudio, setPlayingAudio] = useState<string | null>(null); // Track which word is currently playing
   const [audioGenerationStatus, setAudioGenerationStatus] = useState<{ [key: string]: string }>({}); // Track status messages
+
+  // Test state
+  const [activeTest, setActiveTest] = useState<WordSet | null>(null);
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [userAnswer, setUserAnswer] = useState("");
+  const [answers, setAnswers] = useState<TestAnswer[]>([]);
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [wordStartTime, setWordStartTime] = useState<Date | null>(null);
+  const [showResult, setShowResult] = useState(false);
+  const [currentTries, setCurrentTries] = useState(0);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [lastAnswerCorrect, setLastAnswerCorrect] = useState(false);
+  const [processedWords, setProcessedWords] = useState<string[]>([]);
+  const [testInitialized, setTestInitialized] = useState(false);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+
+  // Test refs for stable audio functionality
+  const activeTestRef = useRef<WordSet | null>(null);
+  const processedWordsRef = useRef<string[]>([]);
+  const isPlayingAudioRef = useRef(false);
+  const lastAutoPlayIndexRef = useRef(-1);
 
   // Create form state
   const [formData, setFormData] = useState<CreateWordSetRequest>({
@@ -52,6 +80,9 @@ export default function WordSetsPage() {
   const [settingsConfig, setSettingsConfig] =
     useState<TestConfiguration>(DEFAULT_TEST_CONFIG);
   const [formError, setFormError] = useState<string>("");
+
+  // Derived values
+  const testConfig = activeTest ? getEffectiveTestConfig(activeTest) : null;
 
   const loadWordSets = useCallback(async () => {
     try {
@@ -202,11 +233,11 @@ export default function WordSetsPage() {
 
     setPlayingAudio(word);
 
-    await playWordAudio(word, wordSet, {
+    await playWordAudioHelper(word, wordSet, {
       onEnd: () => {
         setPlayingAudio(null);
       },
-      onError: (error) => {
+      onError: (error: Error) => {
         setPlayingAudio(null);
         console.error("Failed to play audio for word:", word, error);
       }
@@ -264,8 +295,208 @@ export default function WordSetsPage() {
     });
   };
 
-  const startTest = (wordSetId: string) => {
-    router.push(`/test#${wordSetId}`);
+  const startTest = (wordSet: WordSet) => {
+    // Set the active test and initialize test state
+    setActiveTest(wordSet);
+
+    // Process words based on configuration
+    const config = getEffectiveTestConfig(wordSet);
+    const wordStrings = wordSet.words.map(w => w.word);
+    const words = config.shuffleWords
+      ? [...wordStrings].sort(() => Math.random() - 0.5)
+      : wordStrings;
+
+    setProcessedWords(words);
+    setCurrentWordIndex(0);
+    setUserAnswer("");
+    setAnswers([]);
+    setStartTime(new Date());
+    setWordStartTime(new Date());
+    setShowResult(false);
+    setCurrentTries(0);
+    setShowFeedback(false);
+    setTestInitialized(false);
+    setIsAudioPlaying(false);
+
+    // Update refs for stable access
+    activeTestRef.current = wordSet;
+    processedWordsRef.current = words;
+    isPlayingAudioRef.current = false;
+    lastAutoPlayIndexRef.current = -1;
+    stopAudio();
+  };
+
+  // Test audio functionality
+  const playTestWordAudio = useCallback((word: string, autoDelay = 0) => {
+    if (isPlayingAudioRef.current) return;
+
+    const currentWordSet = activeTestRef.current;
+    if (!currentWordSet) return;
+
+    playWordAudioHelper(word, currentWordSet, {
+      onStart: () => {
+        isPlayingAudioRef.current = true;
+        setIsAudioPlaying(true);
+      },
+      onEnd: () => {
+        isPlayingAudioRef.current = false;
+        setIsAudioPlaying(false);
+      },
+      onError: (error: Error) => {
+        console.error("Audio playback error:", error);
+        isPlayingAudioRef.current = false;
+        setIsAudioPlaying(false);
+      },
+      autoDelay,
+      speechRate: 0.8
+    });
+  }, []);
+
+  const playCurrentWord = useCallback(() => {
+    const words = processedWordsRef.current;
+    if (words.length > currentWordIndex) {
+      playTestWordAudio(words[currentWordIndex]);
+    }
+  }, [playTestWordAudio, currentWordIndex]);
+
+  // Initialize test and handle auto-play
+  useEffect(() => {
+    if (activeTest && processedWords.length > 0 && !testInitialized) {
+      setTestInitialized(true);
+
+      // Auto-play first word if enabled
+      if (testConfig?.autoPlayAudio) {
+        lastAutoPlayIndexRef.current = 0;
+        playTestWordAudio(processedWords[0], 500);
+      }
+    }
+  }, [activeTest, processedWords, testInitialized, testConfig, playTestWordAudio]);
+
+  // Auto-play when moving to next word
+  useEffect(() => {
+    const currentConfig = activeTestRef.current
+      ? getEffectiveTestConfig(activeTestRef.current)
+      : null;
+
+    if (
+      testInitialized &&
+      currentWordIndex > 0 &&
+      currentConfig?.autoPlayAudio &&
+      processedWordsRef.current.length > currentWordIndex &&
+      lastAutoPlayIndexRef.current !== currentWordIndex
+    ) {
+      lastAutoPlayIndexRef.current = currentWordIndex;
+      playTestWordAudio(processedWordsRef.current[currentWordIndex], 500);
+    }
+  }, [currentWordIndex, testInitialized, playTestWordAudio]);
+
+  // Test functionality
+  const handleSubmitAnswer = () => {
+    if (!activeTest || !wordStartTime || !processedWords.length) return;
+
+    const currentWord = processedWords[currentWordIndex];
+    const isCorrect =
+      userAnswer.toLowerCase().trim() === currentWord.toLowerCase();
+    const newTries = currentTries + 1;
+
+    setLastAnswerCorrect(isCorrect);
+    setShowFeedback(true);
+    setCurrentTries(newTries);
+
+    if (isCorrect) {
+      playSuccessTone();
+    } else {
+      playErrorSound();
+    }
+
+    setTimeout(() => {
+      setShowFeedback(false);
+
+      if (isCorrect || newTries >= (testConfig?.maxAttempts ?? 3)) {
+        const timeSpent = Math.round(
+          (new Date().getTime() - wordStartTime.getTime()) / 1000,
+        );
+        const answer: TestAnswer = {
+          word: currentWord,
+          userAnswer: userAnswer.trim(),
+          isCorrect,
+          timeSpent,
+        };
+
+        const newAnswers = [...answers, answer];
+        setAnswers(newAnswers);
+
+        if (currentWordIndex < processedWords.length - 1) {
+          setCurrentWordIndex(currentWordIndex + 1);
+          setUserAnswer("");
+          setWordStartTime(new Date());
+          setCurrentTries(0);
+        } else {
+          completeTest(newAnswers);
+        }
+      } else {
+        setUserAnswer("");
+        playTestWordAudio(currentWord, 500);
+      }
+    }, 2000);
+  };
+
+  const completeTest = async (finalAnswers: TestAnswer[]) => {
+    if (!activeTest || !startTime) return;
+
+    const correctAnswers = finalAnswers.filter((a) => a.isCorrect);
+    const incorrectWords = finalAnswers
+      .filter((a) => !a.isCorrect)
+      .map((a) => a.word);
+    const totalTimeSpent = Math.round(
+      (new Date().getTime() - startTime.getTime()) / 1000,
+    );
+    const score = Math.round(
+      (correctAnswers.length / finalAnswers.length) * 100,
+    );
+
+    try {
+      const resultData: SaveResultRequest = {
+        wordSetId: activeTest.id,
+        score,
+        totalWords: finalAnswers.length,
+        correctWords: correctAnswers.length,
+        incorrectWords,
+        timeSpent: totalTimeSpent,
+      };
+
+      await generatedApiClient.saveResult(resultData);
+    } catch (error) {
+      console.error("Failed to save test result:", error);
+    }
+
+    playCompletionTone();
+    setShowResult(true);
+  };
+
+  const restartTest = () => {
+    if (!activeTest) return;
+
+    setCurrentWordIndex(0);
+    setUserAnswer("");
+    setAnswers([]);
+    setStartTime(new Date());
+    setWordStartTime(new Date());
+    setShowResult(false);
+    setCurrentTries(0);
+    setShowFeedback(false);
+    setTestInitialized(false);
+    setIsAudioPlaying(false);
+
+    isPlayingAudioRef.current = false;
+    lastAutoPlayIndexRef.current = -1;
+    stopAudio();
+  };
+
+  const exitTest = () => {
+    setActiveTest(null);
+    setShowResult(false);
+    stopAudio();
   };
 
   if (loading) {
@@ -276,6 +507,257 @@ export default function WordSetsPage() {
           <p className="mt-4 text-gray-600">{t("wordsets.loading")}</p>
         </div>
       </div>
+    );
+  }
+
+  // Test Results View
+  if (activeTest && showResult) {
+    const correctAnswers = answers.filter((a) => a.isCorrect);
+    const score = Math.round((correctAnswers.length / answers.length) * 100);
+
+    return (
+      <ProtectedRoute>
+        <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+          <div className="w-full max-w-2xl p-8 mx-4 bg-white rounded-lg shadow-xl">
+            <div className="mb-8 text-center">
+              <div className="mb-4">
+                <ScoreIcon score={score} className="w-16 h-16" />
+              </div>
+              <h1 className="mb-2 text-3xl font-bold text-gray-800">
+                {t("test.complete")}
+              </h1>
+              <h2 className="text-xl text-gray-600">{activeTest.name}</h2>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6 mb-8">
+              <div className="p-4 text-center rounded-lg bg-green-50">
+                <div className="text-3xl font-bold text-green-600">{score}%</div>
+                <div className="text-gray-600">{t("test.score")}</div>
+              </div>
+              <div className="p-4 text-center rounded-lg bg-blue-50">
+                <div className="text-3xl font-bold text-blue-600">
+                  {correctAnswers.length}/{answers.length}
+                </div>
+                <div className="text-gray-600">{t("test.correct")}</div>
+              </div>
+            </div>
+
+            <div className="mb-8">
+              <h3 className="mb-4 text-lg font-semibold text-gray-800">
+                {t("test.reviewResults")}
+              </h3>
+              <div className="space-y-2">
+                {answers.map((answer, index) => (
+                  <div
+                    key={index}
+                    className={`flex items-center justify-between p-3 rounded-lg ${answer.isCorrect ? "bg-green-50" : "bg-red-50"
+                      }`}
+                  >
+                    <div className="flex items-center">
+                      <div
+                        className={`w-6 h-6 rounded-full mr-3 flex items-center justify-center ${answer.isCorrect ? "bg-green-500" : "bg-red-500"
+                          }`}
+                      >
+                        {answer.isCorrect ? (
+                          <svg
+                            className="w-4 h-4 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        ) : (
+                          <svg
+                            className="w-4 h-4 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        )}
+                      </div>
+                      <div>
+                        <span
+                          className={`font-medium ${answer.isCorrect ? "text-green-800" : "text-red-800"
+                            }`}
+                        >
+                          {answer.word}
+                        </span>
+                        {!answer.isCorrect && (
+                          <span className="ml-2 text-gray-600">
+                            {t("test.yourAnswer")} &quot;{answer.userAnswer}&quot;
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => playTestWordAudio(answer.word)}
+                      className={`px-3 py-1 transition-colors rounded ${answer.isCorrect
+                          ? "text-green-700 bg-green-100 hover:bg-green-200"
+                          : "text-red-700 bg-red-100 hover:bg-red-200"
+                        }`}
+                    >
+                      <HeroVolumeIcon
+                        className={`w-4 h-4 ${answer.isCorrect ? "text-green-700" : "text-red-700"
+                          }`}
+                      />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={restartTest}
+                className="px-6 py-3 font-semibold text-white transition-all duration-200 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+              >
+                {t("test.restart")}
+              </button>
+              <button
+                onClick={exitTest}
+                className="px-6 py-3 font-semibold text-white transition-colors bg-gray-500 rounded-lg hover:bg-gray-600"
+              >
+                {t("test.backToWordSets")}
+              </button>
+            </div>
+          </div>
+        </div>
+      </ProtectedRoute>
+    );
+  }
+
+  // Test Interface View
+  if (activeTest && !showResult) {
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+          <div className="container px-4 py-8 mx-auto">
+            {/* Header */}
+            <div className="mb-8 text-center">
+              <h1 className="mb-2 text-3xl font-bold text-gray-800">
+                {activeTest.name}
+              </h1>
+              <p className="text-gray-600">
+                {t("test.progress")} {currentWordIndex + 1} {t("common.of")}{" "}
+                {processedWords.length}
+              </p>
+              <div className="w-full h-2 mt-4 bg-gray-200 rounded-full">
+                <div
+                  className="h-2 transition-all duration-300 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+                  style={{
+                    width: `${((currentWordIndex + 1) / processedWords.length) * 100}%`,
+                  }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Test Area */}
+            <div className="max-w-2xl mx-auto">
+              <div className="p-8 text-center bg-white rounded-lg shadow-xl">
+                <div className="mb-8">
+                  <div className="relative inline-block">
+                    {isAudioPlaying && (
+                      <div className="absolute border-4 border-transparent rounded-full -inset-3 border-t-blue-500 border-r-blue-400 animate-spin"></div>
+                    )}
+                    <button
+                      onClick={playCurrentWord}
+                      className="relative p-6 text-6xl text-white transition-all duration-200 transform rounded-full shadow-lg bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 hover:shadow-xl hover:scale-105"
+                    >
+                      <HeroVolumeIcon className="w-16 h-16 text-white" />
+                    </button>
+                  </div>
+                  <p className="mt-4 text-gray-600">{t("test.listenToWord")}</p>
+                </div>
+
+                <div className="flex flex-col justify-center mb-6">
+                  {showFeedback ? (
+                    <div
+                      className={`p-4 rounded-lg animate-in fade-in-0 slide-in-from-top-2 duration-300 ${lastAnswerCorrect
+                          ? "bg-green-100 border border-green-300"
+                          : "bg-red-100 border border-red-300"
+                        }`}
+                    >
+                      <p
+                        className={`font-semibold text-lg ${lastAnswerCorrect ? "text-green-800" : "text-red-800"
+                          }`}
+                      >
+                        {lastAnswerCorrect
+                          ? t("test.correct")
+                          : `${t("test.incorrect")} - ${t("test.tryAgain")} (${currentTries}/${testConfig?.maxAttempts ?? 3})`}
+                      </p>
+                    </div>
+                  ) : (
+                    <input
+                      type="text"
+                      value={userAnswer}
+                      onChange={(e) => setUserAnswer(e.target.value)}
+                      onKeyPress={(e) => e.key === "Enter" && handleSubmitAnswer()}
+                      className="w-full px-6 py-4 text-2xl text-center transition-all duration-200 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder={t("test.typeWordHere")}
+                      autoFocus
+                    />
+                  )}
+                </div>
+
+                <div className="flex justify-center h-5 mb-8">
+                  <p className="text-sm text-gray-500">
+                    {t("test.attemptsRemaining")}:{" "}
+                    {(testConfig?.maxAttempts ?? 3) - currentTries}
+                  </p>
+                </div>
+
+                <div className="flex justify-center gap-4">
+                  <button
+                    onClick={playCurrentWord}
+                    className="px-6 py-3 font-semibold text-white transition-colors bg-blue-500 rounded-lg hover:bg-blue-600"
+                    disabled={showFeedback}
+                  >
+                    <HeroVolumeIcon className="inline w-4 h-4 mr-2" />
+                    {t("test.playAgain")}
+                  </button>
+                  <button
+                    onClick={handleSubmitAnswer}
+                    disabled={!userAnswer.trim() || showFeedback}
+                    className="px-6 py-3 font-semibold text-white transition-all duration-200 rounded-lg bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {currentWordIndex < processedWords.length - 1
+                      ? t("test.nextWord")
+                      : t("test.finishTest")}
+                  </button>
+                  <button
+                    onClick={exitTest}
+                    className="px-6 py-3 font-semibold text-gray-600 transition-colors bg-gray-200 rounded-lg hover:bg-gray-300"
+                  >
+                    {t("test.backToWordSets")}
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-8 text-center text-gray-600">
+                {answers.length > 0 && (
+                  <p>
+                    {t("test.correctSoFar")}:{" "}
+                    {answers.filter((a) => a.isCorrect).length} / {answers.length}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </ProtectedRoute>
     );
   }
 
@@ -528,7 +1010,7 @@ export default function WordSetsPage() {
 
                   <div className="flex flex-wrap gap-2">
                     <button
-                      onClick={() => startTest(wordSet.id)}
+                      onClick={() => startTest(wordSet)}
                       className="flex items-center justify-center flex-1 px-4 py-3 font-semibold text-white transition-all duration-200 rounded-lg shadow-md bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 hover:shadow-lg hover:scale-105"
                     >
                       <HeroPlayIcon className="w-4 h-4 mr-2 text-white" />

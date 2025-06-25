@@ -8,14 +8,8 @@ export function ClientSideRouter() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const pathname = window.location.pathname;
-
-      // Handle /test/[id] routes by redirecting to /test?id=[id]
-      const testRouteMatch = pathname.match(/^\/test\/([^\/]+)$/);
-      if (testRouteMatch) {
-        const testId = testRouteMatch[1];
-        router.replace(`/test?id=${testId}`);
-      }
+      // Client-side routing logic can be added here if needed
+      // Currently no special routing needed since test functionality is integrated into wordsets
     }
   }, [router]);
 

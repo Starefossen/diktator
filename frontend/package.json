@@ -11,6 +11,14 @@
     "format": "prettier --write . --ignore-path .prettierignore",
     "typecheck": "tsc --noEmit"
   },
+  "eslintIgnore": [
+    ".next/",
+    "out/"
+  ],
+  "prettierIgnore": [
+    ".next/",
+    "out/"
+  ],
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@openapitools/openapi-generator-cli": "^2.20.2",
