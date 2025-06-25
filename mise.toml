@@ -10,31 +10,32 @@ air = "latest"
 
 # Environment configurations
 [env]
-# Static configuration - defaults for all environments
+# === GLOBAL STATIC CONFIGURATION ===
+# These values are the same across all environments
 DIKTATOR_APP_NAME = "diktator"
 DIKTATOR_API_SERVICE_NAME = "diktator-api"
 DIKTATOR_DEFAULT_REGION = "europe-north1"
 DIKTATOR_BUCKET_LOCATION = "EU"
 
-# Development environment defaults
+# === DEVELOPMENT ENVIRONMENT ===
+# Backend configuration for development
 NODE_ENV = "development"
 GOOGLE_CLOUD_PROJECT = "diktator-dev"
 GOOGLE_CLOUD_QUOTA_PROJECT = "diktator-app"
 STORAGE_BUCKET = "diktator-dev.appspot.com"
+GIN_MODE = "debug"
 
-# Firebase Emulator configuration for local development
+# Firebase Emulator hosts (backend services)
 FIREBASE_AUTH_EMULATOR_HOST = "localhost:9099"
 FIRESTORE_EMULATOR_HOST = "localhost:8088"
 FIREBASE_STORAGE_EMULATOR_HOST = "localhost:9199"
 
-# Next.js development defaults
+# Frontend configuration for development
 NEXT_PUBLIC_API_URL = "http://localhost:8080"
-
-# Firebase configuration for development (emulator)
 NEXT_PUBLIC_FIREBASE_USE_EMULATOR = "true"
+NEXT_PUBLIC_FIREBASE_PROJECT_ID = "diktator-dev"
 NEXT_PUBLIC_FIREBASE_API_KEY = "demo-key"
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN = "diktator-dev.firebaseapp.com"
-NEXT_PUBLIC_FIREBASE_PROJECT_ID = "diktator-dev"
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET = "diktator-dev.appspot.com"
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID = "123456789"
 NEXT_PUBLIC_FIREBASE_APP_ID = "1:123456789:web:abcdef"
@@ -58,6 +59,12 @@ echo "  - Frontend dev server (:3000)"
 echo "  - Backend API server with auto-reload (:8080)"
 echo ""
 
+# Ensure development config exists
+if [ ! -f backend/.env.development ] || [ ! -f frontend/.env.development ]; then
+    echo "Setting up development configuration..."
+    mise run config-dev
+fi
+
 # Start Firebase emulators in background
 mise run firebase-emulators &
 FIREBASE_PID=$!
@@ -67,7 +74,7 @@ echo "Firebase emulators started with PID: $FIREBASE_PID"
 sleep 3
 
 # Start backend with air (hot reload) in background
-cd backend && PORT=8080 air &
+cd backend && set -a && source .env.development && set +a && air &
 BACKEND_PID=$!
 echo "Backend started with auto-reload, PID: $BACKEND_PID"
 
@@ -75,7 +82,7 @@ echo "Backend started with auto-reload, PID: $BACKEND_PID"
 sleep 2
 
 # Start frontend (this will block)
-cd frontend && PORT=3000 npm run dev
+cd frontend && cp .env.development .env.local && npm run dev
 
 # Cleanup function
 cleanup() {
@@ -88,11 +95,30 @@ trap cleanup EXIT
 
 [tasks.frontend]
 description = "Start frontend development server only"
-run = "cd frontend && PORT=3000 npm run dev"
+run = """
+# Ensure development config exists
+if [ ! -f frontend/.env.development ]; then
+    echo "Setting up development configuration..."
+    mise run config-dev
+fi
+
+cd frontend
+cp .env.development .env.local
+npm run dev
+"""
 
 [tasks.backend]
 description = "Start backend development server with auto-reload"
-run = "cd backend && PORT=8080 air"
+run = """
+# Ensure development config exists
+if [ ! -f backend/.env.development ]; then
+    echo "Setting up development configuration..."
+    mise run config-dev
+fi
+
+cd backend
+set -a && source .env.development && set +a && air
+"""
 
 # Quality assurance tasks
 [tasks.lint]
@@ -116,7 +142,69 @@ run = [
 
 [tasks.test]
 description = "Run all tests and checks"
-run = ["mise run lint", "mise run typecheck", "cd backend && go test ./..."]
+run = """
+echo "🧪 Running tests and checks..."
+
+# Check if Firebase emulator is running, start if not
+if ! pgrep -f "firebase.*emulators:start" > /dev/null; then
+    echo "🔥 Firebase emulator not running, starting it without persistence for testing..."
+    mise run firebase-emulators --no-persist &
+    FIREBASE_PID=$!
+    echo "Firebase emulators started with PID: $FIREBASE_PID"
+
+    # Wait for Firebase emulators to start
+    echo "Waiting for Firebase emulators to be ready..."
+    sleep 5
+
+    # Set flag to stop emulator after tests
+    STARTED_EMULATOR=true
+else
+    echo "✅ Firebase emulator is already running"
+    STARTED_EMULATOR=false
+fi
+
+# Run the actual tests
+echo "Running linting..."
+mise run lint
+
+echo "Running type checking..."
+mise run typecheck
+
+echo "Running backend tests..."
+cd backend && go test ./...
+
+# Stop emulator if we started it
+if [ "$STARTED_EMULATOR" = "true" ]; then
+    echo "🛑 Stopping Firebase emulator that was started for testing..."
+
+    # First try to gracefully stop the emulator
+    if kill -TERM $FIREBASE_PID 2>/dev/null; then
+        echo "Sent graceful shutdown signal to Firebase emulator..."
+
+        # Wait for graceful shutdown (up to 10 seconds)
+        for i in {1..10}; do
+            if ! kill -0 $FIREBASE_PID 2>/dev/null; then
+                echo "Firebase emulator stopped gracefully"
+                break
+            fi
+            sleep 1
+        done
+
+        # If still running after 10 seconds, force kill
+        if kill -0 $FIREBASE_PID 2>/dev/null; then
+            echo "Force stopping Firebase emulator..."
+            kill -KILL $FIREBASE_PID 2>/dev/null || true
+        fi
+    else
+        echo "Firebase emulator process already stopped"
+    fi
+
+    # Additional cleanup for any remaining firebase processes
+    pkill -f "firebase.*emulators:start" 2>/dev/null || true
+fi
+
+echo "✅ All tests completed successfully!"
+"""
 
 # OpenAPI tasks
 [tasks.swagger-gen]
@@ -191,16 +279,21 @@ run = [
 description = "Build all components for production"
 run = [
   "mise run swagger-gen",
-  "cd frontend && NODE_ENV=production npm run build",
-  "cd backend && go build -o bin/server cmd/server/main.go",
+  "mise run config-prod",
+  "cd frontend && cp .env.production .env.local && NODE_ENV=production npm run build",
+  "cd backend && set -a && source .env.production && set +a && go build -o bin/server cmd/server/main.go",
 ]
 
 [tasks.clean]
-description = "Clean build artifacts"
+description = "Clean build artifacts and generated environment files"
 run = [
   "rm -rf frontend/.next frontend/out",
   "rm -rf backend/bin",
   "rm -rf frontend/src/generated",
+  "rm -f frontend/.env.local",
+  "rm -f backend/.env.development backend/.env.production",
+  "rm -f frontend/.env.development frontend/.env.production",
+  "rm -f .mise.env",
 ]
 
 # Infrastructure tasks
@@ -231,7 +324,25 @@ run = "cd terraform && tofu validate"
 # Setup and utility tasks
 [tasks.setup]
 description = "Complete setup for local development (run this first!)"
-run = "./scripts/setup-dev.sh"
+run = """
+echo "Setting up Diktator development environment..."
+
+# Run the original setup script
+./scripts/setup-dev.sh
+
+# Set up environment configurations
+echo "Setting up environment configurations..."
+mise run config-dev
+
+echo ""
+echo "✅ Setup complete! You can now:"
+echo "  - Start development: mise run dev"
+echo "  - Check configuration: mise run config-check"
+echo "  - Start individual services:"
+echo "    - Frontend only: mise run frontend"
+echo "    - Backend only: mise run backend"
+echo "    - Firebase emulators: mise run firebase-emulators"
+"""
 
 # Docker tasks
 [tasks.docker-build]
@@ -278,21 +389,24 @@ docker push gcr.io/${PROJECT_ID}/${SERVICE_NAME}:${COMMIT_SHA}
 description = "Build frontend for CI/CD"
 run = """
 cd frontend
+
+# Create production environment file for CI
+cat > .env.production << EOF
+# CI/CD Production Environment
+NODE_ENV=production
+NEXT_PUBLIC_FIREBASE_USE_EMULATOR=false
+NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL_PROD:-"https://${DIKTATOR_API_SERVICE_NAME}-${DIKTATOR_DEFAULT_REGION}.run.app"}
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=${NEXT_PUBLIC_FIREBASE_PROJECT_ID_PROD:-${GOOGLE_CLOUD_PROJECT}}
+NEXT_PUBLIC_FIREBASE_API_KEY=${NEXT_PUBLIC_FIREBASE_API_KEY_PROD:-""}
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN_PROD:-"${GOOGLE_CLOUD_PROJECT}.firebaseapp.com"}
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET_PROD:-"${GOOGLE_CLOUD_PROJECT}.appspot.com"}
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID_PROD:-""}
+NEXT_PUBLIC_FIREBASE_APP_ID=${NEXT_PUBLIC_FIREBASE_APP_ID_PROD:-""}
+NEXT_TELEMETRY_DISABLED=1
+EOF
+
 npm ci
-
-# Set production environment variables for the build
-export NODE_ENV=production
-export NEXT_PUBLIC_FIREBASE_USE_EMULATOR=false
-export NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL_PROD:-"https://${DIKTATOR_API_SERVICE_NAME}-${DIKTATOR_DEFAULT_REGION}.run.app"}
-
-# Use production Firebase config if available, otherwise use placeholder values
-export NEXT_PUBLIC_FIREBASE_PROJECT_ID=${NEXT_PUBLIC_FIREBASE_PROJECT_ID_PROD:-${GOOGLE_CLOUD_PROJECT}}
-export NEXT_PUBLIC_FIREBASE_API_KEY=${NEXT_PUBLIC_FIREBASE_API_KEY_PROD:-""}
-export NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN_PROD:-"${GOOGLE_CLOUD_PROJECT}.firebaseapp.com"}
-export NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET_PROD:-"${GOOGLE_CLOUD_PROJECT}.appspot.com"}
-export NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID_PROD:-""}
-export NEXT_PUBLIC_FIREBASE_APP_ID=${NEXT_PUBLIC_FIREBASE_APP_ID_PROD:-""}
-
+cp .env.production .env.local
 npm run build
 """
 
@@ -331,9 +445,9 @@ echo "Invalidating CDN cache for key routes..."
 PROJECT_ID=${GOOGLE_CLOUD_PROJECT:-${GCP_PROJECT_ID}}
 gcloud compute url-maps invalidate-cdn-cache ${PROJECT_ID}-frontend-url-map --path="/" --async || echo "Cache invalidation failed for /"
 gcloud compute url-maps invalidate-cdn-cache ${PROJECT_ID}-frontend-url-map --path="/wordsets" --async || echo "Cache invalidation failed for /wordsets"
-gcloud compute url-maps invalidate-cdn-cache ${PROJECT_ID}-frontend-url-map --path="/wordsets/" --async || echo "Cache invalidation failed for /wordsets/"
-gcloud compute url-maps invalidate-cdn-cache ${PROJECT_ID}-frontend-url-map --path="/about" --async || echo "Cache invalidation failed for /about"
-gcloud compute url-maps invalidate-cdn-cache ${PROJECT_ID}-frontend-url-map --path="/about/" --async || echo "Cache invalidation failed for /about/"
+gcloud compute url-maps.invalidate-cdn-cache ${PROJECT_ID}-frontend-url-map --path="/wordsets/" --async || echo "Cache invalidation failed for /wordsets/"
+gcloud compute url-maps.invalidate-cdn-cache ${PROJECT_ID}-frontend-url-map --path="/about" --async || echo "Cache invalidation failed for /about"
+gcloud compute url-maps.invalidate-cdn-cache ${PROJECT_ID}-frontend-url-map --path="/about/" --async || echo "Cache invalidation failed for /about/"
 echo "CDN cache invalidation initiated"
 """
 
@@ -341,8 +455,10 @@ echo "CDN cache invalidation initiated"
 [tasks.deploy-backend]
 description = "Deploy backend to Cloud Run (local development)"
 run = """
+# Load configuration
 mise run config-load
 source .mise.env
+mise run config-prod
 
 # Validate required environment variables
 if [ -z "${DIKTATOR_PROJECT_ID}" ]; then
@@ -370,20 +486,15 @@ echo "API URL: https://${DIKTATOR_API_SERVICE_NAME}-${DIKTATOR_REGION}.run.app"
 [tasks.deploy-frontend]
 description = "Deploy frontend to Cloud Storage (local development)"
 run = """
+# Load configuration and set up production environment
 mise run config-load
 source .mise.env
-
-mise run env-production
+mise run config-prod
 
 cd frontend
-# Verify production environment is set
-if [ ! -f .env.local ]; then
-    echo "ERROR: .env.local not found. Production environment setup failed."
-    exit 1
-fi
 
 echo "Building frontend with production environment..."
-source .env.local
+cp .env.production .env.local
 NODE_ENV=production npm run build
 
 # Verify build was successful
@@ -392,18 +503,16 @@ if [ ! -d "out" ]; then
     exit 1
 fi
 
-env
-
 echo "Deploying to Cloud Storage..."
 gsutil -m cp -r out/* gs://${DIKTATOR_FRONTEND_BUCKET}/
 # Cache headers and CDN invalidation
 gsutil -m setmeta -h "Cache-Control:no-cache" gs://${DIKTATOR_FRONTEND_BUCKET}/index.html
 gsutil -m setmeta -h "Cache-Control:public, max-age=31536000" gs://${DIKTATOR_FRONTEND_BUCKET}/**/*.{js,css}
 gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/" --async
-gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/wordsets/" --async
-gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/about/" --async
-gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/auth/" --async
-gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/test/" --async
+gcloud compute url-maps.invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/wordsets/" --async
+gcloud compute url-maps.invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/about/" --async
+gcloud compute url-maps.invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/auth/" --async
+gcloud compute url-maps.invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/test/" --async
 
 echo "Frontend deployment completed successfully!"
 """
@@ -550,26 +659,57 @@ echo "Firebase setup complete! You can now run 'mise run firebase-emulators' to 
 """
 
 [tasks.firebase-emulators]
-description = "Start Firebase emulators with persistence"
+description = "Start Firebase emulators (use --no-persist flag to disable data persistence)"
 run = """
 cd frontend
-echo "Starting Firebase emulators with data persistence..."
-echo "This will start:"
-echo "  - Authentication emulator on port 9099"
-echo "  - Firestore emulator on port 8088"
-echo "  - Emulator UI on port 4000"
-echo ""
-echo "Data will be persisted in: ./firebase-emulator-data"
-echo "Press Ctrl+C to stop the emulators (data will be automatically exported)"
-echo ""
 
-# Check if emulator data exists
-if [ -d "./firebase-emulator-data" ] && [ "$(ls -A ./firebase-emulator-data 2>/dev/null)" ]; then
-    echo "Found existing emulator data, importing..."
-    firebase emulators:start --project=${GOOGLE_CLOUD_PROJECT} --import=./firebase-emulator-data --export-on-exit=./firebase-emulator-data
+# Setup signal handling for graceful shutdown
+cleanup() {
+    echo "Received shutdown signal, stopping Firebase emulators..."
+    if [ -n "$EMULATOR_PID" ]; then
+        kill -TERM $EMULATOR_PID 2>/dev/null || true
+        wait $EMULATOR_PID 2>/dev/null || true
+    fi
+    exit 0
+}
+trap cleanup TERM INT
+
+if [ '{{flag(name="no-persist")}}' = 'true' ]; then
+    echo "Starting Firebase emulators without data persistence..."
+    echo "This will start:"
+    echo "  - Authentication emulator on port 9099"
+    echo "  - Firestore emulator on port 8088"
+    echo "  - Emulator UI on port 4000"
+    echo ""
+    echo "⚠️  Data will NOT be persisted - perfect for testing!"
+    echo ""
+
+    firebase emulators:start --project=${GOOGLE_CLOUD_PROJECT} &
+    EMULATOR_PID=$!
+    wait $EMULATOR_PID
 else
-    echo "No existing data found, starting fresh..."
-    firebase emulators:start --project=${GOOGLE_CLOUD_PROJECT} --export-on-exit=./firebase-emulator-data
+    echo "Starting Firebase emulators with data persistence..."
+    echo "This will start:"
+    echo "  - Authentication emulator on port 9099"
+    echo "  - Firestore emulator on port 8088"
+    echo "  - Emulator UI on port 4000"
+    echo ""
+    echo "Data will be persisted in: ./firebase-emulator-data"
+    echo "Press Ctrl+C to stop the emulators (data will be automatically exported)"
+    echo ""
+
+    # Check if emulator data exists
+    if [ -d "./firebase-emulator-data" ] && [ "$(ls -A ./firebase-emulator-data 2>/dev/null)" ]; then
+        echo "Found existing emulator data, importing..."
+        firebase emulators:start --project=${GOOGLE_CLOUD_PROJECT} --import=./firebase-emulator-data --export-on-exit=./firebase-emulator-data &
+        EMULATOR_PID=$!
+        wait $EMULATOR_PID
+    else
+        echo "No existing data found, starting fresh..."
+        firebase emulators:start --project=${GOOGLE_CLOUD_PROJECT} --export-on-exit=./firebase-emulator-data &
+        EMULATOR_PID=$!
+        wait $EMULATOR_PID
+    fi
 fi
 """
 
@@ -613,6 +753,7 @@ fi
 echo "Extracting terraform outputs..."
 cat > ../.mise.env << EOF
 # Auto-generated from terraform outputs - do not edit manually
+# === PRODUCTION/DEPLOYED CONFIGURATION ===
 DIKTATOR_PROJECT_ID=$(tofu output -raw project_id 2>/dev/null || echo "")
 DIKTATOR_REGION=$(tofu output -raw region 2>/dev/null || echo "${DIKTATOR_DEFAULT_REGION}")
 DIKTATOR_FRONTEND_BUCKET=$(tofu output -raw frontend_bucket_name 2>/dev/null || echo "")
@@ -629,56 +770,69 @@ EOF
 echo "Configuration loaded to .mise.env"
 """
 
-[tasks.config-check]
-description = "Check all configuration values"
+[tasks.config-dev]
+description = "Set up development environment configuration"
 run = """
-echo "=== Static Configuration (mise.toml) ==="
-echo "DIKTATOR_APP_NAME: ${DIKTATOR_APP_NAME}"
-echo "DIKTATOR_API_SERVICE_NAME: ${DIKTATOR_API_SERVICE_NAME}"
-echo "DIKTATOR_DEFAULT_REGION: ${DIKTATOR_DEFAULT_REGION}"
-echo "DIKTATOR_BUCKET_LOCATION: ${DIKTATOR_BUCKET_LOCATION}"
-echo ""
+echo "Setting up development environment configuration..."
 
-if [ -f .mise.env ]; then
-    echo "=== Dynamic Configuration (.mise.env) ==="
-    source .mise.env
-    echo "DIKTATOR_PROJECT_ID: ${DIKTATOR_PROJECT_ID:-'Not set'}"
-    echo "DIKTATOR_REGION: ${DIKTATOR_REGION:-'Not set'}"
-    echo "DIKTATOR_FRONTEND_BUCKET: ${DIKTATOR_FRONTEND_BUCKET:-'Not set'}"
-    echo "DIKTATOR_API_URL: ${DIKTATOR_API_URL:-'Not set'}"
-    echo ""
-    echo "=== Firebase Configuration ==="
-    echo "API Key: ${DIKTATOR_FIREBASE_API_KEY:-'Not set'}"
-    echo "Auth Domain: ${DIKTATOR_FIREBASE_AUTH_DOMAIN:-'Not set'}"
-    echo "Storage Bucket: ${DIKTATOR_FIREBASE_STORAGE_BUCKET:-'Not set'}"
-    echo "Messaging Sender ID: ${DIKTATOR_FIREBASE_MESSAGING_SENDER_ID:-'Not set'}"
-    echo "App ID: ${DIKTATOR_FIREBASE_APP_ID:-'Not set'}"
-else
-    echo "=== Dynamic Configuration ==="
-    echo "No .mise.env file found. Run 'mise run config-load' to generate it."
-fi
+# Create development backend environment
+cat > backend/.env.development << EOF
+# === BACKEND DEVELOPMENT CONFIGURATION ===
+# Google Cloud settings
+GOOGLE_CLOUD_PROJECT=diktator-dev
+GOOGLE_CLOUD_QUOTA_PROJECT=diktator-app
+STORAGE_BUCKET=diktator-dev.appspot.com
 
+# Application settings
+GIN_MODE=debug
+PORT=8080
+
+# Firebase Emulator hosts
+FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
+FIRESTORE_EMULATOR_HOST=localhost:8088
+FIREBASE_STORAGE_EMULATOR_HOST=localhost:9199
+EOF
+
+# Create development frontend environment
+mkdir -p frontend
+cat > frontend/.env.development << EOF
+# === FRONTEND DEVELOPMENT CONFIGURATION ===
+# API Configuration
+NEXT_PUBLIC_API_URL=http://localhost:8080
+
+# Firebase Emulator Configuration
+NEXT_PUBLIC_FIREBASE_USE_EMULATOR=true
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=diktator-dev
+NEXT_PUBLIC_FIREBASE_API_KEY=demo-key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=diktator-dev.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=diktator-dev.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
+NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789:web:abcdef
+
+# Development optimizations
+NEXT_TELEMETRY_DISABLED=1
+NODE_ENV=development
+EOF
+
+echo "✅ Development configuration files created:"
+echo "  - backend/.env.development"
+echo "  - frontend/.env.development"
 echo ""
-echo "=== Environment Variables ==="
-echo "NODE_ENV: ${NODE_ENV}"
-echo "GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}"
-echo "NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}"
-echo "NEXT_PUBLIC_FIREBASE_USE_EMULATOR: ${NEXT_PUBLIC_FIREBASE_USE_EMULATOR}"
+echo "These files contain environment-specific settings for local development."
 """
 
-[tasks.env-production]
-description = "Generate production environment file for frontend"
+[tasks.config-prod]
+description = "Generate production environment configuration from terraform outputs"
 run = """
+echo "Generating production environment configuration..."
+
 # Load dynamic configuration first
 if [ -f .mise.env ]; then
     source .mise.env
 else
-    echo "Warning: .mise.env not found. Run 'mise run config-load' first."
+    echo "ERROR: .mise.env not found. Run 'mise run config-load' first."
+    exit 1
 fi
-
-cd frontend
-
-echo "Generating production .env.local..."
 
 # Validate required environment variables
 if [ -z "${DIKTATOR_PROJECT_ID}" ]; then
@@ -686,38 +840,119 @@ if [ -z "${DIKTATOR_PROJECT_ID}" ]; then
     exit 1
 fi
 
-if [ -z "${DIKTATOR_FIREBASE_API_KEY}" ]; then
-    echo "WARNING: DIKTATOR_FIREBASE_API_KEY is not set. Firebase authentication may not work."
-fi
+# Create production backend environment
+cat > backend/.env.production << EOF
+# === BACKEND PRODUCTION CONFIGURATION ===
+# Google Cloud settings
+GOOGLE_CLOUD_PROJECT=${DIKTATOR_PROJECT_ID}
+GOOGLE_CLOUD_QUOTA_PROJECT=${GOOGLE_CLOUD_QUOTA_PROJECT:-${DIKTATOR_PROJECT_ID}}
+STORAGE_BUCKET=${DIKTATOR_FIREBASE_STORAGE_BUCKET:-${DIKTATOR_PROJECT_ID}.appspot.com}
 
-cat > .env.local << EOF
-# Production environment - auto-generated
+# Application settings
+GIN_MODE=release
+PORT=8080
+
+# No emulator hosts in production (use real Firebase services)
+EOF
+
+# Create production frontend environment
+mkdir -p frontend
+cat > frontend/.env.production << EOF
+# === FRONTEND PRODUCTION CONFIGURATION ===
+# API Configuration
 NEXT_PUBLIC_API_URL=${DIKTATOR_API_URL:-"https://${DIKTATOR_API_SERVICE_NAME}-${DIKTATOR_REGION:-${DIKTATOR_DEFAULT_REGION}}.run.app"}
-
-# Additional production optimizations
-NEXT_TELEMETRY_DISABLED=1
 
 # Firebase Production Configuration
 NEXT_PUBLIC_FIREBASE_USE_EMULATOR=false
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=${DIKTATOR_PROJECT_ID}
 NEXT_PUBLIC_FIREBASE_API_KEY=${DIKTATOR_FIREBASE_API_KEY:-""}
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${DIKTATOR_FIREBASE_AUTH_DOMAIN:-""}
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=${DIKTATOR_PROJECT_ID:-""}
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${DIKTATOR_FIREBASE_STORAGE_BUCKET:-""}
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${DIKTATOR_FIREBASE_MESSAGING_SENDER_ID:-""}
 NEXT_PUBLIC_FIREBASE_APP_ID=${DIKTATOR_FIREBASE_APP_ID:-""}
+
+# Production optimizations
+NEXT_TELEMETRY_DISABLED=1
+NODE_ENV=production
 EOF
 
-echo "Production .env.local generated successfully"
+echo "✅ Production configuration files created:"
+echo "  - backend/.env.production"
+echo "  - frontend/.env.production"
 echo ""
-echo "=== Production Environment Configuration ==="
-echo "NODE_ENV: production"
+echo "=== Production Configuration Summary ==="
 echo "API URL: ${DIKTATOR_API_URL:-"https://${DIKTATOR_API_SERVICE_NAME}-${DIKTATOR_REGION:-${DIKTATOR_DEFAULT_REGION}}.run.app"}"
-echo "Telemetry: Disabled"
+echo "Firebase Project: ${DIKTATOR_PROJECT_ID}"
+echo "Storage Bucket: ${DIKTATOR_FIREBASE_STORAGE_BUCKET:-${DIKTATOR_PROJECT_ID}.appspot.com}"
+"""
+
+[tasks.config-check]
+description = "Check all configuration values across environments"
+run = """
+echo "=== STATIC CONFIGURATION (mise.toml) ==="
+echo "App Name: ${DIKTATOR_APP_NAME}"
+echo "API Service: ${DIKTATOR_API_SERVICE_NAME}"
+echo "Default Region: ${DIKTATOR_DEFAULT_REGION}"
+echo "Bucket Location: ${DIKTATOR_BUCKET_LOCATION}"
 echo ""
-echo "Firebase Configuration:"
-echo "  Use Emulator: false"
-echo "  Project ID: ${DIKTATOR_PROJECT_ID:-'Not set'}"
-echo "  Auth Domain: ${DIKTATOR_FIREBASE_AUTH_DOMAIN:-'Not set'}"
-echo "  App ID: ${DIKTATOR_FIREBASE_APP_ID:-'Not set'}"
+
+echo "=== DEVELOPMENT CONFIGURATION ==="
+if [ -f backend/.env.development ]; then
+    echo "Backend Development Config (backend/.env.development):"
+    echo "  $(grep GOOGLE_CLOUD_PROJECT backend/.env.development || echo 'GOOGLE_CLOUD_PROJECT: Not set')"
+    echo "  $(grep GIN_MODE backend/.env.development || echo 'GIN_MODE: Not set')"
+    echo "  $(grep FIREBASE_AUTH_EMULATOR_HOST backend/.env.development || echo 'Firebase emulators: Not configured')"
+else
+    echo "❌ Backend development config not found. Run 'mise run config-dev'"
+fi
+
+if [ -f frontend/.env.development ]; then
+    echo "Frontend Development Config (frontend/.env.development):"
+    echo "  $(grep NEXT_PUBLIC_API_URL frontend/.env.development || echo 'API URL: Not set')"
+    echo "  $(grep NEXT_PUBLIC_FIREBASE_USE_EMULATOR frontend/.env.development || echo 'Firebase emulator: Not set')"
+    echo "  $(grep NEXT_PUBLIC_FIREBASE_PROJECT_ID frontend/.env.development || echo 'Firebase project: Not set')"
+else
+    echo "❌ Frontend development config not found. Run 'mise run config-dev'"
+fi
 echo ""
+
+echo "=== PRODUCTION CONFIGURATION ==="
+if [ -f .mise.env ]; then
+    echo "Terraform Outputs (.mise.env):"
+    source .mise.env
+    echo "  Project ID: ${DIKTATOR_PROJECT_ID:-'Not set'}"
+    echo "  Region: ${DIKTATOR_REGION:-'Not set'}"
+    echo "  Frontend Bucket: ${DIKTATOR_FRONTEND_BUCKET:-'Not set'}"
+    echo "  API URL: ${DIKTATOR_API_URL:-'Not set'}"
+    echo "  Firebase API Key: ${DIKTATOR_FIREBASE_API_KEY:+Set}"${DIKTATOR_FIREBASE_API_KEY:-'Not set'}"
+else
+    echo "❌ No terraform outputs found. Run 'mise run config-load'"
+fi
+
+if [ -f backend/.env.production ]; then
+    echo "Backend Production Config (backend/.env.production):"
+    echo "  $(grep GOOGLE_CLOUD_PROJECT backend/.env.production || echo 'GOOGLE_CLOUD_PROJECT: Not set')"
+    echo "  $(grep GIN_MODE backend/.env.production || echo 'GIN_MODE: Not set')"
+else
+    echo "❌ Backend production config not found. Run 'mise run config-prod'"
+fi
+
+if [ -f frontend/.env.production ]; then
+    echo "Frontend Production Config (frontend/.env.production):"
+    echo "  $(grep NEXT_PUBLIC_API_URL frontend/.env.production || echo 'API URL: Not set')"
+    echo "  $(grep NEXT_PUBLIC_FIREBASE_USE_EMULATOR frontend/.env.production || echo 'Firebase emulator: Not set')"
+else
+    echo "❌ Frontend production config not found. Run 'mise run config-prod'"
+fi
+echo ""
+
+echo "=== CURRENT MISE ENVIRONMENT ==="
+echo "NODE_ENV: ${NODE_ENV}"
+echo "GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}"
+echo "NEXT_PUBLIC_FIREBASE_USE_EMULATOR: ${NEXT_PUBLIC_FIREBASE_USE_EMULATOR}"
+echo ""
+
+echo "=== CONFIGURATION SETUP COMMANDS ==="
+echo "For development: mise run config-dev"
+echo "For production: mise run config-load && mise run config-prod"
 """
