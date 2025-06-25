@@ -121,6 +121,9 @@ export interface WordSet {
   language: "en" | "no";
   createdAt: string;
   updatedAt: string;
+  // Audio processing status
+  audioProcessing?: "pending" | "completed" | "failed";
+  audioProcessedAt?: string;
   // Test configuration for this wordset
   testConfiguration?: TestConfiguration;
 }

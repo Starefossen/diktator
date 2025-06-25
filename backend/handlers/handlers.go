@@ -182,14 +182,16 @@ func CreateWordSet(c *gin.Context) {
 
 	// Create new word set
 	wordSet := &models.WordSet{
-		ID:        uuid.New().String(),
-		Name:      req.Name,
-		Words:     words,
-		FamilyID:  familyID.(string),
-		CreatedBy: userID.(string),
-		Language:  req.Language,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		ID:                uuid.New().String(),
+		Name:              req.Name,
+		Words:             words,
+		FamilyID:          familyID.(string),
+		CreatedBy:         userID.(string),
+		Language:          req.Language,
+		AudioProcessing:   "pending", // Mark as pending for audio generation
+		TestConfiguration: req.TestConfiguration,
+		CreatedAt:         time.Now(),
+		UpdatedAt:         time.Now(),
 	}
 
 	err := serviceManager.Firestore.CreateWordSet(wordSet)
@@ -200,9 +202,30 @@ func CreateWordSet(c *gin.Context) {
 		return
 	}
 
+	// Start audio generation in background
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("Panic in audio generation goroutine for wordset %s: %v", wordSet.ID, r)
+			}
+		}()
+
+		if serviceManager == nil {
+			log.Printf("Error: Service manager is nil in goroutine for wordset %s", wordSet.ID)
+			return
+		}
+
+		err := serviceManager.GenerateAudioForWordSet(wordSet.ID)
+		if err != nil {
+			log.Printf("Error generating audio for word set %s: %v", wordSet.ID, err)
+		} else {
+			log.Printf("Successfully completed audio generation for word set %s", wordSet.ID)
+		}
+	}()
+
 	c.JSON(http.StatusCreated, models.APIResponse{
 		Data:    wordSet,
-		Message: "Word set created successfully",
+		Message: "Word set created successfully. Audio generation started in background.",
 	})
 }
 

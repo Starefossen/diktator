@@ -37,11 +37,14 @@ type WordSet struct {
 		Audio      WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`           // Optional audio info for the word
 		Definition string    `firestore:"definition,omitempty" json:"definition,omitempty"` // Optional definition for the word
 	} `firestore:"words" json:"words"`
-	FamilyID  string    `firestore:"familyId" json:"familyId"`
-	CreatedBy string    `firestore:"createdBy" json:"createdBy"`
-	Language  string    `firestore:"language" json:"language"` // 'en' or 'no'
-	CreatedAt time.Time `firestore:"createdAt" json:"createdAt"`
-	UpdatedAt time.Time `firestore:"updatedAt" json:"updatedAt"`
+	FamilyID          string                  `firestore:"familyId" json:"familyId"`
+	CreatedBy         string                  `firestore:"createdBy" json:"createdBy"`
+	Language          string                  `firestore:"language" json:"language"`                                   // 'en' or 'no'
+	AudioProcessing   string                  `firestore:"audioProcessing,omitempty" json:"audioProcessing,omitempty"` // "pending", "completed", "failed", or empty
+	AudioProcessedAt  *time.Time              `firestore:"audioProcessedAt,omitempty" json:"audioProcessedAt,omitempty"`
+	TestConfiguration *map[string]interface{} `firestore:"testConfiguration,omitempty" json:"testConfiguration,omitempty"`
+	CreatedAt         time.Time               `firestore:"createdAt" json:"createdAt"`
+	UpdatedAt         time.Time               `firestore:"updatedAt" json:"updatedAt"`
 }
 
 // TestResult represents the result of a spelling test
@@ -71,9 +74,10 @@ type AudioFile struct {
 
 // CreateWordSetRequest represents the request to create a word set
 type CreateWordSetRequest struct {
-	Name     string   `json:"name" binding:"required"`
-	Words    []string `json:"words" binding:"required"`
-	Language string   `json:"language" binding:"required"`
+	Name              string                  `json:"name" binding:"required"`
+	Words             []string                `json:"words" binding:"required"`
+	Language          string                  `json:"language" binding:"required"`
+	TestConfiguration *map[string]interface{} `json:"testConfiguration,omitempty"`
 }
 
 // SaveResultRequest represents the request to save a test result

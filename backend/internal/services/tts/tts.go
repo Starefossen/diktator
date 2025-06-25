@@ -31,8 +31,8 @@ type VoiceConfig struct {
 // Enhanced voice configurations with child-friendly options
 var DefaultVoices = map[string]VoiceConfig{
 	"en": {
-		LanguageCode: "en-US",
-		VoiceName:    "en-US-Neural2-F", // Child-friendly female voice
+		LanguageCode: "en-GB",
+		VoiceName:    "en-GB-Neural2-A", // Child-friendly female voice
 		Gender:       texttospeechpb.SsmlVoiceGender_FEMALE,
 		SpeakingRate: 0.85, // Slower for children
 		Pitch:        2.0,  // Slightly higher pitch for children

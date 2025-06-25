@@ -132,14 +132,22 @@ func (m *Manager) GenerateAudioForWordSet(wordSetID string) error {
 
 	log.Printf("Generating audio for word set '%s' with %d words", wordSet.Name, len(wordSet.Words))
 
-	// Keep track of whether we updated any audio files
-	updated := false
+	// Mark audio processing as pending
+	wordSet.AudioProcessing = "pending"
+	err = m.Firestore.UpdateWordSet(wordSet)
+	if err != nil {
+		log.Printf("Failed to update word set status to pending: %v", err)
+	}
+
+	// Keep track of processing status
+	hasErrors := false
 
 	// Generate audio for each word in the word set
 	for i, wordItem := range wordSet.Words {
 		audioFile, err := m.GenerateAudioForWord(wordItem.Word, wordSet.Language)
 		if err != nil {
 			log.Printf("Failed to generate audio for word '%s': %v", wordItem.Word, err)
+			hasErrors = true
 			// Continue with other words even if one fails
 			continue
 		}
@@ -153,22 +161,33 @@ func (m *Manager) GenerateAudioForWordSet(wordSetID string) error {
 				VoiceID:   audioFile.VoiceID,
 				CreatedAt: audioFile.CreatedAt,
 			}
-			updated = true
 			log.Printf("Updated audio reference for word '%s'", wordItem.Word)
 		}
 	}
 
-	// Update the word set if any audio files were added
-	if updated {
-		err = m.Firestore.UpdateWordSet(wordSet)
-		if err != nil {
-			log.Printf("Failed to update word set with audio references: %v", err)
-			return fmt.Errorf("failed to update word set: %v", err)
-		}
-		log.Printf("Updated word set '%s' with audio file references", wordSet.Name)
+	// Update the word set with final status
+	now := time.Now()
+	wordSet.AudioProcessedAt = &now
+
+	if hasErrors {
+		wordSet.AudioProcessing = "failed"
+	} else {
+		wordSet.AudioProcessing = "completed"
 	}
 
-	log.Printf("Completed audio generation for word set '%s'", wordSet.Name)
+	// Update the word set with audio references and status
+	err = m.Firestore.UpdateWordSet(wordSet)
+	if err != nil {
+		log.Printf("Failed to update word set with audio references: %v", err)
+		return fmt.Errorf("failed to update word set: %v", err)
+	}
+
+	if hasErrors {
+		log.Printf("Completed audio generation for word set '%s' with some errors", wordSet.Name)
+	} else {
+		log.Printf("Successfully completed audio generation for word set '%s'", wordSet.Name)
+	}
+
 	return nil
 }
 
