@@ -183,6 +183,10 @@ export const en = {
   "test.restart": "Restart Test",
   "test.finishTest": "Finish Test",
   "test.reviewResults": "Review Results",
+  "test.listenToWordMobile": "Tap to listen",
+  "test.nextMobile": "Next",
+  "test.finishMobile": "Finish",
+  "test.backMobile": "Back",
 
   // Results page
   "results.title": "Test Results",

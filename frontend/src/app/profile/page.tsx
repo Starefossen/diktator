@@ -58,9 +58,9 @@ export default function ProfilePage() {
   const averageScore =
     totalTests > 0
       ? Math.round(
-        recentResults.reduce((sum, result) => sum + result.score, 0) /
-        totalTests,
-      )
+          recentResults.reduce((sum, result) => sum + result.score, 0) /
+            totalTests,
+        )
       : 0;
 
   const formatDate = (dateString: string) => {
@@ -255,12 +255,13 @@ export default function ProfilePage() {
                     </div>
                     <div className="text-right">
                       <div
-                        className={`inline-block px-3 py-1 rounded-full font-semibold ${result.score >= 90
-                          ? "text-green-600 bg-green-50"
-                          : result.score >= 70
-                            ? "text-yellow-600 bg-yellow-50"
-                            : "text-red-600 bg-red-50"
-                          }`}
+                        className={`inline-block px-3 py-1 rounded-full font-semibold ${
+                          result.score >= 90
+                            ? "text-green-600 bg-green-50"
+                            : result.score >= 70
+                              ? "text-yellow-600 bg-yellow-50"
+                              : "text-red-600 bg-red-50"
+                        }`}
                       >
                         {result.score}%
                       </div>
@@ -320,10 +321,11 @@ export default function ProfilePage() {
                             {child.displayName}
                           </span>
                           <span
-                            className={`text-xs px-2 py-1 rounded ${child.isActive
-                              ? "bg-green-100 text-green-700"
-                              : "bg-gray-100 text-gray-600"
-                              }`}
+                            className={`text-xs px-2 py-1 rounded ${
+                              child.isActive
+                                ? "bg-green-100 text-green-700"
+                                : "bg-gray-100 text-gray-600"
+                            }`}
                           >
                             {child.isActive
                               ? t("profile.family.active")

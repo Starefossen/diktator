@@ -1154,6 +1154,10 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "testConfiguration": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
                 "words": {
                     "type": "array",
                     "items": {

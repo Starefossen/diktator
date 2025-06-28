@@ -7,6 +7,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **language** | **string** |  | [default to undefined]
 **name** | **string** |  | [default to undefined]
+**testConfiguration** | **{ [key: string]: any; }** |  | [optional] [default to undefined]
 **words** | **Array&lt;string&gt;** |  | [default to undefined]
 
 ## Example
@@ -17,6 +18,7 @@ import { ModelsCreateWordSetRequest } from 'diktator-api-client';
 const instance: ModelsCreateWordSetRequest = {
     language,
     name,
+    testConfiguration,
     words,
 };
 ```

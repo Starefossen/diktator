@@ -17,9 +17,9 @@ export function FlagIcon({ language, className = "w-4 h-4" }: FlagIconProps) {
     <span
       className={`fi fi-${flagCode} rounded-sm overflow-hidden inline-block ${className}`}
       style={{
-        backgroundSize: 'cover',
-        minWidth: '16px',
-        minHeight: '12px'
+        backgroundSize: "cover",
+        minWidth: "16px",
+        minHeight: "12px",
       }}
     />
   );

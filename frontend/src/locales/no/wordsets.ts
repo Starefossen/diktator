@@ -32,6 +32,16 @@ export const wordsets = {
   "wordsets.noTitle": "Ingen ordsett ennå",
   "wordsets.noSubtitle": "Opprett ditt første ordsett for å komme i gang",
   "wordsets.saveSettings": "Lagre innstillinger",
+  "wordsets.withAudio": "med lyd",
+  "wordsets.audioProcessing": "Lydbehandling...",
+  "wordsets.audioReady": "Lyd klar",
+  "wordsets.audioProcessingFailed": "Lydbehandling feilet",
+  "wordsets.audioProcessingInProgress": "Lydbehandling pågår...",
+  "wordsets.deleting": "Sletter...",
+  "wordsets.deleteConfirmMessage":
+    'Er du sikker på at du vil slette "{name}"? Denne handlingen kan ikke angres.',
+  "wordsets.deleteWarning":
+    "Dette vil permanent slette ordsettet og alle tilhørende data inkludert lydfiler.",
 
   // Word Set Configuration
   "wordsets.config.maxAttempts": "Maks forsøk",
@@ -46,4 +56,5 @@ export const wordsets = {
   "wordsets.config.optional": "valgfritt",
   "wordsets.config.noTimeLimit": "Ingen tidsgrense",
   "wordsets.config.timeLimitHelp": "Tid i sekunder (1-300)",
+  "wordsets.config.enableAutocorrect": "Aktiver autokorrigering/stavekontroll",
 };

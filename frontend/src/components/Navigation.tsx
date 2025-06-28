@@ -4,8 +4,16 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import {
+  Disclosure,
+  DisclosureButton,
+  DisclosurePanel,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuItems,
+} from "@headlessui/react";
+import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import NavigationLanguageSwitcher from "./NavigationLanguageSwitcher";
 
 export function Navigation() {
@@ -50,7 +58,10 @@ export function Navigation() {
   };
 
   return (
-    <Disclosure as="nav" className="sticky top-0 z-50 border-b border-gray-100 shadow-sm bg-white/95 backdrop-blur-sm">
+    <Disclosure
+      as="nav"
+      className="sticky top-0 z-50 border-b border-gray-100 shadow-sm bg-white/95 backdrop-blur-sm"
+    >
       <div className="max-w-6xl px-4 mx-auto">
         <div className="flex items-center justify-between h-16">
           <div className="flex">
@@ -78,20 +89,29 @@ export function Navigation() {
               {/* Authenticated user navigation links */}
               {user && (
                 <>
-                  <Link href="/wordsets/" className={getNavLinkClasses("/wordsets")}>
+                  <Link
+                    href="/wordsets/"
+                    className={getNavLinkClasses("/wordsets")}
+                  >
                     {t("nav.wordsets")}
                   </Link>
 
                   {/* Family Management - Only for parents */}
                   {userData?.role === "parent" && (
-                    <Link href="/family/" className={getNavLinkClasses("/family")}>
+                    <Link
+                      href="/family/"
+                      className={getNavLinkClasses("/family")}
+                    >
                       {t("nav.family")}
                     </Link>
                   )}
 
                   {/* Results - Only for children */}
                   {userData?.role === "child" && (
-                    <Link href="/results/" className={getNavLinkClasses("/results")}>
+                    <Link
+                      href="/results/"
+                      className={getNavLinkClasses("/results")}
+                    >
                       {t("nav.results")}
                     </Link>
                   )}
@@ -124,7 +144,9 @@ export function Navigation() {
                     <div className="flex items-center space-x-2">
                       <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600">
                         <span className="text-sm font-medium text-white">
-                          {(userData?.displayName || user.email)?.charAt(0).toUpperCase()}
+                          {(userData?.displayName || user.email)
+                            ?.charAt(0)
+                            .toUpperCase()}
                         </span>
                       </div>
                       <span className="hidden text-sm text-gray-700 md:block">
@@ -191,8 +213,14 @@ export function Navigation() {
             <DisclosureButton className="relative inline-flex items-center justify-center p-2 text-gray-400 bg-white rounded-md group hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
               <span className="absolute -inset-0.5" />
               <span className="sr-only">Open main menu</span>
-              <Bars3Icon aria-hidden="true" className="block h-6 w-6 group-data-[open]:hidden" />
-              <XMarkIcon aria-hidden="true" className="hidden h-6 w-6 group-data-[open]:block" />
+              <Bars3Icon
+                aria-hidden="true"
+                className="block h-6 w-6 group-data-[open]:hidden"
+              />
+              <XMarkIcon
+                aria-hidden="true"
+                className="hidden h-6 w-6 group-data-[open]:block"
+              />
             </DisclosureButton>
           </div>
         </div>
@@ -270,7 +298,9 @@ export function Navigation() {
               <div className="flex-shrink-0">
                 <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600">
                   <span className="text-sm font-medium text-white">
-                    {(userData?.displayName || user.email)?.charAt(0).toUpperCase()}
+                    {(userData?.displayName || user.email)
+                      ?.charAt(0)
+                      .toUpperCase()}
                   </span>
                 </div>
               </div>

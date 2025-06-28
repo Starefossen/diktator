@@ -6,7 +6,7 @@ import AuthForm from "@/components/AuthForm";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 // Force dynamic rendering for this page since it uses client-side authentication
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 function AuthFormWrapper() {
   const [isSignUp, setIsSignUp] = useState(false);

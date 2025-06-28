@@ -23,15 +23,9 @@ export interface AudioPlayerOptions {
 export const playWordAudio = async (
   word: string,
   wordSet: WordSet,
-  options: AudioPlayerOptions = {}
+  options: AudioPlayerOptions = {},
 ): Promise<void> => {
-  const {
-    onStart,
-    onEnd,
-    onError,
-    autoDelay = 0,
-    speechRate = 0.8
-  } = options;
+  const { onStart, onEnd, onError, autoDelay = 0, speechRate = 0.8 } = options;
 
   const playFn = async () => {
     try {
@@ -43,7 +37,8 @@ export const playWordAudio = async (
 
       if (audioInfo && audioInfo.audioId) {
         // Use the generated audio from the API
-        const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+        const apiBaseUrl =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
         const audioUrl = `${apiBaseUrl}/api/wordsets/${wordSet.id}/audio/${audioInfo.audioId}`;
         const audio = new Audio(audioUrl);
 
@@ -52,7 +47,9 @@ export const playWordAudio = async (
         };
 
         audio.onerror = () => {
-          console.log("Generated audio failed, falling back to speech synthesis");
+          console.log(
+            "Generated audio failed, falling back to speech synthesis",
+          );
           // Fallback to speech synthesis
           fallbackToSpeechSynthesis();
         };
@@ -63,7 +60,10 @@ export const playWordAudio = async (
         fallbackToSpeechSynthesis();
       }
     } catch (error) {
-      console.log("Audio playback failed, falling back to speech synthesis:", error);
+      console.log(
+        "Audio playback failed, falling back to speech synthesis:",
+        error,
+      );
       fallbackToSpeechSynthesis();
     }
   };
@@ -78,7 +78,7 @@ export const playWordAudio = async (
 
     try {
       speechSynthesis.cancel();
-      
+
       const utterance = new SpeechSynthesisUtterance(word);
       utterance.lang = wordSet.language === "no" ? "nb-NO" : "en-US";
       utterance.rate = speechRate;
@@ -86,7 +86,7 @@ export const playWordAudio = async (
       utterance.onend = () => {
         onEnd?.();
       };
-      
+
       utterance.onerror = (event) => {
         const error = new Error(`Speech synthesis error: ${event.error}`);
         onError?.(error);
@@ -95,7 +95,10 @@ export const playWordAudio = async (
 
       speechSynthesis.speak(utterance);
     } catch (error) {
-      const speechError = error instanceof Error ? error : new Error("Unknown speech synthesis error");
+      const speechError =
+        error instanceof Error
+          ? error
+          : new Error("Unknown speech synthesis error");
       onError?.(speechError);
       onEnd?.();
     }
@@ -116,7 +119,7 @@ export const stopAudio = (): void => {
   if ("speechSynthesis" in window) {
     speechSynthesis.cancel();
   }
-  
+
   // Note: We can't easily stop HTML5 Audio elements globally,
   // but the calling code should manage their own audio element references
 };
@@ -138,15 +141,19 @@ export const hasGeneratedAudio = (word: string, wordSet: WordSet): boolean => {
  * @param wordSet - The word set containing the word
  * @returns The audio URL or null if not available
  */
-export const getWordAudioUrl = (word: string, wordSet: WordSet): string | null => {
+export const getWordAudioUrl = (
+  word: string,
+  wordSet: WordSet,
+): string | null => {
   const wordItem = wordSet.words.find((w: WordItem) => w.word === word);
   const audioInfo = wordItem?.audio;
-  
+
   if (audioInfo && audioInfo.audioId) {
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    const apiBaseUrl =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
     return `${apiBaseUrl}/api/wordsets/${wordSet.id}/audio/${audioInfo.audioId}`;
   }
-  
+
   return null;
 };
 
@@ -157,16 +164,17 @@ export const getWordAudioUrl = (word: string, wordSet: WordSet): string | null =
  */
 export const getWordSetAudioStats = (wordSet: WordSet) => {
   const totalWords = wordSet.words.length;
-  const wordsWithAudio = wordSet.words.filter(w => w.audio?.audioUrl).length;
+  const wordsWithAudio = wordSet.words.filter((w) => w.audio?.audioUrl).length;
   const hasAnyAudio = wordsWithAudio > 0;
   const hasAllAudio = wordsWithAudio === totalWords;
-  
+
   return {
     totalWords,
     wordsWithAudio,
     hasAnyAudio,
     hasAllAudio,
-    audioPercentage: totalWords > 0 ? Math.round((wordsWithAudio / totalWords) * 100) : 0
+    audioPercentage:
+      totalWords > 0 ? Math.round((wordsWithAudio / totalWords) * 100) : 0,
   };
 };
 
@@ -177,7 +185,7 @@ export const getWordSetAudioStats = (wordSet: WordSet) => {
 export const createAudioController = () => {
   let currentAudio: HTMLAudioElement | null = null;
   let isPlaying = false;
-  
+
   const stop = () => {
     if (currentAudio) {
       currentAudio.pause();
@@ -187,17 +195,17 @@ export const createAudioController = () => {
     stopAudio(); // Also stop speech synthesis
     isPlaying = false;
   };
-  
+
   const play = async (
     word: string,
     wordSet: WordSet,
-    options: AudioPlayerOptions = {}
+    options: AudioPlayerOptions = {},
   ): Promise<void> => {
     // Stop any currently playing audio
     stop();
-    
+
     isPlaying = true;
-    
+
     const enhancedOptions = {
       ...options,
       onEnd: () => {
@@ -209,15 +217,15 @@ export const createAudioController = () => {
         isPlaying = false;
         currentAudio = null;
         options.onError?.(error);
-      }
+      },
     };
-    
+
     await playWordAudio(word, wordSet, enhancedOptions);
   };
-  
+
   return {
     play,
     stop,
-    isPlaying: () => isPlaying
+    isPlaying: () => isPlaying,
   };
 };

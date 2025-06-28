@@ -204,6 +204,12 @@ export interface ModelsCreateWordSetRequest {
     'name': string;
     /**
      * 
+     * @type {{ [key: string]: any; }}
+     * @memberof ModelsCreateWordSetRequest
+     */
+    'testConfiguration'?: { [key: string]: any; };
+    /**
+     * 
      * @type {Array<string>}
      * @memberof ModelsCreateWordSetRequest
      */

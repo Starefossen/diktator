@@ -824,7 +824,7 @@ func DeleteChildAccount(c *gin.Context) {
 		return
 	}
 
-	// Delete user record from our database 
+	// Delete user record from our database
 	if err := serviceManager.Firestore.DeleteUser(childID); err != nil {
 		// Child and Firebase user are already deleted, but log the database error
 		log.Printf("Warning: Failed to delete user record from database: %v", err)

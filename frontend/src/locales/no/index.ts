@@ -183,6 +183,10 @@ export const no = {
   "test.restart": "Start på nytt",
   "test.finishTest": "Fullfør test",
   "test.reviewResults": "Se resultater",
+  "test.listenToWordMobile": "Trykk for å høre",
+  "test.nextMobile": "Neste",
+  "test.finishMobile": "Ferdig",
+  "test.backMobile": "Tilbake",
 
   // Results page
   "results.title": "Testresultater",

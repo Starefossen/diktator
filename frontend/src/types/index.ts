@@ -203,6 +203,7 @@ export interface TestConfiguration {
   timeLimit?: number; // Optional time limit per word in seconds (default: none)
   autoPlayAudio: boolean; // Auto-play word audio when starting/moving to next word (default: true)
   shuffleWords: boolean; // Randomize word order during test (default: false)
+  enableAutocorrect: boolean; // Enable browser autocorrect/spellcheck in input field (default: false)
 }
 
 // Default test configuration
@@ -212,6 +213,7 @@ export const DEFAULT_TEST_CONFIG: TestConfiguration = {
   autoAdvance: true,
   autoPlayAudio: true,
   shuffleWords: false,
+  enableAutocorrect: false,
 };
 
 export interface TestSession {
@@ -261,5 +263,7 @@ export function validateTestConfiguration(
       config.timeLimit && config.timeLimit > 0 ? config.timeLimit : undefined,
     autoPlayAudio: config.autoPlayAudio ?? DEFAULT_TEST_CONFIG.autoPlayAudio,
     shuffleWords: config.shuffleWords ?? DEFAULT_TEST_CONFIG.shuffleWords,
+    enableAutocorrect:
+      config.enableAutocorrect ?? DEFAULT_TEST_CONFIG.enableAutocorrect,
   };
 }

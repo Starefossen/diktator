@@ -55,6 +55,9 @@ definitions:
         type: string
       name:
         type: string
+      testConfiguration:
+        additionalProperties: true
+        type: object
       words:
         items:
           type: string

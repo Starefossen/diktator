@@ -32,6 +32,16 @@ export const wordsets = {
   "wordsets.noTitle": "No Word Sets Yet",
   "wordsets.noSubtitle": "Create your first word set to get started",
   "wordsets.saveSettings": "Save Settings",
+  "wordsets.withAudio": "with audio",
+  "wordsets.audioProcessing": "Audio processing...",
+  "wordsets.audioReady": "Audio ready",
+  "wordsets.audioProcessingFailed": "Audio processing failed",
+  "wordsets.audioProcessingInProgress": "Audio processing in progress...",
+  "wordsets.deleting": "Deleting...",
+  "wordsets.deleteConfirmMessage":
+    'Are you sure you want to delete "{name}"? This action cannot be undone.',
+  "wordsets.deleteWarning":
+    "This will permanently delete the wordset and all its associated data including audio files.",
 
   // Word Set Configuration
   "wordsets.config.maxAttempts": "Max Attempts",
@@ -46,4 +56,5 @@ export const wordsets = {
   "wordsets.config.optional": "optional",
   "wordsets.config.noTimeLimit": "No time limit",
   "wordsets.config.timeLimitHelp": "Time in seconds (1-300)",
+  "wordsets.config.enableAutocorrect": "Enable autocorrect/spellcheck",
 };

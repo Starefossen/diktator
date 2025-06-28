@@ -4,6 +4,11 @@ export const common = {
   correct: "Correct!",
   "common.words": "words",
   "common.back": "Back",
+  "common.of": "of",
+
+  // Languages
+  "common.english": "English",
+  "common.norwegian": "Norwegian",
 
   // Navigation
   "nav.home": "Home",

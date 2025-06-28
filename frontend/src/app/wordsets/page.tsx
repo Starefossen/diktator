@@ -14,7 +14,11 @@ import {
   getEffectiveTestConfig,
 } from "@/types";
 import { generatedApiClient } from "@/lib/api-generated";
-import { playWordAudio as playWordAudioHelper, getWordSetAudioStats, stopAudio } from "@/lib/audioPlayer";
+import {
+  playWordAudio as playWordAudioHelper,
+  getWordSetAudioStats,
+  stopAudio,
+} from "@/lib/audioPlayer";
 import {
   playSuccessTone,
   playErrorSound,
@@ -103,7 +107,9 @@ export default function WordSetsPage() {
 
   // Periodically refresh wordsets if any have pending audio processing
   useEffect(() => {
-    const hasPendingAudio = wordSets.some(ws => ws.audioProcessing === "pending");
+    const hasPendingAudio = wordSets.some(
+      (ws) => ws.audioProcessing === "pending",
+    );
 
     if (hasPendingAudio) {
       const interval = setInterval(() => {
@@ -130,7 +136,12 @@ export default function WordSetsPage() {
       const response = await generatedApiClient.createWordSet(formData);
       if (response.data?.data) {
         setWordSets([response.data.data as WordSet, ...wordSets]);
-        setFormData({ name: "", words: [], language: language as Language, testConfiguration: DEFAULT_TEST_CONFIG });
+        setFormData({
+          name: "",
+          words: [],
+          language: language as Language,
+          testConfiguration: DEFAULT_TEST_CONFIG,
+        });
         setFormError("");
         setShowCreateForm(false);
         // Success feedback - could add a toast notification here instead of alert
@@ -169,7 +180,7 @@ export default function WordSetsPage() {
 
   const handleWordClick = async (word: string, wordSet: WordSet) => {
     // Only play if audio is available
-    const wordItem = wordSet.words.find(w => w.word === word);
+    const wordItem = wordSet.words.find((w) => w.word === word);
     if (!wordItem?.audio?.audioId) {
       return; // No audio available
     }
@@ -183,7 +194,7 @@ export default function WordSetsPage() {
       onError: (error: Error) => {
         setPlayingAudio(null);
         console.error("Failed to play audio for word:", word, error);
-      }
+      },
     });
   };
 
@@ -244,7 +255,7 @@ export default function WordSetsPage() {
 
     // Process words based on configuration
     const config = getEffectiveTestConfig(wordSet);
-    const wordStrings = wordSet.words.map(w => w.word);
+    const wordStrings = wordSet.words.map((w) => w.word);
     const words = config.shuffleWords
       ? [...wordStrings].sort(() => Math.random() - 0.5)
       : wordStrings;
@@ -291,7 +302,7 @@ export default function WordSetsPage() {
         setIsAudioPlaying(false);
       },
       autoDelay,
-      speechRate: 0.8
+      speechRate: 0.8,
     });
   }, []);
 
@@ -313,7 +324,13 @@ export default function WordSetsPage() {
         playTestWordAudio(processedWords[0], 500);
       }
     }
-  }, [activeTest, processedWords, testInitialized, testConfig, playTestWordAudio]);
+  }, [
+    activeTest,
+    processedWords,
+    testInitialized,
+    testConfig,
+    playTestWordAudio,
+  ]);
 
   // Auto-play when moving to next word
   useEffect(() => {
@@ -474,7 +491,9 @@ export default function WordSetsPage() {
 
             <div className="grid grid-cols-2 gap-6 mb-8">
               <div className="p-4 text-center rounded-lg bg-green-50">
-                <div className="text-3xl font-bold text-green-600">{score}%</div>
+                <div className="text-3xl font-bold text-green-600">
+                  {score}%
+                </div>
                 <div className="text-gray-600">{t("test.score")}</div>
               </div>
               <div className="p-4 text-center rounded-lg bg-blue-50">
@@ -493,13 +512,15 @@ export default function WordSetsPage() {
                 {answers.map((answer, index) => (
                   <div
                     key={index}
-                    className={`flex items-center justify-between p-3 rounded-lg ${answer.isCorrect ? "bg-green-50" : "bg-red-50"
-                      }`}
+                    className={`flex items-center justify-between p-3 rounded-lg ${
+                      answer.isCorrect ? "bg-green-50" : "bg-red-50"
+                    }`}
                   >
                     <div className="flex items-center">
                       <div
-                        className={`w-6 h-6 rounded-full mr-3 flex items-center justify-center ${answer.isCorrect ? "bg-green-500" : "bg-red-500"
-                          }`}
+                        className={`w-6 h-6 rounded-full mr-3 flex items-center justify-center ${
+                          answer.isCorrect ? "bg-green-500" : "bg-red-500"
+                        }`}
                       >
                         {answer.isCorrect ? (
                           <svg
@@ -533,28 +554,32 @@ export default function WordSetsPage() {
                       </div>
                       <div>
                         <span
-                          className={`font-medium ${answer.isCorrect ? "text-green-800" : "text-red-800"
-                            }`}
+                          className={`font-medium ${
+                            answer.isCorrect ? "text-green-800" : "text-red-800"
+                          }`}
                         >
                           {answer.word}
                         </span>
                         {!answer.isCorrect && (
                           <span className="ml-2 text-gray-600">
-                            {t("test.yourAnswer")} &quot;{answer.userAnswer}&quot;
+                            {t("test.yourAnswer")} &quot;{answer.userAnswer}
+                            &quot;
                           </span>
                         )}
                       </div>
                     </div>
                     <button
                       onClick={() => playTestWordAudio(answer.word)}
-                      className={`px-3 py-1 transition-colors rounded ${answer.isCorrect
-                        ? "text-green-700 bg-green-100 hover:bg-green-200"
-                        : "text-red-700 bg-red-100 hover:bg-red-200"
-                        }`}
+                      className={`px-3 py-1 transition-colors rounded ${
+                        answer.isCorrect
+                          ? "text-green-700 bg-green-100 hover:bg-green-200"
+                          : "text-red-700 bg-red-100 hover:bg-red-200"
+                      }`}
                     >
                       <HeroVolumeIcon
-                        className={`w-4 h-4 ${answer.isCorrect ? "text-green-700" : "text-red-700"
-                          }`}
+                        className={`w-4 h-4 ${
+                          answer.isCorrect ? "text-green-700" : "text-red-700"
+                        }`}
                       />
                     </button>
                   </div>
@@ -623,22 +648,28 @@ export default function WordSetsPage() {
                     </button>
                   </div>
                   <p className="mt-4 text-gray-600">
-                    <span className="sm:hidden">Trykk for å høre</span>
-                    <span className="hidden sm:inline">{t("test.listenToWord")}</span>
+                    <span className="sm:hidden">
+                      {t("test.listenToWordMobile")}
+                    </span>
+                    <span className="hidden sm:inline">
+                      {t("test.listenToWord")}
+                    </span>
                   </p>
                 </div>
 
                 <div className="flex flex-col justify-center mb-6">
                   {showFeedback ? (
                     <div
-                      className={`p-4 rounded-lg animate-in fade-in-0 slide-in-from-top-2 duration-300 ${lastAnswerCorrect
-                        ? "bg-green-100 border border-green-300"
-                        : "bg-red-100 border border-red-300"
-                        }`}
+                      className={`p-4 rounded-lg animate-in fade-in-0 slide-in-from-top-2 duration-300 ${
+                        lastAnswerCorrect
+                          ? "bg-green-100 border border-green-300"
+                          : "bg-red-100 border border-red-300"
+                      }`}
                     >
                       <p
-                        className={`font-semibold text-lg ${lastAnswerCorrect ? "text-green-800" : "text-red-800"
-                          }`}
+                        className={`font-semibold text-lg ${
+                          lastAnswerCorrect ? "text-green-800" : "text-red-800"
+                        }`}
                       >
                         {lastAnswerCorrect
                           ? t("test.correct")
@@ -650,10 +681,17 @@ export default function WordSetsPage() {
                       type="text"
                       value={userAnswer}
                       onChange={(e) => setUserAnswer(e.target.value)}
-                      onKeyPress={(e) => e.key === "Enter" && handleSubmitAnswer()}
+                      onKeyPress={(e) =>
+                        e.key === "Enter" && handleSubmitAnswer()
+                      }
                       className="w-full px-4 py-3 text-xl text-center transition-all duration-200 border-2 border-gray-300 rounded-lg sm:px-6 sm:py-4 sm:text-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder={t("test.typeWordHere")}
                       autoFocus
+                      autoCorrect={testConfig?.enableAutocorrect ? "on" : "off"}
+                      autoCapitalize={
+                        testConfig?.enableAutocorrect ? "on" : "off"
+                      }
+                      spellCheck={testConfig?.enableAutocorrect}
                     />
                   )}
                 </div>
@@ -673,7 +711,9 @@ export default function WordSetsPage() {
                     disabled={showFeedback}
                   >
                     <HeroVolumeIcon className="w-4 h-4 sm:mr-2" />
-                    <span className="hidden sm:inline">{t("test.playAgain")}</span>
+                    <span className="hidden sm:inline">
+                      {t("test.playAgain")}
+                    </span>
                   </button>
 
                   {/* Next/Finish Button */}
@@ -683,7 +723,9 @@ export default function WordSetsPage() {
                     className="px-4 py-2 font-semibold text-white transition-all duration-200 rounded-lg sm:px-6 sm:py-3 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span className="sm:hidden">
-                      {currentWordIndex < processedWords.length - 1 ? "Neste" : "Ferdig"}
+                      {currentWordIndex < processedWords.length - 1
+                        ? t("test.nextMobile")
+                        : t("test.finishMobile")}
                     </span>
                     <span className="hidden sm:inline">
                       {currentWordIndex < processedWords.length - 1
@@ -697,8 +739,10 @@ export default function WordSetsPage() {
                     onClick={exitTest}
                     className="px-4 py-2 font-semibold text-gray-600 transition-colors bg-gray-200 rounded-lg sm:px-6 sm:py-3 hover:bg-gray-300"
                   >
-                    <span className="sm:hidden">Tilbake</span>
-                    <span className="hidden sm:inline">{t("test.backToWordSets")}</span>
+                    <span className="sm:hidden">{t("test.backMobile")}</span>
+                    <span className="hidden sm:inline">
+                      {t("test.backToWordSets")}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -707,7 +751,8 @@ export default function WordSetsPage() {
                 {answers.length > 0 && (
                   <p>
                     {t("test.correctSoFar")}:{" "}
-                    {answers.filter((a) => a.isCorrect).length} / {answers.length}
+                    {answers.filter((a) => a.isCorrect).length} /{" "}
+                    {answers.length}
                   </p>
                 )}
               </div>
@@ -787,8 +832,8 @@ export default function WordSetsPage() {
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="en">English</option>
-                    <option value="no">Norwegian</option>
+                    <option value="en">{t("common.english")}</option>
+                    <option value="no">{t("common.norwegian")}</option>
                   </select>
                 </div>
 
@@ -891,7 +936,10 @@ export default function WordSetsPage() {
                       {wordSet.name}
                     </h3>
                     <div className="flex items-center gap-2">
-                      <FlagIcon language={wordSet.language as "no" | "en"} className="w-5 h-4" />
+                      <FlagIcon
+                        language={wordSet.language as "no" | "en"}
+                        className="w-5 h-4"
+                      />
                       <span className="px-2 py-1 text-xs text-blue-800 uppercase bg-blue-100 rounded">
                         {wordSet.language}
                       </span>
@@ -906,25 +954,32 @@ export default function WordSetsPage() {
                         : t("wordsets.words.count")}
                       {(() => {
                         const audioStats = getWordSetAudioStats(wordSet);
-                        return audioStats.hasAnyAudio && (
-                          <span className="ml-2 text-sm text-blue-600">
-                            • {audioStats.wordsWithAudio} with audio
-                          </span>
+                        return (
+                          audioStats.hasAnyAudio && (
+                            <span className="ml-2 text-sm text-blue-600">
+                              • {audioStats.wordsWithAudio}{" "}
+                              {t("wordsets.withAudio")}
+                            </span>
+                          )
                         );
                       })()}
                       {/* Show audio processing status */}
                       {wordSet.audioProcessing && (
-                        <span className={`ml-2 text-sm ${wordSet.audioProcessing === "pending"
-                          ? "text-yellow-600"
-                          : wordSet.audioProcessing === "completed"
-                            ? "text-green-600"
-                            : "text-red-600"
-                          }`}>
-                          • {wordSet.audioProcessing === "pending"
-                            ? "Audio processing..."
+                        <span
+                          className={`ml-2 text-sm ${
+                            wordSet.audioProcessing === "pending"
+                              ? "text-yellow-600"
+                              : wordSet.audioProcessing === "completed"
+                                ? "text-green-600"
+                                : "text-red-600"
+                          }`}
+                        >
+                          •{" "}
+                          {wordSet.audioProcessing === "pending"
+                            ? t("wordsets.audioProcessing")
                             : wordSet.audioProcessing === "completed"
-                              ? "Audio ready"
-                              : "Audio processing failed"}
+                              ? t("wordsets.audioReady")
+                              : t("wordsets.audioProcessingFailed")}
                         </span>
                       )}
                     </p>
@@ -937,15 +992,26 @@ export default function WordSetsPage() {
                         return (
                           <span
                             key={index}
-                            onClick={() => hasAudio ? handleWordClick(wordItem.word, wordSet) : undefined}
-                            className={`inline-flex items-center px-2 py-1 text-sm rounded transition-all duration-200 ${hasAudio
-                              ? 'text-blue-700 bg-blue-100 cursor-pointer hover:bg-blue-200 hover:shadow-sm'
-                              : 'text-gray-700 bg-gray-100'
-                              } ${isPlaying ? 'ring-2 ring-blue-500 shadow-md' : ''}`}
-                            title={hasAudio ? t("wordsets.clickToPlay") : t("wordsets.noAudio")}
+                            onClick={() =>
+                              hasAudio
+                                ? handleWordClick(wordItem.word, wordSet)
+                                : undefined
+                            }
+                            className={`inline-flex items-center px-2 py-1 text-sm rounded transition-all duration-200 ${
+                              hasAudio
+                                ? "text-blue-700 bg-blue-100 cursor-pointer hover:bg-blue-200 hover:shadow-sm"
+                                : "text-gray-700 bg-gray-100"
+                            } ${isPlaying ? "ring-2 ring-blue-500 shadow-md" : ""}`}
+                            title={
+                              hasAudio
+                                ? t("wordsets.clickToPlay")
+                                : t("wordsets.noAudio")
+                            }
                           >
                             {hasAudio && (
-                              <HeroVolumeIcon className={`w-3 h-3 mr-1 ${isPlaying ? 'text-blue-600' : 'text-blue-500'}`} />
+                              <HeroVolumeIcon
+                                className={`w-3 h-3 mr-1 ${isPlaying ? "text-blue-600" : "text-blue-500"}`}
+                              />
                             )}
                             {wordItem.word}
                           </span>
@@ -963,11 +1029,14 @@ export default function WordSetsPage() {
                       <div className="mb-3">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-sm text-amber-600">
-                            Audio processing in progress...
+                            {t("wordsets.audioProcessingInProgress")}
                           </span>
                         </div>
                         <div className="w-full h-2 bg-gray-200 rounded-full">
-                          <div className="h-2 rounded-full bg-amber-500 animate-pulse" style={{ width: '100%' }}></div>
+                          <div
+                            className="h-2 rounded-full bg-amber-500 animate-pulse"
+                            style={{ width: "100%" }}
+                          ></div>
                         </div>
                       </div>
                     )}
@@ -1091,17 +1160,17 @@ export default function WordSetsPage() {
                   <label className="flex items-center">
                     <input
                       type="checkbox"
-                      checked={settingsConfig.autoAdvance}
+                      checked={settingsConfig.enableAutocorrect}
                       onChange={(e) =>
                         setSettingsConfig({
                           ...settingsConfig,
-                          autoAdvance: e.target.checked,
+                          enableAutocorrect: e.target.checked,
                         })
                       }
                       className="mr-2 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
                     <span className="text-sm text-gray-700">
-                      {t("wordsets.config.autoAdvance")}
+                      {t("wordsets.config.enableAutocorrect")}
                     </span>
                   </label>
                 </div>
@@ -1166,19 +1235,30 @@ export default function WordSetsPage() {
                   {t("wordsets.deleteConfirm")}
                 </h3>
                 <p className="mb-4 text-sm text-gray-500">
-                  Are you sure you want to delete &quot;{deleteWordSet.name}&quot;? This action cannot be undone.
+                  {t("wordsets.deleteConfirmMessage").replace(
+                    "{name}",
+                    deleteWordSet.name,
+                  )}
                 </p>
 
                 <div className="p-3 mb-4 border border-yellow-200 rounded-lg bg-yellow-50">
                   <div className="flex items-start">
                     <div className="flex-shrink-0">
-                      <svg className="w-5 h-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      <svg
+                        className="w-5 h-5 text-yellow-400"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     </div>
                     <div className="ml-3">
                       <p className="text-sm text-yellow-700">
-                        This will permanently delete the wordset and all its associated data including audio files.
+                        {t("wordsets.deleteWarning")}
                       </p>
                     </div>
                   </div>
@@ -1204,7 +1284,7 @@ export default function WordSetsPage() {
                   {deleting ? (
                     <>
                       <div className="w-4 h-4 mr-2 border-2 border-white rounded-full border-t-transparent animate-spin"></div>
-                      Deleting...
+                      {t("wordsets.deleting")}
                     </>
                   ) : (
                     <>

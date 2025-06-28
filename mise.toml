@@ -228,35 +228,11 @@ description = "Generate TypeScript client from OpenAPI spec"
 run = """
 echo "🚀 Generating TypeScript client from OpenAPI spec..."
 
-# Check if backend is running
-if ! curl -s -f "http://localhost:8080/health" > /dev/null; then
-    echo "❌ Backend is not running on http://localhost:8080"
-    echo "   Please start it with: mise run backend"
-    exit 1
-fi
-
-echo "✅ Backend is running"
-
-# Download OpenAPI spec
-echo "📥 Downloading OpenAPI spec..."
-curl -s "http://localhost:8080/swagger/doc.json" > /tmp/diktator-api.json
-
-# Check if spec was downloaded successfully
-if [ ! -s /tmp/diktator-api.json ]; then
-    echo "❌ Failed to download OpenAPI spec"
-    exit 1
-fi
-
-echo "✅ OpenAPI spec downloaded"
-
-# Create output directory
-mkdir -p frontend/src/generated
-
 # Generate TypeScript client
 echo "🔨 Generating TypeScript client..."
 cd frontend
 npx @openapitools/openapi-generator-cli generate \
-    -i /tmp/diktator-api.json \
+    -i ../backend/docs/swagger.json \
     -g typescript-axios \
     -o src/generated \
     --additional-properties=npmName=diktator-api-client,npmVersion=1.0.0,supportsES6=true,withInterfaces=true
