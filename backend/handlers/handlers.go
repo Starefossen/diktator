@@ -806,9 +806,30 @@ func DeleteChildAccount(c *gin.Context) {
 
 	childID := c.Param("childId")
 
-	if err := serviceManager.Firestore.DeleteChild(childID); err != nil {
+	// First delete from Firebase Auth
+	if err := serviceManager.Auth.DeleteUser(context.Background(), childID); err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
-			Error: "Failed to delete child account",
+			Error: "Failed to delete child from Firebase Auth: " + err.Error(),
+		})
+		return
+	}
+
+	// Delete child record from our database
+	if err := serviceManager.Firestore.DeleteChild(childID); err != nil {
+		// Firebase user is already deleted, but log the database error
+		log.Printf("Warning: Failed to delete child record from database after Firebase deletion: %v", err)
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Child deleted from authentication but failed to remove from database",
+		})
+		return
+	}
+
+	// Delete user record from our database 
+	if err := serviceManager.Firestore.DeleteUser(childID); err != nil {
+		// Child and Firebase user are already deleted, but log the database error
+		log.Printf("Warning: Failed to delete user record from database: %v", err)
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Child account partially deleted - authentication removed but user record cleanup failed",
 		})
 		return
 	}
