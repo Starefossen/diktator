@@ -100,7 +100,7 @@ export function Navigation() {
 
               {/* Sign In link for unauthenticated users */}
               {!user && (
-                <Link href="/auth" className={getNavLinkClasses("/auth")}>
+                <Link href="/auth/" className={getNavLinkClasses("/auth")}>
                   {t("auth.signin.title")}
                 </Link>
               )}
@@ -139,7 +139,7 @@ export function Navigation() {
                 >
                   <MenuItem>
                     <Link
-                      href="/profile"
+                      href="/profile/"
                       className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100"
                     >
                       <div className="flex items-center">

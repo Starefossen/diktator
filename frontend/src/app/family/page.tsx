@@ -80,7 +80,7 @@ export default function FamilyPage() {
   // Redirect non-parents to profile page using useEffect to avoid render-time navigation
   useEffect(() => {
     if (!loading && !isParent) {
-      router.push("/profile");
+      router.push("/profile/");
     }
   }, [loading, isParent, router]);
 
@@ -144,7 +144,7 @@ export default function FamilyPage() {
   };
 
   const viewChildProgress = () => {
-    router.push("/family/progress");
+    router.push("/family/progress/");
   };
 
   // Redirect non-parents to profile page

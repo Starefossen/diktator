@@ -37,22 +37,20 @@ export default function HomePage() {
       {/* API Status Indicator - Moved to less prominent position */}
       <div className="fixed z-40 top-20 right-4">
         <div
-          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium shadow-sm ${
-            status === "connected"
-              ? "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200"
-              : status === "error"
-                ? "bg-red-100 text-red-800 ring-1 ring-red-200"
-                : "bg-amber-100 text-amber-800 ring-1 ring-amber-200"
-          }`}
+          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium shadow-sm ${status === "connected"
+            ? "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200"
+            : status === "error"
+              ? "bg-red-100 text-red-800 ring-1 ring-red-200"
+              : "bg-amber-100 text-amber-800 ring-1 ring-amber-200"
+            }`}
         >
           <span
-            className={`w-1.5 h-1.5 rounded-full mr-2 ${
-              status === "connected"
-                ? "bg-emerald-500"
-                : status === "error"
-                  ? "bg-red-500"
-                  : "bg-amber-500"
-            }`}
+            className={`w-1.5 h-1.5 rounded-full mr-2 ${status === "connected"
+              ? "bg-emerald-500"
+              : status === "error"
+                ? "bg-red-500"
+                : "bg-amber-500"
+              }`}
           ></span>
           API{" "}
           {status === "connected" ? (
@@ -103,7 +101,7 @@ export default function HomePage() {
                 </Link>
               ) : (
                 <Link
-                  href="/auth"
+                  href="/auth/"
                   className="inline-flex items-center px-6 py-3 font-semibold text-white transition-all duration-200 shadow-md bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl hover:from-blue-600 hover:to-blue-700 hover:shadow-lg group"
                 >
                   {t("auth.signin.title")}
