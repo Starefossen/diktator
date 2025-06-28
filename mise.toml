@@ -440,14 +440,6 @@ gsutil -m cp -r frontend/out/* gs://${GCP_FRONTEND_BUCKET}/
 echo "Setting cache headers for deployed files..."
 gsutil -m setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" gs://${GCP_FRONTEND_BUCKET}/index.html
 gsutil -m setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" gs://${GCP_FRONTEND_BUCKET}/**/*.html
-echo "Invalidating CDN cache for key routes..."
-PROJECT_ID=${GOOGLE_CLOUD_PROJECT:-${GCP_PROJECT_ID}}
-gcloud compute url-maps invalidate-cdn-cache ${PROJECT_ID}-frontend-url-map --path="/" --async || echo "Cache invalidation failed for /"
-gcloud compute url-maps invalidate-cdn-cache ${PROJECT_ID}-frontend-url-map --path="/wordsets" --async || echo "Cache invalidation failed for /wordsets*"
-gcloud compute url-maps invalidate-cdn-cache ${PROJECT_ID}-frontend-url-map --path="/about" --async || echo "Cache invalidation failed for /about*"
-gcloud compute url-maps invalidate-cdn-cache ${PROJECT_ID}-frontend-url-map --path="/auth/" --async || echo "Cache invalidation failed for /auth*"
-gcloud compute url-maps invalidate-cdn-cache ${PROJECT_ID}-frontend-url-map --path="/test/" --async || echo "Cache invalidation failed for /family*"
-echo "CDN cache invalidation initiated"
 """
 
 # Deployment tasks for local development
@@ -491,6 +483,7 @@ source .mise.env
 mise run config-prod
 
 cd frontend
+rm -rf out
 
 echo "Building frontend with production environment..."
 cp .env.production .env.local
@@ -508,15 +501,6 @@ gsutil -m cp -r out/* gs://${DIKTATOR_FRONTEND_BUCKET}/
 echo "Setting cache headers for deployed files..."
 gsutil -m setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" gs://${DIKTATOR_FRONTEND_BUCKET}/index.html
 gsutil -m setmeta -h "Cache-Control:public, max-age=300" gs://${DIKTATOR_FRONTEND_BUCKET}/**/*.html
-echo "Invalidating CDN cache for key routes..."
-gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/" --async || echo "Cache invalidation failed for /"
-gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/wordsets" --async || echo "Cache invalidation failed for /wordsets"
-gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/wordsets/" --async || echo "Cache invalidation failed for /wordsets/"
-gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/about" --async || echo "Cache invalidation failed for /about"
-gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/about/" --async || echo "Cache invalidation failed for /about/"
-gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/auth/" --async || echo "Cache invalidation failed for /auth/"
-gcloud compute url-maps invalidate-cdn-cache ${DIKTATOR_PROJECT_ID}-frontend-url-map --path="/test/" --async || echo "Cache invalidation failed for /test/"
-echo "CDN cache invalidation initiated"
 
 echo "Frontend deployment completed successfully!"
 """

@@ -8,10 +8,10 @@ resource "random_id" "certificate" {
   }
 }
 
-# Create a backend bucket for the Global external Application Load Balancer
+# Backend bucket with CDN for /_next/static/ paths
 resource "google_compute_backend_bucket" "frontend" {
   name        = "${var.project_id}-frontend-backend"
-  description = "Backend bucket for frontend static files - Global external Application Load Balancer"
+  description = "Backend bucket with CDN for static assets - Global external Application Load Balancer"
   bucket_name = google_storage_bucket.frontend.name
   enable_cdn  = true
 
@@ -31,11 +31,36 @@ resource "google_compute_backend_bucket" "frontend" {
   depends_on = [google_project_service.required_apis]
 }
 
+# Backend bucket without CDN for all other paths
+resource "google_compute_backend_bucket" "frontend_no_cdn" {
+  name        = "${var.project_id}-frontend-no-cdn-backend"
+  description = "Backend bucket without CDN for dynamic content - Global external Application Load Balancer"
+  bucket_name = google_storage_bucket.frontend.name
+  enable_cdn  = false
+
+  depends_on = [google_project_service.required_apis]
+}
+
 # URL map for routing - Global external Application Load Balancer
 resource "google_compute_url_map" "frontend" {
   name            = "${var.project_id}-frontend-url-map"
-  description     = "Global external Application Load Balancer for frontend SPA"
-  default_service = google_compute_backend_bucket.frontend.id
+  description     = "Global external Application Load Balancer for frontend SPA with CDN routing"
+  default_service = google_compute_backend_bucket.frontend_no_cdn.id
+
+  path_matcher {
+    name            = "static-assets"
+    default_service = google_compute_backend_bucket.frontend_no_cdn.id
+
+    path_rule {
+      paths   = ["/_next/static/*"]
+      service = google_compute_backend_bucket.frontend.id
+    }
+  }
+
+  host_rule {
+    hosts        = ["*"]
+    path_matcher = "static-assets"
+  }
 }
 
 # URL map for HTTP to HTTPS redirect - Global external Application Load Balancer

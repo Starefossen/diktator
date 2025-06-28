@@ -13,7 +13,7 @@ resource "google_storage_bucket" "frontend" {
 
   website {
     main_page_suffix = "index.html"
-    not_found_page   = "index.html"
+    not_found_page   = "404.html"
   }
 
   cors {
