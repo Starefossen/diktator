@@ -39,6 +39,7 @@ import {
   HeroXMarkIcon,
   HeroPlusIcon,
   HeroDevicePhoneMobileIcon,
+  HeroEyeIcon,
 } from "@/components/Icons";
 import { FlagIcon } from "@/components/FlagIcon";
 
@@ -69,6 +70,12 @@ export default function WordSetsPage() {
   const [processedWords, setProcessedWords] = useState<string[]>([]);
   const [testInitialized, setTestInitialized] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+
+  // Flashcard practice state
+  const [practiceMode, setPracticeMode] = useState<WordSet | null>(null);
+  const [practiceWords, setPracticeWords] = useState<string[]>([]);
+  const [currentPracticeIndex, setCurrentPracticeIndex] = useState(0);
+  const [showPracticeWord, setShowPracticeWord] = useState(false);
 
   // Enhanced test state for detailed tracking
   const [currentWordAnswers, setCurrentWordAnswers] = useState<string[]>([]);
@@ -513,6 +520,178 @@ export default function WordSetsPage() {
     stopAudio();
   };
 
+  // Flashcard practice functionality
+  const startPractice = (wordSet: WordSet) => {
+    // Initialize audio for iOS Safari compatibility
+    initializeAudioForIOS();
+
+    // Set up practice mode
+    setPracticeMode(wordSet);
+
+    // Process words with shuffling if enabled
+    const config = getEffectiveTestConfig(wordSet);
+    const wordStrings = wordSet.words.map((w) => w.word);
+    const words = config.shuffleWords
+      ? [...wordStrings].sort(() => Math.random() - 0.5)
+      : wordStrings;
+
+    setPracticeWords(words);
+    setCurrentPracticeIndex(0);
+    setShowPracticeWord(false);
+    stopAudio();
+  };
+
+  const exitPractice = () => {
+    setPracticeMode(null);
+    setPracticeWords([]);
+    setCurrentPracticeIndex(0);
+    setShowPracticeWord(false);
+    stopAudio();
+  };
+
+  const nextPracticeWord = () => {
+    if (currentPracticeIndex < practiceWords.length - 1) {
+      setCurrentPracticeIndex(currentPracticeIndex + 1);
+      setShowPracticeWord(false);
+    }
+  };
+
+  const previousPracticeWord = () => {
+    if (currentPracticeIndex > 0) {
+      setCurrentPracticeIndex(currentPracticeIndex - 1);
+      setShowPracticeWord(false);
+    }
+  };
+
+  const playPracticeWordAudio = () => {
+    if (!practiceMode || practiceWords.length === 0) return;
+
+    const currentWord = practiceWords[currentPracticeIndex];
+    playWordAudioHelper(currentWord, practiceMode, {
+      onStart: () => setIsAudioPlaying(true),
+      onEnd: () => setIsAudioPlaying(false),
+      onError: (error: Error) => {
+        console.error("Practice audio playback error:", error);
+        setIsAudioPlaying(false);
+      },
+      speechRate: 0.8,
+    });
+  };
+
+  const playPracticeWordAudioWithDelay = (word: string, delay = 0) => {
+    if (!practiceMode) return;
+
+    // Check if auto-play is supported (not Safari/iOS)
+    if (requiresUserInteractionForAudio()) {
+      return; // Skip auto-play on Safari/iOS
+    }
+
+    const wordItem = practiceMode.words.find((w) => w.word === word);
+    if (!wordItem?.audio?.audioUrl) {
+      return; // No audio available
+    }
+
+    playWordAudioHelper(word, practiceMode, {
+      onStart: () => setIsAudioPlaying(true),
+      onEnd: () => setIsAudioPlaying(false),
+      onError: (error: Error) => {
+        console.error("Practice auto-play error:", error);
+        setIsAudioPlaying(false);
+      },
+      speechRate: 0.8,
+      autoDelay: delay,
+    });
+  };
+
+  const shufflePracticeWords = () => {
+    const shuffled = [...practiceWords].sort(() => Math.random() - 0.5);
+    setPracticeWords(shuffled);
+    setCurrentPracticeIndex(0);
+    setShowPracticeWord(false);
+
+    // Auto-play first word after shuffle (with longer delay)
+    setTimeout(() => {
+      playPracticeWordAudioWithDelay(shuffled[0], 300);
+    }, 1000);
+  };
+
+  // Auto-play when entering practice mode
+  useEffect(() => {
+    if (
+      practiceMode &&
+      practiceWords.length > 0 &&
+      currentPracticeIndex === 0
+    ) {
+      // Auto-play first word after a short delay
+      const timer = setTimeout(() => {
+        playPracticeWordAudioWithDelay(practiceWords[0], 500);
+      }, 800); // Give UI time to render
+
+      return () => clearTimeout(timer);
+    }
+    return undefined; // Explicit return for when no cleanup is needed
+  }, [practiceMode, practiceWords]);
+
+  // Auto-play when navigating to a new word
+  useEffect(() => {
+    if (practiceMode && practiceWords.length > 0 && currentPracticeIndex > 0) {
+      // Auto-play new word after a short delay
+      const timer = setTimeout(() => {
+        playPracticeWordAudioWithDelay(
+          practiceWords[currentPracticeIndex],
+          300,
+        );
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+    return undefined; // Explicit return for when no cleanup is needed
+  }, [currentPracticeIndex, practiceMode, practiceWords]);
+
+  // Keyboard navigation for practice mode
+  useEffect(() => {
+    if (!practiceMode) return;
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case "ArrowLeft":
+          e.preventDefault();
+          previousPracticeWord();
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          nextPracticeWord();
+          break;
+        case " ":
+          e.preventDefault();
+          if (e.shiftKey) {
+            playPracticeWordAudio();
+          } else {
+            setShowPracticeWord(!showPracticeWord);
+          }
+          break;
+        case "Escape":
+          e.preventDefault();
+          exitPractice();
+          break;
+        case "s":
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            shufflePracticeWords();
+          }
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [
+    practiceMode,
+    showPracticeWord,
+    currentPracticeIndex,
+    practiceWords.length,
+  ]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -521,6 +700,288 @@ export default function WordSetsPage() {
           <p className="mt-4 text-gray-600">{t("wordsets.loading")}</p>
         </div>
       </div>
+    );
+  }
+
+  // Flashcard Practice View
+  if (practiceMode && practiceWords.length > 0) {
+    const currentWord = practiceWords[currentPracticeIndex];
+    const wordItem = practiceMode.words.find((w) => w.word === currentWord);
+    const hasAudio = wordItem?.audio?.audioUrl;
+
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+          <div className="container px-4 py-8 mx-auto">
+            {/* Header */}
+            <div className="mb-8 text-center">
+              <h1 className="mb-2 text-3xl font-bold text-gray-800">
+                {t("wordsets.practice.title")} - {practiceMode.name}
+              </h1>
+              <p className="text-gray-600">
+                {t("test.progress")} {currentPracticeIndex + 1} {t("common.of")}{" "}
+                {practiceWords.length}
+              </p>
+              <div className="w-full h-2 mt-4 bg-gray-200 rounded-full">
+                <div
+                  className="h-2 transition-all duration-300 rounded-full bg-gradient-to-r from-purple-500 to-pink-500"
+                  style={{
+                    width: `${((currentPracticeIndex + 1) / practiceWords.length) * 100}%`,
+                  }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Auto-play Notice for Safari/iOS */}
+            {requiresUserInteractionForAudio() && (
+              <div className="max-w-2xl mx-auto mb-4">
+                <div className="p-3 text-sm border rounded-lg text-amber-700 bg-amber-50 border-amber-200">
+                  <div className="flex items-center">
+                    <HeroDevicePhoneMobileIcon className="w-5 h-5 mr-2 text-amber-600" />
+                    <span>{t("wordsets.practice.autoplayNotice")}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Practice Card */}
+            <div className="max-w-2xl mx-auto">
+              <div className="p-8 text-center bg-white rounded-lg shadow-xl">
+                {/* Audio Button */}
+                <div className="mb-8">
+                  <div className="relative inline-block">
+                    {isAudioPlaying && (
+                      <div className="absolute border-4 border-transparent rounded-full -inset-3 border-t-purple-500 border-r-purple-400 animate-spin"></div>
+                    )}
+                    <button
+                      onClick={playPracticeWordAudio}
+                      disabled={!hasAudio}
+                      className={`relative p-6 text-6xl transition-all duration-200 transform rounded-full shadow-lg ${
+                        hasAudio
+                          ? "text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-105"
+                          : "text-gray-400 bg-gray-200 cursor-not-allowed"
+                      }`}
+                      title={
+                        hasAudio
+                          ? t("wordsets.clickToPlay")
+                          : t("wordsets.noAudio")
+                      }
+                    >
+                      <HeroVolumeIcon className="w-16 h-16" />
+                    </button>
+                  </div>
+                  <p className="mt-4 text-gray-600">
+                    {hasAudio ? (
+                      requiresUserInteractionForAudio() ? (
+                        t("wordsets.practice.clickToHear")
+                      ) : (
+                        <span className="flex items-center justify-center">
+                          <HeroVolumeIcon className="w-4 h-4 mr-1 text-gray-600" />
+                          {t("wordsets.practice.autoPlayingReplay")}
+                        </span>
+                      )
+                    ) : (
+                      t("wordsets.noAudio")
+                    )}
+                  </p>
+                </div>
+
+                {/* Word Display */}
+                <div className="mb-8">
+                  <div className="duration-300 animate-in fade-in-0 slide-in-from-bottom-2">
+                    <button
+                      onClick={() => setShowPracticeWord(!showPracticeWord)}
+                      className={`transition-all duration-500 cursor-pointer focus:outline-none focus:ring-4 focus:ring-purple-200 rounded-lg p-4 ${
+                        showPracticeWord
+                          ? ""
+                          : "hover:scale-105 hover:shadow-lg"
+                      }`}
+                      title={
+                        showPracticeWord
+                          ? t("wordsets.practice.clickToBlur")
+                          : t("wordsets.practice.clickToReveal")
+                      }
+                    >
+                      <h2
+                        className={`text-6xl font-bold text-gray-800 mb-4 transition-all duration-500 select-none ${
+                          showPracticeWord ? "filter-none" : "filter blur-xl"
+                        }`}
+                        style={{
+                          textShadow: showPracticeWord
+                            ? "none"
+                            : "0 0 30px rgba(0,0,0,0.3)",
+                          letterSpacing: showPracticeWord ? "normal" : "0.1em",
+                        }}
+                      >
+                        {currentWord}
+                      </h2>
+                    </button>
+                    <p className="mt-2 text-sm text-gray-500">
+                      {showPracticeWord ? (
+                        <span className="flex items-center justify-center">
+                          <HeroEyeIcon className="w-4 h-4 mr-1 text-gray-500" />
+                          {t("wordsets.practice.wordRevealed")}
+                        </span>
+                      ) : (
+                        <span className="flex items-center justify-center">
+                          <HeroEyeIcon className="w-4 h-4 mr-1 text-gray-500" />
+                          {t("wordsets.practice.clickToRevealHint")}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Navigation Controls */}
+                <div className="flex flex-wrap justify-center gap-4">
+                  {" "}
+                  <button
+                    onClick={previousPracticeWord}
+                    disabled={currentPracticeIndex === 0}
+                    className="flex items-center px-4 py-2 font-medium text-gray-700 transition-colors bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <svg
+                      className="w-4 h-4 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 19l-7-7 7-7"
+                      />
+                    </svg>
+                    {t("wordsets.practice.previous")}
+                  </button>
+                  <button
+                    onClick={shufflePracticeWords}
+                    className="flex items-center px-4 py-2 font-medium text-white transition-colors bg-blue-500 rounded-lg hover:bg-blue-600"
+                  >
+                    <svg
+                      className="w-4 h-4 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                    {t("wordsets.practice.shuffle")}
+                  </button>
+                  <button
+                    onClick={nextPracticeWord}
+                    disabled={currentPracticeIndex === practiceWords.length - 1}
+                    className="flex items-center px-4 py-2 font-medium text-gray-700 transition-colors bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {t("wordsets.practice.next")}
+                    <svg
+                      className="w-4 h-4 ml-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-wrap justify-center gap-4 mt-8">
+                  <button
+                    onClick={() => startTest(practiceMode)}
+                    className="flex items-center px-6 py-3 font-semibold text-white transition-all duration-200 rounded-lg shadow-lg bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 hover:shadow-xl hover:scale-105"
+                  >
+                    <HeroPlayIcon className="w-5 h-5 mr-2" />
+                    {t("wordsets.startTest")}
+                  </button>
+
+                  <button
+                    onClick={exitPractice}
+                    className="flex items-center px-6 py-3 font-medium text-gray-700 transition-colors bg-gray-200 rounded-lg hover:bg-gray-300"
+                  >
+                    <HeroXMarkIcon className="w-5 h-5 mr-2" />
+                    {t("wordsets.cancel")}
+                  </button>
+                </div>
+              </div>
+
+              {/* Word List Preview */}
+              <div className="p-4 mt-6 bg-white rounded-lg shadow">
+                <h3 className="mb-3 text-lg font-semibold text-gray-800">
+                  {t("wordsets.practice.wordList")} ({practiceWords.length}{" "}
+                  {t("wordsets.words.count")})
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {practiceWords.map((word, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setCurrentPracticeIndex(index);
+                        setShowPracticeWord(false);
+                        // Auto-play the selected word
+                        setTimeout(() => {
+                          playPracticeWordAudioWithDelay(word, 200);
+                        }, 400);
+                      }}
+                      className={`px-3 py-1 text-sm rounded transition-colors ${
+                        index === currentPracticeIndex
+                          ? "bg-purple-500 text-white"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
+                    >
+                      {word}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Keyboard Shortcuts */}
+              <div className="p-4 mt-6 rounded-lg bg-blue-50">
+                <h4 className="mb-2 text-sm font-semibold text-blue-800">
+                  {t("wordsets.practice.keyboardShortcuts")}
+                </h4>
+                <div className="grid grid-cols-2 gap-2 text-xs text-blue-700">
+                  <div>
+                    <kbd className="px-1 bg-white rounded">←</kbd>{" "}
+                    {t("wordsets.practice.keyPrevious")}
+                  </div>
+                  <div>
+                    <kbd className="px-1 bg-white rounded">→</kbd>{" "}
+                    {t("wordsets.practice.keyNext")}
+                  </div>
+                  <div>
+                    <kbd className="px-1 bg-white rounded">Space</kbd>{" "}
+                    {t("wordsets.practice.keyToggle")}
+                  </div>
+                  <div>
+                    <kbd className="px-1 bg-white rounded">Shift+Space</kbd>{" "}
+                    {t("wordsets.practice.keyAudio")}
+                  </div>
+                  <div>
+                    <kbd className="px-1 bg-white rounded">Cmd+S</kbd>{" "}
+                    {t("wordsets.practice.keyShuffle")}
+                  </div>
+                  <div>
+                    <kbd className="px-1 bg-white rounded">Esc</kbd>{" "}
+                    {t("wordsets.practice.keyExit")}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ProtectedRoute>
     );
   }
 
@@ -1123,6 +1584,13 @@ export default function WordSetsPage() {
                       {t("wordsets.startTest")}
                     </button>
                     <button
+                      onClick={() => startPractice(wordSet)}
+                      className="flex items-center justify-center px-4 py-3 font-medium text-white transition-all duration-200 bg-purple-500 rounded-lg shadow-md hover:bg-purple-600 hover:shadow-lg hover:scale-105"
+                      title={t("wordsets.practice.buttonTooltip")}
+                    >
+                      <HeroBookIcon className="w-4 h-4 text-white" />
+                    </button>
+                    <button
                       onClick={() => openSettingsModal(wordSet)}
                       className="flex items-center justify-center px-4 py-3 font-medium text-white transition-all duration-200 bg-gray-500 rounded-lg shadow-md hover:bg-gray-600 hover:shadow-lg hover:scale-105"
                       title={t("wordsets.settings")}
@@ -1380,7 +1848,7 @@ export default function WordSetsPage() {
         )}
 
         {/* Footer with build info */}
-        <footer className="mt-12 pb-4 text-center">
+        <footer className="pb-4 mt-12 text-center">
           <div className="text-xs text-gray-400">
             Build:{" "}
             {process.env.NEXT_PUBLIC_BUILD_TIME || new Date().toISOString()}

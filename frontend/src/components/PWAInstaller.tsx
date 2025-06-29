@@ -23,47 +23,70 @@ export function PWAInstaller() {
   useEffect(() => {
     // Register service worker
     if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker
-          .register("/sw.js")
-          .then((registration) => {
-            console.log("SW registered: ", registration);
+      // Register service worker immediately, not waiting for load event
+      const registerServiceWorker = async () => {
+        try {
+          const registration = await navigator.serviceWorker.register("/sw.js");
+          console.log("SW registered: ", registration);
 
-            // Listen for service worker updates
-            registration.addEventListener("updatefound", () => {
-              const newWorker = registration.installing;
-              if (newWorker) {
-                newWorker.addEventListener("statechange", () => {
-                  if (
-                    newWorker.state === "installed" &&
-                    navigator.serviceWorker.controller
-                  ) {
-                    // New service worker installed and ready
-                    console.log(
-                      "New service worker installed, prompting for update",
-                    );
-                    setShowUpdatePrompt(true);
-                  }
-                });
-              }
-            });
-          })
-          .catch((registrationError) => {
-            console.log("SW registration failed: ", registrationError);
+          // Check for updates immediately
+          registration.update();
+
+          // Listen for service worker updates
+          registration.addEventListener("updatefound", () => {
+            const newWorker = registration.installing;
+            if (newWorker) {
+              newWorker.addEventListener("statechange", () => {
+                if (
+                  newWorker.state === "installed" &&
+                  navigator.serviceWorker.controller
+                ) {
+                  // New service worker installed and ready
+                  console.log(
+                    "New service worker installed, prompting for update",
+                  );
+                  setShowUpdatePrompt(true);
+                }
+              });
+            }
           });
 
-        // Listen for messages from service worker
-        navigator.serviceWorker.addEventListener("message", (event) => {
-          if (event.data && event.data.type === "SW_UPDATED") {
-            console.log(
-              "Service worker updated to version:",
-              event.data.version,
-            );
-            setUpdateVersion(event.data.version);
-            setShowUpdatePrompt(true);
-          }
-        });
+          // Check for updates periodically (every 30 seconds when app is active)
+          const updateInterval = setInterval(() => {
+            if (!document.hidden) {
+              registration.update();
+            }
+          }, 30000);
+
+          // Return cleanup function
+          return updateInterval;
+        } catch (registrationError) {
+          console.log("SW registration failed: ", registrationError);
+          return null;
+        }
+      };
+
+      let updateInterval: NodeJS.Timeout | null = null;
+
+      registerServiceWorker().then((interval) => {
+        updateInterval = interval;
       });
+
+      // Listen for messages from service worker (register immediately)
+      navigator.serviceWorker.addEventListener("message", (event) => {
+        if (event.data && event.data.type === "SW_UPDATED") {
+          console.log("Service worker updated to version:", event.data.version);
+          setUpdateVersion(event.data.version);
+          setShowUpdatePrompt(true);
+        }
+      });
+
+      // Return cleanup function
+      return () => {
+        if (updateInterval) {
+          clearInterval(updateInterval);
+        }
+      };
     }
 
     // Handle install prompt

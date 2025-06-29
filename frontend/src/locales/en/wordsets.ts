@@ -63,4 +63,29 @@ export const wordsets = {
     "Auto-play is limited on Safari browsers below version 17. Tap the play button to hear each word.",
   "wordsets.safari.autoplayWarning":
     "Auto-play is limited on Safari browsers below version 17. You'll need to manually tap the play button for each word.",
+
+  // Practice mode
+  "wordsets.practice.title": "Practice Mode",
+  "wordsets.practice.autoPlayingReplay": "Auto-playing • Click to replay",
+  "wordsets.practice.clickToHear": "Click to hear the word",
+  "wordsets.practice.clickToBlur": "Click to blur word",
+  "wordsets.practice.clickToReveal": "Click to reveal word",
+  "wordsets.practice.wordRevealed":
+    "Word revealed! Click to blur again or use Space key",
+  "wordsets.practice.clickToRevealHint":
+    "Click the blurred word to reveal it (or press Space)",
+  "wordsets.practice.previous": "Previous",
+  "wordsets.practice.next": "Next",
+  "wordsets.practice.shuffle": "Shuffle",
+  "wordsets.practice.wordList": "Word List",
+  "wordsets.practice.keyboardShortcuts": "Keyboard Shortcuts:",
+  "wordsets.practice.keyPrevious": "Previous word",
+  "wordsets.practice.keyNext": "Next word",
+  "wordsets.practice.keyToggle": "Blur/Reveal word",
+  "wordsets.practice.keyAudio": "Play audio",
+  "wordsets.practice.keyShuffle": "Shuffle words",
+  "wordsets.practice.keyExit": "Exit practice",
+  "wordsets.practice.autoplayNotice":
+    "Auto-play is limited on this device. Tap the audio button to hear each word.",
+  "wordsets.practice.buttonTooltip": "Practice with flashcards",
 };

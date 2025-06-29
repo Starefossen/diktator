@@ -63,4 +63,30 @@ export const wordsets = {
     "Auto-spill er begrenset på Safari-nettlesere under versjon 17. Trykk på avspillingsknappen for å høre hvert ord.",
   "wordsets.safari.autoplayWarning":
     "Auto-spill er begrenset på Safari-nettlesere under versjon 17. Du må manuelt trykke på avspillingsknappen for hvert ord.",
+
+  // Practice mode
+  "wordsets.practice.title": "Øvingsmodus",
+  "wordsets.practice.autoPlayingReplay":
+    "Auto-spilling • Klikk for å spille på nytt",
+  "wordsets.practice.clickToHear": "Klikk for å høre ordet",
+  "wordsets.practice.clickToBlur": "Klikk for å gjøre ordet uklart",
+  "wordsets.practice.clickToReveal": "Klikk for å vise ordet",
+  "wordsets.practice.wordRevealed":
+    "Ordet vist! Klikk for å gjøre det uklart igjen eller bruk mellomromstasten",
+  "wordsets.practice.clickToRevealHint":
+    "Klikk på det ukarlte ordet for å vise det (eller trykk mellomrom)",
+  "wordsets.practice.previous": "Forrige",
+  "wordsets.practice.next": "Neste",
+  "wordsets.practice.shuffle": "Bland",
+  "wordsets.practice.wordList": "Ordliste",
+  "wordsets.practice.keyboardShortcuts": "Tastatursnarveier:",
+  "wordsets.practice.keyPrevious": "Forrige ord",
+  "wordsets.practice.keyNext": "Neste ord",
+  "wordsets.practice.keyToggle": "Uklar/Vis ord",
+  "wordsets.practice.keyAudio": "Spill av lyd",
+  "wordsets.practice.keyShuffle": "Bland ord",
+  "wordsets.practice.keyExit": "Avslutt øving",
+  "wordsets.practice.autoplayNotice":
+    "Auto-spill er begrenset på denne enheten. Trykk på lydknappen for å høre hvert ord.",
+  "wordsets.practice.buttonTooltip": "Øv med flashcards",
 };

@@ -169,3 +169,15 @@ self.addEventListener("notificationclick", (event) => {
 
   event.waitUntil(clients.openWindow("/"));
 });
+
+// Handle focus events to check for updates
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.action === "CHECK_FOR_UPDATE") {
+    console.log("Manual update check requested");
+    // Force an update check by triggering a cache comparison
+    event.ports[0].postMessage({
+      type: "UPDATE_CHECK_COMPLETE",
+      version: CACHE_VERSION,
+    });
+  }
+});
