@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useApiStatus } from "@/hooks/useApiStatus";
 import {
   Disclosure,
   DisclosureButton,
@@ -21,6 +22,7 @@ export function Navigation() {
   const router = useRouter();
   const { t } = useLanguage();
   const { user, userData, logOut } = useAuth();
+  const { status, message } = useApiStatus();
 
   const handleLogout = async () => {
     try {
@@ -129,6 +131,26 @@ export function Navigation() {
 
           {/* Desktop Right Side */}
           <div className="hidden sm:ml-6 sm:flex sm:items-center">
+            {/* API Status Indicator */}
+            <div className="flex items-center pr-4 mr-4 border-r border-gray-200">
+              <div
+                className={`w-3 h-3 rounded-full transition-colors ${
+                  status === "connected"
+                    ? "bg-emerald-500"
+                    : status === "error"
+                      ? "bg-red-500"
+                      : "bg-amber-500 animate-pulse"
+                }`}
+                title={
+                  status === "connected"
+                    ? `API Connected: ${message}`
+                    : status === "error"
+                      ? `API Error: ${message}`
+                      : "Checking API..."
+                }
+              />
+            </div>
+
             {/* Language Switcher */}
             <div className="flex items-center pr-4 mr-4 border-r border-gray-200">
               <NavigationLanguageSwitcher />
@@ -335,8 +357,30 @@ export function Navigation() {
         {/* Mobile Language Switcher */}
         <div className="pt-4 pb-3 border-t border-gray-200">
           <div className="px-4">
-            <div className="mb-2 text-sm font-medium text-gray-500">
-              Language / Språk
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-medium text-gray-500">
+                Language / Språk
+              </div>
+              {/* API Status Indicator for Mobile */}
+              <div className="flex items-center space-x-2">
+                <span className="text-xs text-gray-500">API</span>
+                <div
+                  className={`w-2.5 h-2.5 rounded-full transition-colors ${
+                    status === "connected"
+                      ? "bg-emerald-500"
+                      : status === "error"
+                        ? "bg-red-500"
+                        : "bg-amber-500 animate-pulse"
+                  }`}
+                  title={
+                    status === "connected"
+                      ? `API Connected: ${message}`
+                      : status === "error"
+                        ? `API Error: ${message}`
+                        : "Checking API..."
+                  }
+                />
+              </div>
             </div>
             <NavigationLanguageSwitcher />
           </div>

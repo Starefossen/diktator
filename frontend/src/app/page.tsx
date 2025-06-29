@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useApiStatus } from "@/hooks/useApiStatus";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -13,7 +12,6 @@ import {
 } from "@/components/Icons";
 
 export default function HomePage() {
-  const { status } = useApiStatus();
   const { t } = useLanguage();
   const { user } = useAuth();
 
@@ -32,37 +30,6 @@ export default function HomePage() {
           <p className="max-w-2xl mx-auto mb-8 text-xl text-gray-700 md:text-2xl">
             {t("home.subtitle")}
           </p>
-        </div>
-      </div>
-
-      {/* API Status Indicator - Moved to less prominent position */}
-      <div className="fixed z-40 top-20 right-4">
-        <div
-          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium shadow-sm ${
-            status === "connected"
-              ? "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200"
-              : status === "error"
-                ? "bg-red-100 text-red-800 ring-1 ring-red-200"
-                : "bg-amber-100 text-amber-800 ring-1 ring-amber-200"
-          }`}
-        >
-          <span
-            className={`w-1.5 h-1.5 rounded-full mr-2 ${
-              status === "connected"
-                ? "bg-emerald-500"
-                : status === "error"
-                  ? "bg-red-500"
-                  : "bg-amber-500"
-            }`}
-          ></span>
-          API{" "}
-          {status === "connected" ? (
-            <Icons.success className="inline w-3 h-3 ml-1" />
-          ) : status === "error" ? (
-            <Icons.error className="inline w-3 h-3 ml-1" />
-          ) : (
-            <Icons.loading className="inline w-3 h-3 ml-1" />
-          )}
         </div>
       </div>
 
