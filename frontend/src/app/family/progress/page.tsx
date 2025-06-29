@@ -230,7 +230,7 @@ export default function FamilyProgressPage() {
                           {member.userName}
                           {selectedChildId === member.userId && (
                             <span className="ml-2 text-xs font-medium text-blue-600">
-                              (Selected)
+                              ({t("family.child.progress.selected")})
                             </span>
                           )}
                         </h3>

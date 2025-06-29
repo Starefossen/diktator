@@ -37,6 +37,7 @@ export const family = {
     "Are you sure you want to delete this child account? This action cannot be undone.",
   "family.child.delete.success": "Child account deleted successfully",
   "family.child.delete.error": "Failed to delete child account",
+  "family.child.progress.selected": "Selected",
   "family.child.progress.tests": "Tests Completed",
   "family.child.progress.avgScore": "Average Score",
   "family.child.progress.correctWords": "Words Correct",

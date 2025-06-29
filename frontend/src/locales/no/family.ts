@@ -36,6 +36,7 @@ export const family = {
     "Er du sikker på at du vil slette denne barnekontoen? Dette kan ikke angres.",
   "family.child.delete.success": "Barnekonto slettet",
   "family.child.delete.error": "Kunne ikke slette barnekonto",
+  "family.child.progress.selected": "Valgt",
   "family.child.progress.tests": "Tester fullført",
   "family.child.progress.avgScore": "Gjennomsnittlig poengsum",
   "family.child.progress.correctWords": "Ord riktig",
