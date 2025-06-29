@@ -566,13 +566,15 @@ export default function WordSetsPage() {
                 {answers.map((answer, index) => (
                   <div
                     key={index}
-                    className={`flex items-center justify-between p-3 rounded-lg ${answer.isCorrect ? "bg-green-50" : "bg-red-50"
-                      }`}
+                    className={`flex items-center justify-between p-3 rounded-lg ${
+                      answer.isCorrect ? "bg-green-50" : "bg-red-50"
+                    }`}
                   >
                     <div className="flex items-center">
                       <div
-                        className={`w-6 h-6 rounded-full mr-3 flex items-center justify-center ${answer.isCorrect ? "bg-green-500" : "bg-red-500"
-                          }`}
+                        className={`w-6 h-6 rounded-full mr-3 flex items-center justify-center ${
+                          answer.isCorrect ? "bg-green-500" : "bg-red-500"
+                        }`}
                       >
                         {answer.isCorrect ? (
                           <svg
@@ -606,8 +608,9 @@ export default function WordSetsPage() {
                       </div>
                       <div>
                         <span
-                          className={`font-medium ${answer.isCorrect ? "text-green-800" : "text-red-800"
-                            }`}
+                          className={`font-medium ${
+                            answer.isCorrect ? "text-green-800" : "text-red-800"
+                          }`}
                         >
                           {answer.word}
                         </span>
@@ -621,14 +624,16 @@ export default function WordSetsPage() {
                     </div>
                     <button
                       onClick={() => playTestWordAudio(answer.word)}
-                      className={`px-3 py-1 transition-colors rounded ${answer.isCorrect
+                      className={`px-3 py-1 transition-colors rounded ${
+                        answer.isCorrect
                           ? "text-green-700 bg-green-100 hover:bg-green-200"
                           : "text-red-700 bg-red-100 hover:bg-red-200"
-                        }`}
+                      }`}
                     >
                       <HeroVolumeIcon
-                        className={`w-4 h-4 ${answer.isCorrect ? "text-green-700" : "text-red-700"
-                          }`}
+                        className={`w-4 h-4 ${
+                          answer.isCorrect ? "text-green-700" : "text-red-700"
+                        }`}
                       />
                     </button>
                   </div>
@@ -721,14 +726,16 @@ export default function WordSetsPage() {
                 <div className="flex flex-col justify-center mb-6">
                   {showFeedback ? (
                     <div
-                      className={`p-4 rounded-lg animate-in fade-in-0 slide-in-from-top-2 duration-300 ${lastAnswerCorrect
+                      className={`p-4 rounded-lg animate-in fade-in-0 slide-in-from-top-2 duration-300 ${
+                        lastAnswerCorrect
                           ? "bg-green-100 border border-green-300"
                           : "bg-red-100 border border-red-300"
-                        }`}
+                      }`}
                     >
                       <p
-                        className={`font-semibold text-lg ${lastAnswerCorrect ? "text-green-800" : "text-red-800"
-                          }`}
+                        className={`font-semibold text-lg ${
+                          lastAnswerCorrect ? "text-green-800" : "text-red-800"
+                        }`}
                       >
                         {lastAnswerCorrect
                           ? t("test.correct")
@@ -1031,12 +1038,13 @@ export default function WordSetsPage() {
                       {/* Show audio processing status */}
                       {wordSet.audioProcessing && (
                         <span
-                          className={`ml-2 text-sm ${wordSet.audioProcessing === "pending"
+                          className={`ml-2 text-sm ${
+                            wordSet.audioProcessing === "pending"
                               ? "text-yellow-600"
                               : wordSet.audioProcessing === "completed"
                                 ? "text-green-600"
                                 : "text-red-600"
-                            }`}
+                          }`}
                         >
                           •{" "}
                           {wordSet.audioProcessing === "pending"
@@ -1061,10 +1069,11 @@ export default function WordSetsPage() {
                                 ? handleWordClick(wordItem.word, wordSet)
                                 : undefined
                             }
-                            className={`inline-flex items-center px-2 py-1 text-sm rounded transition-all duration-200 ${hasAudio
+                            className={`inline-flex items-center px-2 py-1 text-sm rounded transition-all duration-200 ${
+                              hasAudio
                                 ? "text-blue-700 bg-blue-100 cursor-pointer hover:bg-blue-200 hover:shadow-sm"
                                 : "text-gray-700 bg-gray-100"
-                              } ${isPlaying ? "ring-2 ring-blue-500 shadow-md" : ""}`}
+                            } ${isPlaying ? "ring-2 ring-blue-500 shadow-md" : ""}`}
                             title={
                               hasAudio
                                 ? t("wordsets.clickToPlay")

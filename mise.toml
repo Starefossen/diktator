@@ -414,8 +414,25 @@ description = "Deploy frontend for CI/CD"
 run = """
 gsutil -m cp -r frontend/out/* gs://${GCP_FRONTEND_BUCKET}/
 echo "Setting cache headers for deployed files..."
+
+# PWA files - should not be cached or cached for very short time
+gsutil -m setmeta -h "Cache-Control:public, max-age=0, must-revalidate" gs://${GCP_FRONTEND_BUCKET}/sw.js
+gsutil -m setmeta -h "Cache-Control:public, max-age=86400" gs://${GCP_FRONTEND_BUCKET}/manifest.json
+
+# Icon files - can be cached for a long time
+gsutil -m setmeta -h "Cache-Control:public, max-age=31536000, immutable" gs://${GCP_FRONTEND_BUCKET}/*.svg
+gsutil -m setmeta -h "Cache-Control:public, max-age=31536000, immutable" gs://${GCP_FRONTEND_BUCKET}/apple-touch-icon.*
+
+# Static assets - can be cached for a long time
+gsutil -m setmeta -h "Cache-Control:public, max-age=31536000, immutable" gs://${GCP_FRONTEND_BUCKET}/_next/static/**/*
+
+# HTML files - should not be cached to ensure fresh content
 gsutil -m setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" gs://${GCP_FRONTEND_BUCKET}/index.html
 gsutil -m setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" gs://${GCP_FRONTEND_BUCKET}/**/*.html
+
+# Other static files - moderate caching
+gsutil -m setmeta -h "Cache-Control:public, max-age=3600" gs://${GCP_FRONTEND_BUCKET}/*.css
+gsutil -m setmeta -h "Cache-Control:public, max-age=3600" gs://${GCP_FRONTEND_BUCKET}/*.js
 """
 
 # Deployment tasks for local development
@@ -475,6 +492,19 @@ fi
 echo "Deploying to Cloud Storage..."
 gsutil -m cp -r out/* gs://${DIKTATOR_FRONTEND_BUCKET}/
 echo "Setting cache headers for deployed files..."
+
+# PWA files - should not be cached or cached for very short time
+gsutil -m setmeta -h "Cache-Control:public, max-age=0, must-revalidate" gs://${DIKTATOR_FRONTEND_BUCKET}/sw.js
+gsutil -m setmeta -h "Cache-Control:public, max-age=86400" gs://${DIKTATOR_FRONTEND_BUCKET}/manifest.json
+
+# Icon files - can be cached for a long time
+gsutil -m setmeta -h "Cache-Control:public, max-age=31536000, immutable" gs://${DIKTATOR_FRONTEND_BUCKET}/*.svg
+gsutil -m setmeta -h "Cache-Control:public, max-age=31536000, immutable" gs://${DIKTATOR_FRONTEND_BUCKET}/apple-touch-icon.*
+
+# Static assets - can be cached for a long time
+gsutil -m setmeta -h "Cache-Control:public, max-age=31536000, immutable" gs://${DIKTATOR_FRONTEND_BUCKET}/_next/static/**/*
+
+# HTML files - should not be cached to ensure fresh content
 gsutil -m setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" gs://${DIKTATOR_FRONTEND_BUCKET}/index.html
 gsutil -m setmeta -h "Cache-Control:public, max-age=300" gs://${DIKTATOR_FRONTEND_BUCKET}/**/*.html
 

@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "chmod +x scripts/generate-sw.sh && ./scripts/generate-sw.sh",
     "build": "next build",
+    "postbuild": "rm -f out/sw.template.js",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",

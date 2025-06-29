@@ -11,6 +11,9 @@ Thumbs.db
 # Configuration
 .mise.env
 
+# PWA - Generated service worker (built from template)
+frontend/public/sw.js
+
 # Dependencies
 node_modules/
 vendor/

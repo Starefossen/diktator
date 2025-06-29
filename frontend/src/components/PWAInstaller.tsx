@@ -1,0 +1,228 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: string[];
+  readonly userChoice: Promise<{
+    outcome: "accepted" | "dismissed";
+    platform: string;
+  }>;
+  prompt(): Promise<void>;
+}
+
+export function PWAInstaller() {
+  const [deferredPrompt, setDeferredPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
+  const [updateVersion, setUpdateVersion] = useState<string>("");
+
+  useEffect(() => {
+    // Register service worker
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker
+          .register("/sw.js")
+          .then((registration) => {
+            console.log("SW registered: ", registration);
+
+            // Listen for service worker updates
+            registration.addEventListener("updatefound", () => {
+              const newWorker = registration.installing;
+              if (newWorker) {
+                newWorker.addEventListener("statechange", () => {
+                  if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+                    // New service worker installed and ready
+                    console.log("New service worker installed, prompting for update");
+                    setShowUpdatePrompt(true);
+                  }
+                });
+              }
+            });
+          })
+          .catch((registrationError) => {
+            console.log("SW registration failed: ", registrationError);
+          });
+
+        // Listen for messages from service worker
+        navigator.serviceWorker.addEventListener("message", (event) => {
+          if (event.data && event.data.type === "SW_UPDATED") {
+            console.log("Service worker updated to version:", event.data.version);
+            setUpdateVersion(event.data.version);
+            setShowUpdatePrompt(true);
+          }
+        });
+      });
+    }
+
+    // Handle install prompt
+    const handleBeforeInstallPrompt = (e: BeforeInstallPromptEvent) => {
+      // Prevent Chrome 67 and earlier from automatically showing the prompt
+      e.preventDefault();
+      // Stash the event so it can be triggered later
+      setDeferredPrompt(e);
+      // Show our custom install prompt
+      setShowInstallPrompt(true);
+    };
+
+    // Handle successful installation
+    const handleAppInstalled = () => {
+      console.log("PWA was installed");
+      setShowInstallPrompt(false);
+      setDeferredPrompt(null);
+    };
+
+    window.addEventListener(
+      "beforeinstallprompt",
+      handleBeforeInstallPrompt as EventListener,
+    );
+    window.addEventListener("appinstalled", handleAppInstalled);
+
+    // Check if app is running in standalone mode
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      console.log("App is running in standalone mode");
+    }
+
+    // Handle network status changes
+    function updateOnlineStatus() {
+      const status = navigator.onLine ? "online" : "offline";
+      console.log(`App is ${status}`);
+
+      // Add/remove offline class to body
+      if (!navigator.onLine) {
+        document.body.classList.add("offline");
+      } else {
+        document.body.classList.remove("offline");
+      }
+    }
+
+    window.addEventListener("online", updateOnlineStatus);
+    window.addEventListener("offline", updateOnlineStatus);
+
+    // Set initial status
+    updateOnlineStatus();
+
+    // Cleanup
+    return () => {
+      window.removeEventListener(
+        "beforeinstallprompt",
+        handleBeforeInstallPrompt as EventListener,
+      );
+      window.removeEventListener("appinstalled", handleAppInstalled);
+      window.removeEventListener("online", updateOnlineStatus);
+      window.removeEventListener("offline", updateOnlineStatus);
+    };
+  }, []);
+
+  const handleUpdateClick = () => {
+    // Reload the page to activate the new service worker
+    window.location.reload();
+  };
+
+  const handleUpdateDismiss = () => {
+    setShowUpdatePrompt(false);
+    // Don't set localStorage for updates - they should be applied
+  };
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+
+    // Show the install prompt
+    deferredPrompt.prompt();
+
+    // Wait for the user to respond to the prompt
+    const { outcome } = await deferredPrompt.userChoice;
+
+    console.log(`User response to the install prompt: ${outcome}`);
+
+    // Clear the saved prompt since it can't be used again
+    setDeferredPrompt(null);
+    setShowInstallPrompt(false);
+  };
+
+  const handleDismissClick = () => {
+    setShowInstallPrompt(false);
+    // Optionally set a flag in localStorage to not show again for a while
+    localStorage.setItem("installPromptDismissed", Date.now().toString());
+  };
+
+  // Don't show if dismissed recently (within 7 days)
+  useEffect(() => {
+    const dismissedTime = localStorage.getItem("installPromptDismissed");
+    if (dismissedTime) {
+      const daysSinceDismissed =
+        (Date.now() - parseInt(dismissedTime)) / (1000 * 60 * 60 * 24);
+      if (daysSinceDismissed < 7) {
+        setShowInstallPrompt(false);
+      }
+    }
+  }, []);
+
+  if (!showInstallPrompt && !showUpdatePrompt) return null;
+
+  // Show update prompt if available
+  if (showUpdatePrompt) {
+    return (
+      <div className="install-prompt">
+        <div className="install-prompt-content">
+          <div className="install-prompt-icon">🔄</div>
+          <div className="install-prompt-text">
+            <div className="install-prompt-title">Update Available</div>
+            <div className="install-prompt-description">
+              A new version of Diktator is ready. Reload to get the latest features and improvements.
+              {updateVersion && ` (Version ${updateVersion})`}
+            </div>
+          </div>
+        </div>
+        <div className="install-prompt-actions">
+          <button
+            className="install-prompt-button primary"
+            onClick={handleUpdateClick}
+          >
+            Reload Now
+          </button>
+          <button
+            className="install-prompt-button secondary"
+            onClick={handleUpdateDismiss}
+          >
+            Later
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show install prompt
+  if (showInstallPrompt) {
+    return (
+      <div className="install-prompt">
+        <div className="install-prompt-content">
+          <div className="install-prompt-icon">D</div>
+          <div className="install-prompt-text">
+            <div className="install-prompt-title">Install Diktator</div>
+            <div className="install-prompt-description">
+              Add to your home screen for quick access and offline use
+            </div>
+          </div>
+        </div>
+        <div className="install-prompt-actions">
+          <button
+            className="install-prompt-button primary"
+            onClick={handleInstallClick}
+          >
+            Install
+          </button>
+          <button
+            className="install-prompt-button secondary"
+            onClick={handleDismissClick}
+          >
+            Not now
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
