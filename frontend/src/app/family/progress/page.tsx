@@ -4,16 +4,17 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { FamilyProgress, TestResult } from "@/types";
+import { FamilyProgress, TestResult, WordSet } from "@/types";
 import { generatedApiClient } from "@/lib/api-generated";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import TestResultsList from "@/components/TestResultsList";
 import {
   HeroChartBarIcon,
   HeroTrophyIcon,
   HeroBookIcon,
-  ScoreIcon,
 } from "@/components/Icons";
+import { ChevronDownIcon } from "@heroicons/react/16/solid";
 
 export default function FamilyProgressPage() {
   const { t } = useLanguage();
@@ -22,7 +23,9 @@ export default function FamilyProgressPage() {
 
   const [familyMembers, setFamilyMembers] = useState<FamilyProgress[]>([]);
   const [results, setResults] = useState<TestResult[]>([]);
+  const [wordSets, setWordSets] = useState<WordSet[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedChildId, setSelectedChildId] = useState<string>("all");
 
   const loadFamilyData = useCallback(async () => {
     if (!userData) return;
@@ -31,15 +34,19 @@ export default function FamilyProgressPage() {
       setLoading(true);
 
       // Load family progress and stats
-      const [progressResponse, resultsResponse] = await Promise.all([
-        generatedApiClient.getFamilyProgress(),
-        generatedApiClient.getFamilyResults(),
-      ]);
+      const [progressResponse, resultsResponse, wordSetsResponse] =
+        await Promise.all([
+          generatedApiClient.getFamilyProgress(),
+          generatedApiClient.getFamilyResults(),
+          generatedApiClient.getWordSets(),
+        ]);
 
       if (progressResponse.data?.data)
         setFamilyMembers(progressResponse.data.data as FamilyProgress[]);
       if (resultsResponse.data?.data)
         setResults(resultsResponse.data.data as TestResult[]);
+      if (wordSetsResponse.data?.data)
+        setWordSets(wordSetsResponse.data.data as WordSet[]);
     } catch (error) {
       console.error("Failed to load family data:", error);
     } finally {
@@ -62,16 +69,6 @@ export default function FamilyProgressPage() {
     );
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
-  };
-
   // Calculate overall family statistics
   const totalTests = familyMembers.reduce(
     (sum, member) => sum + member.totalTests,
@@ -87,6 +84,21 @@ export default function FamilyProgressPage() {
   );
   const averageScore =
     totalWords > 0 ? (totalCorrectWords / totalWords) * 100 : 0;
+
+  // Filter results based on selected child
+  const filteredResults =
+    selectedChildId === "all"
+      ? results
+      : results.filter((result) => result.userId === selectedChildId);
+
+  // Get user name for selected child
+  const getSelectedChildName = () => {
+    if (selectedChildId === "all") return t("family.progress.allChildren");
+    const selectedMember = familyMembers.find(
+      (member) => member.userId === selectedChildId,
+    );
+    return selectedMember?.userName || t("family.progress.unknown");
+  };
 
   return (
     <ProtectedRoute>
@@ -170,24 +182,67 @@ export default function FamilyProgressPage() {
           {/* Family Members Progress */}
           {familyMembers.length > 0 && (
             <div className="p-6 mb-8 bg-white rounded-lg shadow-lg">
-              <h2 className="mb-6 text-2xl font-semibold text-gray-800">
-                {t("family.children.title")} ({familyMembers.length})
-              </h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-semibold text-gray-800">
+                  {t("family.children.title")} ({familyMembers.length})
+                </h2>
+                {selectedChildId !== "all" && (
+                  <button
+                    onClick={() => setSelectedChildId("all")}
+                    className="px-3 py-1 text-sm text-blue-600 transition-colors border border-blue-600 rounded-lg hover:bg-blue-50"
+                  >
+                    {t("family.progress.viewAll")}
+                  </button>
+                )}
+              </div>
+              <p className="mb-4 text-sm text-gray-500">
+                {t("family.progress.instruction")}
+              </p>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {familyMembers.map((member) => (
                   <div
                     key={member.userId}
-                    className="p-4 transition-shadow border border-gray-200 rounded-lg hover:shadow-md"
+                    onClick={() => setSelectedChildId(member.userId)}
+                    className={`p-4 transition-all border rounded-lg cursor-pointer hover:shadow-md ${
+                      selectedChildId === member.userId
+                        ? "border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-200"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
                   >
                     <div className="flex items-center mb-3 space-x-3">
-                      <div className="flex items-center justify-center w-10 h-10 font-bold text-white rounded-full bg-gradient-to-br from-blue-500 to-purple-500">
+                      <div
+                        className={`flex items-center justify-center w-10 h-10 font-bold text-white rounded-full ${
+                          selectedChildId === member.userId
+                            ? "bg-gradient-to-br from-blue-600 to-purple-600"
+                            : "bg-gradient-to-br from-blue-500 to-purple-500"
+                        }`}
+                      >
                         {member.userName.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-800">
+                        <h3
+                          className={`font-semibold ${
+                            selectedChildId === member.userId
+                              ? "text-blue-900"
+                              : "text-gray-800"
+                          }`}
+                        >
                           {member.userName}
+                          {selectedChildId === member.userId && (
+                            <span className="ml-2 text-xs font-medium text-blue-600">
+                              (Selected)
+                            </span>
+                          )}
                         </h3>
-                        <p className="text-sm text-gray-600">{member.role}</p>
+                        <p
+                          className={`text-sm ${
+                            selectedChildId === member.userId
+                              ? "text-blue-700"
+                              : "text-gray-600"
+                          }`}
+                        >
+                          {member.role}
+                        </p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
@@ -234,92 +289,48 @@ export default function FamilyProgressPage() {
           )}
 
           {/* Recent Test Results */}
-          <div className="p-6 bg-white rounded-lg shadow-lg">
-            <h2 className="mb-6 text-2xl font-semibold text-gray-800">
-              {t("results.title")} ({results.length})
-            </h2>
+          <div className="bg-white rounded-lg shadow-lg">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-semibold text-gray-800">
+                  {t("results.title")} ({filteredResults.length})
+                </h2>
 
-            {results.length === 0 ? (
-              <div className="py-12 text-center">
-                <HeroBookIcon className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <h3 className="mb-2 text-xl font-semibold text-gray-600">
-                  {t("results.history.noResults")}
-                </h3>
-                <p className="text-gray-500">{t("results.empty.subtitle")}</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {results.slice(0, 10).map((result) => (
-                  <div
-                    key={result.id}
-                    className="p-4 transition-shadow border border-gray-200 rounded-lg hover:shadow-md"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <ScoreIcon score={result.score} className="w-10 h-10" />
-                        <div>
-                          <h3 className="font-semibold text-gray-800">
-                            {t("family.test.title")}
-                          </h3>
-                          <p className="text-sm text-gray-600">
-                            {formatDate(result.completedAt)}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="text-right">
-                        <div className="flex items-center space-x-6">
-                          <div className="text-center">
-                            <p className="text-sm text-gray-600">
-                              {t("results.history.score")}
-                            </p>
-                            <p className="text-lg font-bold text-gray-900">
-                              {Math.round(result.score)}%
-                            </p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-sm text-gray-600">
-                              {t("results.history.words")}
-                            </p>
-                            <p className="text-lg font-bold text-gray-900">
-                              {result.correctWords}/{result.totalWords}
-                            </p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-sm text-gray-600">
-                              {t("results.history.time")}
-                            </p>
-                            <p className="text-lg font-bold text-gray-900">
-                              {formatTime(result.timeSpent)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Show incorrect words if any */}
-                    {result.incorrectWords &&
-                      result.incorrectWords.length > 0 && (
-                        <div className="pt-4 mt-4 border-t border-gray-100">
-                          <p className="mb-2 text-sm font-medium text-gray-700">
-                            {t("results.details.incorrectWords")}:
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {result.incorrectWords.map((word, index) => (
-                              <span
-                                key={index}
-                                className="px-2 py-1 text-sm text-red-800 bg-red-100 rounded"
-                              >
-                                {word}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                {/* Child Selector */}
+                {familyMembers.length > 0 && (
+                  <div className="relative">
+                    <select
+                      value={selectedChildId}
+                      onChange={(e) => setSelectedChildId(e.target.value)}
+                      className="px-4 py-2 pr-10 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg appearance-none hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="all">
+                        {t("family.progress.allChildren")}
+                      </option>
+                      {familyMembers.map((member) => (
+                        <option key={member.userId} value={member.userId}>
+                          {member.userName}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDownIcon className="absolute w-4 h-4 text-gray-500 transform -translate-y-1/2 pointer-events-none right-3 top-1/2" />
                   </div>
-                ))}
+                )}
               </div>
-            )}
+
+              {selectedChildId !== "all" && (
+                <p className="text-sm text-gray-600">
+                  {t("family.progress.showingResultsFor")}{" "}
+                  <span className="font-medium">{getSelectedChildName()}</span>
+                </p>
+              )}
+            </div>
+
+            <TestResultsList
+              results={filteredResults.slice(0, 10)}
+              wordSets={wordSets}
+              showUserName={selectedChildId === "all"}
+            />
           </div>
         </div>
       </div>

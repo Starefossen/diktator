@@ -197,6 +197,17 @@ func (s *Service) GetFamilyResults(familyID string) ([]models.TestResult, error)
 		allResults = append(allResults, userResults...)
 	}
 
+	// Sort all results by completion date (newest first)
+	if len(allResults) > 1 {
+		for i := 0; i < len(allResults)-1; i++ {
+			for j := i + 1; j < len(allResults); j++ {
+				if allResults[i].CompletedAt.Before(allResults[j].CompletedAt) {
+					allResults[i], allResults[j] = allResults[j], allResults[i]
+				}
+			}
+		}
+	}
+
 	return allResults, nil
 }
 
@@ -413,12 +424,12 @@ func (s *Service) GetFamilyProgress(familyID string) ([]models.FamilyProgress, e
 		// Get recent results (last 5)
 		recentResults := results
 		if len(results) > 5 {
-			recentResults = results[:5]
+			recentResults = results[:5] // Already sorted newest first from GetTestResults
 		}
 
 		var lastActivity time.Time
 		if len(results) > 0 {
-			lastActivity = results[0].CompletedAt
+			lastActivity = results[0].CompletedAt // First result is newest
 		}
 
 		childProgress := models.FamilyProgress{
@@ -487,12 +498,12 @@ func (s *Service) GetFamilyProgress(familyID string) ([]models.FamilyProgress, e
 		// Get recent results (last 5)
 		recentResults := results
 		if len(results) > 5 {
-			recentResults = results[:5]
+			recentResults = results[:5] // Already sorted newest first from GetTestResults
 		}
 
 		var lastActivity time.Time
 		if len(results) > 0 {
-			lastActivity = results[0].CompletedAt
+			lastActivity = results[0].CompletedAt // First result is newest
 		}
 
 		userProgress := models.FamilyProgress{

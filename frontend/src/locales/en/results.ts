@@ -79,4 +79,80 @@ export const results = {
   "results.performance.excellent": "Excellent",
   "results.performance.good": "Good",
   "results.performance.needsWork": "Needs Work",
+
+  // Word details
+  "results.words.needingAttention": "Words needing attention",
+  "results.words.yourAnswers": "Your answers",
+  "results.words.attempts": "tries",
+  "results.words.correct": "Correct",
+  "results.words.incorrect": "Incorrect",
+  "results.words.audioPlayed": "Audio played",
+  "results.words.time": "time",
+  "results.words.times": "times",
+  "results.words.empty": "(empty)",
+  "results.words.practice": "Words to practice",
+
+  // Statistics labels
+  "results.stats.words": "Words",
+  "results.stats.time": "Time",
+  "results.stats.avgPerWord": "Avg/Word",
+  "results.stats.accuracy": "Accuracy",
+
+  // User states
+  "results.user.noTests": "hasn't completed any tests yet.",
+  "results.start.message":
+    "Start taking spelling tests to see your results here!",
+
+  // Statistics cards
+  "results.stats.totalTestsCard": "Total Tests",
+  "results.stats.averageScoreCard": "Average Score",
+  "results.stats.bestScoreCard": "Best Score",
+  "results.stats.improvementCard": "Improvement",
+  "results.stats.totalWordsLabel": "total words",
+  "results.stats.correctLabel": "correct",
+  "results.stats.personalBest": "Personal best",
+  "results.stats.recentTrend": "Recent trend",
+
+  // Performance distribution
+  "results.performance.distributionTitle": "Performance Distribution",
+  "results.performance.excellentLabel": "Excellent (90%+)",
+  "results.performance.goodLabel": "Good (70-89%)",
+  "results.performance.needsWorkLabel": "Needs Work (<70%)",
+  "results.performance.ofTests": "% of tests",
+
+  // Filters
+  "results.filters.filterSortTitle": "Filter & Sort Results",
+  "results.filters.filterByScore": "Filter by Score",
+  "results.filters.sortByLabel": "Sort by",
+  "results.filters.orderLabel": "Order",
+  "results.filters.allScores": "All Scores",
+  "results.filters.excellentOption": "Excellent (90%+)",
+  "results.filters.goodOption": "Good (70-89%)",
+  "results.filters.needsWorkOption": "Needs Work (<70%)",
+  "results.filters.dateOption": "Date",
+  "results.filters.scoreOption": "Score",
+  "results.filters.timeSpentOption": "Time Spent",
+  "results.filters.descendingOption": "Descending",
+  "results.filters.ascendingOption": "Ascending",
+  "results.filters.showingResults": "Showing {count} of {total} tests",
+
+  // Results list
+  "results.list.title": "Test Results",
+  "results.list.noResultsTitle": "No results found",
+  "results.list.noResultsMessage":
+    "Try adjusting your filters to see more results.",
+
+  // Achievements
+  "results.achievement.spellingChampion": "Spelling Champion",
+  "results.achievement.spellingChampionDesc":
+    "Maintaining an average score above 90%",
+  "results.achievement.dedicatedLearner": "Dedicated Learner",
+  "results.achievement.dedicatedLearnerDesc":
+    "Completed {count} spelling tests",
+
+  // Empty state
+  "results.empty.noTestsTitle": "No Test Results Yet",
+  "results.empty.noTestsMessage":
+    "Start taking spelling tests to track your progress and see detailed results here.",
+  "results.empty.startFirstTest": "Start Your First Test",
 };

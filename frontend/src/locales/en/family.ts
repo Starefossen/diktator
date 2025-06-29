@@ -51,4 +51,12 @@ export const family = {
   "family.children.empty.title": "No children yet",
   "family.children.empty.subtitle":
     "Create child accounts to get started with family learning",
+
+  // Progress page specific
+  "family.progress.instruction":
+    "Click on a child's card to view their test results below",
+  "family.progress.unknown": "Unknown",
+  "family.progress.allChildren": "All Children",
+  "family.progress.viewAll": "View All",
+  "family.progress.showingResultsFor": "Showing results for:",
 };

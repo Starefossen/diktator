@@ -6,11 +6,12 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **correctWords** | **number** |  | [default to undefined]
-**incorrectWords** | **Array&lt;string&gt;** |  | [optional] [default to undefined]
+**incorrectWords** | **Array&lt;string&gt;** | Deprecated: Use Words field for detailed information | [optional] [default to undefined]
 **score** | **number** |  | [default to undefined]
 **timeSpent** | **number** |  | [optional] [default to undefined]
 **totalWords** | **number** |  | [default to undefined]
 **wordSetId** | **string** |  | [default to undefined]
+**words** | [**Array&lt;ModelsWordTestResult&gt;**](ModelsWordTestResult.md) | Detailed information for each word in the test | [optional] [default to undefined]
 
 ## Example
 
@@ -24,6 +25,7 @@ const instance: ModelsSaveResultRequest = {
     timeSpent,
     totalWords,
     wordSetId,
+    words,
 };
 ```
 

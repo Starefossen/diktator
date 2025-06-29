@@ -50,4 +50,12 @@ export const family = {
   "family.children.empty.title": "Ingen barn ennå",
   "family.children.empty.subtitle":
     "Opprett barnekontoer for å komme i gang med familielæring",
+
+  // Progress page specific
+  "family.progress.instruction":
+    "Klikk på et barns kort for å se testresultatene deres nedenfor",
+  "family.progress.unknown": "Ukjent",
+  "family.progress.allChildren": "Alle Barn",
+  "family.progress.viewAll": "Vis Alle",
+  "family.progress.showingResultsFor": "Viser resultater for:",
 };

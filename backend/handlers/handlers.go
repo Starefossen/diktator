@@ -377,7 +377,8 @@ func SaveResult(c *gin.Context) {
 		Score:          req.Score,
 		TotalWords:     req.TotalWords,
 		CorrectWords:   req.CorrectWords,
-		IncorrectWords: req.IncorrectWords,
+		IncorrectWords: req.IncorrectWords, // Keep for backward compatibility
+		Words:          req.Words,          // New detailed word information
 		TimeSpent:      req.TimeSpent,
 		CompletedAt:    time.Now(),
 		CreatedAt:      time.Now(),

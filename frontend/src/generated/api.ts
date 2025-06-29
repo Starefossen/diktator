@@ -228,7 +228,7 @@ export interface ModelsSaveResultRequest {
      */
     'correctWords': number;
     /**
-     * 
+     * Deprecated: Use Words field for detailed information
      * @type {Array<string>}
      * @memberof ModelsSaveResultRequest
      */
@@ -257,6 +257,67 @@ export interface ModelsSaveResultRequest {
      * @memberof ModelsSaveResultRequest
      */
     'wordSetId': string;
+    /**
+     * Detailed information for each word in the test
+     * @type {Array<ModelsWordTestResult>}
+     * @memberof ModelsSaveResultRequest
+     */
+    'words'?: Array<ModelsWordTestResult>;
+}
+/**
+ * 
+ * @export
+ * @interface ModelsWordTestResult
+ */
+export interface ModelsWordTestResult {
+    /**
+     * Number of attempts made
+     * @type {number}
+     * @memberof ModelsWordTestResult
+     */
+    'attempts'?: number;
+    /**
+     * Number of times audio was played
+     * @type {number}
+     * @memberof ModelsWordTestResult
+     */
+    'audioPlayCount'?: number;
+    /**
+     * Whether the word was answered correctly
+     * @type {boolean}
+     * @memberof ModelsWordTestResult
+     */
+    'correct'?: boolean;
+    /**
+     * The final answer provided
+     * @type {string}
+     * @memberof ModelsWordTestResult
+     */
+    'finalAnswer'?: string;
+    /**
+     * Number of hints used (if applicable)
+     * @type {number}
+     * @memberof ModelsWordTestResult
+     */
+    'hintsUsed'?: number;
+    /**
+     * Time spent on this word in seconds
+     * @type {number}
+     * @memberof ModelsWordTestResult
+     */
+    'timeSpent'?: number;
+    /**
+     * All answers the user provided for this word
+     * @type {Array<string>}
+     * @memberof ModelsWordTestResult
+     */
+    'userAnswers'?: Array<string>;
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelsWordTestResult
+     */
+    'word'?: string;
 }
 
 /**

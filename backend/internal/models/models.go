@@ -47,18 +47,31 @@ type WordSet struct {
 	UpdatedAt         time.Time               `firestore:"updatedAt" json:"updatedAt"`
 }
 
+// WordTestResult represents detailed information about a word in a test
+type WordTestResult struct {
+	Word           string   `firestore:"word" json:"word"`
+	UserAnswers    []string `firestore:"userAnswers" json:"userAnswers"`                           // All answers the user provided for this word
+	Attempts       int      `firestore:"attempts" json:"attempts"`                                 // Number of attempts made
+	Correct        bool     `firestore:"correct" json:"correct"`                                   // Whether the word was answered correctly
+	TimeSpent      int      `firestore:"timeSpent" json:"timeSpent"`                               // Time spent on this word in seconds
+	FinalAnswer    string   `firestore:"finalAnswer" json:"finalAnswer"`                           // The final answer provided
+	HintsUsed      int      `firestore:"hintsUsed,omitempty" json:"hintsUsed,omitempty"`           // Number of hints used (if applicable)
+	AudioPlayCount int      `firestore:"audioPlayCount,omitempty" json:"audioPlayCount,omitempty"` // Number of times audio was played
+}
+
 // TestResult represents the result of a spelling test
 type TestResult struct {
-	ID             string    `firestore:"id" json:"id"`
-	WordSetID      string    `firestore:"wordSetId" json:"wordSetId"`
-	UserID         string    `firestore:"userId" json:"userId"`
-	Score          float64   `firestore:"score" json:"score"` // Percentage (0-100)
-	TotalWords     int       `firestore:"totalWords" json:"totalWords"`
-	CorrectWords   int       `firestore:"correctWords" json:"correctWords"`
-	IncorrectWords []string  `firestore:"incorrectWords" json:"incorrectWords"`
-	TimeSpent      int       `firestore:"timeSpent" json:"timeSpent"` // seconds
-	CompletedAt    time.Time `firestore:"completedAt" json:"completedAt"`
-	CreatedAt      time.Time `firestore:"createdAt" json:"createdAt"`
+	ID             string           `firestore:"id" json:"id"`
+	WordSetID      string           `firestore:"wordSetId" json:"wordSetId"`
+	UserID         string           `firestore:"userId" json:"userId"`
+	Score          float64          `firestore:"score" json:"score"` // Percentage (0-100)
+	TotalWords     int              `firestore:"totalWords" json:"totalWords"`
+	CorrectWords   int              `firestore:"correctWords" json:"correctWords"`
+	IncorrectWords []string         `firestore:"incorrectWords,omitempty" json:"incorrectWords,omitempty"` // Deprecated: Use Words field for detailed information
+	Words          []WordTestResult `firestore:"words" json:"words"`                                       // Detailed information for each word in the test
+	TimeSpent      int              `firestore:"timeSpent" json:"timeSpent"`                               // Total time spent on test in seconds
+	CompletedAt    time.Time        `firestore:"completedAt" json:"completedAt"`
+	CreatedAt      time.Time        `firestore:"createdAt" json:"createdAt"`
 }
 
 // AudioFile represents a generated TTS audio file
@@ -82,12 +95,13 @@ type CreateWordSetRequest struct {
 
 // SaveResultRequest represents the request to save a test result
 type SaveResultRequest struct {
-	WordSetID      string   `json:"wordSetId" binding:"required"`
-	Score          float64  `json:"score" binding:"required"`
-	TotalWords     int      `json:"totalWords" binding:"required"`
-	CorrectWords   int      `json:"correctWords" binding:"required"`
-	IncorrectWords []string `json:"incorrectWords"`
-	TimeSpent      int      `json:"timeSpent"`
+	WordSetID      string           `json:"wordSetId" binding:"required"`
+	Score          float64          `json:"score" binding:"required"`
+	TotalWords     int              `json:"totalWords" binding:"required"`
+	CorrectWords   int              `json:"correctWords" binding:"required"`
+	IncorrectWords []string         `json:"incorrectWords,omitempty"` // Deprecated: Use Words field for detailed information
+	Words          []WordTestResult `json:"words"`                    // Detailed information for each word in the test
+	TimeSpent      int              `json:"timeSpent"`
 }
 
 // APIResponse represents a standard API response

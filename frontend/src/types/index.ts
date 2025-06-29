@@ -134,6 +134,17 @@ export interface WordItem {
   audio?: WordAudio; // Audio info for this specific word
 }
 
+export interface WordTestResult {
+  word: string;
+  userAnswers: string[]; // All answers the user provided for this word
+  attempts: number; // Number of attempts made
+  correct: boolean; // Whether the word was answered correctly
+  timeSpent: number; // Time spent on this word in seconds
+  finalAnswer: string; // The final answer provided
+  hintsUsed?: number; // Number of hints used (if applicable)
+  audioPlayCount?: number; // Number of times audio was played
+}
+
 export interface TestResult {
   id: string;
   wordSetId: string;
@@ -141,8 +152,9 @@ export interface TestResult {
   score: number; // Percentage (0-100)
   totalWords: number;
   correctWords: number;
-  incorrectWords: string[] | null; // Can be null if no incorrect words
-  timeSpent: number; // seconds
+  incorrectWords?: string[] | null; // Deprecated: Use words field for detailed information
+  words: WordTestResult[]; // Detailed information for each word in the test
+  timeSpent: number; // Total time spent on test in seconds
   completedAt: string;
   createdAt: string;
 }
@@ -170,7 +182,8 @@ export interface SaveResultRequest {
   score: number;
   totalWords: number;
   correctWords: number;
-  incorrectWords: string[]; // When saving, we always provide an array (can be empty)
+  incorrectWords?: string[]; // Deprecated: Use words field for detailed information
+  words: WordTestResult[]; // Detailed information for each word in the test
   timeSpent: number;
 }
 
@@ -190,10 +203,13 @@ export interface CreateWordSetForm {
 
 export interface TestAnswer {
   word: string;
-  userAnswer: string;
-  isCorrect: boolean;
-  timeSpent: number;
-  attemptNumber?: number; // Track which attempt this was
+  userAnswers: string[]; // All answers the user provided for this word
+  isCorrect: boolean; // Whether the word was answered correctly
+  timeSpent: number; // Time spent on this word in seconds
+  attempts: number; // Total number of attempts made
+  finalAnswer: string; // The final answer provided
+  hintsUsed?: number; // Number of hints used (if applicable)
+  audioPlayCount?: number; // Number of times audio was played
 }
 
 export interface TestConfiguration {

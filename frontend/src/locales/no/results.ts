@@ -80,4 +80,79 @@ export const results = {
   "results.performance.excellent": "Utmerket",
   "results.performance.good": "Bra",
   "results.performance.needsWork": "Trenger Øvelse",
+
+  // Word details
+  "results.words.needingAttention": "Ord som trenger oppmerksomhet",
+  "results.words.yourAnswers": "Dine svar",
+  "results.words.attempts": "forsøk",
+  "results.words.correct": "Riktig",
+  "results.words.incorrect": "Feil",
+  "results.words.audioPlayed": "Lyd spilt av",
+  "results.words.time": "gang",
+  "results.words.times": "ganger",
+  "results.words.empty": "(tomt)",
+  "results.words.practice": "Ord å øve på",
+
+  // Statistics labels
+  "results.stats.words": "Ord",
+  "results.stats.time": "Tid",
+  "results.stats.avgPerWord": "Snitt/Ord",
+  "results.stats.accuracy": "Nøyaktighet",
+
+  // User states
+  "results.user.noTests": "har ikke fullført noen tester ennå.",
+  "results.start.message":
+    "Start å ta stavetester for å se resultatene dine her!",
+
+  // Statistics cards
+  "results.stats.totalTestsCard": "Totale Tester",
+  "results.stats.averageScoreCard": "Gjennomsnittsscore",
+  "results.stats.bestScoreCard": "Beste Score",
+  "results.stats.improvementCard": "Forbedring",
+  "results.stats.totalWordsLabel": "totale ord",
+  "results.stats.correctLabel": "riktige",
+  "results.stats.personalBest": "Personlig rekord",
+  "results.stats.recentTrend": "Nylig trend",
+
+  // Performance distribution
+  "results.performance.distributionTitle": "Prestasjonsfordeling",
+  "results.performance.excellentLabel": "Utmerket (90%+)",
+  "results.performance.goodLabel": "Bra (70-89%)",
+  "results.performance.needsWorkLabel": "Trenger Øvelse (<70%)",
+  "results.performance.ofTests": "% av tester",
+
+  // Filters
+  "results.filters.filterSortTitle": "Filtrer og Sorter Resultater",
+  "results.filters.filterByScore": "Filtrer etter Score",
+  "results.filters.sortByLabel": "Sorter etter",
+  "results.filters.orderLabel": "Rekkefølge",
+  "results.filters.allScores": "Alle Scorer",
+  "results.filters.excellentOption": "Utmerket (90%+)",
+  "results.filters.goodOption": "Bra (70-89%)",
+  "results.filters.needsWorkOption": "Trenger Øvelse (<70%)",
+  "results.filters.dateOption": "Dato",
+  "results.filters.scoreOption": "Score",
+  "results.filters.timeSpentOption": "Tid Brukt",
+  "results.filters.descendingOption": "Synkende",
+  "results.filters.ascendingOption": "Stigende",
+  "results.filters.showingResults": "Viser {count} av {total} tester",
+
+  // Results list
+  "results.list.title": "Testresultater",
+  "results.list.noResultsTitle": "Ingen resultater funnet",
+  "results.list.noResultsMessage":
+    "Prøv å justere filtrene dine for å se flere resultater.",
+
+  // Achievements
+  "results.achievement.spellingChampion": "Stavemester",
+  "results.achievement.spellingChampionDesc":
+    "Opprettholder en gjennomsnittsscore over 90%",
+  "results.achievement.dedicatedLearner": "Dedikert Elev",
+  "results.achievement.dedicatedLearnerDesc": "Fullført {count} stavetester",
+
+  // Empty state
+  "results.empty.noTestsTitle": "Ingen Testresultater Ennå",
+  "results.empty.noTestsMessage":
+    "Start å ta stavetester for å spore fremgangen din og se detaljerte resultater her.",
+  "results.empty.startFirstTest": "Start Din Første Test",
 };

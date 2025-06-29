@@ -83,6 +83,7 @@ Class | Method | HTTP request | Description
  - [ModelsCreateChildAccountRequest](docs/ModelsCreateChildAccountRequest.md)
  - [ModelsCreateWordSetRequest](docs/ModelsCreateWordSetRequest.md)
  - [ModelsSaveResultRequest](docs/ModelsSaveResultRequest.md)
+ - [ModelsWordTestResult](docs/ModelsWordTestResult.md)
 
 
 <a id="documentation-for-authorization"></a>

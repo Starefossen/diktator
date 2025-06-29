@@ -454,8 +454,37 @@ func TestChildUserDataAccess(t *testing.T) {
 			Score:          82.0,
 			TotalWords:     10,
 			CorrectWords:   8,
-			IncorrectWords: []string{"difficult", "challenge"},
-			TimeSpent:      150,
+			IncorrectWords: []string{"difficult", "challenge"}, // Keep for backward compatibility
+			Words: []models.WordTestResult{
+				{
+					Word:           "simple",
+					UserAnswers:    []string{"simple"},
+					Attempts:       1,
+					Correct:        true,
+					TimeSpent:      5,
+					FinalAnswer:    "simple",
+					AudioPlayCount: 1,
+				},
+				{
+					Word:           "difficult",
+					UserAnswers:    []string{"difacult", "difficult"},
+					Attempts:       2,
+					Correct:        false,
+					TimeSpent:      18,
+					FinalAnswer:    "difacult",
+					AudioPlayCount: 2,
+				},
+				{
+					Word:           "challenge",
+					UserAnswers:    []string{"chaleneg", "challenge"},
+					Attempts:       2,
+					Correct:        false,
+					TimeSpent:      22,
+					FinalAnswer:    "chaleneg",
+					AudioPlayCount: 3,
+				},
+			},
+			TimeSpent: 150,
 		}
 
 		mockFirestore.On("SaveTestResult", mock.AnythingOfType("*models.TestResult")).Return(nil)

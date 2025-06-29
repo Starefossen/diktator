@@ -271,8 +271,28 @@ func TestSaveUserResult(t *testing.T) {
 			Score:          88.5,
 			TotalWords:     10,
 			CorrectWords:   9,
-			IncorrectWords: []string{"difficult"},
-			TimeSpent:      95,
+			IncorrectWords: []string{"difficult"}, // Keep for backward compatibility
+			Words: []models.WordTestResult{
+				{
+					Word:           "test",
+					UserAnswers:    []string{"test"},
+					Attempts:       1,
+					Correct:        true,
+					TimeSpent:      8,
+					FinalAnswer:    "test",
+					AudioPlayCount: 1,
+				},
+				{
+					Word:           "difficult",
+					UserAnswers:    []string{"diffikult", "dificult", "difficult"},
+					Attempts:       3,
+					Correct:        false,
+					TimeSpent:      25,
+					FinalAnswer:    "dificult",
+					AudioPlayCount: 3,
+				},
+			},
+			TimeSpent: 95,
 		}
 
 		mockFirestore.On("SaveTestResult", mock.AnythingOfType("*models.TestResult")).Return(nil)

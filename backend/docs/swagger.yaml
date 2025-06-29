@@ -72,6 +72,7 @@ definitions:
       correctWords:
         type: integer
       incorrectWords:
+        description: 'Deprecated: Use Words field for detailed information'
         items:
           type: string
         type: array
@@ -83,11 +84,44 @@ definitions:
         type: integer
       wordSetId:
         type: string
+      words:
+        description: Detailed information for each word in the test
+        items:
+          $ref: '#/definitions/models.WordTestResult'
+        type: array
     required:
     - correctWords
     - score
     - totalWords
     - wordSetId
+    type: object
+  models.WordTestResult:
+    properties:
+      attempts:
+        description: Number of attempts made
+        type: integer
+      audioPlayCount:
+        description: Number of times audio was played
+        type: integer
+      correct:
+        description: Whether the word was answered correctly
+        type: boolean
+      finalAnswer:
+        description: The final answer provided
+        type: string
+      hintsUsed:
+        description: Number of hints used (if applicable)
+        type: integer
+      timeSpent:
+        description: Time spent on this word in seconds
+        type: integer
+      userAnswers:
+        description: All answers the user provided for this word
+        items:
+          type: string
+        type: array
+      word:
+        type: string
     type: object
 host: localhost:8080
 info:

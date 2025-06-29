@@ -64,6 +64,10 @@ export default function WordSetsPage() {
   const [testInitialized, setTestInitialized] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
 
+  // Enhanced test state for detailed tracking
+  const [currentWordAnswers, setCurrentWordAnswers] = useState<string[]>([]);
+  const [currentWordAudioPlays, setCurrentWordAudioPlays] = useState(0);
+
   // Test refs for stable audio functionality
   const activeTestRef = useRef<WordSet | null>(null);
   const processedWordsRef = useRef<string[]>([]);
@@ -272,6 +276,10 @@ export default function WordSetsPage() {
     setTestInitialized(false);
     setIsAudioPlaying(false);
 
+    // Reset enhanced tracking state
+    setCurrentWordAnswers([]);
+    setCurrentWordAudioPlays(0);
+
     // Update refs for stable access
     activeTestRef.current = wordSet;
     processedWordsRef.current = words;
@@ -286,6 +294,9 @@ export default function WordSetsPage() {
 
     const currentWordSet = activeTestRef.current;
     if (!currentWordSet) return;
+
+    // Increment audio play count for current word
+    setCurrentWordAudioPlays((prev) => prev + 1);
 
     playWordAudioHelper(word, currentWordSet, {
       onStart: () => {
@@ -359,6 +370,10 @@ export default function WordSetsPage() {
       userAnswer.toLowerCase().trim() === currentWord.toLowerCase();
     const newTries = currentTries + 1;
 
+    // Track all answers for this word
+    const newAnswers = [...currentWordAnswers, userAnswer.trim()];
+    setCurrentWordAnswers(newAnswers);
+
     setLastAnswerCorrect(isCorrect);
     setShowFeedback(true);
     setCurrentTries(newTries);
@@ -378,21 +393,26 @@ export default function WordSetsPage() {
         );
         const answer: TestAnswer = {
           word: currentWord,
-          userAnswer: userAnswer.trim(),
+          userAnswers: newAnswers,
           isCorrect,
           timeSpent,
+          attempts: newTries,
+          finalAnswer: userAnswer.trim(),
+          audioPlayCount: currentWordAudioPlays,
         };
 
-        const newAnswers = [...answers, answer];
-        setAnswers(newAnswers);
+        const newAnswersList = [...answers, answer];
+        setAnswers(newAnswersList);
 
         if (currentWordIndex < processedWords.length - 1) {
           setCurrentWordIndex(currentWordIndex + 1);
           setUserAnswer("");
           setWordStartTime(new Date());
           setCurrentTries(0);
+          setCurrentWordAnswers([]);
+          setCurrentWordAudioPlays(0);
         } else {
-          completeTest(newAnswers);
+          completeTest(newAnswersList);
         }
       } else {
         setUserAnswer("");
@@ -416,12 +436,24 @@ export default function WordSetsPage() {
     );
 
     try {
+      // Convert TestAnswer to WordTestResult format
+      const wordsResults = finalAnswers.map((answer) => ({
+        word: answer.word,
+        userAnswers: answer.userAnswers,
+        attempts: answer.attempts,
+        correct: answer.isCorrect,
+        timeSpent: answer.timeSpent,
+        finalAnswer: answer.finalAnswer,
+        audioPlayCount: answer.audioPlayCount,
+      }));
+
       const resultData: SaveResultRequest = {
         wordSetId: activeTest.id,
         score,
         totalWords: finalAnswers.length,
         correctWords: correctAnswers.length,
-        incorrectWords,
+        incorrectWords, // Keep for backward compatibility
+        words: wordsResults,
         timeSpent: totalTimeSpent,
       };
 
@@ -447,6 +479,10 @@ export default function WordSetsPage() {
     setShowFeedback(false);
     setTestInitialized(false);
     setIsAudioPlaying(false);
+
+    // Reset enhanced tracking state
+    setCurrentWordAnswers([]);
+    setCurrentWordAudioPlays(0);
 
     isPlayingAudioRef.current = false;
     lastAutoPlayIndexRef.current = -1;
@@ -562,7 +598,7 @@ export default function WordSetsPage() {
                         </span>
                         {!answer.isCorrect && (
                           <span className="ml-2 text-gray-600">
-                            {t("test.yourAnswer")} &quot;{answer.userAnswer}
+                            {t("test.yourAnswer")} &quot;{answer.finalAnswer}
                             &quot;
                           </span>
                         )}

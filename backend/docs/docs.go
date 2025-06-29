@@ -1179,6 +1179,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "incorrectWords": {
+                    "description": "Deprecated: Use Words field for detailed information",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -1194,6 +1195,52 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "wordSetId": {
+                    "type": "string"
+                },
+                "words": {
+                    "description": "Detailed information for each word in the test",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.WordTestResult"
+                    }
+                }
+            }
+        },
+        "models.WordTestResult": {
+            "type": "object",
+            "properties": {
+                "attempts": {
+                    "description": "Number of attempts made",
+                    "type": "integer"
+                },
+                "audioPlayCount": {
+                    "description": "Number of times audio was played",
+                    "type": "integer"
+                },
+                "correct": {
+                    "description": "Whether the word was answered correctly",
+                    "type": "boolean"
+                },
+                "finalAnswer": {
+                    "description": "The final answer provided",
+                    "type": "string"
+                },
+                "hintsUsed": {
+                    "description": "Number of hints used (if applicable)",
+                    "type": "integer"
+                },
+                "timeSpent": {
+                    "description": "Time spent on this word in seconds",
+                    "type": "integer"
+                },
+                "userAnswers": {
+                    "description": "All answers the user provided for this word",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "word": {
                     "type": "string"
                 }
             }

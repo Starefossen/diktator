@@ -15,6 +15,7 @@ docs/ModelsChildAccount.md
 docs/ModelsCreateChildAccountRequest.md
 docs/ModelsCreateWordSetRequest.md
 docs/ModelsSaveResultRequest.md
+docs/ModelsWordTestResult.md
 docs/UsersApi.md
 docs/WordsetsApi.md
 git_push.sh
