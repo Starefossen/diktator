@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -12,6 +13,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function PWAInstaller() {
+  const { t } = useLanguage();
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
@@ -168,9 +170,9 @@ export function PWAInstaller() {
         <div className="install-prompt-content">
           <div className="install-prompt-icon">🔄</div>
           <div className="install-prompt-text">
-            <div className="install-prompt-title">Update Available</div>
+            <div className="install-prompt-title">{t("pwa.update.title")}</div>
             <div className="install-prompt-description">
-              A new version of Diktator is ready. Reload to get the latest features and improvements.
+              {t("pwa.update.description")}
               {updateVersion && ` (Version ${updateVersion})`}
             </div>
           </div>
@@ -180,13 +182,13 @@ export function PWAInstaller() {
             className="install-prompt-button primary"
             onClick={handleUpdateClick}
           >
-            Reload Now
+            {t("pwa.update.button")}
           </button>
           <button
             className="install-prompt-button secondary"
             onClick={handleUpdateDismiss}
           >
-            Later
+            {t("pwa.update.dismiss")}
           </button>
         </div>
       </div>
@@ -200,9 +202,9 @@ export function PWAInstaller() {
         <div className="install-prompt-content">
           <div className="install-prompt-icon">D</div>
           <div className="install-prompt-text">
-            <div className="install-prompt-title">Install Diktator</div>
+            <div className="install-prompt-title">{t("pwa.install.title")}</div>
             <div className="install-prompt-description">
-              Add to your home screen for quick access and offline use
+              {t("pwa.install.description")}
             </div>
           </div>
         </div>
@@ -211,13 +213,13 @@ export function PWAInstaller() {
             className="install-prompt-button primary"
             onClick={handleInstallClick}
           >
-            Install
+            {t("pwa.install.button")}
           </button>
           <button
             className="install-prompt-button secondary"
             onClick={handleDismissClick}
           >
-            Not now
+            {t("pwa.install.dismiss")}
           </button>
         </div>
       </div>

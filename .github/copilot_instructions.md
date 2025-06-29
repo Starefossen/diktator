@@ -57,6 +57,8 @@ mise run deploy-frontend # Deploy to Cloud Storage
 mise run deploy-backend  # Deploy to Cloud Run
 ```
 
+Never use npm commands directly unless you absolutely have to.
+
 ### File Structure
 
 ```
