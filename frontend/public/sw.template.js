@@ -38,26 +38,29 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   console.log(`Activating service worker version ${CACHE_VERSION}`);
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && cacheName.startsWith('diktator-')) {
-            console.log("Deleting old cache:", cacheName);
-            return caches.delete(cacheName);
-          }
-        }),
-      );
-    }).then(() => {
-      // Notify all clients about the update
-      return self.clients.matchAll().then((clients) => {
-        clients.forEach((client) => {
-          client.postMessage({
-            type: 'SW_UPDATED',
-            version: CACHE_VERSION
+    caches
+      .keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME && cacheName.startsWith("diktator-")) {
+              console.log("Deleting old cache:", cacheName);
+              return caches.delete(cacheName);
+            }
+          }),
+        );
+      })
+      .then(() => {
+        // Notify all clients about the update
+        return self.clients.matchAll().then((clients) => {
+          clients.forEach((client) => {
+            client.postMessage({
+              type: "SW_UPDATED",
+              version: CACHE_VERSION,
+            });
           });
         });
-      });
-    }),
+      }),
   );
   // Take control of all clients immediately
   self.clients.claim();

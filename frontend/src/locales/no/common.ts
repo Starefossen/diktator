@@ -31,11 +31,13 @@ export const common = {
 
   // PWA Install and Updates
   "pwa.install.title": "Installer Diktator",
-  "pwa.install.description": "Legg til på hjemmeskjermen for rask tilgang og offline bruk",
+  "pwa.install.description":
+    "Legg til på hjemmeskjermen for rask tilgang og offline bruk",
   "pwa.install.button": "Installer",
   "pwa.install.dismiss": "Ikke nå",
   "pwa.update.title": "Oppdatering tilgjengelig",
-  "pwa.update.description": "En ny versjon av Diktator er klar. Last inn på nytt for å få de nyeste funksjonene og forbedringene.",
+  "pwa.update.description":
+    "En ny versjon av Diktator er klar. Last inn på nytt for å få de nyeste funksjonene og forbedringene.",
   "pwa.update.button": "Last inn på nytt",
   "pwa.update.dismiss": "Senere",
 };

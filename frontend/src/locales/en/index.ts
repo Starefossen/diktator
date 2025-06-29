@@ -37,13 +37,78 @@ export const en = {
   "home.features.title": "Ready to Practice!",
   "home.features.subtitle":
     "Advanced spelling practice with audio feedback and professional user experience.",
+
+  // New section translations
+  "home.demo.title": "How It Works",
+  "home.demo.subtitle": "Simple steps to practice spelling",
+  "home.demo.step1.title": "Create Word Sets",
+  "home.demo.step1.desc": "Add words for practice in Norwegian or English",
+  "home.demo.step2.title": "Listen & Type",
+  "home.demo.step2.desc": "Hear pronunciation and practice spelling",
+  "home.demo.step3.title": "Track Progress",
+  "home.demo.step3.desc": "View results and improvement over time",
+  "home.demo.cta.title": "Ready to try?",
+  "home.demo.cta.desc": "Create your first word set to begin practicing",
+  "home.demo.cta.button": "Get Started",
+
+  "home.benefits.title": "Perfect for Everyone",
+  "home.benefits.subtitle":
+    "Whether you're a parent, teacher, or student, Diktator adapts to your needs",
+  "home.benefits.parents.title": "For Parents",
+  "home.benefits.parents.1": "Track your child's spelling progress",
+  "home.benefits.parents.2": "Create custom word lists",
+  "home.benefits.parents.3": "Safe, ad-free environment",
+  "home.benefits.teachers.title": "For Teachers",
+  "home.benefits.teachers.1": "Manage multiple student accounts",
+  "home.benefits.teachers.2": "Curriculum-aligned word sets",
+  "home.benefits.teachers.3": "Detailed progress reports",
+  "home.benefits.students.title": "For Students",
+  "home.benefits.students.1": "Fun, game-like experience",
+  "home.benefits.students.2": "Immediate feedback",
+  "home.benefits.students.3": "Self-paced learning",
+
+  "home.pwa.title": "Install as App",
+  "home.pwa.subtitle":
+    "Add to your home screen for quick access and offline practice",
+  "home.pwa.feature1.title": "Home Screen Access",
+  "home.pwa.feature1.desc": "Launch from your home screen",
+  "home.pwa.feature2.title": "Offline Mode",
+  "home.pwa.feature2.desc": "Practice without internet connection",
+  "home.pwa.feature3.title": "App Interface",
+  "home.pwa.feature3.desc": "Full-screen app experience",
+  "home.pwa.footer":
+    "Available on iOS, Android, and desktop • No app store required",
+
+  "home.start.title": "Start Learning",
+  "home.start.desc":
+    "Practice spelling with audio pronunciation and progress tracking",
+  "home.start.feature1": "Audio pronunciation for every word",
+  "home.start.feature2": "Instant feedback and scoring",
+  "home.start.feature3": "Progress tracking and analytics",
+  "home.start.button": "Get Started",
+
+  "home.about.tech1": "Modern PWA technology",
+  "home.about.tech2": "Norwegian & English support",
+  "home.about.tech3": "Family-friendly design",
+
+  "home.cta.title": "Start Practicing Spelling",
+  "home.cta.subtitle": "Create word sets and practice with audio pronunciation",
+  "home.cta.button": "Get Started",
+  "home.cta.continue": "Continue Learning",
+  "home.cta.footer": "No downloads required • Works on all devices",
+
+  // Existing features
   "home.features.auth": "Firebase Authentication",
   "home.features.database": "Firestore Database",
   "home.features.i18n": "Multilingual Support (EN/NO)",
   "home.features.wordsets": "Custom Word Sets & Tests",
   "home.features.profiles": "User Profiles & Statistics",
   "home.features.tts": "Speech Synthesis (TTS)",
+  "home.features.tts.desc": "Professional text-to-speech pronunciation",
   "home.features.results": "Test Results Tracking",
+  "home.features.results.desc": "Progress tracking and detailed results",
+  "home.features.profiles.desc": "Family accounts with individual tracking",
+  "home.features.i18n.desc": "Norwegian and English language support",
   "home.features.emulators": "Firebase Emulators",
   "home.nextPhase.title": "Ready for Phase 2:",
   "home.nextPhase.desc":

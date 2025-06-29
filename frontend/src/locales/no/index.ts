@@ -37,13 +37,77 @@ export const no = {
   "home.features.title": "Klar for øving!",
   "home.features.subtitle":
     "Avansert stavingsøving med lydtilbakemelding og profesjonell brukeropplevelse.",
+
+  // New section translations
+  "home.demo.title": "Slik fungerer det",
+  "home.demo.subtitle": "Enkle steg for å øve på staving",
+  "home.demo.step1.title": "Opprett ordsett",
+  "home.demo.step1.desc": "Legg til ord for øving på norsk eller engelsk",
+  "home.demo.step2.title": "Lytt og skriv",
+  "home.demo.step2.desc": "Hør uttale og øv på staving",
+  "home.demo.step3.title": "Følg fremgang",
+  "home.demo.step3.desc": "Se resultater og forbedring over tid",
+  "home.demo.cta.title": "Klar til å prøve?",
+  "home.demo.cta.desc": "Opprett ditt første ordsett for å begynne å øve",
+  "home.demo.cta.button": "Kom i gang",
+
+  "home.benefits.title": "Perfekt for alle",
+  "home.benefits.subtitle":
+    "Enten du er forelder, lærer eller student, tilpasser Diktator seg dine behov",
+  "home.benefits.parents.title": "For foreldre",
+  "home.benefits.parents.1": "Følg barnets stavefremgang",
+  "home.benefits.parents.2": "Opprett tilpassede ordlister",
+  "home.benefits.parents.3": "Trygt, reklamefritt miljø",
+  "home.benefits.teachers.title": "For lærere",
+  "home.benefits.teachers.1": "Administrer flere elevkontoer",
+  "home.benefits.teachers.2": "Læreplantilpassede ordsett",
+  "home.benefits.teachers.3": "Detaljerte fremgangsrapporter",
+  "home.benefits.students.title": "For elever",
+  "home.benefits.students.1": "Morsom, spillaktig opplevelse",
+  "home.benefits.students.2": "Umiddelbar tilbakemelding",
+  "home.benefits.students.3": "Selvpasert læring",
+
+  "home.pwa.title": "Installer som app",
+  "home.pwa.subtitle":
+    "Legg til på hjemskjermen for rask tilgang og frakoblet øving",
+  "home.pwa.feature1.title": "Hjemskjermtilgang",
+  "home.pwa.feature1.desc": "Start fra hjemskjermen din",
+  "home.pwa.feature2.title": "Frakoblet modus",
+  "home.pwa.feature2.desc": "Øv uten internettforbindelse",
+  "home.pwa.feature3.title": "App-grensesnitt",
+  "home.pwa.feature3.desc": "Fullskjerm app-opplevelse",
+  "home.pwa.footer":
+    "Tilgjengelig på iOS, Android og desktop • Ingen appbutikk nødvendig",
+
+  "home.start.title": "Start læring",
+  "home.start.desc": "Øv på staving med lyduttale og fremgangssporing",
+  "home.start.feature1": "Lyduttale for hvert ord",
+  "home.start.feature2": "Umiddelbar tilbakemelding og poenggiving",
+  "home.start.feature3": "Fremgangssporing og analyse",
+  "home.start.button": "Kom i gang",
+
+  "home.about.tech1": "Moderne PWA-teknologi",
+  "home.about.tech2": "Norsk og engelsk støtte",
+  "home.about.tech3": "Familievennlig design",
+
+  "home.cta.title": "Start stavingsøving",
+  "home.cta.subtitle": "Opprett ordsett og øv med lyduttale",
+  "home.cta.button": "Kom i gang",
+  "home.cta.continue": "Fortsett læring",
+  "home.cta.footer": "Ingen nedlastinger nødvendig • Fungerer på alle enheter",
+
+  // Existing features
   "home.features.auth": "Firebase autentisering",
   "home.features.database": "Firestore database",
   "home.features.i18n": "Flerspråklig støtte (EN/NO)",
   "home.features.wordsets": "Tilpassede ordsett og tester",
   "home.features.profiles": "Brukerprofiler og statistikk",
   "home.features.tts": "Talesyntese (TTS)",
+  "home.features.tts.desc": "Profesjonell tekst-til-tale uttale",
   "home.features.results": "Testresultater sporing",
+  "home.features.results.desc": "Fremgangssporing og detaljerte resultater",
+  "home.features.profiles.desc": "Familiekontoer med individuell sporing",
+  "home.features.i18n.desc": "Norsk og engelsk språkstøtte",
   "home.features.emulators": "Firebase emulatorer",
   "home.nextPhase.title": "Klar for fase 2:",
   "home.nextPhase.desc":
