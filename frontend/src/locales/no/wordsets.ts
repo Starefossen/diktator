@@ -57,4 +57,10 @@ export const wordsets = {
   "wordsets.config.noTimeLimit": "Ingen tidsgrense",
   "wordsets.config.timeLimitHelp": "Tid i sekunder (1-300)",
   "wordsets.config.enableAutocorrect": "Aktiver autokorrigering/stavekontroll",
+
+  // Safari compatibility
+  "wordsets.safari.autoplayLimited":
+    "Auto-spill er begrenset på Safari-nettlesere under versjon 17. Trykk på avspillingsknappen for å høre hvert ord.",
+  "wordsets.safari.autoplayWarning":
+    "Auto-spill er begrenset på Safari-nettlesere under versjon 17. Du må manuelt trykke på avspillingsknappen for hvert ord.",
 };

@@ -57,4 +57,10 @@ export const wordsets = {
   "wordsets.config.noTimeLimit": "No time limit",
   "wordsets.config.timeLimitHelp": "Time in seconds (1-300)",
   "wordsets.config.enableAutocorrect": "Enable autocorrect/spellcheck",
+
+  // Safari compatibility
+  "wordsets.safari.autoplayLimited":
+    "Auto-play is limited on Safari browsers below version 17. Tap the play button to hear each word.",
+  "wordsets.safari.autoplayWarning":
+    "Auto-play is limited on Safari browsers below version 17. You'll need to manually tap the play button for each word.",
 };

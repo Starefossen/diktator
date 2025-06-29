@@ -10,17 +10,43 @@ declare global {
   }
 }
 
+// Shared audio context for iOS Safari compatibility
+let sharedAudioContext: AudioContext | null = null;
+
+/**
+ * Gets or creates a shared AudioContext for iOS Safari compatibility
+ */
+const getAudioContext = (): AudioContext | null => {
+  if (!("AudioContext" in window || "webkitAudioContext" in window))
+    return null;
+
+  if (!sharedAudioContext) {
+    try {
+      const AudioContextConstructor =
+        window.AudioContext || window.webkitAudioContext;
+      sharedAudioContext = new AudioContextConstructor();
+
+      // Resume context if suspended (required on iOS Safari)
+      if (sharedAudioContext.state === "suspended") {
+        sharedAudioContext.resume();
+      }
+    } catch (error) {
+      console.log("Could not create AudioContext:", error);
+      return null;
+    }
+  }
+
+  return sharedAudioContext;
+};
+
 /**
  * Plays a pleasant success chord (C major) when user answers correctly
  */
 export const playSuccessTone = (): void => {
-  if (!("AudioContext" in window || "webkitAudioContext" in window)) return;
+  const audioContext = getAudioContext();
+  if (!audioContext) return;
 
   try {
-    const AudioContextConstructor =
-      window.AudioContext || window.webkitAudioContext;
-    const audioContext = new AudioContextConstructor();
-
     // Create a pleasant success chord (C major)
     const frequencies = [523.25, 659.25, 783.99]; // C5, E5, G5
     const duration = 0.5;
@@ -58,13 +84,10 @@ export const playSuccessTone = (): void => {
  * Plays a subtle error sound (descending minor third) when user answers incorrectly
  */
 export const playErrorSound = (): void => {
-  if (!("AudioContext" in window || "webkitAudioContext" in window)) return;
+  const audioContext = getAudioContext();
+  if (!audioContext) return;
 
   try {
-    const AudioContextConstructor =
-      window.AudioContext || window.webkitAudioContext;
-    const audioContext = new AudioContextConstructor();
-
     // Create a subtle error sound (descending minor third)
     const frequencies = [329.63, 293.66]; // E4, D4
     const duration = 0.3;
@@ -102,13 +125,10 @@ export const playErrorSound = (): void => {
  * Plays a triumphant completion fanfare when the test is finished
  */
 export const playCompletionTone = (): void => {
-  if (!("AudioContext" in window || "webkitAudioContext" in window)) return;
+  const audioContext = getAudioContext();
+  if (!audioContext) return;
 
   try {
-    const AudioContextConstructor =
-      window.AudioContext || window.webkitAudioContext;
-    const audioContext = new AudioContextConstructor();
-
     // Create a triumphant completion fanfare (ascending major scale)
     const frequencies = [523.25, 587.33, 659.25, 698.46, 783.99]; // C5, D5, E5, F5, G5
     const duration = 0.8;

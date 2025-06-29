@@ -28,6 +28,9 @@ import {
   BoltIcon,
   UsersIcon,
   UserPlusIcon,
+  ExclamationTriangleIcon,
+  XMarkIcon,
+  DevicePhoneMobileIcon,
 } from "@heroicons/react/24/outline";
 
 // Icon mapping object for easy reference
@@ -249,6 +252,38 @@ export function HeroChartBarIcon({
   className?: string;
 }) {
   return <ChartBarIcon className={className} />;
+}
+
+export function HeroExclamationTriangleIcon({
+  className = "w-5 h-5 text-yellow-600",
+}: {
+  className?: string;
+}) {
+  return <ExclamationTriangleIcon className={className} />;
+}
+
+export function HeroXMarkIcon({
+  className = "w-5 h-5 text-gray-600",
+}: {
+  className?: string;
+}) {
+  return <XMarkIcon className={className} />;
+}
+
+export function HeroPlusIcon({
+  className = "w-5 h-5 text-white",
+}: {
+  className?: string;
+}) {
+  return <PlusIcon className={className} />;
+}
+
+export function HeroDevicePhoneMobileIcon({
+  className = "w-5 h-5 text-blue-600",
+}: {
+  className?: string;
+}) {
+  return <DevicePhoneMobileIcon className={className} />;
 }
 
 // Score-based icon component

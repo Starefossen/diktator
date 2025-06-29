@@ -18,6 +18,8 @@ import {
   playWordAudio as playWordAudioHelper,
   getWordSetAudioStats,
   stopAudio,
+  initializeAudioForIOS,
+  requiresUserInteractionForAudio,
 } from "@/lib/audioPlayer";
 import {
   playSuccessTone,
@@ -33,6 +35,10 @@ import {
   HeroSaveIcon,
   HeroSettingsIcon,
   ScoreIcon,
+  HeroExclamationTriangleIcon,
+  HeroXMarkIcon,
+  HeroPlusIcon,
+  HeroDevicePhoneMobileIcon,
 } from "@/components/Icons";
 import { FlagIcon } from "@/components/FlagIcon";
 
@@ -254,6 +260,9 @@ export default function WordSetsPage() {
   };
 
   const startTest = (wordSet: WordSet) => {
+    // Initialize audio for iOS Safari compatibility
+    initializeAudioForIOS();
+
     // Set the active test and initialize test state
     setActiveTest(wordSet);
 
@@ -298,6 +307,10 @@ export default function WordSetsPage() {
     // Increment audio play count for current word
     setCurrentWordAudioPlays((prev) => prev + 1);
 
+    // Check if this is Safari and requires user interaction
+    const needsUserInteraction =
+      requiresUserInteractionForAudio() && autoDelay > 0;
+
     playWordAudioHelper(word, currentWordSet, {
       onStart: () => {
         isPlayingAudioRef.current = true;
@@ -312,8 +325,9 @@ export default function WordSetsPage() {
         isPlayingAudioRef.current = false;
         setIsAudioPlaying(false);
       },
-      autoDelay,
+      autoDelay: needsUserInteraction ? 0 : autoDelay, // Skip auto-delay on Safari
       speechRate: 0.8,
+      requireUserInteraction: needsUserInteraction,
     });
   }, []);
 
@@ -329,8 +343,8 @@ export default function WordSetsPage() {
     if (activeTest && processedWords.length > 0 && !testInitialized) {
       setTestInitialized(true);
 
-      // Auto-play first word if enabled
-      if (testConfig?.autoPlayAudio) {
+      // Auto-play first word if enabled (skip on Safari due to autoplay restrictions)
+      if (testConfig?.autoPlayAudio && !requiresUserInteractionForAudio()) {
         lastAutoPlayIndexRef.current = 0;
         playTestWordAudio(processedWords[0], 500);
       }
@@ -354,7 +368,8 @@ export default function WordSetsPage() {
       currentWordIndex > 0 &&
       currentConfig?.autoPlayAudio &&
       processedWordsRef.current.length > currentWordIndex &&
-      lastAutoPlayIndexRef.current !== currentWordIndex
+      lastAutoPlayIndexRef.current !== currentWordIndex &&
+      !requiresUserInteractionForAudio() // Skip auto-play on Safari
     ) {
       lastAutoPlayIndexRef.current = currentWordIndex;
       playTestWordAudio(processedWordsRef.current[currentWordIndex], 500);
@@ -416,7 +431,10 @@ export default function WordSetsPage() {
         }
       } else {
         setUserAnswer("");
-        playTestWordAudio(currentWord, 500);
+        // Auto-replay word if incorrect (skip on Safari due to autoplay restrictions)
+        if (!requiresUserInteractionForAudio()) {
+          playTestWordAudio(currentWord, 500);
+        }
       }
     }, 2000);
   };
@@ -548,15 +566,13 @@ export default function WordSetsPage() {
                 {answers.map((answer, index) => (
                   <div
                     key={index}
-                    className={`flex items-center justify-between p-3 rounded-lg ${
-                      answer.isCorrect ? "bg-green-50" : "bg-red-50"
-                    }`}
+                    className={`flex items-center justify-between p-3 rounded-lg ${answer.isCorrect ? "bg-green-50" : "bg-red-50"
+                      }`}
                   >
                     <div className="flex items-center">
                       <div
-                        className={`w-6 h-6 rounded-full mr-3 flex items-center justify-center ${
-                          answer.isCorrect ? "bg-green-500" : "bg-red-500"
-                        }`}
+                        className={`w-6 h-6 rounded-full mr-3 flex items-center justify-center ${answer.isCorrect ? "bg-green-500" : "bg-red-500"
+                          }`}
                       >
                         {answer.isCorrect ? (
                           <svg
@@ -590,9 +606,8 @@ export default function WordSetsPage() {
                       </div>
                       <div>
                         <span
-                          className={`font-medium ${
-                            answer.isCorrect ? "text-green-800" : "text-red-800"
-                          }`}
+                          className={`font-medium ${answer.isCorrect ? "text-green-800" : "text-red-800"
+                            }`}
                         >
                           {answer.word}
                         </span>
@@ -606,16 +621,14 @@ export default function WordSetsPage() {
                     </div>
                     <button
                       onClick={() => playTestWordAudio(answer.word)}
-                      className={`px-3 py-1 transition-colors rounded ${
-                        answer.isCorrect
+                      className={`px-3 py-1 transition-colors rounded ${answer.isCorrect
                           ? "text-green-700 bg-green-100 hover:bg-green-200"
                           : "text-red-700 bg-red-100 hover:bg-red-200"
-                      }`}
+                        }`}
                     >
                       <HeroVolumeIcon
-                        className={`w-4 h-4 ${
-                          answer.isCorrect ? "text-green-700" : "text-red-700"
-                        }`}
+                        className={`w-4 h-4 ${answer.isCorrect ? "text-green-700" : "text-red-700"
+                          }`}
                       />
                     </button>
                   </div>
@@ -668,6 +681,18 @@ export default function WordSetsPage() {
               </div>
             </div>
 
+            {/* Safari Auto-play Notice */}
+            {requiresUserInteractionForAudio() && testConfig?.autoPlayAudio && (
+              <div className="max-w-2xl mx-auto mb-4">
+                <div className="p-3 text-sm border rounded-lg text-amber-700 bg-amber-50 border-amber-200">
+                  <div className="flex items-center">
+                    <HeroDevicePhoneMobileIcon className="w-5 h-5 mr-2 text-amber-600" />
+                    <span>{t("wordsets.safari.autoplayLimited")}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Test Area */}
             <div className="max-w-2xl mx-auto">
               <div className="p-4 text-center bg-white rounded-lg shadow-xl sm:p-8">
@@ -696,16 +721,14 @@ export default function WordSetsPage() {
                 <div className="flex flex-col justify-center mb-6">
                   {showFeedback ? (
                     <div
-                      className={`p-4 rounded-lg animate-in fade-in-0 slide-in-from-top-2 duration-300 ${
-                        lastAnswerCorrect
+                      className={`p-4 rounded-lg animate-in fade-in-0 slide-in-from-top-2 duration-300 ${lastAnswerCorrect
                           ? "bg-green-100 border border-green-300"
                           : "bg-red-100 border border-red-300"
-                      }`}
+                        }`}
                     >
                       <p
-                        className={`font-semibold text-lg ${
-                          lastAnswerCorrect ? "text-green-800" : "text-red-800"
-                        }`}
+                        className={`font-semibold text-lg ${lastAnswerCorrect ? "text-green-800" : "text-red-800"
+                          }`}
                       >
                         {lastAnswerCorrect
                           ? t("test.correct")
@@ -819,7 +842,13 @@ export default function WordSetsPage() {
               }}
               className="flex items-center px-6 py-3 font-semibold text-white transition-all duration-200 rounded-lg shadow-lg bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 hover:shadow-xl hover:scale-105"
             >
-              <span className="mr-2 text-lg">{showCreateForm ? "✕" : "+"}</span>
+              <span className="mr-2">
+                {showCreateForm ? (
+                  <HeroXMarkIcon className="w-5 h-5" />
+                ) : (
+                  <HeroPlusIcon className="w-5 h-5" />
+                )}
+              </span>
               {showCreateForm ? t("wordsets.cancel") : t("wordsets.create")}
             </button>
           </div>
@@ -941,7 +970,7 @@ export default function WordSetsPage() {
                     onClick={() => setShowCreateForm(false)}
                     className="flex items-center px-6 py-3 font-semibold text-gray-700 transition-all duration-200 bg-gray-200 rounded-lg hover:bg-gray-300 hover:shadow-md"
                   >
-                    <span className="mr-2">✕</span>
+                    <HeroXMarkIcon className="w-4 h-4 mr-2 text-gray-700" />
                     {t("wordsets.cancel")}
                   </button>
                 </div>
@@ -1002,13 +1031,12 @@ export default function WordSetsPage() {
                       {/* Show audio processing status */}
                       {wordSet.audioProcessing && (
                         <span
-                          className={`ml-2 text-sm ${
-                            wordSet.audioProcessing === "pending"
+                          className={`ml-2 text-sm ${wordSet.audioProcessing === "pending"
                               ? "text-yellow-600"
                               : wordSet.audioProcessing === "completed"
                                 ? "text-green-600"
                                 : "text-red-600"
-                          }`}
+                            }`}
                         >
                           •{" "}
                           {wordSet.audioProcessing === "pending"
@@ -1033,11 +1061,10 @@ export default function WordSetsPage() {
                                 ? handleWordClick(wordItem.word, wordSet)
                                 : undefined
                             }
-                            className={`inline-flex items-center px-2 py-1 text-sm rounded transition-all duration-200 ${
-                              hasAudio
+                            className={`inline-flex items-center px-2 py-1 text-sm rounded transition-all duration-200 ${hasAudio
                                 ? "text-blue-700 bg-blue-100 cursor-pointer hover:bg-blue-200 hover:shadow-sm"
                                 : "text-gray-700 bg-gray-100"
-                            } ${isPlaying ? "ring-2 ring-blue-500 shadow-md" : ""}`}
+                              } ${isPlaying ? "ring-2 ring-blue-500 shadow-md" : ""}`}
                             title={
                               hasAudio
                                 ? t("wordsets.clickToPlay")
@@ -1158,6 +1185,15 @@ export default function WordSetsPage() {
                       {t("wordsets.config.autoPlayAudio")}
                     </span>
                   </label>
+                  {requiresUserInteractionForAudio() &&
+                    settingsConfig.autoPlayAudio && (
+                      <div className="p-2 text-xs border rounded text-amber-600 bg-amber-50 border-amber-200">
+                        <div className="flex items-start space-x-2">
+                          <HeroExclamationTriangleIcon className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                          <span>{t("wordsets.safari.autoplayWarning")}</span>
+                        </div>
+                      </div>
+                    )}
 
                   <label className="flex items-center">
                     <input
@@ -1333,6 +1369,15 @@ export default function WordSetsPage() {
             </div>
           </div>
         )}
+
+        {/* Footer with build info */}
+        <footer className="mt-12 pb-4 text-center">
+          <div className="text-xs text-gray-400">
+            Build:{" "}
+            {process.env.NEXT_PUBLIC_BUILD_TIME || new Date().toISOString()}
+            {process.env.NODE_ENV === "development" && " (dev)"}
+          </div>
+        </footer>
       </div>
     </ProtectedRoute>
   );
