@@ -37,22 +37,20 @@ export default function HomePage() {
       {/* API Status Indicator - Moved to less prominent position */}
       <div className="fixed z-40 top-20 right-4">
         <div
-          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium shadow-sm ${
-            status === "connected"
-              ? "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200"
-              : status === "error"
-                ? "bg-red-100 text-red-800 ring-1 ring-red-200"
-                : "bg-amber-100 text-amber-800 ring-1 ring-amber-200"
-          }`}
+          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium shadow-sm ${status === "connected"
+            ? "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200"
+            : status === "error"
+              ? "bg-red-100 text-red-800 ring-1 ring-red-200"
+              : "bg-amber-100 text-amber-800 ring-1 ring-amber-200"
+            }`}
         >
           <span
-            className={`w-1.5 h-1.5 rounded-full mr-2 ${
-              status === "connected"
-                ? "bg-emerald-500"
-                : status === "error"
-                  ? "bg-red-500"
-                  : "bg-amber-500"
-            }`}
+            className={`w-1.5 h-1.5 rounded-full mr-2 ${status === "connected"
+              ? "bg-emerald-500"
+              : status === "error"
+                ? "bg-red-500"
+                : "bg-amber-500"
+              }`}
           ></span>
           API{" "}
           {status === "connected" ? (
@@ -157,179 +155,6 @@ export default function HomePage() {
                   />
                 </svg>
               </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Development Progress Bar */}
-        <div className="max-w-6xl mx-auto mt-16">
-          <div className="p-8 bg-white shadow-lg rounded-2xl">
-            <div className="mb-8 text-center">
-              <h2 className="mb-2 text-3xl font-bold text-gray-900">
-                {t("home.progress.title")}
-              </h2>
-              <p className="text-gray-600">{t("home.progress.subtitle")}</p>
-            </div>
-
-            {/* Progress Bar Container */}
-            <div className="relative mb-8">
-              {/* Progress Line */}
-              <div className="absolute left-0 right-0 h-1 bg-gray-200 rounded-full top-6">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-blue-500"
-                  style={{ width: "75%" }}
-                ></div>
-              </div>
-
-              {/* Phase Indicators */}
-              <div className="relative flex justify-between">
-                {/* Phase 0 */}
-                <div className="flex flex-col items-center">
-                  <div className="flex items-center justify-center w-12 h-12 text-lg font-bold text-white rounded-full shadow-lg bg-emerald-500">
-                    ✓
-                  </div>
-                  <div className="mt-4 text-center">
-                    <h3 className="font-semibold text-emerald-700">
-                      {t("home.progress.phase0.title")}
-                    </h3>
-                    <p className="mt-1 text-sm text-gray-600">
-                      {t("home.progress.phase0.subtitle")}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Phase 1 */}
-                <div className="flex flex-col items-center">
-                  <div className="flex items-center justify-center w-12 h-12 text-lg font-bold text-white rounded-full shadow-lg bg-emerald-500">
-                    ✓
-                  </div>
-                  <div className="mt-4 text-center">
-                    <h3 className="font-semibold text-emerald-700">
-                      {t("home.progress.phase1.title")}
-                    </h3>
-                    <p className="mt-1 text-sm text-gray-600">
-                      {t("home.progress.phase1.subtitle")}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Phase 2 */}
-                <div className="flex flex-col items-center">
-                  <div className="flex items-center justify-center w-12 h-12 text-lg font-bold text-white bg-blue-500 rounded-full shadow-lg animate-pulse">
-                    ✓
-                  </div>
-                  <div className="mt-4 text-center">
-                    <h3 className="font-semibold text-blue-700">
-                      {t("home.progress.phase2.title")}
-                    </h3>
-                    <p className="mt-1 text-sm text-gray-600">
-                      {t("home.progress.phase2.subtitle")}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Phase 3 */}
-                <div className="flex flex-col items-center">
-                  <div className="flex items-center justify-center w-12 h-12 text-lg font-bold text-gray-500 bg-gray-300 rounded-full">
-                    3
-                  </div>
-                  <div className="mt-4 text-center">
-                    <h3 className="font-semibold text-gray-500">
-                      {t("home.progress.phase3.title")}
-                    </h3>
-                    <p className="mt-1 text-sm text-gray-400">
-                      {t("home.progress.phase3.subtitle")}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Phase Details Grid */}
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-              {/* Phase 0 Details */}
-              <div className="p-4 border rounded-lg border-emerald-200 bg-emerald-50">
-                <h4 className="mb-3 font-semibold text-emerald-800">
-                  {t("home.progress.phase0.title")}
-                </h4>
-                <ul className="space-y-2 text-sm text-emerald-700">
-                  <li className="flex items-start">
-                    <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-emerald-600 flex-shrink-0" />
-                    {t("home.progress.phase0.point1")}
-                  </li>
-                  <li className="flex items-start">
-                    <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-emerald-600 flex-shrink-0" />
-                    {t("home.progress.phase0.point2")}
-                  </li>
-                  <li className="flex items-start">
-                    <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-emerald-600 flex-shrink-0" />
-                    {t("home.progress.phase0.point3")}
-                  </li>
-                </ul>
-              </div>
-
-              {/* Phase 1 Details */}
-              <div className="p-4 border rounded-lg border-emerald-200 bg-emerald-50">
-                <h4 className="mb-3 font-semibold text-emerald-800">
-                  {t("home.progress.phase1.title")}
-                </h4>
-                <ul className="space-y-2 text-sm text-emerald-700">
-                  <li className="flex items-start">
-                    <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-emerald-600 flex-shrink-0" />
-                    {t("home.progress.phase1.point1")}
-                  </li>
-                  <li className="flex items-start">
-                    <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-emerald-600 flex-shrink-0" />
-                    {t("home.progress.phase1.point2")}
-                  </li>
-                  <li className="flex items-start">
-                    <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-emerald-600 flex-shrink-0" />
-                    {t("home.progress.phase1.point3")}
-                  </li>
-                </ul>
-              </div>
-
-              {/* Phase 2 Details */}
-              <div className="p-4 border border-blue-200 rounded-lg bg-blue-50">
-                <h4 className="mb-3 font-semibold text-blue-800">
-                  {t("home.progress.phase2.title")}
-                </h4>
-                <ul className="space-y-2 text-sm text-blue-700">
-                  <li className="flex items-start">
-                    <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-blue-600 flex-shrink-0" />
-                    {t("home.progress.phase2.point1")}
-                  </li>
-                  <li className="flex items-start">
-                    <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-blue-600 flex-shrink-0" />
-                    {t("home.progress.phase2.point2")}
-                  </li>
-                  <li className="flex items-start">
-                    <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-blue-600 flex-shrink-0" />
-                    {t("home.progress.phase2.point3")}
-                  </li>
-                </ul>
-              </div>
-
-              {/* Phase 3 Details */}
-              <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-                <h4 className="mb-3 font-semibold text-gray-600">
-                  {t("home.progress.phase3.title")}
-                </h4>
-                <ul className="space-y-2 text-sm text-gray-500">
-                  <li className="flex items-start">
-                    <div className="w-4 h-4 mt-0.5 mr-2 border border-gray-300 rounded flex-shrink-0"></div>
-                    {t("home.progress.phase3.point1")}
-                  </li>
-                  <li className="flex items-start">
-                    <div className="w-4 h-4 mt-0.5 mr-2 border border-gray-300 rounded flex-shrink-0"></div>
-                    {t("home.progress.phase3.point2")}
-                  </li>
-                  <li className="flex items-start">
-                    <div className="w-4 h-4 mt-0.5 mr-2 border border-gray-300 rounded flex-shrink-0"></div>
-                    {t("home.progress.phase3.point3")}
-                  </li>
-                </ul>
-              </div>
             </div>
           </div>
         </div>
