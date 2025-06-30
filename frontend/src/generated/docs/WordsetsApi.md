@@ -8,6 +8,7 @@ All URIs are relative to *http://localhost:8080/api*
 |[**apiWordsetsIdAudioAudioIdGet**](#apiwordsetsidaudioaudioidget) | **GET** /api/wordsets/{id}/audio/{audioId} | Stream Audio File by ID|
 |[**apiWordsetsIdDelete**](#apiwordsetsiddelete) | **DELETE** /api/wordsets/{id} | Delete Word Set|
 |[**apiWordsetsIdGenerateAudioPost**](#apiwordsetsidgenerateaudiopost) | **POST** /api/wordsets/{id}/generate-audio | Generate Audio|
+|[**apiWordsetsIdPut**](#apiwordsetsidput) | **PUT** /api/wordsets/{id} | Update Word Set|
 |[**apiWordsetsPost**](#apiwordsetspost) | **POST** /api/wordsets | Create Word Set|
 |[**apiWordsetsVoicesGet**](#apiwordsetsvoicesget) | **GET** /api/wordsets/voices | List available TTS voices|
 
@@ -219,6 +220,65 @@ const { status, data } = await apiInstance.apiWordsetsIdGenerateAudioPost(
 |**400** | Word set ID is required |  -  |
 |**404** | Word set not found |  -  |
 |**500** | Failed to start audio generation |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiWordsetsIdPut**
+> ModelsAPIResponse apiWordsetsIdPut(request)
+
+Update an existing word set name, words, and configuration. Audio will be regenerated automatically for new/changed words.
+
+### Example
+
+```typescript
+import {
+    WordsetsApi,
+    Configuration,
+    ModelsUpdateWordSetRequest
+} from 'diktator-api-client';
+
+const configuration = new Configuration();
+const apiInstance = new WordsetsApi(configuration);
+
+let id: string; //Word Set ID (default to undefined)
+let request: ModelsUpdateWordSetRequest; //Word set update request
+
+const { status, data } = await apiInstance.apiWordsetsIdPut(
+    id,
+    request
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **request** | **ModelsUpdateWordSetRequest**| Word set update request | |
+| **id** | [**string**] | Word Set ID | defaults to undefined|
+
+
+### Return type
+
+**ModelsAPIResponse**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Word set updated successfully |  -  |
+|**400** | Invalid request data or word set ID required |  -  |
+|**401** | User authentication required |  -  |
+|**404** | Word set not found |  -  |
+|**500** | Failed to update word set |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

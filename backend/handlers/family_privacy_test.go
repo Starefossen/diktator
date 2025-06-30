@@ -378,6 +378,90 @@ func MockCreateWordSet(c *gin.Context) {
 	c.JSON(http.StatusCreated, models.APIResponse{Data: wordSet})
 }
 
+// MockUpdateWordSet is a test-specific wrapper for UpdateWordSet
+func MockUpdateWordSet(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, models.APIResponse{Error: "Word set ID is required"})
+		return
+	}
+
+	var req models.UpdateWordSetRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.APIResponse{Error: "Invalid request data"})
+		return
+	}
+
+	sm := c.MustGet("serviceManager").(*MockServiceManager)
+
+	// Get authenticated user info from context
+	_, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{Error: "User authentication required"})
+		return
+	}
+
+	familyID, exists := c.Get("validatedFamilyID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{Error: "Family access validation required"})
+		return
+	}
+
+	// Get existing word set to check ownership and get current state
+	existingWordSet, err := sm.Firestore.GetWordSet(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, models.APIResponse{Error: "Word set not found"})
+		return
+	}
+
+	// Verify family access
+	if existingWordSet.FamilyID != familyID.(string) {
+		c.JSON(http.StatusNotFound, models.APIResponse{Error: "Word set not found"})
+		return
+	}
+
+	// Convert string words to WordItem structs (simplified for testing)
+	words := make([]struct {
+		Word       string           `firestore:"word" json:"word"`
+		Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
+		Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
+	}, len(req.Words))
+
+	for i, word := range req.Words {
+		words[i] = struct {
+			Word       string           `firestore:"word" json:"word"`
+			Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
+			Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
+		}{
+			Word: word,
+		}
+	}
+
+	// Update the word set
+	updatedWordSet := &models.WordSet{
+		ID:                existingWordSet.ID,
+		Name:              req.Name,
+		Words:             words,
+		FamilyID:          existingWordSet.FamilyID,
+		CreatedBy:         existingWordSet.CreatedBy,
+		Language:          req.Language,
+		TestConfiguration: req.TestConfiguration,
+		CreatedAt:         existingWordSet.CreatedAt,
+		UpdatedAt:         time.Now(),
+	}
+
+	err = sm.Firestore.UpdateWordSet(updatedWordSet)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{Error: "Failed to update word set"})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Data:    updatedWordSet,
+		Message: "Word set updated successfully",
+	})
+}
+
 // MockDeleteWordSet is a test-specific wrapper for DeleteWordSet
 func MockDeleteWordSet(c *gin.Context) {
 	id := c.Param("id")
@@ -417,6 +501,7 @@ func setupTestRouter() (*gin.Engine, *MockFirestoreService) {
 	{
 		api.GET("/wordsets", MockGetWordSets)
 		api.POST("/wordsets", MockCreateWordSet)
+		api.PUT("/wordsets/:id", MockUpdateWordSet)
 		api.DELETE("/wordsets/:id", MockDeleteWordSet)
 		api.GET("/families/children", MockGetFamilyChildren)
 		api.POST("/families/children", MockCreateChildAccount)
@@ -980,6 +1065,14 @@ func (m *MockFirestoreService) UpdateWordSet(wordSet *models.WordSet) error {
 	return args.Error(0)
 }
 
+func (m *MockFirestoreService) GetWordSet(wordSetID string) (*models.WordSet, error) {
+	args := m.Called(wordSetID)
+	if wordSet, exists := m.wordSets[wordSetID]; exists {
+		return wordSet, args.Error(1)
+	}
+	return args.Get(0).(*models.WordSet), args.Error(1)
+}
+
 func (m *MockFirestoreService) GetUserProgress(userID string) (*models.FamilyProgress, error) {
 	args := m.Called(userID)
 	return args.Get(0).(*models.FamilyProgress), args.Error(1)
@@ -994,4 +1087,182 @@ func (m *MockFirestoreService) VerifyFamilyAccess(userID, familyID string) error
 		return nil
 	}
 	return args.Error(0)
+}
+
+// TestUpdateWordSet tests the PUT /api/wordsets/:id endpoint
+func TestUpdateWordSet(t *testing.T) {
+	_, mockFirestore := setupTestRouter()
+	setupTestData(mockFirestore)
+
+	tests := []struct {
+		name           string
+		wordSetID      string
+		userID         string
+		familyID       string
+		requestBody    models.UpdateWordSetRequest
+		setupMocks     func()
+		expectedStatus int
+		expectedError  string
+	}{
+		{
+			name:      "Successful word set update",
+			wordSetID: "wordset-smith-1",
+			userID:    "parent-smith",
+			familyID:  "family-smith",
+			requestBody: models.UpdateWordSetRequest{
+				Name:     "Updated Smith Words",
+				Words:    []string{"apple", "banana", "orange", "grape"},
+				Language: "en",
+			},
+			setupMocks: func() {
+				// Mock the GetWordSet call
+				existingWordSet := &models.WordSet{
+					ID:        "wordset-smith-1",
+					Name:      "Smith Family Words",
+					FamilyID:  "family-smith",
+					CreatedBy: "parent-smith",
+					Language:  "en",
+					CreatedAt: time.Now(),
+				}
+				mockFirestore.On("GetWordSet", "wordset-smith-1").Return(existingWordSet, nil)
+				mockFirestore.On("UpdateWordSet", mock.AnythingOfType("*models.WordSet")).Return(nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:      "Word set not found",
+			wordSetID: "nonexistent-wordset",
+			userID:    "parent-smith",
+			familyID:  "family-smith",
+			requestBody: models.UpdateWordSetRequest{
+				Name:     "Updated Words",
+				Words:    []string{"word1", "word2"},
+				Language: "en",
+			},
+			setupMocks: func() {
+				mockFirestore.On("GetWordSet", "nonexistent-wordset").Return((*models.WordSet)(nil), fmt.Errorf("word set not found"))
+			},
+			expectedStatus: http.StatusNotFound,
+			expectedError:  "Word set not found",
+		},
+		{
+			name:      "Access denied - different family",
+			wordSetID: "wordset-johnson-1",
+			userID:    "parent-smith",
+			familyID:  "family-smith",
+			requestBody: models.UpdateWordSetRequest{
+				Name:     "Unauthorized Update",
+				Words:    []string{"word1", "word2"},
+				Language: "en",
+			},
+			setupMocks: func() {
+				// Mock existing word set from different family
+				existingWordSet := &models.WordSet{
+					ID:        "wordset-johnson-1",
+					Name:      "Johnson Family Words",
+					FamilyID:  "family-johnson", // Different family
+					CreatedBy: "parent-johnson",
+					Language:  "en",
+					CreatedAt: time.Now(),
+				}
+				mockFirestore.On("GetWordSet", "wordset-johnson-1").Return(existingWordSet, nil)
+			},
+			expectedStatus: http.StatusNotFound,
+			expectedError:  "Word set not found",
+		},
+		{
+			name:      "Missing word set ID",
+			wordSetID: "",
+			userID:    "parent-smith",
+			familyID:  "family-smith",
+			requestBody: models.UpdateWordSetRequest{
+				Name:     "Updated Words",
+				Words:    []string{"word1", "word2"},
+				Language: "en",
+			},
+			setupMocks:     func() {},
+			expectedStatus: http.StatusBadRequest, // MockUpdateWordSet returns 400 for empty ID
+			expectedError:  "Word set ID is required",
+		},
+		{
+			name:      "Invalid request body",
+			wordSetID: "wordset-smith-1",
+			userID:    "parent-smith",
+			familyID:  "family-smith",
+			requestBody: models.UpdateWordSetRequest{
+				// Missing required fields
+				Words: []string{"word1", "word2"},
+			},
+			setupMocks:     func() {},
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "Invalid request data",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Reset mock expectations
+			mockFirestore.ExpectedCalls = nil
+			mockFirestore.Calls = nil
+
+			// Setup mocks for this test
+			tt.setupMocks()
+
+			// Create request body
+			requestBody, _ := json.Marshal(tt.requestBody)
+
+			// Create request
+			var url string
+			if tt.wordSetID == "" {
+				url = "/api/wordsets/"
+			} else {
+				url = fmt.Sprintf("/api/wordsets/%s", tt.wordSetID)
+			}
+			req := httptest.NewRequest("PUT", url, bytes.NewBuffer(requestBody))
+			req.Header.Set("Content-Type", "application/json")
+
+			// Create response recorder
+			w := httptest.NewRecorder()
+
+			// Set up context with user info
+			c, _ := gin.CreateTestContext(w)
+			c.Request = req
+			c.Set("serviceManager", &MockServiceManager{Firestore: mockFirestore})
+			c.Set("userID", tt.userID)
+			c.Set("validatedFamilyID", tt.familyID)
+
+			// Set URL params
+			if tt.wordSetID != "" {
+				c.Params = []gin.Param{{Key: "id", Value: tt.wordSetID}}
+			}
+
+			// Call the handler
+			MockUpdateWordSet(c)
+
+			// Verify response
+			assert.Equal(t, tt.expectedStatus, w.Code)
+
+			if tt.expectedError != "" {
+				var response models.APIResponse
+				err := json.Unmarshal(w.Body.Bytes(), &response)
+				assert.NoError(t, err)
+				assert.Contains(t, response.Error, tt.expectedError)
+			} else if tt.expectedStatus == http.StatusOK {
+				var response models.APIResponse
+				err := json.Unmarshal(w.Body.Bytes(), &response)
+				assert.NoError(t, err)
+				assert.Empty(t, response.Error) // Check that Error field is empty, not nil
+				assert.Equal(t, "Word set updated successfully", response.Message)
+
+				// Verify the updated data
+				wordSet, ok := response.Data.(map[string]interface{})
+				assert.True(t, ok)
+				assert.Equal(t, tt.requestBody.Name, wordSet["name"])
+				assert.Equal(t, tt.requestBody.Language, wordSet["language"])
+			}
+
+			// Verify mock expectations
+			mockFirestore.AssertExpectations(t)
+		})
+	}
 }

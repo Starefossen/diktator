@@ -267,6 +267,37 @@ export interface ModelsSaveResultRequest {
 /**
  * 
  * @export
+ * @interface ModelsUpdateWordSetRequest
+ */
+export interface ModelsUpdateWordSetRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelsUpdateWordSetRequest
+     */
+    'language': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelsUpdateWordSetRequest
+     */
+    'name': string;
+    /**
+     * 
+     * @type {{ [key: string]: any; }}
+     * @memberof ModelsUpdateWordSetRequest
+     */
+    'testConfiguration'?: { [key: string]: any; };
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof ModelsUpdateWordSetRequest
+     */
+    'words': Array<string>;
+}
+/**
+ * 
+ * @export
  * @interface ModelsWordTestResult
  */
 export interface ModelsWordTestResult {
@@ -1842,6 +1873,49 @@ export const WordsetsApiAxiosParamCreator = function (configuration?: Configurat
             };
         },
         /**
+         * Update an existing word set name, words, and configuration. Audio will be regenerated automatically for new/changed words.
+         * @summary Update Word Set
+         * @param {string} id Word Set ID
+         * @param {ModelsUpdateWordSetRequest} request Word set update request
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiWordsetsIdPut: async (id: string, request: ModelsUpdateWordSetRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('apiWordsetsIdPut', 'id', id)
+            // verify required parameter 'request' is not null or undefined
+            assertParamExists('apiWordsetsIdPut', 'request', request)
+            const localVarPath = `/api/wordsets/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(request, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Create a new word set for practice
          * @summary Create Word Set
          * @param {ModelsCreateWordSetRequest} request Word set creation request
@@ -1981,6 +2055,20 @@ export const WordsetsApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * Update an existing word set name, words, and configuration. Audio will be regenerated automatically for new/changed words.
+         * @summary Update Word Set
+         * @param {string} id Word Set ID
+         * @param {ModelsUpdateWordSetRequest} request Word set update request
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiWordsetsIdPut(id: string, request: ModelsUpdateWordSetRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAPIResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiWordsetsIdPut(id, request, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WordsetsApi.apiWordsetsIdPut']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Create a new word set for practice
          * @summary Create Word Set
          * @param {ModelsCreateWordSetRequest} request Word set creation request
@@ -2057,6 +2145,17 @@ export const WordsetsApiFactory = function (configuration?: Configuration, baseP
             return localVarFp.apiWordsetsIdGenerateAudioPost(id, options).then((request) => request(axios, basePath));
         },
         /**
+         * Update an existing word set name, words, and configuration. Audio will be regenerated automatically for new/changed words.
+         * @summary Update Word Set
+         * @param {string} id Word Set ID
+         * @param {ModelsUpdateWordSetRequest} request Word set update request
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiWordsetsIdPut(id: string, request: ModelsUpdateWordSetRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
+            return localVarFp.apiWordsetsIdPut(id, request, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Create a new word set for practice
          * @summary Create Word Set
          * @param {ModelsCreateWordSetRequest} request Word set creation request
@@ -2124,6 +2223,17 @@ export interface WordsetsApiInterface {
      * @memberof WordsetsApiInterface
      */
     apiWordsetsIdGenerateAudioPost(id: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Update an existing word set name, words, and configuration. Audio will be regenerated automatically for new/changed words.
+     * @summary Update Word Set
+     * @param {string} id Word Set ID
+     * @param {ModelsUpdateWordSetRequest} request Word set update request
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WordsetsApiInterface
+     */
+    apiWordsetsIdPut(id: string, request: ModelsUpdateWordSetRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
 
     /**
      * Create a new word set for practice
@@ -2200,6 +2310,19 @@ export class WordsetsApi extends BaseAPI implements WordsetsApiInterface {
      */
     public apiWordsetsIdGenerateAudioPost(id: string, options?: RawAxiosRequestConfig) {
         return WordsetsApiFp(this.configuration).apiWordsetsIdGenerateAudioPost(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Update an existing word set name, words, and configuration. Audio will be regenerated automatically for new/changed words.
+     * @summary Update Word Set
+     * @param {string} id Word Set ID
+     * @param {ModelsUpdateWordSetRequest} request Word set update request
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WordsetsApi
+     */
+    public apiWordsetsIdPut(id: string, request: ModelsUpdateWordSetRequest, options?: RawAxiosRequestConfig) {
+        return WordsetsApiFp(this.configuration).apiWordsetsIdPut(id, request, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

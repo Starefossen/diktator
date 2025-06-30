@@ -865,6 +865,74 @@
             }
         },
         "/api/wordsets/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update an existing word set name, words, and configuration. Audio will be regenerated automatically for new/changed words.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wordsets"
+                ],
+                "summary": "Update Word Set",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Word Set ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Word set update request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateWordSetRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Word set updated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request data or word set ID required",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "User authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Word set not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to update word set",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "security": [
                     {
@@ -1195,6 +1263,32 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.WordTestResult"
+                    }
+                }
+            }
+        },
+        "models.UpdateWordSetRequest": {
+            "type": "object",
+            "required": [
+                "language",
+                "name",
+                "words"
+            ],
+            "properties": {
+                "language": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "testConfiguration": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "words": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
                     }
                 }
             }

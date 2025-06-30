@@ -95,6 +95,24 @@ definitions:
     - totalWords
     - wordSetId
     type: object
+  models.UpdateWordSetRequest:
+    properties:
+      language:
+        type: string
+      name:
+        type: string
+      testConfiguration:
+        additionalProperties: true
+        type: object
+      words:
+        items:
+          type: string
+        type: array
+    required:
+    - language
+    - name
+    - words
+    type: object
   models.WordTestResult:
     properties:
       attempts:
@@ -669,6 +687,51 @@ paths:
       security:
       - BearerAuth: []
       summary: Delete Word Set
+      tags:
+      - wordsets
+    put:
+      consumes:
+      - application/json
+      description: Update an existing word set name, words, and configuration. Audio
+        will be regenerated automatically for new/changed words.
+      parameters:
+      - description: Word Set ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Word set update request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateWordSetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Word set updated successfully
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "400":
+          description: Invalid request data or word set ID required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "401":
+          description: User authentication required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "404":
+          description: Word set not found
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to update word set
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update Word Set
       tags:
       - wordsets
   /api/wordsets/{id}/audio/{audioId}:

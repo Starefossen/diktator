@@ -138,6 +138,7 @@ func main() {
 			{
 				wordsets.GET("", handlers.GetWordSets)
 				wordsets.POST("", handlers.CreateWordSet)
+				wordsets.PUT("/:id", handlers.UpdateWordSet)
 				wordsets.DELETE("/:id", handlers.DeleteWordSet)
 				wordsets.POST("/:id/generate-audio", handlers.GenerateAudio)
 				wordsets.GET("/voices", handlers.ListVoices)

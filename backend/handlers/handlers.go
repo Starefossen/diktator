@@ -229,6 +229,178 @@ func CreateWordSet(c *gin.Context) {
 	})
 }
 
+// UpdateWordSet updates an existing word set
+//
+//	@Summary		Update Word Set
+//	@Description	Update an existing word set name, words, and configuration. Audio will be regenerated automatically for new/changed words.
+//	@Tags			wordsets
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string						true	"Word Set ID"
+//	@Param			request	body		models.UpdateWordSetRequest	true	"Word set update request"
+//	@Success		200		{object}	models.APIResponse			"Word set updated successfully"
+//	@Failure		400		{object}	models.APIResponse			"Invalid request data or word set ID required"
+//	@Failure		401		{object}	models.APIResponse			"User authentication required"
+//	@Failure		404		{object}	models.APIResponse			"Word set not found"
+//	@Failure		500		{object}	models.APIResponse			"Failed to update word set"
+//	@Security		BearerAuth
+//	@Router			/api/wordsets/{id} [put]
+func UpdateWordSet(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Word set ID is required",
+		})
+		return
+	}
+
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
+	var req models.UpdateWordSetRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Invalid request data",
+		})
+		return
+	}
+
+	// Get authenticated user info from context
+	_, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "User authentication required",
+		})
+		return
+	}
+
+	familyID, exists := c.Get("validatedFamilyID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "Family access validation required",
+		})
+		return
+	}
+
+	// Get existing word set to check ownership and get current state
+	existingWordSet, err := serviceManager.Firestore.GetWordSet(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, models.APIResponse{
+			Error: "Word set not found",
+		})
+		return
+	}
+
+	// Verify family access
+	if existingWordSet.FamilyID != familyID.(string) {
+		c.JSON(http.StatusNotFound, models.APIResponse{
+			Error: "Word set not found",
+		})
+		return
+	}
+
+	// Store original words for comparison
+	originalWords := make(map[string]bool)
+	for _, wordItem := range existingWordSet.Words {
+		originalWords[wordItem.Word] = true
+	}
+
+	// Convert string words to WordItem structs, preserving existing audio for unchanged words
+	words := make([]struct {
+		Word       string           `firestore:"word" json:"word"`
+		Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
+		Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
+	}, len(req.Words))
+
+	hasNewWords := false
+	for i, word := range req.Words {
+		words[i] = struct {
+			Word       string           `firestore:"word" json:"word"`
+			Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
+			Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
+		}{
+			Word: word,
+		}
+
+		// Check if this is a new word or if audio needs regeneration
+		if !originalWords[word] {
+			hasNewWords = true
+		} else {
+			// Preserve existing audio for unchanged words
+			for _, existingWord := range existingWordSet.Words {
+				if existingWord.Word == word {
+					words[i].Audio = existingWord.Audio
+					words[i].Definition = existingWord.Definition
+					break
+				}
+			}
+		}
+	}
+
+	// Update the word set
+	updatedWordSet := &models.WordSet{
+		ID:                existingWordSet.ID,
+		Name:              req.Name,
+		Words:             words,
+		FamilyID:          existingWordSet.FamilyID,
+		CreatedBy:         existingWordSet.CreatedBy,
+		Language:          req.Language,
+		TestConfiguration: req.TestConfiguration,
+		CreatedAt:         existingWordSet.CreatedAt,
+		UpdatedAt:         time.Now(),
+	}
+
+	// Set audio processing status if there are new words or language changed
+	if hasNewWords || req.Language != existingWordSet.Language {
+		updatedWordSet.AudioProcessing = "pending"
+		updatedWordSet.AudioProcessedAt = nil
+	} else {
+		updatedWordSet.AudioProcessing = existingWordSet.AudioProcessing
+		updatedWordSet.AudioProcessedAt = existingWordSet.AudioProcessedAt
+	}
+
+	err = serviceManager.Firestore.UpdateWordSet(updatedWordSet)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to update word set",
+		})
+		return
+	}
+
+	// Generate audio for new words in background if needed
+	if hasNewWords || req.Language != existingWordSet.Language {
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Printf("Panic in audio generation goroutine for updated wordset %s: %v", updatedWordSet.ID, r)
+				}
+			}()
+
+			if serviceManager == nil {
+				log.Printf("Error: Service manager is nil in goroutine for updated wordset %s", updatedWordSet.ID)
+				return
+			}
+
+			err := serviceManager.GenerateAudioForWordSet(updatedWordSet.ID)
+			if err != nil {
+				log.Printf("Error generating audio for updated word set %s: %v", updatedWordSet.ID, err)
+			} else {
+				log.Printf("Successfully completed audio generation for updated word set %s", updatedWordSet.ID)
+			}
+		}()
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Data:    updatedWordSet,
+		Message: "Word set updated successfully",
+	})
+}
+
 // DeleteWordSet deletes a word set and all associated audio files
 //
 //	@Summary		Delete Word Set

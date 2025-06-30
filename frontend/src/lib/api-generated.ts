@@ -16,6 +16,7 @@ import {
   ModelsSaveResultRequest,
   ApiUsersPostRequest,
   ModelsCreateWordSetRequest,
+  ModelsUpdateWordSetRequest,
   ModelsChildAccount,
 } from "@/generated";
 
@@ -150,6 +151,11 @@ export const generatedApiClient = {
   async createWordSet(request: ModelsCreateWordSetRequest) {
     const { wordsetsApi } = await createApiInstances();
     return wordsetsApi.apiWordsetsPost(request);
+  },
+
+  async updateWordSet(id: string, request: ModelsUpdateWordSetRequest) {
+    const { wordsetsApi } = await createApiInstances();
+    return wordsetsApi.apiWordsetsIdPut(id, request);
   },
 
   async deleteWordSet(id: string) {

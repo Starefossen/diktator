@@ -31,6 +31,7 @@ import {
   ExclamationTriangleIcon,
   XMarkIcon,
   DevicePhoneMobileIcon,
+  PencilIcon,
 } from "@heroicons/react/24/outline";
 
 // Icon mapping object for easy reference
@@ -284,6 +285,14 @@ export function HeroDevicePhoneMobileIcon({
   className?: string;
 }) {
   return <DevicePhoneMobileIcon className={className} />;
+}
+
+export function HeroPencilIcon({
+  className = "w-5 h-5 text-white",
+}: {
+  className?: string;
+}) {
+  return <PencilIcon className={className} />;
 }
 
 // Score-based icon component

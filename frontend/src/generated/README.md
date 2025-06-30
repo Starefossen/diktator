@@ -70,6 +70,7 @@ Class | Method | HTTP request | Description
 *WordsetsApi* | [**apiWordsetsIdAudioAudioIdGet**](docs/WordsetsApi.md#apiwordsetsidaudioaudioidget) | **GET** /api/wordsets/{id}/audio/{audioId} | Stream Audio File by ID
 *WordsetsApi* | [**apiWordsetsIdDelete**](docs/WordsetsApi.md#apiwordsetsiddelete) | **DELETE** /api/wordsets/{id} | Delete Word Set
 *WordsetsApi* | [**apiWordsetsIdGenerateAudioPost**](docs/WordsetsApi.md#apiwordsetsidgenerateaudiopost) | **POST** /api/wordsets/{id}/generate-audio | Generate Audio
+*WordsetsApi* | [**apiWordsetsIdPut**](docs/WordsetsApi.md#apiwordsetsidput) | **PUT** /api/wordsets/{id} | Update Word Set
 *WordsetsApi* | [**apiWordsetsPost**](docs/WordsetsApi.md#apiwordsetspost) | **POST** /api/wordsets | Create Word Set
 *WordsetsApi* | [**apiWordsetsVoicesGet**](docs/WordsetsApi.md#apiwordsetsvoicesget) | **GET** /api/wordsets/voices | List available TTS voices
 
@@ -83,6 +84,7 @@ Class | Method | HTTP request | Description
  - [ModelsCreateChildAccountRequest](docs/ModelsCreateChildAccountRequest.md)
  - [ModelsCreateWordSetRequest](docs/ModelsCreateWordSetRequest.md)
  - [ModelsSaveResultRequest](docs/ModelsSaveResultRequest.md)
+ - [ModelsUpdateWordSetRequest](docs/ModelsUpdateWordSetRequest.md)
  - [ModelsWordTestResult](docs/ModelsWordTestResult.md)
 
 
