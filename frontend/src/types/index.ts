@@ -172,9 +172,21 @@ export interface AudioFile {
 // API Request types
 export interface CreateWordSetRequest {
   name: string;
-  words: string[]; // Frontend still sends simple strings, backend converts to WordItem
+  words: WordInput[]; // Changed from string[] to WordInput[] to support definitions
   language: "en" | "no";
   testConfiguration?: TestConfiguration;
+}
+
+export interface UpdateWordSetRequest {
+  name: string;
+  words: WordInput[]; // Changed from string[] to WordInput[] to support definitions
+  language: "en" | "no";
+  testConfiguration?: TestConfiguration;
+}
+
+export interface WordInput {
+  word: string;
+  definition?: string;
 }
 
 export interface SaveResultRequest {

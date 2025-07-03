@@ -4,8 +4,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
   WordSet,
-  CreateWordSetRequest,
-  Language,
   TestConfiguration,
   DEFAULT_TEST_CONFIG,
   validateTestConfiguration,
@@ -14,7 +12,10 @@ import {
   getEffectiveTestConfig,
 } from "@/types";
 import { generatedApiClient } from "@/lib/api-generated";
-import { ModelsUpdateWordSetRequest } from "@/generated";
+import {
+  ModelsUpdateWordSetRequest,
+  ModelsCreateWordSetRequest,
+} from "@/generated";
 import {
   playWordAudio as playWordAudioHelper,
   getWordSetAudioStats,
@@ -28,12 +29,13 @@ import {
   playCompletionTone,
 } from "@/lib/audioTones";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import WordSetEditor from "@/components/WordSetEditor";
+import { FlagIcon } from "@/components/FlagIcon";
 import {
   HeroBookIcon,
   HeroVolumeIcon,
   HeroPlayIcon,
   HeroTrashIcon,
-  HeroSaveIcon,
   HeroSettingsIcon,
   HeroPencilIcon,
   ScoreIcon,
@@ -43,10 +45,9 @@ import {
   HeroDevicePhoneMobileIcon,
   HeroEyeIcon,
 } from "@/components/Icons";
-import { FlagIcon } from "@/components/FlagIcon";
 
 export default function WordSetsPage() {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const [wordSets, setWordSets] = useState<WordSet[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -89,30 +90,14 @@ export default function WordSetsPage() {
   const isPlayingAudioRef = useRef(false);
   const lastAutoPlayIndexRef = useRef(-1);
 
-  // Create form state
-  const [formData, setFormData] = useState<CreateWordSetRequest>({
-    name: "",
-    words: [],
-    language: language as Language,
-    testConfiguration: DEFAULT_TEST_CONFIG,
-  });
-  const [newWord, setNewWord] = useState("");
-
   // Settings form state
   const [settingsConfig, setSettingsConfig] =
     useState<TestConfiguration>(DEFAULT_TEST_CONFIG);
   const [formError, setFormError] = useState<string>("");
 
-  // Edit form state
+  // Edit form state - simplified since WordSetEditor handles the form
   const [showEditForm, setShowEditForm] = useState(false);
   const [editingWordSet, setEditingWordSet] = useState<WordSet | null>(null);
-  const [editFormData, setEditFormData] = useState<ModelsUpdateWordSetRequest>({
-    name: "",
-    words: [],
-    language: language,
-    testConfiguration: DEFAULT_TEST_CONFIG,
-  });
-  const [editNewWord, setEditNewWord] = useState("");
   const [updating, setUpdating] = useState(false);
 
   // Derived values
@@ -153,39 +138,35 @@ export default function WordSetsPage() {
     return undefined; // Explicit return for when there's no pending audio
   }, [wordSets, loadWordSets]);
 
-  const handleCreateWordSet = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormError("");
-
-    if (!formData.name.trim() || formData.words.length === 0) {
-      setFormError(t("wordsets.nameRequired"));
-      return;
-    }
+  const saveSettings = async () => {
+    if (!settingsWordSet) return;
 
     try {
-      setCreating(true);
-      const response = await generatedApiClient.createWordSet(formData);
-      if (response.data?.data) {
-        setWordSets([response.data.data as WordSet, ...wordSets]);
-        setFormData({
-          name: "",
-          words: [],
-          language: language as Language,
-          testConfiguration: DEFAULT_TEST_CONFIG,
-        });
-        setFormError("");
-        setShowCreateForm(false);
-        // Success feedback - could add a toast notification here instead of alert
-        console.log("Word set created successfully");
-      }
+      const validatedConfig = validateTestConfiguration(settingsConfig);
+      // TODO: Implement API call to update wordset configuration
+      console.log(
+        "Saving settings for wordset:",
+        settingsWordSet.id,
+        validatedConfig,
+      );
+
+      // Update local state
+      setWordSets(
+        wordSets.map((ws) =>
+          ws.id === settingsWordSet.id
+            ? { ...ws, testConfiguration: validatedConfig }
+            : ws,
+        ),
+      );
+
+      setShowSettingsModal(false);
+      setSettingsWordSet(null);
     } catch (error) {
-      console.error("Failed to create word set:", error);
-      setFormError(t("wordsets.createError"));
-    } finally {
-      setCreating(false);
+      console.error("Failed to save settings:", error);
     }
   };
 
+  // Functions still needed for UI interactions (not editor)
   const openDeleteModal = (wordSet: WordSet) => {
     setDeleteWordSet(wordSet);
     setShowDeleteModal(true);
@@ -235,81 +216,38 @@ export default function WordSetsPage() {
     setShowSettingsModal(true);
   };
 
-  const saveSettings = async () => {
-    if (!settingsWordSet) return;
-
-    try {
-      const validatedConfig = validateTestConfiguration(settingsConfig);
-      // TODO: Implement API call to update wordset configuration
-      console.log(
-        "Saving settings for wordset:",
-        settingsWordSet.id,
-        validatedConfig,
-      );
-
-      // Update local state
-      setWordSets(
-        wordSets.map((ws) =>
-          ws.id === settingsWordSet.id
-            ? { ...ws, testConfiguration: validatedConfig }
-            : ws,
-        ),
-      );
-
-      setShowSettingsModal(false);
-      setSettingsWordSet(null);
-    } catch (error) {
-      console.error("Failed to save settings:", error);
-    }
-  };
-
-  const addWord = () => {
-    if (newWord.trim() && !formData.words.includes(newWord.trim())) {
-      setFormData({
-        ...formData,
-        words: [...formData.words, newWord.trim()],
-      });
-      setNewWord("");
-    }
-  };
-
-  const removeWord = (index: number) => {
-    setFormData({
-      ...formData,
-      words: formData.words.filter((_, i) => i !== index),
-    });
-  };
-
-  // Edit functionality
   const openEditModal = (wordSet: WordSet) => {
     setEditingWordSet(wordSet);
-    setEditFormData({
-      name: wordSet.name,
-      words: wordSet.words.map((w) => w.word),
-      language: wordSet.language,
-      testConfiguration: wordSet.testConfiguration || DEFAULT_TEST_CONFIG,
-    });
-    setEditNewWord("");
     setFormError("");
     setShowEditForm(true);
   };
 
-  const handleEditWordSet = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormError("");
-
-    if (!editFormData.name.trim() || editFormData.words.length === 0) {
-      setFormError(t("wordsets.nameRequired"));
-      return;
+  // Editor wrapper functions
+  const handleEditorCreateSave = async (data: ModelsCreateWordSetRequest) => {
+    try {
+      setCreating(true);
+      const response = await generatedApiClient.createWordSet(data);
+      if (response.data?.data) {
+        setWordSets([response.data.data as WordSet, ...wordSets]);
+        setShowCreateForm(false);
+        console.log("Word set created successfully");
+      }
+    } catch (error) {
+      console.error("Failed to create word set:", error);
+      throw new Error(t("wordsets.createError"));
+    } finally {
+      setCreating(false);
     }
+  };
 
+  const handleEditorEditSave = async (data: ModelsUpdateWordSetRequest) => {
     if (!editingWordSet) return;
 
     try {
       setUpdating(true);
       const response = await generatedApiClient.updateWordSet(
         editingWordSet.id,
-        editFormData,
+        data,
       );
       if (response.data?.data) {
         setWordSets(
@@ -317,43 +255,23 @@ export default function WordSetsPage() {
             ws.id === editingWordSet.id ? (response.data.data as WordSet) : ws,
           ),
         );
-        setEditFormData({
-          name: "",
-          words: [],
-          language: language,
-          testConfiguration: DEFAULT_TEST_CONFIG,
-        });
-        setFormError("");
         setShowEditForm(false);
         setEditingWordSet(null);
         console.log("Word set updated successfully");
       }
     } catch (error) {
       console.error("Failed to update word set:", error);
-      setFormError(t("wordsets.updateError"));
+      throw new Error(t("wordsets.updateError"));
     } finally {
       setUpdating(false);
     }
   };
 
-  const addEditWord = () => {
-    if (
-      editNewWord.trim() &&
-      !editFormData.words.includes(editNewWord.trim())
-    ) {
-      setEditFormData({
-        ...editFormData,
-        words: [...editFormData.words, editNewWord.trim()],
-      });
-      setEditNewWord("");
-    }
-  };
-
-  const removeEditWord = (index: number) => {
-    setEditFormData({
-      ...editFormData,
-      words: editFormData.words.filter((_, i) => i !== index),
-    });
+  const handleEditorCancel = () => {
+    setShowCreateForm(false);
+    setShowEditForm(false);
+    setEditingWordSet(null);
+    setFormError("");
   };
 
   const startTest = (wordSet: WordSet) => {
@@ -1289,6 +1207,20 @@ export default function WordSetsPage() {
                       {t("test.listenToWord")}
                     </span>
                   </p>
+
+                  {/* Show definition/context if available for current word */}
+                  {activeTest &&
+                    activeTest.words[currentWordIndex] &&
+                    activeTest.words[currentWordIndex].definition && (
+                      <div className="max-w-md px-4 py-2 mx-auto mt-3 text-sm border border-blue-200 rounded-lg bg-blue-50">
+                        <p className="text-blue-800">
+                          <span className="font-medium">
+                            {t("test.context")}
+                          </span>{" "}
+                          {activeTest.words[currentWordIndex].definition}
+                        </p>
+                      </div>
+                    )}
                 </div>
 
                 <div className="flex flex-col justify-center mb-6">
@@ -1430,127 +1362,13 @@ export default function WordSetsPage() {
 
           {/* Create Form */}
           {showCreateForm && (
-            <div className="p-6 mb-8 bg-white border border-gray-100 rounded-lg shadow-lg">
-              <h2 className="mb-4 text-2xl font-semibold text-gray-800">
-                {t("wordsets.create")}
-              </h2>
-
-              {formError && (
-                <div className="p-3 mb-4 text-red-700 bg-red-100 border border-red-300 rounded-lg">
-                  {formError}
-                </div>
-              )}
-
-              <form onSubmit={handleCreateWordSet} className="space-y-4">
-                <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700">
-                    {t("wordsets.name")}
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder={t("wordsets.name.placeholder")}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700">
-                    {t("wordsets.language")}
-                  </label>
-                  <select
-                    value={formData.language}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        language: e.target.value as Language,
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="en">{t("common.english")}</option>
-                    <option value="no">{t("common.norwegian")}</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700">
-                    {t("wordsets.words")}
-                  </label>
-                  <div className="flex gap-2 mb-2">
-                    <input
-                      type="text"
-                      value={newWord}
-                      onChange={(e) => setNewWord(e.target.value)}
-                      onKeyPress={(e) =>
-                        e.key === "Enter" && (e.preventDefault(), addWord())
-                      }
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder={t("wordsets.addWord.placeholder")}
-                    />
-                    <button
-                      type="button"
-                      onClick={addWord}
-                      className="px-5 py-2 font-medium text-white transition-all duration-200 bg-blue-500 rounded-lg hover:bg-blue-600 hover:shadow-md"
-                    >
-                      {t("wordsets.add")}
-                    </button>
-                  </div>
-
-                  {formData.words.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {formData.words.map((word, index) => (
-                        <span
-                          key={index}
-                          className="inline-flex items-center gap-1 px-3 py-1 text-sm text-blue-800 bg-blue-100 rounded-full"
-                        >
-                          {word}
-                          <button
-                            type="button"
-                            onClick={() => removeWord(index)}
-                            className="text-blue-600 hover:text-blue-800"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="submit"
-                    disabled={creating}
-                    className="flex items-center px-6 py-3 font-semibold text-white transition-all duration-200 bg-green-600 rounded-lg hover:bg-green-700 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {creating ? (
-                      <>
-                        <div className="w-4 h-4 mr-2 border-2 border-white rounded-full border-t-transparent animate-spin"></div>
-                        {t("wordsets.creating")}
-                      </>
-                    ) : (
-                      <>
-                        <HeroSaveIcon className="w-4 h-4 mr-2 text-white" />
-                        {t("wordsets.save")}
-                      </>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateForm(false)}
-                    className="flex items-center px-6 py-3 font-semibold text-gray-700 transition-all duration-200 bg-gray-200 rounded-lg hover:bg-gray-300 hover:shadow-md"
-                  >
-                    <HeroXMarkIcon className="w-4 h-4 mr-2 text-gray-700" />
-                    {t("wordsets.cancel")}
-                  </button>
-                </div>
-              </form>
-            </div>
+            <WordSetEditor
+              mode="create"
+              onSave={handleEditorCreateSave}
+              onCancel={handleEditorCancel}
+              isLoading={creating}
+              error={formError}
+            />
           )}
 
           {/* Word Sets List */}
@@ -1885,133 +1703,14 @@ export default function WordSetsPage() {
 
         {/* Edit WordSet Modal */}
         {showEditForm && editingWordSet && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="w-full max-w-2xl p-6 mx-4 bg-white rounded-lg shadow-xl max-h-[90vh] overflow-y-auto">
-              <h2 className="mb-4 text-2xl font-semibold text-gray-800">
-                {t("wordsets.editWordSet")} - {editingWordSet.name}
-              </h2>
-
-              {formError && (
-                <div className="p-3 mb-4 text-red-700 bg-red-100 border border-red-300 rounded-lg">
-                  {formError}
-                </div>
-              )}
-
-              <form onSubmit={handleEditWordSet} className="space-y-4">
-                <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700">
-                    {t("wordsets.name")}
-                  </label>
-                  <input
-                    type="text"
-                    value={editFormData.name}
-                    onChange={(e) =>
-                      setEditFormData({ ...editFormData, name: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder={t("wordsets.name.placeholder")}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700">
-                    {t("wordsets.language")}
-                  </label>
-                  <select
-                    value={editFormData.language}
-                    onChange={(e) =>
-                      setEditFormData({
-                        ...editFormData,
-                        language: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="en">{t("common.english")}</option>
-                    <option value="no">{t("common.norwegian")}</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700">
-                    {t("wordsets.words")}
-                  </label>
-                  <div className="flex gap-2 mb-2">
-                    <input
-                      type="text"
-                      value={editNewWord}
-                      onChange={(e) => setEditNewWord(e.target.value)}
-                      onKeyPress={(e) =>
-                        e.key === "Enter" && (e.preventDefault(), addEditWord())
-                      }
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder={t("wordsets.addWord.placeholder")}
-                    />
-                    <button
-                      type="button"
-                      onClick={addEditWord}
-                      className="px-5 py-2 font-medium text-white transition-all duration-200 bg-blue-500 rounded-lg hover:bg-blue-600 hover:shadow-md"
-                    >
-                      {t("wordsets.add")}
-                    </button>
-                  </div>
-
-                  {editFormData.words.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {editFormData.words.map((word, index) => (
-                        <span
-                          key={index}
-                          className="inline-flex items-center gap-1 px-3 py-1 text-sm text-blue-800 bg-blue-100 rounded-full"
-                        >
-                          {word}
-                          <button
-                            type="button"
-                            onClick={() => removeEditWord(index)}
-                            className="text-blue-600 hover:text-blue-800"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="submit"
-                    disabled={updating}
-                    className="flex items-center px-6 py-3 font-semibold text-white transition-all duration-200 bg-green-600 rounded-lg hover:bg-green-700 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {updating ? (
-                      <>
-                        <div className="w-4 h-4 mr-2 border-2 border-white rounded-full border-t-transparent animate-spin"></div>
-                        {t("wordsets.updating")}
-                      </>
-                    ) : (
-                      <>
-                        <HeroSaveIcon className="w-4 h-4 mr-2 text-white" />
-                        {t("wordsets.save")}
-                      </>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowEditForm(false);
-                      setEditingWordSet(null);
-                      setFormError("");
-                    }}
-                    className="flex items-center px-6 py-3 font-semibold text-gray-700 transition-all duration-200 bg-gray-200 rounded-lg hover:bg-gray-300 hover:shadow-md"
-                  >
-                    <HeroXMarkIcon className="w-4 h-4 mr-2 text-gray-700" />
-                    {t("wordsets.cancel")}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
+          <WordSetEditor
+            mode="edit"
+            initialData={editingWordSet}
+            onSave={handleEditorEditSave}
+            onCancel={handleEditorCancel}
+            isLoading={updating}
+            error={formError}
+          />
         )}
 
         {/* Delete Confirmation Modal */}

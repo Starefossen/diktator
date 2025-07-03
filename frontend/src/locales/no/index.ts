@@ -4,6 +4,7 @@ import { wordsets } from "./wordsets";
 import { common } from "./common";
 import { profile } from "./profile";
 import { results } from "./results";
+import { test } from "./test";
 
 export const no = {
   ...auth,
@@ -12,6 +13,7 @@ export const no = {
   ...common,
   ...profile,
   ...results,
+  ...test,
 
   // Home page
   "home.welcome": "Velkommen til Diktator!",

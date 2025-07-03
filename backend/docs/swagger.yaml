@@ -60,7 +60,7 @@ definitions:
         type: object
       words:
         items:
-          type: string
+          $ref: '#/definitions/models.WordInput'
         type: array
     required:
     - language
@@ -106,12 +106,21 @@ definitions:
         type: object
       words:
         items:
-          type: string
+          $ref: '#/definitions/models.WordInput'
         type: array
     required:
     - language
     - name
     - words
+    type: object
+  models.WordInput:
+    properties:
+      definition:
+        type: string
+      word:
+        type: string
+    required:
+    - word
     type: object
   models.WordTestResult:
     properties:

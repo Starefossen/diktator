@@ -210,10 +210,10 @@ export interface ModelsCreateWordSetRequest {
     'testConfiguration'?: { [key: string]: any; };
     /**
      * 
-     * @type {Array<string>}
+     * @type {Array<ModelsWordInput>}
      * @memberof ModelsCreateWordSetRequest
      */
-    'words': Array<string>;
+    'words': Array<ModelsWordInput>;
 }
 /**
  * 
@@ -290,10 +290,29 @@ export interface ModelsUpdateWordSetRequest {
     'testConfiguration'?: { [key: string]: any; };
     /**
      * 
-     * @type {Array<string>}
+     * @type {Array<ModelsWordInput>}
      * @memberof ModelsUpdateWordSetRequest
      */
-    'words': Array<string>;
+    'words': Array<ModelsWordInput>;
+}
+/**
+ * 
+ * @export
+ * @interface ModelsWordInput
+ */
+export interface ModelsWordInput {
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelsWordInput
+     */
+    'definition'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelsWordInput
+     */
+    'word': string;
 }
 /**
  * 

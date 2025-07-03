@@ -163,20 +163,21 @@ func CreateWordSet(c *gin.Context) {
 		return
 	}
 
-	// Convert string words to WordItem structs
+	// Convert WordInput to WordItem structs
 	words := make([]struct {
 		Word       string           `firestore:"word" json:"word"`
 		Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
 		Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
 	}, len(req.Words))
 
-	for i, word := range req.Words {
+	for i, wordInput := range req.Words {
 		words[i] = struct {
 			Word       string           `firestore:"word" json:"word"`
 			Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
 			Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
 		}{
-			Word: word,
+			Word:       wordInput.Word,
+			Definition: wordInput.Definition,
 		}
 	}
 
@@ -318,24 +319,28 @@ func UpdateWordSet(c *gin.Context) {
 	}, len(req.Words))
 
 	hasNewWords := false
-	for i, word := range req.Words {
+	for i, wordInput := range req.Words {
 		words[i] = struct {
 			Word       string           `firestore:"word" json:"word"`
 			Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
 			Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
 		}{
-			Word: word,
+			Word:       wordInput.Word,
+			Definition: wordInput.Definition,
 		}
 
 		// Check if this is a new word or if audio needs regeneration
-		if !originalWords[word] {
+		if !originalWords[wordInput.Word] {
 			hasNewWords = true
 		} else {
 			// Preserve existing audio for unchanged words
 			for _, existingWord := range existingWordSet.Words {
-				if existingWord.Word == word {
+				if existingWord.Word == wordInput.Word {
 					words[i].Audio = existingWord.Audio
-					words[i].Definition = existingWord.Definition
+					// Only preserve existing definition if new one is empty
+					if wordInput.Definition == "" {
+						words[i].Definition = existingWord.Definition
+					}
 					break
 				}
 			}

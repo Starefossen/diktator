@@ -85,6 +85,7 @@ Class | Method | HTTP request | Description
  - [ModelsCreateWordSetRequest](docs/ModelsCreateWordSetRequest.md)
  - [ModelsSaveResultRequest](docs/ModelsSaveResultRequest.md)
  - [ModelsUpdateWordSetRequest](docs/ModelsUpdateWordSetRequest.md)
+ - [ModelsWordInput](docs/ModelsWordInput.md)
  - [ModelsWordTestResult](docs/ModelsWordTestResult.md)
 
 

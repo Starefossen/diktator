@@ -1229,7 +1229,7 @@ const docTemplate = `{
                 "words": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/models.WordInput"
                     }
                 }
             }
@@ -1295,8 +1295,22 @@ const docTemplate = `{
                 "words": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/models.WordInput"
                     }
+                }
+            }
+        },
+        "models.WordInput": {
+            "type": "object",
+            "required": [
+                "word"
+            ],
+            "properties": {
+                "definition": {
+                    "type": "string"
+                },
+                "word": {
+                    "type": "string"
                 }
             }
         },

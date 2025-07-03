@@ -8,7 +8,7 @@ Name | Type | Description | Notes
 **language** | **string** |  | [default to undefined]
 **name** | **string** |  | [default to undefined]
 **testConfiguration** | **{ [key: string]: any; }** |  | [optional] [default to undefined]
-**words** | **Array&lt;string&gt;** |  | [default to undefined]
+**words** | [**Array&lt;ModelsWordInput&gt;**](ModelsWordInput.md) |  | [default to undefined]
 
 ## Example
 

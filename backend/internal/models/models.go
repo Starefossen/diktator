@@ -85,10 +85,16 @@ type AudioFile struct {
 	CreatedAt   time.Time `firestore:"createdAt" json:"createdAt"`
 }
 
+// WordInput represents a word input with optional definition for word set creation/updates
+type WordInput struct {
+	Word       string `json:"word" binding:"required"`
+	Definition string `json:"definition,omitempty"`
+}
+
 // CreateWordSetRequest represents the request to create a word set
 type CreateWordSetRequest struct {
 	Name              string                  `json:"name" binding:"required"`
-	Words             []string                `json:"words" binding:"required"`
+	Words             []WordInput             `json:"words" binding:"required"`
 	Language          string                  `json:"language" binding:"required"`
 	TestConfiguration *map[string]interface{} `json:"testConfiguration,omitempty"`
 }
@@ -96,7 +102,7 @@ type CreateWordSetRequest struct {
 // UpdateWordSetRequest represents the request to update a word set
 type UpdateWordSetRequest struct {
 	Name              string                  `json:"name" binding:"required"`
-	Words             []string                `json:"words" binding:"required"`
+	Words             []WordInput             `json:"words" binding:"required"`
 	Language          string                  `json:"language" binding:"required"`
 	TestConfiguration *map[string]interface{} `json:"testConfiguration,omitempty"`
 }

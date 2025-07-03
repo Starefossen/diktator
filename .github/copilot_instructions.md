@@ -47,6 +47,8 @@ Diktator is a Norwegian vocabulary learning app for children with gamified tests
 
 ### Available Commands
 
+Always use the `mise` tool for running commands in this project. It manages dependencies and scripts.
+
 ```bash
 mise run dev              # Full dev environment
 mise run frontend         # Frontend only (:3000)
@@ -56,8 +58,6 @@ mise run format          # Format all code
 mise run deploy-frontend # Deploy to Cloud Storage
 mise run deploy-backend  # Deploy to Cloud Run
 ```
-
-Never use npm commands directly unless you absolutely have to.
 
 ### File Structure
 

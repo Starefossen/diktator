@@ -427,13 +427,14 @@ func MockUpdateWordSet(c *gin.Context) {
 		Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
 	}, len(req.Words))
 
-	for i, word := range req.Words {
+	for i, wordInput := range req.Words {
 		words[i] = struct {
 			Word       string           `firestore:"word" json:"word"`
 			Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
 			Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
 		}{
-			Word: word,
+			Word:       wordInput.Word,
+			Definition: wordInput.Definition,
 		}
 	}
 
@@ -1111,7 +1112,7 @@ func TestUpdateWordSet(t *testing.T) {
 			familyID:  "family-smith",
 			requestBody: models.UpdateWordSetRequest{
 				Name:     "Updated Smith Words",
-				Words:    []string{"apple", "banana", "orange", "grape"},
+				Words:    []models.WordInput{{Word: "apple"}, {Word: "banana"}, {Word: "orange"}, {Word: "grape"}},
 				Language: "en",
 			},
 			setupMocks: func() {
@@ -1136,7 +1137,7 @@ func TestUpdateWordSet(t *testing.T) {
 			familyID:  "family-smith",
 			requestBody: models.UpdateWordSetRequest{
 				Name:     "Updated Words",
-				Words:    []string{"word1", "word2"},
+				Words:    []models.WordInput{{Word: "word1"}, {Word: "word2"}},
 				Language: "en",
 			},
 			setupMocks: func() {
@@ -1152,7 +1153,7 @@ func TestUpdateWordSet(t *testing.T) {
 			familyID:  "family-smith",
 			requestBody: models.UpdateWordSetRequest{
 				Name:     "Unauthorized Update",
-				Words:    []string{"word1", "word2"},
+				Words:    []models.WordInput{{Word: "word1"}, {Word: "word2"}},
 				Language: "en",
 			},
 			setupMocks: func() {
@@ -1177,7 +1178,7 @@ func TestUpdateWordSet(t *testing.T) {
 			familyID:  "family-smith",
 			requestBody: models.UpdateWordSetRequest{
 				Name:     "Updated Words",
-				Words:    []string{"word1", "word2"},
+				Words:    []models.WordInput{{Word: "word1"}, {Word: "word2"}},
 				Language: "en",
 			},
 			setupMocks:     func() {},
@@ -1191,7 +1192,7 @@ func TestUpdateWordSet(t *testing.T) {
 			familyID:  "family-smith",
 			requestBody: models.UpdateWordSetRequest{
 				// Missing required fields
-				Words: []string{"word1", "word2"},
+				Words: []models.WordInput{{Word: "word1"}, {Word: "word2"}},
 			},
 			setupMocks:     func() {},
 			expectedStatus: http.StatusBadRequest,
