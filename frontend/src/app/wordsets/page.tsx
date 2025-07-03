@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { WordSet, validateTestConfiguration } from "@/types";
+import { useAuth } from "@/contexts/AuthContext";
+import { WordSet, validateTestConfiguration, TestResult, FamilyProgress } from "@/types";
 import {
   ModelsUpdateWordSetRequest,
   ModelsCreateWordSetRequest,
 } from "@/generated";
 import { playWordAudio as playWordAudioHelper } from "@/lib/audioPlayer";
+import { generatedApiClient } from "@/lib/api-generated";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import WordSetEditor from "@/components/WordSetEditor";
 import { WordSetsListView } from "@/components/WordSetsListView";
@@ -26,6 +28,7 @@ import { useModalState } from "@/hooks/useModalState";
 
 export default function WordSetsPage() {
   const { t } = useLanguage();
+  const { userData } = useAuth();
 
   // Data management
   const {
@@ -39,6 +42,11 @@ export default function WordSetsPage() {
     deleteWordSet,
   } = useWordSetsData();
 
+  // Personalization data
+  const [userResults, setUserResults] = useState<TestResult[]>([]);
+  const [familyProgress, setFamilyProgress] = useState<FamilyProgress[]>([]);
+  const [personalizationLoading, setPersonalizationLoading] = useState(false);
+
   // Test mode management
   const testMode = useTestMode();
 
@@ -50,6 +58,37 @@ export default function WordSetsPage() {
 
   // Audio state for word list
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
+
+  // Load personalization data when component mounts or userData changes
+  useEffect(() => {
+    const loadPersonalizationData = async () => {
+      if (!userData) return;
+
+      try {
+        setPersonalizationLoading(true);
+
+        if (userData.role === "child") {
+          // Load user's test results for personalization
+          const resultsResponse = await generatedApiClient.getResults();
+          if (resultsResponse.data?.data) {
+            setUserResults(resultsResponse.data.data as TestResult[]);
+          }
+        } else if (userData.role === "parent") {
+          // Load family progress for parent view
+          const progressResponse = await generatedApiClient.getFamilyProgress();
+          if (progressResponse.data?.data) {
+            setFamilyProgress(progressResponse.data.data as FamilyProgress[]);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load personalization data:", error);
+      } finally {
+        setPersonalizationLoading(false);
+      }
+    };
+
+    loadPersonalizationData();
+  }, [userData]);
 
   // Word click handler for audio playback
   const handleWordClick = useCallback(
@@ -144,12 +183,14 @@ export default function WordSetsPage() {
   }, [modalState]);
 
   // Loading state
-  if (loading) {
+  if (loading || personalizationLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
         <div className="text-center">
           <div className="w-12 h-12 mx-auto border-b-2 border-blue-600 rounded-full animate-spin"></div>
-          <p className="mt-4 text-gray-600">{t("wordsets.loading")}</p>
+          <p className="mt-4 text-gray-600">
+            {loading ? t("wordsets.loading") : "Loading personalization..."}
+          </p>
         </div>
       </div>
     );
@@ -262,6 +303,8 @@ export default function WordSetsPage() {
           <WordSetsListView
             wordSets={wordSets}
             playingAudio={playingAudio}
+            userResults={userResults}
+            familyProgress={familyProgress}
             onStartTest={testMode.startTest}
             onStartPractice={practiceMode.startPractice}
             onWordClick={handleWordClick}
