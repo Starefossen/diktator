@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
   WordSet,
@@ -80,11 +80,20 @@ export default function WordSetEditor({
   // New word form state
   const [newWord, setNewWord] = useState("");
   const [newDefinition, setNewDefinition] = useState("");
-  const [showAddForm, setShowAddForm] = useState(false);
 
   // Refs for focus management
   const newWordRef = useRef<HTMLInputElement>(null);
   const editRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus the name input when creating a new wordset, word input when editing
+  useEffect(() => {
+    if (mode === "create" && nameInputRef.current) {
+      nameInputRef.current.focus();
+    } else if (mode === "edit" && newWordRef.current) {
+      newWordRef.current.focus();
+    }
+  }, [mode]);
 
   const handleAddWord = () => {
     if (!newWord.trim()) return;
@@ -107,7 +116,10 @@ export default function WordSetEditor({
     setWords([...words, newWordItem]);
     setNewWord("");
     setNewDefinition("");
-    setShowAddForm(false);
+    // Focus back to the word input for easy continuation
+    if (newWordRef.current) {
+      newWordRef.current.focus();
+    }
   };
 
   const handleEditWord = (id: string) => {
@@ -167,15 +179,6 @@ export default function WordSetEditor({
     await onSave(formData);
   };
 
-  const showAddWordForm = () => {
-    setShowAddForm(true);
-    setTimeout(() => {
-      if (newWordRef.current) {
-        newWordRef.current.focus();
-      }
-    }, 50);
-  };
-
   return (
     <BaseModal
       isOpen={true}
@@ -183,78 +186,71 @@ export default function WordSetEditor({
       title={mode === "create" ? t("wordsets.create") : t("wordsets.edit")}
       size="xl"
     >
-      <ModalContent>
-        <form id="wordset-form" onSubmit={handleSubmit} className="space-y-6">
-          {/* Error Display */}
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-800">{error}</div>
-            </div>
-          )}
-
-          {/* Basic Info */}
-          <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium leading-6 text-gray-900"
-              >
-                {t("wordsets.name")}
-              </label>
-              <div className="mt-2">
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                  placeholder={t("wordsets.name.placeholder")}
-                  required
-                />
+      <div className="flex flex-col h-full max-h-[calc(100vh-180px)] sm:max-h-[calc(100vh-160px)] md:max-h-[calc(100vh-140px)] lg:max-h-[calc(100vh-160px)]">
+        <ModalContent className="flex-1 overflow-y-auto min-h-0 pb-4">
+          <form id="wordset-form" onSubmit={handleSubmit} className="space-y-6">
+            {/* Error Display */}
+            {error && (
+              <div className="p-4 rounded-md bg-red-50">
+                <div className="text-sm text-red-800">{error}</div>
               </div>
-            </div>
-            <div>
-              <label
-                htmlFor="language"
-                className="block text-sm font-medium leading-6 text-gray-900"
-              >
-                {t("wordsets.language")}
-              </label>
-              <div className="mt-2">
-                <select
-                  id="language"
-                  value={selectedLanguage}
-                  onChange={(e) =>
-                    setSelectedLanguage(e.target.value as Language)
-                  }
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+            )}
+
+            {/* Basic Info */}
+            <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium leading-6 text-gray-900"
                 >
-                  <option value="en">{t("common.english")}</option>
-                  <option value="no">{t("common.norwegian")}</option>
-                </select>
+                  {t("wordsets.name")}
+                </label>
+                <div className="mt-2">
+                  <input
+                    ref={nameInputRef}
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    placeholder={t("wordsets.name.placeholder")}
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label
+                  htmlFor="language"
+                  className="block text-sm font-medium leading-6 text-gray-900"
+                >
+                  {t("wordsets.language")}
+                </label>
+                <div className="mt-2">
+                  <select
+                    id="language"
+                    value={selectedLanguage}
+                    onChange={(e) =>
+                      setSelectedLanguage(e.target.value as Language)
+                    }
+                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  >
+                    <option value="en">{t("common.english")}</option>
+                    <option value="no">{t("common.norwegian")}</option>
+                  </select>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Words Section */}
-          <div>
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-semibold leading-6 text-gray-900">
-                {t("wordsets.words")} ({words.length})
-              </h3>
-              <button
-                type="button"
-                onClick={showAddWordForm}
-                className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              >
-                <HeroPlusIcon className="h-4 w-4 mr-1" />
-                {t("wordsets.add")}
-              </button>
-            </div>
+            {/* Words Section */}
+            <div>
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold leading-6 text-gray-900">
+                  {t("wordsets.words")} ({words.length})
+                </h3>
+              </div>
 
-            {/* Add Word Form */}
-            {showAddForm && (
-              <div className="mt-6 rounded-lg bg-blue-50 border border-blue-200 p-4">
+              {/* Add Word Form - Always visible */}
+              <div className="p-4 mt-6 border border-blue-200 rounded-lg bg-blue-50">
                 <div className="grid grid-cols-1 gap-3 mb-3 md:grid-cols-2">
                   <div>
                     <input
@@ -262,7 +258,7 @@ export default function WordSetEditor({
                       type="text"
                       value={newWord}
                       onChange={(e) => setNewWord(e.target.value)}
-                      className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                       placeholder={t("wordsets.addWord.placeholder")}
                       onKeyPress={(e) => {
                         if (e.key === "Enter") {
@@ -277,7 +273,7 @@ export default function WordSetEditor({
                       type="text"
                       value={newDefinition}
                       onChange={(e) => setNewDefinition(e.target.value)}
-                      className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                       placeholder="Definition/context (optional) - helps distinguish homophones like 'to', 'two', 'too'"
                       onKeyPress={(e) => {
                         if (e.key === "Enter") {
@@ -293,183 +289,173 @@ export default function WordSetEditor({
                     type="button"
                     onClick={handleAddWord}
                     disabled={!newWord.trim()}
-                    className="px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center px-3 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-md shadow-sm hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
+                    <HeroPlusIcon className="w-4 h-4 mr-1" />
                     {t("wordsets.add")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAddForm(false);
-                      setNewWord("");
-                      setNewDefinition("");
-                    }}
-                    className="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
-                  >
-                    {t("wordsets.cancel")}
                   </button>
                 </div>
               </div>
-            )}
 
-            {/* Words List */}
-            <div className="mt-6 space-y-2 overflow-y-auto max-h-96">
-              {words.length === 0 ? (
-                <div className="py-8 text-center text-gray-500">
-                  <p>{t("wordsets.noTitle")}</p>
-                  <p className="mt-1 text-sm">{t("wordsets.noSubtitle")}</p>
-                </div>
-              ) : (
-                words.map((word) => (
-                  <div
-                    key={word.id}
-                    className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg bg-gray-50"
-                  >
-                    {word.isEditing ? (
-                      // Editing mode
-                      <>
-                        <div className="grid flex-1 grid-cols-1 gap-2 md:grid-cols-2">
-                          <input
-                            ref={(el) => {
-                              editRefs.current[`word-${word.id}`] = el;
-                            }}
-                            type="text"
-                            value={word.word}
-                            onChange={(e) =>
-                              handleWordChange(word.id, "word", e.target.value)
-                            }
-                            className="px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            onKeyPress={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                handleSaveEdit(word.id);
-                              }
-                              if (e.key === "Escape") {
-                                e.preventDefault();
-                                handleCancelEdit(word.id);
-                              }
-                            }}
-                          />
-                          <input
-                            type="text"
-                            value={word.definition}
-                            onChange={(e) =>
-                              handleWordChange(
-                                word.id,
-                                "definition",
-                                e.target.value,
-                              )
-                            }
-                            className="px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="Definition/context (optional)"
-                            onKeyPress={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                handleSaveEdit(word.id);
-                              }
-                              if (e.key === "Escape") {
-                                e.preventDefault();
-                                handleCancelEdit(word.id);
-                              }
-                            }}
-                          />
-                        </div>
-                        <div className="flex gap-1">
-                          <button
-                            type="button"
-                            onClick={() => handleSaveEdit(word.id)}
-                            className="p-1 text-green-600 rounded hover:text-green-800 hover:bg-green-100"
-                            title="Save"
-                          >
-                            <HeroCheckIcon className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleCancelEdit(word.id)}
-                            className="p-1 text-gray-600 rounded hover:text-gray-800 hover:bg-gray-100"
-                            title="Cancel"
-                          >
-                            <HeroXMarkIcon className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </>
-                    ) : (
-                      // Display mode
-                      <>
-                        <div className="grid flex-1 grid-cols-1 gap-2 md:grid-cols-2">
-                          <div className="font-medium text-gray-900">
-                            {word.word}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {word.definition || (
-                              <span className="italic text-gray-400">
-                                No definition
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex gap-1">
-                          <button
-                            type="button"
-                            onClick={() => handleEditWord(word.id)}
-                            className="p-1 text-blue-600 rounded hover:text-blue-800 hover:bg-blue-100"
-                            title="Edit"
-                          >
-                            <HeroPencilIcon className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveWord(word.id)}
-                            className="p-1 text-red-600 rounded hover:text-red-800 hover:bg-red-100"
-                            title="Remove"
-                          >
-                            <HeroTrashIcon className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </>
-                    )}
+              {/* Words List */}
+              <div className="mt-6 space-y-2">
+                {words.length === 0 ? (
+                  <div className="py-8 text-center text-gray-500">
+                    <p>No words added yet</p>
+                    <p className="mt-1 text-sm">Use the form above to add words to this set</p>
                   </div>
-                ))
-              )}
+                ) : (
+                  words.map((word) => (
+                    <div
+                      key={word.id}
+                      className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg bg-gray-50"
+                    >
+                      {word.isEditing ? (
+                        // Editing mode
+                        <>
+                          <div className="grid flex-1 grid-cols-1 gap-2 md:grid-cols-2">
+                            <input
+                              ref={(el) => {
+                                editRefs.current[`word-${word.id}`] = el;
+                              }}
+                              type="text"
+                              value={word.word}
+                              onChange={(e) =>
+                                handleWordChange(word.id, "word", e.target.value)
+                              }
+                              className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                              onKeyPress={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  handleSaveEdit(word.id);
+                                }
+                                if (e.key === "Escape") {
+                                  e.preventDefault();
+                                  handleCancelEdit(word.id);
+                                }
+                              }}
+                            />
+                            <input
+                              type="text"
+                              value={word.definition}
+                              onChange={(e) =>
+                                handleWordChange(
+                                  word.id,
+                                  "definition",
+                                  e.target.value,
+                                )
+                              }
+                              className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                              placeholder="Definition/context (optional)"
+                              onKeyPress={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  handleSaveEdit(word.id);
+                                }
+                                if (e.key === "Escape") {
+                                  e.preventDefault();
+                                  handleCancelEdit(word.id);
+                                }
+                              }}
+                            />
+                          </div>
+                          <div className="flex gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleSaveEdit(word.id)}
+                              className="p-1 text-green-600 rounded hover:text-green-800 hover:bg-green-100"
+                              title="Save"
+                            >
+                              <HeroCheckIcon className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleCancelEdit(word.id)}
+                              className="p-1 text-gray-600 rounded hover:text-gray-800 hover:bg-gray-100"
+                              title="Cancel"
+                            >
+                              <HeroXMarkIcon className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        // Display mode
+                        <>
+                          <div className="grid flex-1 grid-cols-1 gap-2 md:grid-cols-2">
+                            <div className="font-medium text-gray-900">
+                              {word.word}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {word.definition || (
+                                <span className="italic text-gray-400">
+                                  No definition
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleEditWord(word.id)}
+                              className="p-1 text-blue-600 rounded hover:text-blue-800 hover:bg-blue-100"
+                              title="Edit"
+                            >
+                              <HeroPencilIcon className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveWord(word.id)}
+                              className="p-1 text-red-600 rounded hover:text-red-800 hover:bg-red-100"
+                              title="Remove"
+                            >
+                              <HeroTrashIcon className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
-          </div>
-        </form>
-      </ModalContent>
+          </form>
+        </ModalContent>
 
-      <ModalActions>
-        {/* Primary action first in DOM for proper tab order and focus management */}
-        <ModalButton
-          onClick={() => {
-            // Trigger form submission
-            const form = document.getElementById(
-              "wordset-form",
-            ) as HTMLFormElement;
-            if (form) form.requestSubmit();
-          }}
-          variant="primary"
-          disabled={isLoading || !name.trim() || words.length === 0}
-        >
-          {isLoading ? (
-            <div className="flex items-center">
-              <div className="w-4 h-4 mr-2 border-b-2 border-white rounded-full animate-spin"></div>
-              {mode === "create"
-                ? t("wordsets.creating")
-                : t("wordsets.updating")}
-            </div>
-          ) : mode === "create" ? (
-            t("wordsets.create")
-          ) : (
-            t("wordsets.save")
-          )}
-        </ModalButton>
-        <ModalButton
-          onClick={onCancel}
-          variant="secondary"
-          className="mt-3 sm:mt-0 sm:mr-3"
-        >
-          {t("wordsets.cancel")}
-        </ModalButton>
-      </ModalActions>
+        <ModalActions className="flex-shrink-0 mt-6 sm:mt-6 md:mt-8">
+          {/* Primary action first in DOM for proper tab order and focus management */}
+          <ModalButton
+            onClick={() => {
+              // Trigger form submission
+              const form = document.getElementById(
+                "wordset-form",
+              ) as HTMLFormElement;
+              if (form) form.requestSubmit();
+            }}
+            variant="primary"
+            disabled={isLoading || !name.trim() || words.length === 0}
+          >
+            {isLoading ? (
+              <div className="flex items-center">
+                <div className="w-4 h-4 mr-2 border-b-2 border-white rounded-full animate-spin"></div>
+                {mode === "create"
+                  ? t("wordsets.creating")
+                  : t("wordsets.updating")}
+              </div>
+            ) : mode === "create" ? (
+              t("wordsets.create")
+            ) : (
+              t("wordsets.save")
+            )}
+          </ModalButton>
+          <ModalButton
+            onClick={onCancel}
+            variant="secondary"
+            className="mt-3 sm:mt-0 sm:mr-3"
+          >
+            {t("wordsets.cancel")}
+          </ModalButton>
+        </ModalActions>
+      </div>
     </BaseModal>
   );
 }
