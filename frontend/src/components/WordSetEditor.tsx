@@ -187,7 +187,7 @@ export default function WordSetEditor({
       size="xl"
     >
       <div className="flex flex-col h-full max-h-[calc(100vh-180px)] sm:max-h-[calc(100vh-160px)] md:max-h-[calc(100vh-140px)] lg:max-h-[calc(100vh-160px)]">
-        <ModalContent className="flex-1 overflow-y-auto min-h-0 pb-4">
+        <ModalContent className="flex-1 min-h-0 pb-4 overflow-y-auto">
           <form id="wordset-form" onSubmit={handleSubmit} className="space-y-6">
             {/* Error Display */}
             {error && (
@@ -197,11 +197,11 @@ export default function WordSetEditor({
             )}
 
             {/* Basic Info */}
-            <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
-              <div>
+            <div className="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+              <div className="sm:col-span-3">
                 <label
                   htmlFor="name"
-                  className="block text-sm font-medium leading-6 text-gray-900"
+                  className="block font-medium text-gray-900 text-sm/6"
                 >
                   {t("wordsets.name")}
                 </label>
@@ -212,31 +212,43 @@ export default function WordSetEditor({
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                     placeholder={t("wordsets.name.placeholder")}
                     required
                   />
                 </div>
               </div>
-              <div>
+              <div className="sm:col-span-3">
                 <label
                   htmlFor="language"
-                  className="block text-sm font-medium leading-6 text-gray-900"
+                  className="block font-medium text-gray-900 text-sm/6"
                 >
                   {t("wordsets.language")}
                 </label>
-                <div className="mt-2">
+                <div className="grid grid-cols-1 mt-2">
                   <select
                     id="language"
                     value={selectedLanguage}
                     onChange={(e) =>
                       setSelectedLanguage(e.target.value as Language)
                     }
-                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                   >
                     <option value="en">{t("common.english")}</option>
                     <option value="no">{t("common.norwegian")}</option>
                   </select>
+                  <svg
+                    className="self-center col-start-1 row-start-1 mr-2 text-gray-500 pointer-events-none size-5 justify-self-end sm:size-4"
+                    viewBox="0 0 16 16"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
                 </div>
               </div>
             </div>
@@ -244,7 +256,7 @@ export default function WordSetEditor({
             {/* Words Section */}
             <div>
               <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold leading-6 text-gray-900">
+                <h3 className="font-semibold text-gray-900 text-base/7">
                   {t("wordsets.words")} ({words.length})
                 </h3>
               </div>
@@ -258,7 +270,7 @@ export default function WordSetEditor({
                       type="text"
                       value={newWord}
                       onChange={(e) => setNewWord(e.target.value)}
-                      className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                      className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                       placeholder={t("wordsets.addWord.placeholder")}
                       onKeyPress={(e) => {
                         if (e.key === "Enter") {
@@ -273,7 +285,7 @@ export default function WordSetEditor({
                       type="text"
                       value={newDefinition}
                       onChange={(e) => setNewDefinition(e.target.value)}
-                      className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                      className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                       placeholder="Definition/context (optional) - helps distinguish homophones like 'to', 'two', 'too'"
                       onKeyPress={(e) => {
                         if (e.key === "Enter") {
@@ -289,9 +301,9 @@ export default function WordSetEditor({
                     type="button"
                     onClick={handleAddWord}
                     disabled={!newWord.trim()}
-                    className="inline-flex items-center px-3 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-md shadow-sm hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="rounded-md bg-indigo-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-xs ring-1 ring-indigo-600 ring-inset hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <HeroPlusIcon className="w-4 h-4 mr-1" />
+                    <HeroPlusIcon className="inline w-4 h-4 mr-1" />
                     {t("wordsets.add")}
                   </button>
                 </div>
@@ -302,7 +314,9 @@ export default function WordSetEditor({
                 {words.length === 0 ? (
                   <div className="py-8 text-center text-gray-500">
                     <p>No words added yet</p>
-                    <p className="mt-1 text-sm">Use the form above to add words to this set</p>
+                    <p className="mt-1 text-sm">
+                      Use the form above to add words to this set
+                    </p>
                   </div>
                 ) : (
                   words.map((word) => (
@@ -321,9 +335,13 @@ export default function WordSetEditor({
                               type="text"
                               value={word.word}
                               onChange={(e) =>
-                                handleWordChange(word.id, "word", e.target.value)
+                                handleWordChange(
+                                  word.id,
+                                  "word",
+                                  e.target.value,
+                                )
                               }
-                              className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                              className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                               onKeyPress={(e) => {
                                 if (e.key === "Enter") {
                                   e.preventDefault();
@@ -345,7 +363,7 @@ export default function WordSetEditor({
                                   e.target.value,
                                 )
                               }
-                              className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                              className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                               placeholder="Definition/context (optional)"
                               onKeyPress={(e) => {
                                 if (e.key === "Enter") {

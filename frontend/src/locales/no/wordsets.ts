@@ -95,4 +95,15 @@ export const wordsets = {
   "wordsets.practice.autoplayNotice":
     "Auto-spill er begrenset på denne enheten. Trykk på lydknappen for å høre hvert ord.",
   "wordsets.practice.buttonTooltip": "Øv med flashcards",
+
+  // Status and time labels
+  "wordsets.status.new": "Ny!",
+  "wordsets.status.neverTaken": "Aldri tatt",
+  "wordsets.time.today": "I dag",
+  "wordsets.time.dayAgo": "1 dag siden",
+  "wordsets.time.daysAgo": "dager siden",
+  "wordsets.time.weekAgo": "1 uke siden",
+  "wordsets.time.weeksAgo": "uker siden",
+  "wordsets.time.monthAgo": "1 måned siden",
+  "wordsets.time.monthsAgo": "måneder siden",
 };

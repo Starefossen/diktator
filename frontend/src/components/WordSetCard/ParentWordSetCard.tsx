@@ -45,16 +45,22 @@ export function ParentWordSetCard({
   const getChildrenPerformance = () => {
     if (!familyProgress) return [];
 
-    return familyProgress.map(child => {
-      // Find the child's latest result for this wordset
-      const latestResult = child.recentResults?.find(result => result.wordSetId === wordSet.id);
-      return {
-        name: child.userName,
-        score: latestResult?.score || null,
-        attempts: child.recentResults?.filter(r => r.wordSetId === wordSet.id).length || 0,
-        lastAttempt: latestResult?.completedAt || null,
-      };
-    }).filter(child => child.score !== null || child.attempts > 0);
+    return familyProgress
+      .map((child) => {
+        // Find the child's latest result for this wordset
+        const latestResult = child.recentResults?.find(
+          (result) => result.wordSetId === wordSet.id,
+        );
+        return {
+          name: child.userName,
+          score: latestResult?.score || null,
+          attempts:
+            child.recentResults?.filter((r) => r.wordSetId === wordSet.id)
+              .length || 0,
+          lastAttempt: latestResult?.completedAt || null,
+        };
+      })
+      .filter((child) => child.score !== null || child.attempts > 0);
   };
 
   const childrenPerformance = getChildrenPerformance();
@@ -69,9 +75,14 @@ export function ParentWordSetCard({
             className="w-5 h-4"
           />
           <div>
-            <h3 className="text-xl font-semibold text-gray-800">{wordSet.name}</h3>
+            <h3 className="text-xl font-semibold text-gray-800">
+              {wordSet.name}
+            </h3>
             <p className="text-sm text-gray-500">
-              {wordSet.words.length} {wordSet.words.length === 1 ? t("results.word") : t("wordsets.words.count")}
+              {wordSet.words.length}{" "}
+              {wordSet.words.length === 1
+                ? t("results.word")
+                : t("wordsets.words.count")}
               • Created: {new Date(wordSet.createdAt).toLocaleDateString()}
             </p>
           </div>
@@ -89,19 +100,28 @@ export function ParentWordSetCard({
           </h4>
           <div className="space-y-1">
             {childrenPerformance.slice(0, 3).map((child, index) => (
-              <div key={index} className="flex items-center justify-between text-xs">
+              <div
+                key={index}
+                className="flex items-center justify-between text-xs"
+              >
                 <span className="font-medium text-gray-600">{child.name}</span>
                 <div className="flex items-center gap-2">
                   {child.score && (
-                    <span className={`px-2 py-1 rounded-full font-medium ${child.score >= 90 ? "text-green-700 bg-green-100" :
-                        child.score >= 70 ? "text-yellow-700 bg-yellow-100" :
-                          "text-red-700 bg-red-100"
-                      }`}>
+                    <span
+                      className={`px-2 py-1 rounded-full font-medium ${
+                        child.score >= 90
+                          ? "text-green-700 bg-green-100"
+                          : child.score >= 70
+                            ? "text-yellow-700 bg-yellow-100"
+                            : "text-red-700 bg-red-100"
+                      }`}
+                    >
                       {child.score}%
                     </span>
                   )}
                   <span className="text-gray-500">
-                    {child.attempts} {child.attempts === 1 ? "attempt" : "attempts"}
+                    {child.attempts}{" "}
+                    {child.attempts === 1 ? "attempt" : "attempts"}
                   </span>
                   {child.score && child.score >= 90 && <span>⬆️</span>}
                   {child.score && child.score < 70 && <span>📝</span>}
@@ -127,11 +147,14 @@ export function ParentWordSetCard({
             return (
               <span
                 key={index}
-                onClick={() => hasAudio ? onWordClick(wordItem.word, wordSet) : undefined}
-                className={`inline-flex items-center px-2 py-1 text-xs rounded transition-all duration-200 ${hasAudio
+                onClick={() =>
+                  hasAudio ? onWordClick(wordItem.word, wordSet) : undefined
+                }
+                className={`inline-flex items-center px-2 py-1 text-xs rounded transition-all duration-200 ${
+                  hasAudio
                     ? "text-blue-700 bg-blue-100 cursor-pointer hover:bg-blue-200 hover:shadow-sm"
                     : "text-gray-700 bg-gray-100"
-                  } ${isPlaying ? "ring-2 ring-blue-500 shadow-md" : ""}`}
+                } ${isPlaying ? "ring-2 ring-blue-500 shadow-md" : ""}`}
               >
                 {hasAudio && (
                   <HeroVolumeIcon className="w-3 h-3 mr-1 text-blue-500" />
@@ -163,7 +186,10 @@ export function ParentWordSetCard({
               </span>
             </div>
             <div className="w-full h-2 bg-gray-200 rounded-full">
-              <div className="h-2 rounded-full bg-amber-500 animate-pulse" style={{ width: "100%" }}></div>
+              <div
+                className="h-2 rounded-full bg-amber-500 animate-pulse"
+                style={{ width: "100%" }}
+              ></div>
             </div>
           </div>
         )}

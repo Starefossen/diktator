@@ -94,4 +94,15 @@ export const wordsets = {
   "wordsets.practice.autoplayNotice":
     "Auto-play is limited on this device. Tap the audio button to hear each word.",
   "wordsets.practice.buttonTooltip": "Practice with flashcards",
+
+  // Status and time labels
+  "wordsets.status.new": "New!",
+  "wordsets.status.neverTaken": "Never taken",
+  "wordsets.time.today": "Today",
+  "wordsets.time.dayAgo": "1 day ago",
+  "wordsets.time.daysAgo": "days ago",
+  "wordsets.time.weekAgo": "1 week ago",
+  "wordsets.time.weeksAgo": "weeks ago",
+  "wordsets.time.monthAgo": "1 month ago",
+  "wordsets.time.monthsAgo": "months ago",
 };

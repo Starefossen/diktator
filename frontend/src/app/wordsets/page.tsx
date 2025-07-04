@@ -3,7 +3,12 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { WordSet, validateTestConfiguration, TestResult, FamilyProgress } from "@/types";
+import {
+  WordSet,
+  validateTestConfiguration,
+  TestResult,
+  FamilyProgress,
+} from "@/types";
 import {
   ModelsUpdateWordSetRequest,
   ModelsCreateWordSetRequest,
@@ -18,7 +23,7 @@ import { PracticeView } from "@/components/PracticeView";
 import { TestResultsView } from "@/components/TestResultsView";
 import { SettingsModal } from "@/components/modals/SettingsModal";
 import { DeleteConfirmationModal } from "@/components/modals/DeleteConfirmationModal";
-import { HeroXMarkIcon, HeroPlusIcon } from "@/components/Icons";
+import { HeroPlusIcon } from "@/components/Icons";
 
 // Custom hooks
 import { useWordSetsData } from "@/hooks/useWordSetsData";
@@ -275,16 +280,8 @@ export default function WordSetsPage() {
               onClick={modalState.openCreateForm}
               className="flex items-center px-6 py-3 font-semibold text-white transition-all duration-200 rounded-lg shadow-lg bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 hover:shadow-xl hover:scale-105"
             >
-              <span className="mr-2">
-                {modalState.showCreateForm ? (
-                  <HeroXMarkIcon className="w-5 h-5" />
-                ) : (
-                  <HeroPlusIcon className="w-5 h-5" />
-                )}
-              </span>
-              {modalState.showCreateForm
-                ? t("wordsets.cancel")
-                : t("wordsets.create")}
+              <HeroPlusIcon className="w-5 h-5 mr-2" />
+              {t("wordsets.create")}
             </button>
           </div>
 
