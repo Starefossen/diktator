@@ -105,4 +105,11 @@ export const wordsets = {
   "wordsets.time.weeksAgo": "weeks ago",
   "wordsets.time.monthAgo": "1 month ago",
   "wordsets.time.monthsAgo": "months ago",
+
+  // Parent card specific
+  "wordsets.childrenProgress": "Children's Progress",
+  "wordsets.attempt": "attempt",
+  "wordsets.attempts": "attempts",
+  "wordsets.moreChildren": "more children",
+  "wordsets.created": "Created",
 };

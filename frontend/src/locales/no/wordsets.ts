@@ -106,4 +106,11 @@ export const wordsets = {
   "wordsets.time.weeksAgo": "uker siden",
   "wordsets.time.monthAgo": "1 måned siden",
   "wordsets.time.monthsAgo": "måneder siden",
+
+  // Parent card specific
+  "wordsets.childrenProgress": "Barnas fremgang",
+  "wordsets.attempt": "forsøk",
+  "wordsets.attempts": "forsøk",
+  "wordsets.moreChildren": "flere barn",
+  "wordsets.created": "Opprettet",
 };
