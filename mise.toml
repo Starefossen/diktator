@@ -8,6 +8,7 @@ air = "latest"
 # OpenAPI tools
 "npm:@openapitools/openapi-generator-cli" = "latest"
 python = "3.12"
+pnpm = "10"
 
 # Environment configurations
 [env]
