@@ -39,9 +39,9 @@ NEXT_PUBLIC_AUTH_MODE = "mock"
 [tasks.install]
 description = "Install all dependencies"
 run = [
-    "cd frontend && pnpm install",
-    "cd backend && go mod tidy",
-    "go install github.com/swaggo/swag/cmd/swag@latest",
+  "cd frontend && pnpm install",
+  "cd backend && go mod tidy",
+  "go install github.com/swaggo/swag/cmd/swag@latest",
 ]
 
 [tasks.dev]
@@ -313,16 +313,16 @@ run = ["cd frontend && pnpm run lint", "cd backend && go vet ./..."]
 [tasks.format]
 description = "Format code"
 run = [
-    "cd frontend && pnpm run format",
-    "cd backend && go fmt ./...",
-    "mise run tofu:fmt",
+  "cd frontend && pnpm run format",
+  "cd backend && go fmt ./...",
+  "mise run tofu:fmt",
 ]
 
 [tasks.typecheck]
 description = "Type check all code"
 run = [
-    "cd frontend && pnpm run typecheck",
-    "cd backend && go build -o /dev/null ./...",
+  "cd frontend && pnpm run typecheck",
+  "cd backend && go build -o /dev/null ./...",
 ]
 
 [tasks."frontend:knip"]
@@ -591,10 +591,10 @@ echo "✅ TypeScript client generated"
 [tasks.build]
 description = "Build for production"
 run = [
-    "mise run backend:swagger-gen",
-    "mise run config-prod",
-    "cd frontend && cp .env.production .env.local && pnpm run build",
-    "cd backend && go build -o bin/server cmd/server/main.go",
+  "mise run backend:swagger-gen",
+  "mise run config-prod",
+  "cd frontend && cp .env.production .env.local && pnpm run build",
+  "cd backend && go build -o bin/server cmd/server/main.go",
 ]
 
 [tasks."backend:build-binary"]
@@ -625,6 +625,7 @@ echo "✅ Built: diktator-api:latest (linux-${ARCH})"
 
 [tasks."frontend:docker-build"]
 description = "Build frontend Docker image with nginx"
+depends = ["frontend:config-homelab"]
 run = """
 echo "📦 Building frontend Docker image..."
 
@@ -641,12 +642,12 @@ echo "✅ Built: diktator-frontend:latest"
 [tasks.clean]
 description = "Clean build artifacts"
 run = [
-    "mise run backend:stop 2>/dev/null || true",
-    "rm -rf frontend/.next frontend/out frontend/src/generated frontend/dist",
-    "rm -rf backend/bin",
-    "rm -f frontend/.env.local backend/.env.* frontend/.env.*",
-    "rm -f .mise.env",
-    "rm -rf .tmp",
+  "mise run backend:stop 2>/dev/null || true",
+  "rm -rf frontend/.next frontend/out frontend/src/generated frontend/dist",
+  "rm -rf backend/bin",
+  "rm -f frontend/.env.local backend/.env.* frontend/.env.*",
+  "rm -f .mise.env",
+  "rm -rf .tmp",
 ]
 
 # ============================================================================
@@ -852,8 +853,8 @@ gsutil -m setmeta -h "Cache-Control:public, max-age=31536000" gs://${DIKTATOR_FR
 [tasks."ci:test"]
 description = "CI: Run all tests"
 run = [
-    "cd frontend && pnpm ci && pnpm run lint && pnpm run typecheck",
-    "cd backend && go mod tidy && go test ./... && go vet ./...",
+  "cd frontend && pnpm ci && pnpm run lint && pnpm run typecheck",
+  "cd backend && go mod tidy && go test ./... && go vet ./...",
 ]
 
 [tasks."ci:build-backend"]
@@ -935,16 +936,31 @@ run = """
   pnpm install
 """
 
+[tasks."frontend:config-homelab"]
+description = "Generate frontend build configuration for homelab Knative deployment"
+run = """
+cat > frontend/.env.production << EOF
+NEXT_PUBLIC_API_URL=https://api.diktator.fn.flaatten.org
+NEXT_PUBLIC_APP_URL=https://www.diktator.fn.flaatten.org
+NEXT_PUBLIC_AUTH_MODE=oidc
+NEXT_PUBLIC_OIDC_ISSUER_URL=https://zitadel.zitadel.fn.flaatten.org
+NEXT_PUBLIC_OIDC_CLIENT_ID=353809168672555052
+NEXT_PUBLIC_OIDC_REDIRECT_URI=https://www.diktator.fn.flaatten.org/auth/callback
+NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI=https://www.diktator.fn.flaatten.org
+NEXT_TELEMETRY_DISABLED=1
+NODE_ENV=production
+EOF
+echo "✅ Homelab config: frontend/.env.production"
+"""
+
 [tasks."homelab:build-frontend"]
 description = "Build frontend and Docker image for homelab"
-depends = ["homelab:install-frontend"]
+depends = ["homelab:install-frontend", "frontend:config-homelab"]
 run = """
-  echo "🔨 Building frontend static files..."
   cd frontend
-  # Set production API URL for static export
-  export NEXT_PUBLIC_API_URL="https://api.diktator.fn.flaatten.org"
-  export NEXT_PUBLIC_AUTH_MODE="oidc"
-  pnpm run build
+  echo "🔨 Building frontend static files..."
+  source .env.production
+  NODE_ENV=production pnpm run build
 
   echo "📦 Building and pushing Docker image..."
   BUILD_TAG=$(date +%s)
@@ -1105,12 +1121,12 @@ run = """
 [tasks."homelab:deploy"]
 description = "Deploy both backend and frontend to homelab"
 depends = [
-    "homelab:create-namespace",
-    "homelab:gcp-create-secret",
-    "homelab:apply-network-policies",
-    "homelab:db-migrate",
-    "homelab:deploy-backend",
-    "homelab:deploy-frontend",
+  "homelab:create-namespace",
+  "homelab:gcp-create-secret",
+  "homelab:apply-network-policies",
+  "homelab:db-migrate",
+  "homelab:deploy-backend",
+  "homelab:deploy-frontend",
 ]
 
 [tasks."homelab:full-deploy"]
