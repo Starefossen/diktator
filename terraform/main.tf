@@ -9,6 +9,6 @@
 # - storage.tf: Cloud Storage buckets for frontend
 # - load_balancer.tf: Load balancer, SSL certificates, and CDN
 # - cloud_run.tf: Backend API service on Cloud Run
-# - firebase.tf: Firebase and Firestore configuration
+
 # - billing.tf: Budget alerts and cost monitoring
 # - outputs.tf: Output values for other systems

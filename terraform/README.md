@@ -8,8 +8,8 @@ The Diktator application infrastructure consists of:
 
 - **Frontend**: Next.js SPA hosted on Google Cloud Storage with CDN via Global Load Balancer
 - **Backend**: Go API service running on Google Cloud Run
-- **Database**: Firebase Firestore for data storage
-- **Authentication**: Firebase Authentication for user management
+- **Database**: PostgreSQL for data storage
+- **Authentication**: OIDC for user management
 - **CI/CD**: Service account and permissions for GitHub Actions deployment
 - **Monitoring**: Optional billing budget alerts
 
@@ -27,7 +27,7 @@ terraform/
 ├── storage.tf          # Cloud Storage buckets for frontend
 ├── load_balancer.tf    # Load balancer, SSL certificates, and CDN
 ├── cloud_run.tf        # Backend API service on Cloud Run
-├── firebase.tf         # Firebase and Firestore configuration
+
 ├── billing.tf          # Budget alerts and cost monitoring (optional)
 ├── outputs.tf          # Output values for integration
 ├── terraform.tfvars    # Your project configuration (create from .example)
@@ -137,8 +137,8 @@ cd terraform && tofu show
 
 - **Google Cloud Storage**: Frontend static file hosting with global CDN
 - **Google Cloud Run**: Serverless backend API with auto-scaling
-- **Firebase Firestore**: NoSQL database for application data
-- **Firebase Authentication**: User authentication and management
+- **PostgreSQL**: Relational database for application data
+- **OIDC Authentication**: User authentication and management via identity provider
 
 ### Networking & Security
 

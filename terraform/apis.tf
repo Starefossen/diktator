@@ -11,9 +11,7 @@ resource "google_project_service" "required_apis" {
     "compute.googleapis.com",              # Compute Engine for load balancer
     "billingbudgets.googleapis.com",       # Billing and budget management
     "certificatemanager.googleapis.com",   # SSL certificate management
-    "firebase.googleapis.com",             # Firebase services
-    "firestore.googleapis.com",            # Firestore database
-    "identitytoolkit.googleapis.com",      # Firebase Authentication
+
     "texttospeech.googleapis.com"          # Text-to-Speech API for audio generation
   ])
 
