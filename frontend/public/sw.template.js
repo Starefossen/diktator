@@ -73,9 +73,8 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Skip Firebase requests and API calls
+  // Skip API calls
   if (
-    event.request.url.includes("firebase") ||
     event.request.url.includes("/api/") ||
     event.request.url.includes("googleapis")
   ) {
