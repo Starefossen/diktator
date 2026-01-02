@@ -37,6 +37,13 @@ function CallbackContent() {
       try {
         await handleCallback(code, state);
 
+        // Wait briefly for localStorage to commit and trigger storage event
+        // This ensures AuthContext can sync before we navigate
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Trigger storage event for same-tab synchronization
+        window.dispatchEvent(new Event("storage"));
+
         // Get return URL from session storage or OIDC lib, or default to wordsets
         const sessionRedirect = sessionStorage.getItem("post_auth_redirect");
         sessionStorage.removeItem("post_auth_redirect");

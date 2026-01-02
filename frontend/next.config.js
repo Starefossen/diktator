@@ -18,7 +18,14 @@ const nextConfig = {
     NEXT_PUBLIC_API_URL:
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
     NEXT_PUBLIC_APP_URL:
-      process.env.NEXT_PUBLIC_APP_URL || "https://diktator.gc.flaatten.org",
+      process.env.NEXT_PUBLIC_APP_URL || "https://www.diktator.fn.flaatten.org",
+    NEXT_PUBLIC_AUTH_MODE: process.env.NEXT_PUBLIC_AUTH_MODE || "mock",
+    NEXT_PUBLIC_OIDC_ISSUER_URL: process.env.NEXT_PUBLIC_OIDC_ISSUER_URL || "",
+    NEXT_PUBLIC_OIDC_CLIENT_ID: process.env.NEXT_PUBLIC_OIDC_CLIENT_ID || "",
+    NEXT_PUBLIC_OIDC_REDIRECT_URI:
+      process.env.NEXT_PUBLIC_OIDC_REDIRECT_URI || "",
+    NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI:
+      process.env.NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI || "",
     NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
   },
 

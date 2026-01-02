@@ -9,7 +9,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL || "https://diktator.gc.flaatten.org",
+    process.env.NEXT_PUBLIC_APP_URL || "https://www.diktator.fn.flaatten.org",
   ),
   title: "Diktator - Spelling Practice for Kids",
   description: "A fun spelling practice app for children",

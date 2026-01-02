@@ -228,6 +228,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
     checkAuth();
   }, [checkAuth]);
 
+  // Listen for storage events to detect token changes (cross-tab and manual triggers)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      checkAuth();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, [checkAuth]);
+
   useEffect(() => {
     const interval = setInterval(
       () => {

@@ -198,34 +198,69 @@ export function getAccessToken(): string | null {
   }
 
   // Check if token is expired (with 60 second buffer)
-  if (Date.now() > parseInt(expiry) - 60000) {
-    return null;
+  const expiryTime = parseInt(expiry);
+  const now = Date.now();
+
+  if (now > expiryTime - 60000) {
+    // Token is expired or expiring soon - try to refresh
+    refreshAccessToken().catch(() => {
+      // Refresh failed, token will be null on next call
+    });
+
+    // If already expired, return null
+    if (now > expiryTime) {
+      return null;
+    }
   }
 
   return token;
 }
 
 /**
- * Get stored ID token
+ * Get stored ID token (for API authentication)
+ * ID tokens from Zitadel have the correct audience claim for the client
  */
-function getIdToken(): string | null {
+export function getIdToken(): string | null {
   if (typeof window === "undefined") return null;
 
   if (isMockMode) {
     return mockToken;
   }
 
-  return localStorage.getItem(ID_TOKEN_KEY);
+  const token = localStorage.getItem(ID_TOKEN_KEY);
+  const expiry = localStorage.getItem(TOKEN_EXPIRY_KEY);
+
+  if (!token || !expiry) {
+    return null;
+  }
+
+  // Check if token is expired (with 60 second buffer)
+  const expiryTime = parseInt(expiry);
+  const now = Date.now();
+
+  if (now > expiryTime - 60000) {
+    // Token is expired or expiring soon - try to refresh
+    refreshAccessToken().catch(() => {
+      // Refresh failed, token will be null on next call
+    });
+
+    // If already expired, return null
+    if (now > expiryTime) {
+      return null;
+    }
+  }
+
+  return token;
 }
 
 /**
- * Check if user is authenticated (has valid token)
+ * Check if user is authenticated (has valid ID token)
  */
 export function isAuthenticated(): boolean {
   if (isMockMode) {
     return true;
   }
-  return getAccessToken() !== null;
+  return getIdToken() !== null;
 }
 
 /**
@@ -451,6 +486,54 @@ export async function initiateLogout(): Promise<void> {
   } else {
     // No end_session_endpoint, just redirect home
     window.location.href = oidcConfig.postLogoutRedirectUri || "/";
+  }
+}
+
+/**
+ * Refresh access token using refresh token
+ */
+async function refreshAccessToken(): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+  if (isMockMode) return true;
+
+  const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+  if (!refreshToken) {
+    return false;
+  }
+
+  try {
+    const discovery = await getDiscoveryDocument();
+    if (!discovery?.token_endpoint) {
+      return false;
+    }
+
+    const response = await fetch(discovery.token_endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: oidcConfig.clientId,
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+      }),
+    });
+
+    if (!response.ok) {
+      // Refresh failed, clear tokens
+      clearTokens();
+      return false;
+    }
+
+    const tokens: TokenResponse = await response.json();
+    storeTokens(tokens);
+
+    // Trigger storage event for AuthContext synchronization
+    window.dispatchEvent(new Event("storage"));
+
+    return true;
+  } catch (error) {
+    console.error("Token refresh failed:", error);
+    clearTokens();
+    return false;
   }
 }
 

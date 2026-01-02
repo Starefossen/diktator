@@ -95,7 +95,7 @@ const playAudioWithiOSSupport = async (
         resolve();
       };
 
-      const onErrorHandler = (event: ErrorEvent | Event) => {
+      const onErrorHandler = (_event: ErrorEvent | Event) => {
         cleanup();
         reject(new Error("Audio playback failed"));
       };
