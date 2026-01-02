@@ -20,3 +20,15 @@ output "cicd_service_account_key" {
   value       = google_service_account_key.cicd_key.private_key
   sensitive   = true
 }
+
+# Application runtime outputs
+output "app_service_account_email" {
+  description = "Application service account email for TTS and Storage"
+  value       = google_service_account.app.email
+}
+
+output "app_service_account_key" {
+  description = "Application service account key (base64 encoded, JSON format)"
+  value       = google_service_account_key.app_key.private_key
+  sensitive   = true
+}
