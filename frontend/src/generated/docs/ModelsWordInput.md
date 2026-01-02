@@ -6,15 +6,17 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **definition** | **string** |  | [optional] [default to undefined]
+**translations** | [**Array&lt;ModelsTranslation&gt;**](ModelsTranslation.md) |  | [optional] [default to undefined]
 **word** | **string** |  | [default to undefined]
 
 ## Example
 
 ```typescript
-import { ModelsWordInput } from 'diktator-api-client';
+import { ModelsWordInput } from './api';
 
 const instance: ModelsWordInput = {
     definition,
+    translations,
     word,
 };
 ```

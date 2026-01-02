@@ -6,17 +6,20 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 
 	texttospeech "cloud.google.com/go/texttospeech/apiv1"
 	"cloud.google.com/go/texttospeech/apiv1/texttospeechpb"
 	"github.com/starefossen/diktator/backend/internal/models"
+	"github.com/starefossen/diktator/backend/internal/services/cache"
 	"google.golang.org/api/option"
 )
 
 type Service struct {
 	client *texttospeech.Client
 	ctx    context.Context
+	cache  *cache.LRUCache
 }
 
 // VoiceConfig defines the voice configuration for different languages
@@ -125,9 +128,21 @@ func NewService() (*Service, error) {
 		return nil, fmt.Errorf("failed to create TTS client: %v", err)
 	}
 
+	// Get cache size from environment (default 15MB)
+	cacheSize := int64(15 * 1024 * 1024) // 15MB default
+	if cacheSizeStr := os.Getenv("TTS_CACHE_SIZE_MB"); cacheSizeStr != "" {
+		if size, err := strconv.ParseInt(cacheSizeStr, 10, 64); err == nil && size > 0 {
+			cacheSize = size * 1024 * 1024
+			log.Printf("TTS cache size set to %d MB", size)
+		}
+	} else {
+		log.Printf("TTS cache size set to default 15 MB")
+	}
+
 	return &Service{
 		client: client,
 		ctx:    ctx,
+		cache:  cache.NewLRUCache(cacheSize),
 	}, nil
 }
 
@@ -141,7 +156,27 @@ func (s *Service) GenerateAudio(word, language string) ([]byte, *models.AudioFil
 	// Normalize language code and get voice configuration
 	voiceConfig := s.getOptimalVoiceConfig(language)
 
-	log.Printf("Generating audio for word '%s' in language '%s' using voice '%s'",
+	// Generate cache key
+	cacheKey := fmt.Sprintf("%s:%s:%s", word, language, voiceConfig.VoiceName)
+
+	// Check cache first
+	if cachedAudio, found := s.cache.Get(cacheKey); found {
+		log.Printf("Cache HIT for word '%s' in language '%s'", word, language)
+
+		// Generate filename for cached audio
+		filename := s.generateFilename(word, language, voiceConfig.VoiceName)
+		audioFile := &models.AudioFile{
+			ID:       filename,
+			Word:     word,
+			Language: language,
+			VoiceID:  voiceConfig.VoiceName,
+			URL:      "",
+		}
+
+		return cachedAudio, audioFile, nil
+	}
+
+	log.Printf("Cache MISS - Generating audio for word '%s' in language '%s' using voice '%s'",
 		word, language, voiceConfig.VoiceName)
 
 	// Create the synthesis input with word normalization
@@ -160,8 +195,10 @@ func (s *Service) GenerateAudio(word, language string) ([]byte, *models.AudioFil
 	}
 
 	// Configure audio for child-friendly output
+	// Using OGG_OPUS for better browser compatibility (especially Firefox)
+	// and higher quality at similar bitrate compared to MP3
 	audioConfig := &texttospeechpb.AudioConfig{
-		AudioEncoding:   texttospeechpb.AudioEncoding_MP3,
+		AudioEncoding:   texttospeechpb.AudioEncoding_OGG_OPUS,
 		SpeakingRate:    voiceConfig.SpeakingRate,
 		Pitch:           voiceConfig.Pitch,
 		VolumeGainDb:    2.0,   // Slightly louder for clarity
@@ -200,15 +237,21 @@ func (s *Service) GenerateAudio(word, language string) ([]byte, *models.AudioFil
 
 	// Create audio file metadata
 	audioFile := &models.AudioFile{
-		ID:          filename,
-		Word:        word,
-		Language:    language,
-		VoiceID:     voiceConfig.VoiceName,
-		StoragePath: fmt.Sprintf("audio/%s", filename),
-		URL:         "", // Will be set after upload to storage
+		ID:       filename,
+		Word:     word,
+		Language: language,
+		VoiceID:  voiceConfig.VoiceName,
+		URL:      "", // Will be set after upload to storage
 	}
 
-	log.Printf("Generated audio for word '%s' in language '%s'", word, language)
+	// Store in cache
+	s.cache.Put(cacheKey, resp.AudioContent)
+
+	// Log cache stats periodically
+	items, bytes, maxBytes := s.cache.Stats()
+	log.Printf("Generated audio for word '%s' in language '%s' | Cache: %d items, %.2f MB / %.2f MB",
+		word, language, items, float64(bytes)/(1024*1024), float64(maxBytes)/(1024*1024))
+
 	return resp.AudioContent, audioFile, nil
 }
 
@@ -229,7 +272,7 @@ func (s *Service) GenerateAudioWithSSML(ssml, language string) ([]byte, error) {
 	}
 
 	audioConfig := &texttospeechpb.AudioConfig{
-		AudioEncoding:   texttospeechpb.AudioEncoding_MP3,
+		AudioEncoding:   texttospeechpb.AudioEncoding_OGG_OPUS,
 		SpeakingRate:    voiceConfig.SpeakingRate,
 		Pitch:           voiceConfig.Pitch,
 		VolumeGainDb:    2.0,
@@ -261,7 +304,7 @@ func (s *Service) generateFilename(word, language, voiceID string) string {
 	cleanWord = strings.ReplaceAll(cleanWord, ".", "")
 	cleanWord = strings.ReplaceAll(cleanWord, ",", "")
 
-	return fmt.Sprintf("%s_%s_%s.mp3", cleanWord, language, hashStr[:8])
+	return fmt.Sprintf("%s_%s_%s.ogg", cleanWord, language, hashStr[:8])
 }
 
 // ListAvailableVoices lists available voices for a language

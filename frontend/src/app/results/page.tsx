@@ -166,7 +166,7 @@ export default function ResultsPage() {
   if (loading) {
     return (
       <ProtectedRoute>
-        <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
           <div className="text-center">
             <div className="w-12 h-12 mx-auto border-b-2 border-blue-600 rounded-full"></div>
             <p className="mt-4 text-gray-600">{t("common.loading")}</p>
@@ -178,10 +178,10 @@ export default function ResultsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
         <div className="container px-4 py-8 mx-auto max-w-7xl">
           <div className="mb-8">
-            <h1 className="mb-4 text-4xl font-bold text-transparent bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text">
+            <h1 className="mb-4 text-4xl font-bold text-transparent bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text">
               {t("results.title")}
             </h1>
             <p className="text-lg text-gray-600">{t("results.desc")}</p>
@@ -483,7 +483,7 @@ export default function ResultsPage() {
               {/* Achievement Badges */}
               <div className="grid grid-cols-1 gap-6 mt-8 md:grid-cols-2">
                 {stats.averageScore >= 90 && (
-                  <div className="p-6 text-white bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl">
+                  <div className="p-6 text-white bg-linear-to-r from-yellow-400 to-orange-500 rounded-xl">
                     <div className="flex items-center space-x-3">
                       <HeroTrophyIcon className="w-10 h-10" />
                       <div>
@@ -499,7 +499,7 @@ export default function ResultsPage() {
                 )}
 
                 {stats.totalTests >= 20 && (
-                  <div className="p-6 text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl">
+                  <div className="p-6 text-white bg-linear-to-r from-purple-500 to-pink-500 rounded-xl">
                     <div className="flex items-center space-x-3">
                       <HeroTargetIcon className="w-10 h-10" />
                       <div>

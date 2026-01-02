@@ -18,7 +18,7 @@
 //	@securityDefinitions.apikey	BearerAuth
 //	@in							header
 //	@name						Authorization
-//	@description				Firebase JWT token. Format: "Bearer {token}"
+//	@description				OIDC JWT token. Format: "Bearer {token}"
 //
 //	@tag.name		health
 //	@tag.description	Health check endpoints
@@ -113,15 +113,15 @@ func main() {
 	// Swagger documentation
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// Truly public audio streaming (no auth required for browser playback)
-	r.GET("/api/wordsets/:id/audio/:audioId", handlers.StreamAudioByID)
+	// On-demand streaming for word audio (public, cached by browser, no auth required)
+	r.GET("/api/wordsets/:id/words/:word/audio", handlers.StreamWordAudio)
 
 	// API routes
 	api := r.Group("/api")
 	{
-		// Public routes - use BasicAuthMiddleware for Firebase token validation
+		// Public routes - use BasicAuthMiddleware for OIDC token validation
 		public := api.Group("")
-		public.Use(middleware.BasicAuthMiddleware(serviceManager))
+		public.Use(middleware.OIDCBasicAuthMiddleware(serviceManager.AuthValidator))
 		{
 			public.POST("/users", handlers.CreateUser)
 			public.GET("/users/profile", handlers.GetUserProfile)
@@ -129,18 +129,17 @@ func main() {
 
 		// Protected routes - require authentication
 		protected := api.Group("")
-		protected.Use(middleware.AuthMiddleware(serviceManager))
+		protected.Use(middleware.OIDCAuthMiddleware(serviceManager.AuthValidator, serviceManager.DB))
 		protected.Use(middleware.RequireFamilyAccess())
 		{
 			// Word sets
 			wordsets := protected.Group("/wordsets")
-			wordsets.Use(middleware.RequireWordSetAccess(serviceManager))
+			wordsets.Use(middleware.RequireWordSetAccess(serviceManager.DB))
 			{
 				wordsets.GET("", handlers.GetWordSets)
 				wordsets.POST("", handlers.CreateWordSet)
 				wordsets.PUT("/:id", handlers.UpdateWordSet)
 				wordsets.DELETE("/:id", handlers.DeleteWordSet)
-				wordsets.POST("/:id/generate-audio", handlers.GenerateAudio)
 				wordsets.GET("/voices", handlers.ListVoices)
 			}
 
@@ -169,7 +168,7 @@ func main() {
 
 					// Child-specific routes (with ownership verification)
 					childRoutes := parentOnly.Group("/children/:childId")
-					childRoutes.Use(middleware.RequireChildOwnership(serviceManager))
+					childRoutes.Use(middleware.RequireChildOwnership(serviceManager.DB))
 					{
 						childRoutes.PUT("", handlers.UpdateChildAccount)
 						childRoutes.DELETE("", handlers.DeleteChildAccount)

@@ -70,10 +70,10 @@ export function Navigation() {
             {/* Logo */}
             <div className="flex items-center">
               <Link href="/" className="flex items-center space-x-2 group">
-                <div className="flex items-center justify-center w-8 h-8 transition-transform duration-200 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 group-hover:scale-110">
+                <div className="flex items-center justify-center w-8 h-8 transition-transform duration-200 rounded-lg bg-linear-to-br from-blue-500 to-purple-600 group-hover:scale-110">
                   <span className="text-lg font-bold text-white">D</span>
                 </div>
-                <span className="text-xl font-bold text-transparent bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text">
+                <span className="text-xl font-bold text-transparent bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text">
                   Diktator
                 </span>
               </Link>
@@ -164,7 +164,7 @@ export function Navigation() {
                     <span className="absolute -inset-1.5" />
                     <span className="sr-only">Open user menu</span>
                     <div className="flex items-center space-x-2">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-linear-to-br from-blue-500 to-purple-600">
                         <span className="text-sm font-medium text-white">
                           {(userData?.displayName || user.email)
                             ?.charAt(0)
@@ -317,8 +317,8 @@ export function Navigation() {
         {user && (
           <div className="pt-4 pb-3 border-t border-gray-200">
             <div className="flex items-center px-4">
-              <div className="flex-shrink-0">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600">
+              <div className="shrink-0">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-600">
                   <span className="text-sm font-medium text-white">
                     {(userData?.displayName || user.email)
                       ?.charAt(0)

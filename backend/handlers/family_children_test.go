@@ -15,12 +15,12 @@ import (
 )
 
 // setupFamilyChildrenTest creates a test environment for family children tests
-func setupFamilyChildrenTest() (*gin.Engine, *MockFirestoreService, string, string) {
+func setupFamilyChildrenTest() (*gin.Engine, *MockDBService, string, string) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 
-	mockFirestore := NewMockFirestoreService()
-	mockManager := &MockServiceManager{Firestore: mockFirestore}
+	mockDB := NewMockDBService()
+	mockManager := &MockServiceManager{DB: mockDB}
 
 	testFamilyID := "family-test"
 	testParentID := "parent-test"
@@ -28,7 +28,7 @@ func setupFamilyChildrenTest() (*gin.Engine, *MockFirestoreService, string, stri
 	// Setup parent user
 	parentUser := &models.User{
 		ID:           testParentID,
-		FirebaseUID:  "firebase-parent-test",
+		AuthID:       "oidc-parent-test",
 		Email:        "parent@test.com",
 		DisplayName:  "Test Parent",
 		FamilyID:     testFamilyID,
@@ -37,7 +37,7 @@ func setupFamilyChildrenTest() (*gin.Engine, *MockFirestoreService, string, stri
 		CreatedAt:    time.Now(),
 		LastActiveAt: time.Now(),
 	}
-	mockFirestore.users[testParentID] = parentUser
+	mockDB.users[testParentID] = parentUser
 
 	// Mock authentication middleware
 	r.Use(func(c *gin.Context) {
@@ -58,7 +58,7 @@ func setupFamilyChildrenTest() (*gin.Engine, *MockFirestoreService, string, stri
 		api.GET("/families/children/:childId", MockGetChild)
 	}
 
-	return r, mockFirestore, testFamilyID, testParentID
+	return r, mockDB, testFamilyID, testParentID
 }
 
 // createSampleChild creates a sample child account for testing
@@ -99,9 +99,9 @@ func makeChildrenRequest(router *gin.Engine, method, url string, body interface{
 
 // TestFamilyChildrenInitialState tests that a family initially has no children
 func TestFamilyChildrenInitialState(t *testing.T) {
-	router, mockFirestore, familyID, _ := setupFamilyChildrenTest()
+	router, mockDB, familyID, _ := setupFamilyChildrenTest()
 
-	mockFirestore.On("GetFamilyChildren", familyID).Return([]models.ChildAccount{}, nil).Once()
+	mockDB.On("GetFamilyChildren", familyID).Return([]models.ChildAccount{}, nil).Once()
 
 	w := makeChildrenRequest(router, "GET", "/api/families/children", nil)
 
@@ -120,15 +120,15 @@ func TestFamilyChildrenInitialState(t *testing.T) {
 		assert.Empty(t, children, "Family should initially have no children")
 	}
 
-	mockFirestore.AssertExpectations(t)
+	mockDB.AssertExpectations(t)
 }
 
 // TestCreateSingleChild tests creating a single child account
 func TestCreateSingleChild(t *testing.T) {
-	router, mockFirestore, familyID, parentID := setupFamilyChildrenTest()
+	router, mockDB, familyID, parentID := setupFamilyChildrenTest()
 	child := createSampleChild(familyID, parentID, "child-1")
 
-	mockFirestore.On("CreateChild", mock.MatchedBy(func(c *models.ChildAccount) bool {
+	mockDB.On("CreateChild", mock.MatchedBy(func(c *models.ChildAccount) bool {
 		return c.ID == child.ID && c.Email == child.Email && c.FamilyID == familyID
 	})).Return(nil).Once()
 
@@ -141,22 +141,22 @@ func TestCreateSingleChild(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, response.Data, "Response should contain created child data")
 
-	mockFirestore.AssertExpectations(t)
+	mockDB.AssertExpectations(t)
 }
 
 // TestCreateAndRetrieveChild tests the complete flow of creating and then retrieving a child
 func TestCreateAndRetrieveChild(t *testing.T) {
-	router, mockFirestore, familyID, parentID := setupFamilyChildrenTest()
+	router, mockDB, familyID, parentID := setupFamilyChildrenTest()
 	child := createSampleChild(familyID, parentID, "child-1")
 
 	// Step 1: Create child
-	mockFirestore.On("CreateChild", mock.AnythingOfType("*models.ChildAccount")).Return(nil).Once()
+	mockDB.On("CreateChild", mock.AnythingOfType("*models.ChildAccount")).Return(nil).Once()
 
 	w := makeChildrenRequest(router, "POST", "/api/families/children", child)
 	assert.Equal(t, http.StatusCreated, w.Code)
 
 	// Step 2: Retrieve children and verify the created child is returned
-	mockFirestore.On("GetFamilyChildren", familyID).Return([]models.ChildAccount{child}, nil).Once()
+	mockDB.On("GetFamilyChildren", familyID).Return([]models.ChildAccount{child}, nil).Once()
 
 	w = makeChildrenRequest(router, "GET", "/api/families/children", nil)
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -173,12 +173,12 @@ func TestCreateAndRetrieveChild(t *testing.T) {
 	assert.Equal(t, child.DisplayName, childData["displayName"])
 	assert.Equal(t, child.Email, childData["email"])
 
-	mockFirestore.AssertExpectations(t)
+	mockDB.AssertExpectations(t)
 }
 
 // TestCreateMultipleChildren tests creating multiple children and retrieving them all
 func TestCreateMultipleChildren(t *testing.T) {
-	router, mockFirestore, familyID, parentID := setupFamilyChildrenTest()
+	router, mockDB, familyID, parentID := setupFamilyChildrenTest()
 
 	children := []models.ChildAccount{
 		createSampleChild(familyID, parentID, "child-1"),
@@ -187,7 +187,7 @@ func TestCreateMultipleChildren(t *testing.T) {
 
 	// Create each child
 	for _, child := range children {
-		mockFirestore.On("CreateChild", mock.MatchedBy(func(c *models.ChildAccount) bool {
+		mockDB.On("CreateChild", mock.MatchedBy(func(c *models.ChildAccount) bool {
 			return c.ID == child.ID
 		})).Return(nil).Once()
 
@@ -196,7 +196,7 @@ func TestCreateMultipleChildren(t *testing.T) {
 	}
 
 	// Retrieve all children
-	mockFirestore.On("GetFamilyChildren", familyID).Return(children, nil).Once()
+	mockDB.On("GetFamilyChildren", familyID).Return(children, nil).Once()
 
 	w := makeChildrenRequest(router, "GET", "/api/families/children", nil)
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -208,47 +208,47 @@ func TestCreateMultipleChildren(t *testing.T) {
 	retrievedChildren := response.Data.([]interface{})
 	assert.Len(t, retrievedChildren, len(children), "Should have all created children")
 
-	mockFirestore.AssertExpectations(t)
+	mockDB.AssertExpectations(t)
 }
 
 // TestUpdateChild tests updating a child account
 func TestUpdateChild(t *testing.T) {
-	router, mockFirestore, familyID, parentID := setupFamilyChildrenTest()
+	router, mockDB, familyID, parentID := setupFamilyChildrenTest()
 	child := createSampleChild(familyID, parentID, "child-1")
 
 	updatedChild := child
 	updatedChild.DisplayName = "Updated Child Name"
 	updatedChild.Email = "updated@test.com"
 
-	mockFirestore.On("UpdateChild", mock.MatchedBy(func(c *models.ChildAccount) bool {
+	mockDB.On("UpdateChild", mock.MatchedBy(func(c *models.ChildAccount) bool {
 		return c.ID == child.ID && c.DisplayName == "Updated Child Name"
 	})).Return(nil).Once()
 
 	w := makeChildrenRequest(router, "PUT", "/api/families/children/"+child.ID, updatedChild)
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	mockFirestore.AssertExpectations(t)
+	mockDB.AssertExpectations(t)
 }
 
 // TestDeleteChild tests deleting a child account
 func TestDeleteChild(t *testing.T) {
-	router, mockFirestore, familyID, parentID := setupFamilyChildrenTest()
+	router, mockDB, familyID, parentID := setupFamilyChildrenTest()
 	child := createSampleChild(familyID, parentID, "child-1")
 
-	mockFirestore.On("DeleteChild", child.ID).Return(nil).Once()
+	mockDB.On("DeleteChild", child.ID).Return(nil).Once()
 
 	w := makeChildrenRequest(router, "DELETE", "/api/families/children/"+child.ID, nil)
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	mockFirestore.AssertExpectations(t)
+	mockDB.AssertExpectations(t)
 }
 
 // TestGetSpecificChild tests retrieving a specific child by ID
 func TestGetSpecificChild(t *testing.T) {
-	router, mockFirestore, familyID, parentID := setupFamilyChildrenTest()
+	router, mockDB, familyID, parentID := setupFamilyChildrenTest()
 	child := createSampleChild(familyID, parentID, "child-1")
 
-	mockFirestore.On("GetChild", child.ID).Return(&child, nil).Once()
+	mockDB.On("GetChild", child.ID).Return(&child, nil).Once()
 
 	w := makeChildrenRequest(router, "GET", "/api/families/children/"+child.ID, nil)
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -258,37 +258,37 @@ func TestGetSpecificChild(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, response.Data)
 
-	mockFirestore.AssertExpectations(t)
+	mockDB.AssertExpectations(t)
 }
 
 // TestFamilyChildrenIsolation tests that families cannot access each other's children
 func TestFamilyChildrenIsolation(t *testing.T) {
-	router, mockFirestore, familyID, parentID := setupFamilyChildrenTest()
+	router, mockDB, familyID, parentID := setupFamilyChildrenTest()
 	children := []models.ChildAccount{createSampleChild(familyID, parentID, "child-1")}
 
 	// Mock should only be called with the correct family ID
-	mockFirestore.On("GetFamilyChildren", familyID).Return(children, nil).Once()
+	mockDB.On("GetFamilyChildren", familyID).Return(children, nil).Once()
 
 	w := makeChildrenRequest(router, "GET", "/api/families/children", nil)
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	// Verify the mock was called with the correct family ID and not with other family ID
-	mockFirestore.AssertNotCalled(t, "GetFamilyChildren", "other-family")
-	mockFirestore.AssertExpectations(t)
+	mockDB.AssertNotCalled(t, "GetFamilyChildren", "other-family")
+	mockDB.AssertExpectations(t)
 }
 
 // TestDataConsistency tests that child creation and retrieval are consistent
 func TestDataConsistency(t *testing.T) {
-	router, mockFirestore, familyID, parentID := setupFamilyChildrenTest()
+	router, mockDB, familyID, parentID := setupFamilyChildrenTest()
 	child := createSampleChild(familyID, parentID, "child-1")
 
 	// Create child
-	mockFirestore.On("CreateChild", mock.AnythingOfType("*models.ChildAccount")).Return(nil).Once()
+	mockDB.On("CreateChild", mock.AnythingOfType("*models.ChildAccount")).Return(nil).Once()
 	w := makeChildrenRequest(router, "POST", "/api/families/children", child)
 	assert.Equal(t, http.StatusCreated, w.Code)
 
 	// Immediately retrieve and verify consistency
-	mockFirestore.On("GetFamilyChildren", familyID).Return([]models.ChildAccount{child}, nil).Once()
+	mockDB.On("GetFamilyChildren", familyID).Return([]models.ChildAccount{child}, nil).Once()
 	w = makeChildrenRequest(router, "GET", "/api/families/children", nil)
 	assert.Equal(t, http.StatusOK, w.Code)
 
@@ -303,25 +303,25 @@ func TestDataConsistency(t *testing.T) {
 	assert.Equal(t, child.ID, retrievedChild["id"], "Retrieved child ID should match created child ID")
 	assert.Equal(t, child.Email, retrievedChild["email"], "Retrieved child email should match created child email")
 
-	mockFirestore.AssertExpectations(t)
+	mockDB.AssertExpectations(t)
 }
 
 // TestChildrenErrorHandling tests various error scenarios
 func TestChildrenErrorHandling(t *testing.T) {
-	router, mockFirestore, familyID, parentID := setupFamilyChildrenTest()
+	router, mockDB, familyID, parentID := setupFamilyChildrenTest()
 	child := createSampleChild(familyID, parentID, "child-1")
 
 	// Test creation failure
-	mockFirestore.On("CreateChild", mock.AnythingOfType("*models.ChildAccount")).Return(assert.AnError).Once()
+	mockDB.On("CreateChild", mock.AnythingOfType("*models.ChildAccount")).Return(assert.AnError).Once()
 	w := makeChildrenRequest(router, "POST", "/api/families/children", child)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
 	// Test retrieval failure
-	mockFirestore.On("GetFamilyChildren", familyID).Return([]models.ChildAccount{}, assert.AnError).Once()
+	mockDB.On("GetFamilyChildren", familyID).Return([]models.ChildAccount{}, assert.AnError).Once()
 	w = makeChildrenRequest(router, "GET", "/api/families/children", nil)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
-	mockFirestore.AssertExpectations(t)
+	mockDB.AssertExpectations(t)
 }
 
 // Mock handler functions for testing
@@ -330,7 +330,7 @@ func MockGetChild(c *gin.Context) {
 	childID := c.Param("childId")
 	sm := c.MustGet("serviceManager").(*MockServiceManager)
 
-	child, err := sm.Firestore.GetChild(childID)
+	child, err := sm.DB.GetChild(childID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{Error: "Failed to retrieve child"})
 		return
@@ -350,7 +350,7 @@ func MockUpdateChildAccount(c *gin.Context) {
 	child.ID = childID
 	sm := c.MustGet("serviceManager").(*MockServiceManager)
 
-	if err := sm.Firestore.UpdateChild(&child); err != nil {
+	if err := sm.DB.UpdateChild(&child); err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{Error: "Failed to update child"})
 		return
 	}

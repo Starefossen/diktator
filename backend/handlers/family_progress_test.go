@@ -15,12 +15,12 @@ import (
 )
 
 // setupFamilyProgressTest creates a test environment for family progress tests
-func setupFamilyProgressTest() (*gin.Engine, *MockFirestoreService, string, string) {
+func setupFamilyProgressTest() (*gin.Engine, *MockDBService, string, string) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 
-	mockFirestore := NewMockFirestoreService()
-	mockManager := &MockServiceManager{Firestore: mockFirestore}
+	mockDB := NewMockDBService()
+	mockManager := &MockServiceManager{DB: mockDB}
 
 	testFamilyID := "family-progress-test"
 	testParentID := "parent-progress-test"
@@ -28,7 +28,7 @@ func setupFamilyProgressTest() (*gin.Engine, *MockFirestoreService, string, stri
 	// Setup parent user
 	parentUser := &models.User{
 		ID:           testParentID,
-		FirebaseUID:  "firebase-parent-test",
+		AuthID:       "oidc-parent-test",
 		Email:        "parent@test.com",
 		DisplayName:  "Test Parent",
 		FamilyID:     testFamilyID,
@@ -37,7 +37,7 @@ func setupFamilyProgressTest() (*gin.Engine, *MockFirestoreService, string, stri
 		CreatedAt:    time.Now(),
 		LastActiveAt: time.Now(),
 	}
-	mockFirestore.users[testParentID] = parentUser
+	mockDB.users[testParentID] = parentUser
 
 	// Mock authentication middleware
 	r.Use(func(c *gin.Context) {
@@ -56,7 +56,7 @@ func setupFamilyProgressTest() (*gin.Engine, *MockFirestoreService, string, stri
 		api.GET("/families/children", MockGetFamilyChildren)
 	}
 
-	return r, mockFirestore, testFamilyID, testParentID
+	return r, mockDB, testFamilyID, testParentID
 }
 
 // MockGetFamilyProgress mocks the family progress endpoint
@@ -70,7 +70,7 @@ func MockGetFamilyProgress(c *gin.Context) {
 	mockSM := sm.(*MockServiceManager)
 	familyID, _ := c.Get("validatedFamilyID")
 
-	progress, err := mockSM.Firestore.GetFamilyProgress(familyID.(string))
+	progress, err := mockSM.DB.GetFamilyProgress(familyID.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{Error: "Failed to retrieve family progress"})
 		return
@@ -102,10 +102,10 @@ func makeProgressRequest(router *gin.Engine, method, url string, body interface{
 
 // TestFamilyProgressExcludesParent tests that family progress should NOT include parent data
 func TestFamilyProgressExcludesParent(t *testing.T) {
-	router, mockFirestore, familyID, _ := setupFamilyProgressTest()
+	router, mockDB, familyID, _ := setupFamilyProgressTest()
 
 	// Mock GetFamilyProgress to return empty array (no children, no progress)
-	mockFirestore.On("GetFamilyProgress", familyID).Return([]models.FamilyProgress{}, nil).Once()
+	mockDB.On("GetFamilyProgress", familyID).Return([]models.FamilyProgress{}, nil).Once()
 
 	w := makeProgressRequest(router, "GET", "/api/families/progress", nil)
 
@@ -118,12 +118,12 @@ func TestFamilyProgressExcludesParent(t *testing.T) {
 	progress := response.Data.([]interface{})
 	assert.Empty(t, progress, "Family progress should be empty when there are no children")
 
-	mockFirestore.AssertExpectations(t)
+	mockDB.AssertExpectations(t)
 }
 
 // TestFamilyProgressIncludesChildrenOnly tests that family progress should include children but NOT parents
 func TestFamilyProgressIncludesChildrenOnly(t *testing.T) {
-	router, mockFirestore, familyID, parentID := setupFamilyProgressTest()
+	router, mockDB, familyID, parentID := setupFamilyProgressTest()
 
 	// Create a child
 	child := models.ChildAccount{
@@ -139,7 +139,7 @@ func TestFamilyProgressIncludesChildrenOnly(t *testing.T) {
 	}
 
 	// Mock CreateChild to store the child
-	mockFirestore.On("CreateChild", mock.AnythingOfType("*models.ChildAccount")).Return(nil).Once()
+	mockDB.On("CreateChild", mock.AnythingOfType("*models.ChildAccount")).Return(nil).Once()
 
 	// Create child first
 	w := makeProgressRequest(router, "POST", "/api/families/children", child)
@@ -158,7 +158,7 @@ func TestFamilyProgressIncludesChildrenOnly(t *testing.T) {
 		RecentResults: []models.TestResult{},
 	}
 
-	mockFirestore.On("GetFamilyProgress", familyID).Return([]models.FamilyProgress{childProgress}, nil).Once()
+	mockDB.On("GetFamilyProgress", familyID).Return([]models.FamilyProgress{childProgress}, nil).Once()
 
 	w = makeProgressRequest(router, "GET", "/api/families/progress", nil)
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -176,12 +176,12 @@ func TestFamilyProgressIncludesChildrenOnly(t *testing.T) {
 	assert.Equal(t, "child", progressData["role"], "Progress should show child role, NOT parent")
 	assert.NotEqual(t, "parent", progressData["role"], "Progress should NOT include parent role")
 
-	mockFirestore.AssertExpectations(t)
+	mockDB.AssertExpectations(t)
 }
 
 // TestFamilyProgressWithMultipleChildren tests that family progress includes all children
 func TestFamilyProgressWithMultipleChildren(t *testing.T) {
-	router, mockFirestore, familyID, parentID := setupFamilyProgressTest()
+	router, mockDB, familyID, parentID := setupFamilyProgressTest()
 
 	// Create multiple children
 	children := []models.ChildAccount{
@@ -211,7 +211,7 @@ func TestFamilyProgressWithMultipleChildren(t *testing.T) {
 
 	// Create children
 	for _, child := range children {
-		mockFirestore.On("CreateChild", mock.MatchedBy(func(c *models.ChildAccount) bool {
+		mockDB.On("CreateChild", mock.MatchedBy(func(c *models.ChildAccount) bool {
 			return c.ID == child.ID
 		})).Return(nil).Once()
 
@@ -245,7 +245,7 @@ func TestFamilyProgressWithMultipleChildren(t *testing.T) {
 		},
 	}
 
-	mockFirestore.On("GetFamilyProgress", familyID).Return(progressData, nil).Once()
+	mockDB.On("GetFamilyProgress", familyID).Return(progressData, nil).Once()
 
 	w := makeProgressRequest(router, "GET", "/api/families/progress", nil)
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -265,12 +265,12 @@ func TestFamilyProgressWithMultipleChildren(t *testing.T) {
 		assert.NotEqual(t, "parent", progressData["role"], "Should not include any parent entries")
 	}
 
-	mockFirestore.AssertExpectations(t)
+	mockDB.AssertExpectations(t)
 }
 
 // TestFamilyProgressCorrectBehaviorAfterFix demonstrates the correct behavior after the bug fix
 func TestFamilyProgressCorrectBehaviorAfterFix(t *testing.T) {
-	router, mockFirestore, familyID, parentID := setupFamilyProgressTest()
+	router, mockDB, familyID, parentID := setupFamilyProgressTest()
 
 	// Create a child and simulate some test results
 	child := models.ChildAccount{
@@ -286,7 +286,7 @@ func TestFamilyProgressCorrectBehaviorAfterFix(t *testing.T) {
 	}
 
 	// Mock CreateChild
-	mockFirestore.On("CreateChild", mock.AnythingOfType("*models.ChildAccount")).Return(nil).Once()
+	mockDB.On("CreateChild", mock.AnythingOfType("*models.ChildAccount")).Return(nil).Once()
 
 	w := makeProgressRequest(router, "POST", "/api/families/children", child)
 	assert.Equal(t, http.StatusCreated, w.Code)
@@ -331,7 +331,7 @@ func TestFamilyProgressCorrectBehaviorAfterFix(t *testing.T) {
 		RecentResults: recentResults,
 	}
 
-	mockFirestore.On("GetFamilyProgress", familyID).Return([]models.FamilyProgress{expectedProgress}, nil).Once()
+	mockDB.On("GetFamilyProgress", familyID).Return([]models.FamilyProgress{expectedProgress}, nil).Once()
 
 	w = makeProgressRequest(router, "GET", "/api/families/progress", nil)
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -358,15 +358,15 @@ func TestFamilyProgressCorrectBehaviorAfterFix(t *testing.T) {
 	recentResultsData := progressData["recentResults"].([]interface{})
 	assert.Len(t, recentResultsData, 2, "Should include recent test results")
 
-	mockFirestore.AssertExpectations(t)
+	mockDB.AssertExpectations(t)
 }
 
 // TestFamilyProgressErrorHandling tests error scenarios
 func TestFamilyProgressErrorHandling(t *testing.T) {
-	router, mockFirestore, familyID, _ := setupFamilyProgressTest()
+	router, mockDB, familyID, _ := setupFamilyProgressTest()
 
 	// Test service error
-	mockFirestore.On("GetFamilyProgress", familyID).Return([]models.FamilyProgress{}, assert.AnError).Once()
+	mockDB.On("GetFamilyProgress", familyID).Return([]models.FamilyProgress{}, assert.AnError).Once()
 
 	w := makeProgressRequest(router, "GET", "/api/families/progress", nil)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
@@ -376,5 +376,5 @@ func TestFamilyProgressErrorHandling(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Contains(t, response.Error, "Failed to retrieve family progress")
 
-	mockFirestore.AssertExpectations(t)
+	mockDB.AssertExpectations(t)
 }

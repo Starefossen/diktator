@@ -18,7 +18,7 @@ Name | Type | Description | Notes
 ## Example
 
 ```typescript
-import { ModelsChildAccount } from 'diktator-api-client';
+import { ModelsChildAccount } from './api';
 
 const instance: ModelsChildAccount = {
     createdAt,

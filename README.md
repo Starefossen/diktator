@@ -2,12 +2,12 @@
 
 ![Diktator Logo](./docs/diktator-banner.png)
 
-Diktator is a web application designed to help children learn Norwegian vocabulary through gamified tests and practice modes. It features a modern frontend built with Next.js and TypeScript, a backend API in Go, and uses Firebase for authentication and real-time data storage.
+Diktator is a web application designed to help children learn Norwegian vocabulary through gamified tests and practice modes. It features a modern frontend built with Next.js and TypeScript, a backend API in Go, and uses OIDC for authentication with PostgreSQL for data storage.
 
 ## Features
 
 - 🌍 **Multilingual Support**: English and Norwegian (🇬🇧/🇳🇴)
-- 🔥 **Firebase Integration**: Authentication and real-time data storage
+- 🔐 **OIDC Authentication**: Flexible identity provider support with mock mode for development
 - 🎮 **Gamification**: Score tracking, progress monitoring, and statistics
 - 🎯 **Practice Modes**: Hover-to-reveal word practice with speech synthesis
 - 📊 **Analytics**: Detailed test results and performance tracking
@@ -15,21 +15,21 @@ Diktator is a web application designed to help children learn Norwegian vocabula
 
 ## Architecture
 
-- **Frontend**: Next.js 14 with TypeScript, Tailwind CSS, and Firebase SDK
-- **Authentication**: Firebase Auth with email/password
-- **Database**: Firestore for user data, test results, and analytics
-- **Backend**: Go with Gin HTTP framework (for future API features)
+- **Frontend**: Next.js 16 with TypeScript, Tailwind CSS
+- **Authentication**: OIDC (mock mode for development, configurable provider for production)
+- **Database**: PostgreSQL for user data, test results, and analytics
+- **Backend**: Go with Gin HTTP framework
 - **Deployment**: Google Cloud (Cloud Run + Cloud Storage)
-- **Development**: Firebase Emulators for local development
+- **Development**: Docker Compose for local services
 
 ## Quick Start
 
 ### 1. Prerequisites
 
 - Node.js 20+
-- Go 1.23+
+- Go 1.25+
+- Docker & Docker Compose
 - [mise](https://mise.jdx.dev/) (recommended for tool management)
-- Firebase CLI (installed automatically)
 
 ### 2. One-Command Setup
 
@@ -41,20 +41,21 @@ cd diktator
 # Install mise if you haven't already
 curl https://mise.run | sh
 
-# Complete setup (tools, dependencies, Firebase emulators)
+# Complete setup (tools, dependencies, PostgreSQL)
 mise run setup
 ```
 
 ### 3. Start Development
 
 ```bash
-# Start full development environment (Firebase emulators + frontend + backend)
+# Start full development environment (PostgreSQL + frontend + backend)
 mise run dev
 
 # Or start components individually:
-mise run frontend          # Frontend only (:3000)
-mise run backend          # Backend only (:8080)
-mise run firebase-emulators # Firebase emulators only
+mise run frontend:dev     # Frontend only (:3000)
+mise run backend:dev      # Backend only (:8080)
+mise run backend:start    # Backend in background
+mise run db:start         # PostgreSQL only
 ```
 
 ### 4. Quality Assurance
@@ -71,230 +72,119 @@ mise run typecheck        # TypeScript check + Go build check
 
 ### 5. Access the Application
 
-- 🌐 **Frontend**: <http://localhost:3000>
-- 🔥 **Firebase UI**: <http://localhost:4000>
-- 🔧 **Backend API**: <http://localhost:8080>
+- 🌐 **Frontend**: http://localhost:3000
+- 🔧 **Backend API**: http://localhost:8080
+- 📖 **API Docs**: http://localhost:8080/docs
+- 🗄️ **PostgreSQL**: localhost:5432
 
 ## Development URLs
 
-| Service       | URL                     | Purpose             |
-| ------------- | ----------------------- | ------------------- |
-| Frontend App  | <http://localhost:3000> | Main application    |
-| Firebase UI   | <http://localhost:4000> | Emulator management |
-| Auth Emulator | <http://localhost:9099> | Firebase Auth       |
-| Firestore     | <http://localhost:8088> | Database emulator   |
-| Backend API   | <http://localhost:8080> | Go API server       |
+| Service      | URL                        | Purpose                      |
+| ------------ | -------------------------- | ---------------------------- |
+| Frontend App | http://localhost:3000      | Main application             |
+| Backend API  | http://localhost:8080      | Go API server                |
+| API Docs     | http://localhost:8080/docs | Swagger documentation        |
+| PostgreSQL   | localhost:5432             | Database (postgres/postgres) |
 
 ## Available Tasks
 
 ### Core Development
 
 - `mise run dev` - Start full development environment
-- `mise run frontend` - Frontend development server only
-- `mise run backend` - Backend development server only
-- `mise run firebase-emulators` - Firebase emulators only
+- `mise run frontend:dev` - Frontend development server only
+- `mise run backend:dev` - Backend with hot reload (air)
+- `mise run backend:start` - Start backend in background
+- `mise run backend:stop` - Stop background backend
+- `mise run backend:restart` - Restart background backend
+- `mise run backend:logs` - View backend logs
+- `mise run backend:status` - Check backend status
+
+### Database Management
+
+- `mise run db:start` - Start PostgreSQL
+- `mise run db:stop` - Stop PostgreSQL
+- `mise run db:reset` - Reset database (destroy and recreate)
+- `mise run db:migrate` - Run database migrations
+- `mise run db:shell` - Open PostgreSQL shell
+- `mise run db:seed` - Seed database with test data
+- `mise run db:reset-seed` - Reset database and seed with fresh test data
+
+### Testing
+
+**Run All Tests:**
+- `mise run test` - All tests (lint + typecheck + backend + frontend unit tests)
+- `mise run test-all` - Complete suite including E2E tests
+- `mise run check` - Alias for `test`
+
+**Backend Tests:**
+- `mise run backend:test` - All backend tests (requires PostgreSQL)
+- `mise run backend:test-short` - Unit tests only (skip integration)
+- `mise run backend:test-coverage` - Backend tests with coverage report
+
+**Frontend Tests:**
+- `mise run frontend:test` - Frontend unit tests (Vitest)
+- `mise run frontend:test-watch` - Frontend tests in watch mode
+- `mise run frontend:test-coverage` - Frontend tests with coverage
+- `mise run frontend:test-e2e` - E2E tests with Playwright (requires running backend)
+- `mise run frontend:test-e2e-ui` - E2E tests with Playwright UI
+
+**Quick Tests:**
+- `mise run test-unit` - Unit tests only (backend + frontend, skip integration)
 
 ### Quality Assurance
 
-- `mise run test` - Run all tests and quality checks
 - `mise run lint` - Lint all code (ESLint + go vet)
 - `mise run format` - Format all code (prettier + go fmt + tofu fmt)
 - `mise run typecheck` - Type checking (TypeScript + Go build check)
+- `mise run frontend:knip` - Find unused code in frontend
+- `mise run frontend:knip-fix` - Auto-fix unused code in frontend
+
+### API Documentation
+
+- `mise run backend:swagger-gen` - Generate OpenAPI spec from Go code
+- `mise run frontend:client-gen` - Generate TypeScript client from OpenAPI
 
 ### Build & Deployment
 
 - `mise run build` - Build all components for production
-- `mise run deploy-backend` - Deploy backend to Cloud Run
-- `mise run deploy-frontend` - Deploy frontend to Cloud Storage
+- `mise run backend:docker-build` - Build backend Docker image locally
+- `mise run backend:deploy` - Deploy backend to Cloud Run
+- `mise run frontend:deploy` - Deploy frontend to Cloud Storage
 - `mise run clean` - Clean build artifacts
 
 ### Infrastructure (OpenTofu)
 
-- `mise run tofu-init` - Initialize OpenTofu
-- `mise run tofu-plan` - Plan infrastructure changes
-- `mise run tofu-apply` - Apply infrastructure changes
-- `mise run tofu-fmt` - Format Terraform/OpenTofu files
+- `mise run tofu:init` - Initialize OpenTofu
+- `mise run tofu:plan` - Plan infrastructure changes
+- `mise run tofu:apply` - Apply infrastructure changes
+- `mise run tofu:fmt` - Format Terraform/OpenTofu files
 
-### Utilities
+### Configuration
 
 - `mise run setup` - Complete project setup
-- `mise run check` - Alias for `test`
-- `mise run fmt` - Alias for `format`
+- `mise run config-dev` - Generate development configuration
+- `mise run config-prod` - Generate production configuration
+- `mise run config-load` - Load configuration from terraform
+- `mise run config-check` - Check all configuration values
 
-## Configuration Management
+## Configuration
 
-This project uses a centralized configuration system with mise environments:
+### Development Mode
 
-- **Static Config**: Application constants defined in `mise.toml`
-- **Dynamic Config**: Automatically loaded from terraform outputs
-- **Environment Files**: Generated for Next.js production builds
+In development, the app runs with:
+- **AUTH_MODE=mock**: Authentication is mocked, no real OIDC provider needed
+- **PostgreSQL**: Running in Docker on localhost:5432
+- **Storage**: Mock storage or local GCS credentials
 
-```bash
-# Load current configuration
-mise run config-load
+### Production Mode
 
-# Check all configuration values
-mise run config-check
+For production, configure:
+- **AUTH_MODE=oidc**: Real OIDC provider (Keycloak, Auth0, etc.)
+- **DATABASE_URL**: Production PostgreSQL connection string
+- **OIDC_ISSUER_URL**: Your OIDC provider URL
+- **OIDC_AUDIENCE**: Expected token audience
 
-# Generate production environment
-mise run env-production
-```
-
-For detailed information, see [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
-mise run dev
-
-````
-
-This will start both frontend (<http://localhost:3000>) and backend (<http://localhost:8080>).
-
-### Google Cloud Setup
-
-```bash
-# Authenticate with Google Cloud
-mise run gcloud-auth
-
-# Set your project
-mise run gcloud-set-project -- your-project-id
-
-# Enable required APIs
-mise run gcloud-enable-apis
-
-# Check environment
-mise run env-check
-````
-
-### Manual Setup
-
-#### Frontend Development
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The frontend will be available at `http://localhost:3000`.
-
-#### Backend Development
-
-```bash
-cd backend
-go mod tidy
-go run cmd/server/main.go
-```
-
-The backend API will be available at `http://localhost:8080`.
-
-### Testing
-
-**With mise:**
-
-```bash
-mise run test          # Run all tests
-mise run test-frontend # Frontend only
-mise run test-backend  # Backend only
-```
-
-**Manual:**
-
-**Frontend:**
-
-```bash
-cd frontend
-npm run lint
-npm run type-check
-```
-
-**Backend:**
-
-```bash
-cd backend
-go test ./...
-go vet ./...
-```
-
-## Deployment
-
-### Infrastructure Setup
-
-The infrastructure uses OpenTofu (open-source Terraform) with a well-organized file structure for maintainability.
-
-**Quick Setup (recommended):**
-
-```bash
-# Automatic setup using your current gcloud project
-mise run tofu-auto-setup
-mise run tofu-init
-mise run tofu-apply
-```
-
-**Manual Setup:**
-
-```bash
-# Create configuration template
-mise run tofu-setup
-# Edit terraform/terraform.tfvars with your project details
-mise run tofu-init
-mise run tofu-apply
-```
-
-The infrastructure configuration is organized into logical files:
-
-- `versions.tf` - Provider configurations and version constraints
-- `variables.tf` - Input variables and configuration
-- `apis.tf` - Google Cloud API enablement
-- `iam.tf` - Service accounts and permissions
-- `storage.tf` - Frontend static file hosting
-- `load_balancer.tf` - HTTPS load balancer with CDN
-- `cloud_run.tf` - Backend API service
-- `firebase.tf` - Authentication and database
-- `billing.tf` - Cost monitoring (optional)
-- `outputs.tf` - Integration values
-
-For detailed infrastructure documentation, see [terraform/README.md](terraform/README.md).
-
-### Application Deployment
-
-After the infrastructure is set up, deploy the applications:
-
-**Deploy Backend:**
-
-```bash
-# Start Docker Desktop (open the Docker Desktop application)
-# Verify Docker is running:
-docker ps
-
-# Configure Docker for GCR (one-time setup)
-gcloud auth configure-docker
-
-# Build and deploy the backend (automatically builds for linux/amd64)
-mise run deploy-backend
-```
-
-**Deploy Frontend:**
-
-```bash
-mise run deploy-frontend
-```
-
-See [terraform/README.md](terraform/README.md) for detailed instructions.
-
-### Automated Deployment
-
-Deployment is automated via GitHub Actions using mise tasks:
-
-- Backend deploys to Google Cloud Run on changes to `backend/`
-- Frontend deploys to Google Cloud Storage on changes to `frontend/`
-
-### Required Secrets
-
-Configure these secrets in your GitHub repository (get values from `tofu output`):
-
-- `GCP_SA_KEY`: Google Cloud Service Account JSON key
-- `GCP_PROJECT_ID`: Google Cloud Project ID
-- `GCP_FRONTEND_BUCKET`: Cloud Storage bucket name for frontend
-
-See [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md) for detailed environment variable documentation.
+See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for detailed configuration options.
 
 ## Project Structure
 
@@ -303,25 +193,72 @@ See [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md) for detailed environment variable
 ├── backend/                 # Go API server
 │   ├── cmd/server/         # Application entrypoint
 │   ├── handlers/           # HTTP handlers
+│   ├── internal/           # Private application code
+│   │   ├── middleware/     # HTTP middleware (auth)
+│   │   ├── models/         # Data models
+│   │   └── services/       # Business logic (db, tts, storage)
+│   ├── docs/               # Swagger documentation
 │   └── Dockerfile          # Backend container
 ├── frontend/               # Next.js application
 │   ├── src/               # Source code
+│   │   ├── app/           # Next.js App Router pages
+│   │   ├── components/    # React components
+│   │   ├── contexts/      # Auth context (OIDC)
+│   │   └── lib/           # Utilities and API clients
 │   └── public/            # Static assets
 ├── terraform/             # Infrastructure as Code (OpenTofu)
-│   ├── main.tf            # Entry point and documentation
-│   ├── versions.tf        # Provider configurations
-│   ├── variables.tf       # Input variables
-│   ├── apis.tf           # API enablement
-│   ├── iam.tf            # Service accounts & permissions
-│   ├── storage.tf        # Frontend hosting (Cloud Storage)
-│   ├── load_balancer.tf  # HTTPS load balancer & CDN
-│   ├── cloud_run.tf      # Backend service (Cloud Run)
-│   ├── firebase.tf       # Authentication & database
-│   ├── billing.tf        # Cost monitoring (optional)
-│   └── outputs.tf        # Integration values
+├── migrations/            # Database migrations
 ├── docs/                  # Documentation
+├── docker-compose.dev.yml # Local development services
+├── mise.toml              # Task runner configuration
 └── .github/workflows/     # CI/CD pipelines
 ```
+
+## Authentication Flow
+
+### Development (Mock Mode)
+1. Set `AUTH_MODE=mock` in backend
+2. Set `NEXT_PUBLIC_AUTH_MODE=mock` in frontend
+3. Any login credentials work, creating a mock user session
+
+### Production (OIDC)
+1. Configure OIDC provider (Keycloak, Auth0, Okta, etc.)
+2. Set `AUTH_MODE=oidc` with `OIDC_ISSUER_URL` and `OIDC_AUDIENCE`
+3. Frontend redirects to OIDC provider for login
+4. Backend validates JWT tokens from provider
+
+## Deployment
+
+### Infrastructure Setup
+
+The infrastructure uses OpenTofu (open-source Terraform):
+
+```bash
+# Setup using your current gcloud project
+mise run tofu:init
+mise run tofu:plan
+mise run tofu:apply
+```
+
+### Application Deployment
+
+```bash
+# Deploy backend to Cloud Run
+mise run backend:deploy
+
+# Deploy frontend to Cloud Storage
+mise run frontend:deploy
+```
+
+### Required Secrets
+
+Configure these secrets in your GitHub repository:
+
+- `GCP_SA_KEY`: Google Cloud Service Account JSON key
+- `GCP_PROJECT_ID`: Google Cloud Project ID
+- `GCP_FRONTEND_BUCKET`: Cloud Storage bucket name for frontend
+
+See [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md) for detailed environment variable documentation.
 
 ## Contributing
 
@@ -335,58 +272,3 @@ For AI assistance, see [GitHub Copilot Instructions](.github/copilot_instruction
 ## License
 
 MIT
-
-### Available mise Tasks
-
-**Development:**
-
-```bash
-mise run dev                # Start both frontend & backend
-mise run dev-frontend-only  # Frontend only
-mise run dev-backend-only   # Backend only
-mise run install            # Install all dependencies
-mise run clean              # Clean build artifacts
-```
-
-**Testing & Quality:**
-
-```bash
-mise run test               # Run all tests
-mise run test-frontend      # Frontend tests only
-mise run test-backend       # Backend tests only
-mise run check              # All linting and tests
-mise run fmt                # Format all code
-```
-
-**Google Cloud:**
-
-```bash
-mise run gcloud-auth        # Authenticate with Google Cloud
-mise run gcloud-set-project # Set GCP project
-mise run gcloud-enable-apis # Enable required APIs
-mise run env-check          # Check environment variables
-```
-
-**Local Deployment:**
-
-```bash
-mise run docker-build       # Build Docker image locally
-mise run docker-run         # Run backend container
-mise run deploy-backend     # Deploy to Cloud Run
-mise run deploy-frontend    # Deploy to Cloud Storage
-```
-
-**Infrastructure:**
-
-```bash
-mise run tofu-setup          # Create terraform.tfvars template
-mise run tofu-auto-setup     # Auto-setup using gcloud project
-mise run tofu-init           # Initialize OpenTofu
-mise run tofu-plan           # Plan infrastructure changes
-mise run tofu-apply          # Apply infrastructure
-mise run tofu-destroy        # Destroy infrastructure
-mise run tofu-output         # Show outputs
-mise run tofu-validate       # Validate configuration
-```
-
-> **Note**: Infrastructure setup (`tofu apply`) and application deployment are separate steps. The OpenTofu configuration creates the infrastructure with a placeholder image, and then you deploy your actual application code using the mise deployment tasks. Docker images are automatically built for the correct architecture (linux/amd64) for Cloud Run compatibility.

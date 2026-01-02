@@ -1,953 +1,894 @@
 [tools]
-firebase = "latest"
-go = "1.23"
-node = "20"
+go = "1.25"
+node = "24"
 opentofu = "latest"
-# Air for Go hot reloading
 air = "latest"
-# OpenAPI tools
-"npm:@openapitools/openapi-generator-cli" = "latest"
-python = "3.12"
 pnpm = "10"
 
-# Environment configurations
+# ============================================================================
+# Environment Configuration
+# ============================================================================
 [env]
-# === GLOBAL STATIC CONFIGURATION ===
-# These values are the same across all environments
+# Static configuration - same across all environments
 DIKTATOR_APP_NAME = "diktator"
 DIKTATOR_API_SERVICE_NAME = "diktator-api"
 DIKTATOR_DEFAULT_REGION = "europe-north1"
 DIKTATOR_BUCKET_LOCATION = "EU"
 
-# === DEVELOPMENT ENVIRONMENT ===
-# Backend configuration for development
-NODE_ENV = "development"
+# Development environment defaults
 GOOGLE_CLOUD_PROJECT = "diktator-dev"
 GOOGLE_CLOUD_QUOTA_PROJECT = "diktator-app"
 STORAGE_BUCKET = "diktator-dev.appspot.com"
 GIN_MODE = "debug"
 
-# Firebase Emulator hosts (backend services)
-FIREBASE_AUTH_EMULATOR_HOST = "localhost:9099"
-FIRESTORE_EMULATOR_HOST = "localhost:8088"
-FIREBASE_STORAGE_EMULATOR_HOST = "localhost:9199"
+# PostgreSQL configuration
+DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/diktator?sslmode=disable"
+DATABASE_TEST_URL = "postgresql://postgres:postgres@localhost:5432/diktator_test?sslmode=disable"
 
-# Frontend configuration for development
+# Authentication - mock mode for development
+AUTH_MODE = "mock"
+
+# Frontend configuration
 NEXT_PUBLIC_API_URL = "http://localhost:8080"
-NEXT_PUBLIC_FIREBASE_USE_EMULATOR = "true"
-NEXT_PUBLIC_FIREBASE_PROJECT_ID = "diktator-dev"
-NEXT_PUBLIC_FIREBASE_API_KEY = "demo-key"
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN = "diktator-dev.firebaseapp.com"
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET = "diktator-dev.appspot.com"
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID = "123456789"
-NEXT_PUBLIC_FIREBASE_APP_ID = "1:123456789:web:abcdef"
+NEXT_PUBLIC_AUTH_MODE = "mock"
 
-# Core development tasks
+# ============================================================================
+# Development Tasks
+# ============================================================================
+
 [tasks.install]
 description = "Install all dependencies"
 run = [
-  "cd frontend && npm install",
-  "cd backend && go mod tidy",
-  "go install github.com/swaggo/swag/cmd/swag@latest",
+    "cd frontend && pnpm install",
+    "cd backend && go mod tidy",
+    "go install github.com/swaggo/swag/cmd/swag@latest",
 ]
 
 [tasks.dev]
-description = "Start full development environment (Firebase emulators + frontend + backend with auto-reload)"
+description = "Start full development environment (PostgreSQL + frontend + backend)"
 run = """
-echo "Starting full development environment..."
-echo "This will start:"
-echo "  - Firebase emulators (Auth: :9099, Firestore: :8088, UI: :4000)"
-echo "  - Frontend dev server (:3000)"
-echo "  - Backend API server with auto-reload (:8080)"
-echo ""
+echo "🚀 Starting full development environment..."
 
-# Ensure development config exists
-if [ ! -f backend/.env.development ] || [ ! -f frontend/.env.development ]; then
-    echo "Setting up development configuration..."
+# Ensure config exists
+if [ ! -f backend/.env.development ]; then
+    echo "📝 Generating development config..."
     mise run config-dev
 fi
 
-# Start Firebase emulators in background
-mise run firebase-emulators &
-FIREBASE_PID=$!
-echo "Firebase emulators started with PID: $FIREBASE_PID"
+# Ensure dependencies are installed
+if [ ! -d frontend/node_modules ] || [ ! -f backend/go.sum ]; then
+    echo "📦 Installing dependencies..."
+    mise run install
+fi
 
-# Wait for Firebase emulators to start
+# Start PostgreSQL
+echo "🐘 Starting PostgreSQL..."
+docker compose -f docker-compose.dev.yml up -d
 sleep 3
 
+# Run migrations
+echo "🗄️  Running database migrations..."
+mise run db:migrate
+
 # Start backend with air (hot reload) in background
+echo "🔧 Starting backend with hot reload..."
 cd backend && set -a && source .env.development && set +a && air &
 BACKEND_PID=$!
-echo "Backend started with auto-reload, PID: $BACKEND_PID"
+sleep 3
 
-# Wait a moment for backend to start
-sleep 2
-
-# Start frontend (this will block)
-cd frontend && cp .env.development .env.local && npm run dev
-
-# Cleanup function
-cleanup() {
-    echo "Stopping services..."
-    kill $FIREBASE_PID 2>/dev/null || true
-    kill $BACKEND_PID 2>/dev/null || true
-}
-trap cleanup EXIT
-"""
-
-[tasks.frontend]
-description = "Start frontend development server only"
-run = """
-# Ensure development config exists
-if [ ! -f frontend/.env.development ]; then
-    echo "Setting up development configuration..."
-    mise run config-dev
+# Check if backend started successfully
+if ! kill -0 $BACKEND_PID 2>/dev/null; then
+    echo "❌ Backend failed to start"
+    exit 1
 fi
 
+echo "✅ Backend started (PID: $BACKEND_PID)"
+
+# Start frontend
+echo "⚛️  Starting frontend..."
+cd frontend && cp .env.development .env.local && pnpm run dev
+
+# Cleanup on exit
+cleanup() {
+    echo ""
+    echo "🛑 Stopping services..."
+    kill $BACKEND_PID 2>/dev/null || true
+    docker compose -f docker-compose.dev.yml down
+}
+trap cleanup EXIT INT TERM
+"""
+
+[tasks."frontend:dev"]
+description = "Start frontend development server"
+run = """
+if [ ! -f frontend/.env.development ]; then
+    mise run config-dev
+fi
 cd frontend
 cp .env.development .env.local
-npm run dev
+pnpm run dev
 """
 
-[tasks.backend]
-description = "Start backend development server with auto-reload"
+[tasks."backend:dev"]
+description = "Start backend with hot reload (air)"
 run = """
-# Ensure development config exists
 if [ ! -f backend/.env.development ]; then
-    echo "Setting up development configuration..."
     mise run config-dev
 fi
-
 cd backend
 set -a && source .env.development && set +a && air
 """
 
-# Quality assurance tasks
+# ============================================================================
+# Backend Service Management
+# ============================================================================
+
+[tasks."backend:start"]
+description = "Start backend in background"
+run = """
+mkdir -p .tmp
+
+if [ -f .tmp/backend.pid ] && kill -0 $(cat .tmp/backend.pid) 2>/dev/null; then
+    echo "⚠️  Backend already running (PID: $(cat .tmp/backend.pid))"
+    exit 0
+fi
+
+if [ ! -f backend/.env.development ]; then
+    mise run config-dev
+fi
+
+# Ensure PostgreSQL is running
+if ! docker compose -f docker-compose.dev.yml ps postgres 2>/dev/null | grep -q "running"; then
+    echo "🐘 Starting PostgreSQL..."
+    docker compose -f docker-compose.dev.yml up -d postgres
+    sleep 3
+fi
+
+echo "🚀 Starting backend..."
+cd backend
+set -a && source .env.development && set +a
+nohup go run cmd/server/main.go > ../.tmp/backend.log 2>&1 &
+echo $! > ../.tmp/backend.pid
+cd ..
+
+sleep 3
+if kill -0 $(cat .tmp/backend.pid) 2>/dev/null; then
+    echo "✅ Backend started (PID: $(cat .tmp/backend.pid))"
+    echo "   Logs: .tmp/backend.log"
+    curl -s http://localhost:8080/health | head -c 100
+    echo ""
+else
+    echo "❌ Backend failed to start"
+    tail -20 .tmp/backend.log
+    exit 1
+fi
+"""
+
+[tasks."backend:stop"]
+description = "Stop backend"
+run = """
+if [ -f .tmp/backend.pid ]; then
+    PID=$(cat .tmp/backend.pid)
+    if kill -0 $PID 2>/dev/null; then
+        echo "Stopping backend (PID: $PID)..."
+        kill $PID
+        sleep 1
+        kill -0 $PID 2>/dev/null && kill -9 $PID
+        echo "✅ Backend stopped"
+    fi
+    rm -f .tmp/backend.pid
+else
+    lsof -ti:8080 | xargs kill -9 2>/dev/null || true
+fi
+"""
+
+[tasks."backend:logs"]
+description = "View backend logs"
+run = """
+if [ -f .tmp/backend.log ]; then
+    tail -f .tmp/backend.log
+else
+    echo "No log file found. Start backend with 'mise run backend:start'"
+fi
+"""
+
+[tasks."backend:status"]
+description = "Check backend status"
+run = """
+if [ -f .tmp/backend.pid ] && kill -0 $(cat .tmp/backend.pid) 2>/dev/null; then
+    echo "✅ Backend running (PID: $(cat .tmp/backend.pid))"
+    curl -s http://localhost:8080/health 2>/dev/null || echo "❌ Not responding"
+else
+    echo "❌ Backend not running"
+fi
+"""
+
+[tasks."backend:restart"]
+description = "Restart backend"
+run = "mise run backend:stop && sleep 1 && mise run backend:start"
+
+# ============================================================================
+# Database Tasks
+# ============================================================================
+
+[tasks."db:start"]
+description = "Start PostgreSQL"
+run = """
+docker compose -f docker-compose.dev.yml up -d
+echo "PostgreSQL started at localhost:5432"
+"""
+
+[tasks."db:stop"]
+description = "Stop PostgreSQL"
+run = "docker compose -f docker-compose.dev.yml down"
+
+[tasks."db:reset"]
+description = "Reset database (destroy and recreate)"
+run = """
+echo "WARNING: This will delete all data!"
+read -p "Are you sure? (y/N): " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    docker compose -f docker-compose.dev.yml down -v
+    docker compose -f docker-compose.dev.yml up -d
+    sleep 3
+    mise run db:migrate
+fi
+"""
+
+[tasks."db:migrate"]
+description = "Run database migrations"
+run = """
+echo "Running database migrations..."
+for migration in migrations/*_*.up.sql; do
+    if [ -f "$migration" ]; then
+        echo "Applying $(basename "$migration") to diktator..."
+        docker compose -f docker-compose.dev.yml exec -T postgres psql -U postgres -d diktator < "$migration"
+    fi
+done
+echo "✅ All migrations completed."
+"""
+
+[tasks."db:migrate-test"]
+description = "Run database migrations on test database"
+run = """
+echo "Running test database migrations..."
+for migration in migrations/*_*.up.sql; do
+    if [ -f "$migration" ]; then
+        echo "Applying $(basename "$migration") to diktator_test..."
+        docker compose -f docker-compose.dev.yml exec -T postgres psql -U postgres -d diktator_test < "$migration"
+    fi
+done
+echo "✅ Test database migrations completed."
+"""
+
+[tasks."db:reset-test"]
+description = "Reset test database (destroy and recreate)"
+run = """
+echo "Resetting test database..."
+docker compose -f docker-compose.dev.yml exec -T postgres psql -U postgres -c "DROP DATABASE IF EXISTS diktator_test;"
+docker compose -f docker-compose.dev.yml exec -T postgres psql -U postgres -c "CREATE DATABASE diktator_test;"
+sleep 1
+mise run db:migrate-test
+echo "✅ Test database reset complete."
+"""
+
+[tasks."db:shell"]
+description = "Open PostgreSQL shell"
+run = "docker compose -f docker-compose.dev.yml exec postgres psql -U postgres -d diktator"
+
+[tasks."db:seed"]
+description = "Seed database with test data"
+run = """
+echo "🌱 Seeding database with test data..."
+(cd backend && go run cmd/seed/main.go)
+"""
+
+[tasks."db:reset-seed"]
+description = "Reset database and seed with fresh test data"
+run = """
+echo "🔄 Resetting database..."
+mise run db:reset
+
+echo "⏳ Waiting for database..."
+sleep 5
+
+echo "🗄️  Running migrations..."
+mise run db:migrate
+
+echo "🌱 Seeding test data..."
+(cd backend && go run cmd/seed/main.go)
+
+echo "✅ Database reset and seeded!"
+"""
+
+# ============================================================================
+# Code Quality
+# ============================================================================
+
 [tasks.lint]
-description = "Run linting for all components"
-run = ["cd frontend && npm run lint", "cd backend && go vet ./..."]
+description = "Run linters"
+run = ["cd frontend && pnpm run lint", "cd backend && go vet ./..."]
 
 [tasks.format]
-description = "Format all code"
+description = "Format code"
 run = [
-  "cd frontend && npm run format",
-  "cd backend && go fmt ./...",
-  "mise run tofu-fmt",
+    "cd frontend && pnpm run format",
+    "cd backend && go fmt ./...",
+    "mise run tofu:fmt",
 ]
 
 [tasks.typecheck]
-description = "Run type checking for all components"
+description = "Type check all code"
 run = [
-  "cd frontend && npm run typecheck",
-  "cd backend && go build -o /dev/null ./...",
+    "cd frontend && pnpm run typecheck",
+    "cd backend && go build -o /dev/null ./...",
 ]
 
-[tasks.test]
-description = "Run all tests and checks"
+[tasks."frontend:knip"]
+description = "Find unused code in frontend"
+run = "cd frontend && pnpm run knip"
+
+[tasks."frontend:knip-fix"]
+description = "Auto-fix unused code in frontend"
+run = "cd frontend && pnpm run knip:fix"
+
+[tasks."frontend:check"]
+description = "Run all frontend checks (typecheck, lint:fix, format, knip:fix, test) with auto-fixing"
+run = "cd frontend && pnpm run check"
+
+[tasks."frontend:build"]
+description = "Build frontend for production"
 run = """
-echo "🧪 Running tests and checks..."
+cd frontend
+cp .env.production .env.local 2>/dev/null || true
+NODE_ENV=production pnpm run build
+"""
 
-# Check if Firebase emulator is running, start if not
-if ! pgrep -f "firebase.*emulators:start" > /dev/null; then
-    echo "🔥 Firebase emulator not running, starting it without persistence for testing..."
-    mise run firebase-emulators --no-persist &
-    FIREBASE_PID=$!
-    echo "Firebase emulators started with PID: $FIREBASE_PID"
+[tasks."backend:check"]
+description = "Run all backend checks (fmt, vet, test) with auto-fixing"
+run = """
+echo "🔧 Running backend checks..."
+echo ""
+echo "📝 Formatting code..."
+(cd backend && go fmt ./...)
 
-    # Wait for Firebase emulators to start
-    echo "Waiting for Firebase emulators to be ready..."
-    sleep 5
+echo ""
+echo "🔍 Running go vet..."
+(cd backend && go vet ./...)
 
-    # Set flag to stop emulator after tests
-    STARTED_EMULATOR=true
-else
-    echo "✅ Firebase emulator is already running"
-    STARTED_EMULATOR=false
+echo ""
+echo "🧪 Running tests..."
+
+if ! docker compose -f docker-compose.dev.yml ps postgres 2>/dev/null | grep -q "running"; then
+    echo "🐘 Starting PostgreSQL..."
+    docker compose -f docker-compose.dev.yml up -d postgres
+    sleep 3
 fi
 
-# Run the actual tests
-echo "Running linting..."
+# Run migrations on test database
+echo "🗄️  Running test database migrations..."
+for migration in migrations/*_*.up.sql; do
+    if [ -f "$migration" ]; then
+        docker compose -f docker-compose.dev.yml exec -T postgres psql -U postgres -d diktator_test < "$migration" 2>/dev/null || true
+    fi
+done
+
+(cd backend && DATABASE_URL="${DATABASE_TEST_URL}" go test ./...)
+
+echo ""
+echo "✅ All backend checks passed!"
+"""
+
+[tasks.test]
+description = "Run all tests (backend + frontend unit tests)"
+run = """
+echo "🧪 Running all tests..."
+
+# Ensure PostgreSQL is running
+if ! docker compose -f docker-compose.dev.yml ps postgres 2>/dev/null | grep -q "running"; then
+    echo "🐘 Starting PostgreSQL..."
+    docker compose -f docker-compose.dev.yml up -d postgres
+    sleep 3
+fi
+
+echo ""
+echo "📋 Running linters..."
 mise run lint
 
-echo "Running type checking..."
+echo ""
+echo "🔍 Type checking..."
 mise run typecheck
 
-echo "Running backend tests..."
-cd backend && go test ./...
-
-# Stop emulator if we started it
-if [ "$STARTED_EMULATOR" = "true" ]; then
-    echo "🛑 Stopping Firebase emulator that was started for testing..."
-
-    # First try to gracefully stop the emulator
-    if kill -TERM $FIREBASE_PID 2>/dev/null; then
-        echo "Sent graceful shutdown signal to Firebase emulator..."
-
-        # Wait for graceful shutdown (up to 10 seconds)
-        for i in {1..10}; do
-            if ! kill -0 $FIREBASE_PID 2>/dev/null; then
-                echo "Firebase emulator stopped gracefully"
-                break
-            fi
-            sleep 1
-        done
-
-        # If still running after 10 seconds, force kill
-        if kill -0 $FIREBASE_PID 2>/dev/null; then
-            echo "Force stopping Firebase emulator..."
-            kill -KILL $FIREBASE_PID 2>/dev/null || true
-        fi
-    else
-        echo "Firebase emulator process already stopped"
+echo ""
+echo "🔧 Backend tests..."
+echo "🗄️  Preparing test database..."
+for migration in migrations/*_*.up.sql; do
+    if [ -f "$migration" ]; then
+        docker compose -f docker-compose.dev.yml exec -T postgres psql -U postgres -d diktator_test < "$migration" 2>/dev/null || true
     fi
+done
+(cd backend && DATABASE_URL="${DATABASE_TEST_URL}" go test ./...)
 
-    # Additional cleanup for any remaining firebase processes
-    pkill -f "firebase.*emulators:start" 2>/dev/null || true
-fi
+echo ""
+echo "⚛️  Frontend unit tests..."
+(cd frontend && pnpm test)
 
-echo "✅ All tests completed successfully!"
+echo ""
+echo "✅ All tests passed!"
 """
 
-# OpenAPI tasks
-[tasks.swagger-gen]
-description = "Generate OpenAPI documentation from Go annotations"
+[tasks.test-unit]
+description = "Run unit tests only (skip integration tests)"
 run = """
-echo "🔨 Generating OpenAPI specification..."
+echo "🧪 Running unit tests..."
+
+echo ""
+echo "🔧 Backend unit tests..."
+(cd backend && go test -short ./...)
+
+echo ""
+echo "⚛️  Frontend unit tests..."
+(cd frontend && pnpm test)
+
+echo "✅ Unit tests passed!"
+"""
+
+[tasks."backend:test"]
+description = "Run backend tests"
+run = """
+echo "🔧 Running backend tests..."
+
+# Ensure PostgreSQL is running for integration tests
+if ! docker compose -f docker-compose.dev.yml ps postgres 2>/dev/null | grep -q "running"; then
+    echo "🐘 Starting PostgreSQL..."
+    docker compose -f docker-compose.dev.yml up -d postgres
+    sleep 3
+fi
+
+# Run migrations on test database
+echo "🗄️  Running test database migrations..."
+for migration in migrations/*_*.up.sql; do
+    if [ -f "$migration" ]; then
+        docker compose -f docker-compose.dev.yml exec -T postgres psql -U postgres -d diktator_test < "$migration" 2>/dev/null || true
+    fi
+done
+
+(cd backend && DATABASE_URL="${DATABASE_TEST_URL}" go test -v ./...)
+"""
+
+[tasks."backend:test-short"]
+description = "Run backend tests without integration tests"
+run = "(cd backend && go test -short -v ./...)"
+
+[tasks."backend:test-coverage"]
+description = "Run backend tests with coverage"
+run = """
+echo "🔧 Running backend tests with coverage..."
+
+if ! docker compose -f docker-compose.dev.yml ps postgres 2>/dev/null | grep -q "running"; then
+    echo "🐘 Starting PostgreSQL..."
+    docker compose -f docker-compose.dev.yml up -d postgres
+    sleep 3
+fi
+
+# Run migrations on test database
+for migration in migrations/*_*.up.sql; do
+    if [ -f "$migration" ]; then
+        docker compose -f docker-compose.dev.yml exec -T postgres psql -U postgres -d diktator_test < "$migration" 2>/dev/null || true
+    fi
+done
+
+(cd backend && \
+    DATABASE_URL="${DATABASE_TEST_URL}" go test -coverprofile=coverage.out ./... && \
+    go tool cover -html=coverage.out -o coverage.html)
+echo "✅ Coverage report: backend/coverage.html"
+"""
+
+[tasks."frontend:test"]
+description = "Run frontend unit tests"
+run = "(cd frontend && pnpm test)"
+
+[tasks."frontend:test-watch"]
+description = "Run frontend tests in watch mode"
+run = "(cd frontend && pnpm test:watch)"
+
+[tasks."frontend:test-coverage"]
+description = "Run frontend tests with coverage"
+run = "(cd frontend && pnpm test:coverage)"
+
+[tasks."frontend:test-e2e"]
+description = "Run frontend E2E tests with Playwright"
+run = """
+echo "🎭 Running E2E tests..."
+
+# Check if backend is running
+if ! curl -s http://localhost:8080/health > /dev/null 2>&1; then
+    echo "⚠️  Backend not running. Starting backend..."
+    mise run backend:start
+    sleep 5
+fi
+
+(cd frontend && pnpm test:e2e)
+"""
+
+[tasks."frontend:test-e2e-ui"]
+description = "Run E2E tests with Playwright UI"
+run = """
+# Check if backend is running
+if ! curl -s http://localhost:8080/health > /dev/null 2>&1; then
+    echo "⚠️  Backend not running. Starting backend..."
+    mise run backend:start
+    sleep 5
+fi
+
+(cd frontend && pnpm test:e2e:ui)
+"""
+
+[tasks.test-all]
+description = "Run all tests including E2E"
+run = """
+echo "🧪 Running complete test suite..."
+
+mise run test
+echo ""
+echo "🎭 Running E2E tests..."
+mise run frontend:test-e2e
+
+echo ""
+echo "✅ All tests (unit + E2E) passed!"
+"""
+
+[tasks.check]
+description = "Run all checks (backend + frontend: fmt, lint, typecheck, knip, tests)"
+run = """
+echo "🔍 Running all checks..."
+echo ""
+echo "=== Backend Checks ==="
+mise run backend:check
+
+echo ""
+echo "=== Frontend Checks ==="
+mise run frontend:check
+
+echo ""
+echo "✅ All checks passed!"
+"""
+
+[tasks.fmt]
+description = "Format code (alias for format)"
+run = "mise run format"
+
+# ============================================================================
+# API Documentation
+# ============================================================================
+
+[tasks."backend:swagger-gen"]
+description = "Generate OpenAPI spec"
+run = """
 cd backend
-# Install swag if not available
-if ! command -v swag &> /dev/null; then
-    echo "Installing swag..."
-    go install github.com/swaggo/swag/cmd/swag@latest
-fi
-# Generate swagger docs
+command -v swag &>/dev/null || go install github.com/swaggo/swag/cmd/swag@latest
 swag init -g cmd/server/main.go --output docs --parseInternal
-echo "✅ OpenAPI spec generated in backend/docs/"
+echo "✅ OpenAPI spec generated"
 """
 
-[tasks.client-gen]
-description = "Generate TypeScript client from OpenAPI spec"
+[tasks."frontend:client-gen"]
+description = "Generate TypeScript client"
 run = """
-echo "🚀 Generating TypeScript client from OpenAPI spec..."
-
-# Generate TypeScript client
-echo "🔨 Generating TypeScript client..."
 cd frontend
 npx @openapitools/openapi-generator-cli generate \
     -i ../backend/docs/swagger.json \
     -g typescript-axios \
     -o src/generated \
-    --additional-properties=npmName=diktator-api-client,npmVersion=1.0.0,supportsES6=true,withInterfaces=true
-
-echo "✅ TypeScript client generated in frontend/src/generated"
+    --additional-properties=supportsES6=true,withInterfaces=true
+echo "✅ TypeScript client generated"
 """
 
-[tasks.api-setup]
-description = "Complete OpenAPI setup: generate docs and client"
+# ============================================================================
+# Build Tasks
+# ============================================================================
+
+[tasks.build]
+description = "Build for production"
 run = [
-  "mise run swagger-gen",
-  "echo 'Starting backend for client generation...'",
-  "cd backend && PORT=8080 go run cmd/server/main.go &",
-  "sleep 3",
-  "mise run client-gen",
-  "pkill -f 'go run cmd/server/main.go' || true",
+    "mise run backend:swagger-gen",
+    "mise run config-prod",
+    "cd frontend && cp .env.production .env.local && pnpm run build",
+    "cd backend && go build -o bin/server cmd/server/main.go",
 ]
 
-# Build tasks
-[tasks.build]
-description = "Build all components for production"
-run = [
-  "mise run swagger-gen",
-  "mise run config-prod",
-  "cd frontend && cp .env.production .env.local && NODE_ENV=production npm run build",
-  "cd backend && set -a && source .env.production && set +a && go build -o bin/server cmd/server/main.go",
-]
+[tasks."backend:build-binary"]
+description = "Build backend binary for target architecture"
+run = """
+ARCH=${TARGETARCH:-amd64}
+echo "🔨 Building backend binary for linux-${ARCH}..."
+mkdir -p backend/bin
+cd backend
+CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build -ldflags="-w -s" -o bin/server-linux-${ARCH} ./cmd/server/main.go
+echo "✅ Binary built: backend/bin/server-linux-${ARCH}"
+"""
+
+[tasks."backend:docker-build"]
+description = "Build backend Docker image (builds binary first)"
+run = """
+ARCH=${TARGETARCH:-amd64}
+echo "📦 Building backend Docker image for ${ARCH}..."
+
+# Build binary outside Docker for performance
+mise run backend:build-binary
+
+# Build minimal Docker image with pre-built binary
+cd backend
+docker build --build-arg TARGETARCH=${ARCH} -t diktator-api:latest -t diktator-api:${ARCH} .
+echo "✅ Built: diktator-api:latest (linux-${ARCH})"
+"""
+
+[tasks."frontend:docker-build"]
+description = "Build frontend Docker image with nginx"
+run = """
+echo "📦 Building frontend Docker image..."
+
+# Build frontend first
+cd frontend
+cp .env.production .env.local 2>/dev/null || true
+NODE_ENV=production pnpm run build
+
+# Build minimal Docker image with nginx
+docker build -t diktator-frontend:latest .
+echo "✅ Built: diktator-frontend:latest"
+"""
 
 [tasks.clean]
-description = "Clean build artifacts and generated environment files"
+description = "Clean build artifacts"
 run = [
-  "rm -rf frontend/.next frontend/out",
-  "rm -rf backend/bin",
-  "rm -rf frontend/src/generated",
-  "rm -f frontend/.env.local",
-  "rm -f backend/.env.development backend/.env.production",
-  "rm -f frontend/.env.development frontend/.env.production",
-  "rm -f .mise.env",
+    "mise run backend:stop 2>/dev/null || true",
+    "rm -rf frontend/.next frontend/out frontend/src/generated frontend/dist",
+    "rm -rf backend/bin",
+    "rm -f frontend/.env.local backend/.env.* frontend/.env.*",
+    "rm -f .mise.env",
+    "rm -rf .tmp",
 ]
 
-# Infrastructure tasks
-[tasks.tofu-init]
-description = "Initialize OpenTofu"
-run = "cd terraform && tofu init"
+# ============================================================================
+# Setup & Configuration
+# ============================================================================
 
-[tasks.tofu-plan]
-description = "Plan OpenTofu deployment"
-run = "cd terraform && tofu plan"
-
-[tasks.tofu-apply]
-description = "Apply OpenTofu configuration"
-run = "cd terraform && tofu apply"
-
-[tasks.tofu-destroy]
-description = "Destroy OpenTofu infrastructure"
-run = "cd terraform && tofu destroy"
-
-[tasks.tofu-fmt]
-description = "Format OpenTofu configuration files"
-run = "cd terraform && tofu fmt"
-
-[tasks.tofu-validate]
-description = "Validate OpenTofu configuration"
-run = "cd terraform && tofu validate"
-
-# Setup and utility tasks
 [tasks.setup]
-description = "Complete setup for local development (run this first!)"
+description = "Initial project setup"
 run = """
-echo "Setting up Diktator development environment..."
+echo "🚀 Setting up Diktator..."
 
-# Run the original setup script
-./scripts/setup-dev.sh
+echo ""
+echo "📦 Installing tools..."
+mise install
 
-# Set up environment configurations
-echo "Setting up environment configurations..."
+echo ""
+echo "📝 Generating development config..."
 mise run config-dev
 
 echo ""
-echo "✅ Setup complete! You can now:"
-echo "  - Start development: mise run dev"
-echo "  - Check configuration: mise run config-check"
-echo "  - Start individual services:"
-echo "    - Frontend only: mise run frontend"
-echo "    - Backend only: mise run backend"
-echo "    - Firebase emulators: mise run firebase-emulators"
+echo "📦 Installing dependencies..."
+mise run install
+
+echo ""
+echo "🐘 Starting PostgreSQL..."
+docker compose -f docker-compose.dev.yml pull
+docker compose -f docker-compose.dev.yml up -d
+sleep 3
+
+echo ""
+echo "🗄️  Running database migrations..."
+mise run db:migrate
+
+echo ""
+echo "✅ Setup complete!"
+echo ""
+echo "Next steps:"
+echo "  Start full dev:     mise run dev"
+echo "  Start backend only: mise run backend:start"
+echo "  Start frontend:     mise run frontend:dev"
+echo "  Run tests:          mise run test"
 """
 
-# Docker tasks
-[tasks.docker-build]
-description = "Build Docker image locally"
+[tasks.config-dev]
+description = "Generate development configuration"
 run = """
-cd backend
-docker build -t diktator-api:local .
-echo "Docker image built: diktator-api:local"
-"""
-
-[tasks.docker-run]
-description = "Run backend Docker container locally"
-run = """
-docker run -p 8080:8080 -e GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-diktator-dev} diktator-api:local
-"""
-
-# CI/CD tasks
-[tasks.ci-test]
-description = "Run all tests for CI (both frontend and backend)"
-run = [
-  "cd frontend && npm ci && npm run lint && npm run typecheck",
-  "cd backend && go mod tidy && go test ./... && go vet ./...",
-]
-
-[tasks.ci-build-backend]
-description = "Build backend for CI/CD"
-run = """
-PROJECT_ID=${GOOGLE_CLOUD_PROJECT:-${DIKTATOR_PROJECT_ID}}
-COMMIT_SHA=${GITHUB_SHA:-latest}
-SERVICE_NAME=${DIKTATOR_API_SERVICE_NAME}
-
-if [ -z "$PROJECT_ID" ]; then
-  echo "Error: GOOGLE_CLOUD_PROJECT not set"
-  exit 1
-fi
-
-cd backend
-echo "Building Docker image: gcr.io/${PROJECT_ID}/${SERVICE_NAME}:${COMMIT_SHA}"
-docker buildx build --platform linux/amd64 --build-arg TARGETOS=linux --build-arg TARGETARCH=amd64 -t gcr.io/${PROJECT_ID}/${SERVICE_NAME}:${COMMIT_SHA} --load .
-docker push gcr.io/${PROJECT_ID}/${SERVICE_NAME}:${COMMIT_SHA}
-"""
-
-[tasks.ci-build-frontend]
-description = "Build frontend for CI/CD"
-run = """
-cd frontend
-
-# Create production environment file for CI
-cat > .env.production << EOF
-# CI/CD Production Environment
-NODE_ENV=production
-NEXT_PUBLIC_FIREBASE_USE_EMULATOR=false
-NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL_PROD:-"https://${DIKTATOR_API_SERVICE_NAME}-${DIKTATOR_DEFAULT_REGION}.run.app"}
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=${NEXT_PUBLIC_FIREBASE_PROJECT_ID_PROD:-${GOOGLE_CLOUD_PROJECT}}
-NEXT_PUBLIC_FIREBASE_API_KEY=${NEXT_PUBLIC_FIREBASE_API_KEY_PROD:-""}
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN_PROD:-"${GOOGLE_CLOUD_PROJECT}.firebaseapp.com"}
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET_PROD:-"${GOOGLE_CLOUD_PROJECT}.appspot.com"}
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID_PROD:-""}
-NEXT_PUBLIC_FIREBASE_APP_ID=${NEXT_PUBLIC_FIREBASE_APP_ID_PROD:-""}
-NEXT_TELEMETRY_DISABLED=1
+cat > backend/.env.development << 'EOF'
+# Backend Development Configuration
+GOOGLE_CLOUD_PROJECT=diktator-dev
+GOOGLE_CLOUD_QUOTA_PROJECT=diktator-app
+STORAGE_BUCKET=diktator-dev.appspot.com
+GIN_MODE=debug
+PORT=8080
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/diktator?sslmode=disable
+DATABASE_TEST_URL=postgresql://postgres:postgres@localhost:5432/diktator_test?sslmode=disable
+AUTH_MODE=mock
 EOF
 
-npm ci
-cp .env.production .env.local
-npm run build
+cat > frontend/.env.development << 'EOF'
+# Frontend Development Configuration
+NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_AUTH_MODE=mock
+NEXT_TELEMETRY_DISABLED=1
+NODE_ENV=development
+EOF
+
+echo "✅ Development config created"
 """
 
-[tasks.ci-deploy-backend]
-description = "Deploy backend for CI/CD"
+[tasks.config-prod]
+description = "Generate production configuration"
 run = """
-PROJECT_ID=${GOOGLE_CLOUD_PROJECT:-${DIKTATOR_PROJECT_ID}}
-COMMIT_SHA=${GITHUB_SHA:-latest}
-SERVICE_NAME=${DIKTATOR_API_SERVICE_NAME}
-REGION=${GCP_REGION:-${DIKTATOR_DEFAULT_REGION}}
-
-if [ -z "$PROJECT_ID" ]; then
-  echo "Error: GOOGLE_CLOUD_PROJECT not set"
-  exit 1
+if [ ! -f .mise.env ]; then
+    echo "ERROR: .mise.env not found. Run 'mise run config-load' first."
+    exit 1
 fi
-
-echo "Deploying backend: gcr.io/${PROJECT_ID}/${SERVICE_NAME}:${COMMIT_SHA} to region: ${REGION}"
-gcloud run deploy ${SERVICE_NAME} \
-  --image gcr.io/${PROJECT_ID}/${SERVICE_NAME}:${COMMIT_SHA} \
-  --region ${REGION} \
-  --platform managed \
-  --allow-unauthenticated \
-  --set-env-vars="GOOGLE_CLOUD_PROJECT=${PROJECT_ID}"
-"""
-
-[tasks.ci-deploy-frontend]
-description = "Deploy frontend for CI/CD"
-run = """
-gsutil -m cp -r frontend/out/* gs://${GCP_FRONTEND_BUCKET}/
-echo "Setting cache headers for deployed files..."
-
-# PWA files - should not be cached or cached for very short time
-gsutil -m setmeta -h "Cache-Control:public, max-age=0, must-revalidate" gs://${GCP_FRONTEND_BUCKET}/sw.js
-gsutil -m setmeta -h "Cache-Control:public, max-age=86400" gs://${GCP_FRONTEND_BUCKET}/manifest.json
-
-# Icon files - can be cached for a long time
-gsutil -m setmeta -h "Cache-Control:public, max-age=31536000, immutable" gs://${GCP_FRONTEND_BUCKET}/*.svg
-gsutil -m setmeta -h "Cache-Control:public, max-age=31536000, immutable" gs://${GCP_FRONTEND_BUCKET}/apple-touch-icon.*
-
-# Static assets - can be cached for a long time
-gsutil -m setmeta -h "Cache-Control:public, max-age=31536000, immutable" gs://${GCP_FRONTEND_BUCKET}/_next/static/**/*
-
-# HTML files - should not be cached to ensure fresh content
-gsutil -m setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" gs://${GCP_FRONTEND_BUCKET}/index.html
-gsutil -m setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" gs://${GCP_FRONTEND_BUCKET}/**/*.html
-
-# Other static files - moderate caching
-gsutil -m setmeta -h "Cache-Control:public, max-age=3600" gs://${GCP_FRONTEND_BUCKET}/*.css
-gsutil -m setmeta -h "Cache-Control:public, max-age=3600" gs://${GCP_FRONTEND_BUCKET}/*.js
-"""
-
-# Deployment tasks for local development
-[tasks.deploy-backend]
-description = "Deploy backend to Cloud Run (local development)"
-run = """
-# Load configuration
-mise run config-load
 source .mise.env
-mise run config-prod
 
-# Validate required environment variables
-if [ -z "${DIKTATOR_PROJECT_ID}" ]; then
-    echo "ERROR: DIKTATOR_PROJECT_ID is not set. Run 'mise run config-load' first."
+cat > backend/.env.production << EOF
+GOOGLE_CLOUD_PROJECT=${DIKTATOR_PROJECT_ID}
+GOOGLE_CLOUD_QUOTA_PROJECT=${GOOGLE_CLOUD_QUOTA_PROJECT:-${DIKTATOR_PROJECT_ID}}
+STORAGE_BUCKET=${STORAGE_BUCKET:-${DIKTATOR_PROJECT_ID}.appspot.com}
+GIN_MODE=release
+PORT=8080
+DATABASE_URL=${DATABASE_URL}
+AUTH_MODE=oidc
+OIDC_ISSUER_URL=${OIDC_ISSUER_URL:-https://auth.diktator.app}
+OIDC_AUDIENCE=${OIDC_AUDIENCE:-diktator}
+EOF
+
+cat > frontend/.env.production << EOF
+NEXT_PUBLIC_API_URL=${DIKTATOR_API_URL:-https://${DIKTATOR_API_SERVICE_NAME}-${DIKTATOR_REGION:-${DIKTATOR_DEFAULT_REGION}}.run.app}
+NEXT_PUBLIC_AUTH_MODE=oidc
+NEXT_PUBLIC_OIDC_ISSUER_URL=${OIDC_ISSUER_URL:-https://auth.diktator.app}
+NEXT_PUBLIC_OIDC_CLIENT_ID=${OIDC_CLIENT_ID:-diktator-frontend}
+NEXT_TELEMETRY_DISABLED=1
+NODE_ENV=production
+EOF
+
+echo "✅ Production config created"
+"""
+
+[tasks.config-load]
+description = "Load configuration from terraform"
+run = """
+cd terraform
+if [ ! -d .terraform ]; then
+    echo "Terraform not initialized. Run 'mise run tofu:init'"
     exit 1
 fi
 
+cat > ../.mise.env << EOF
+DIKTATOR_PROJECT_ID=$(tofu output -raw project_id 2>/dev/null || echo "")
+DIKTATOR_REGION=$(tofu output -raw region 2>/dev/null || echo "${DIKTATOR_DEFAULT_REGION}")
+DIKTATOR_FRONTEND_BUCKET=$(tofu output -raw frontend_bucket_name 2>/dev/null || echo "")
+DIKTATOR_API_URL=$(tofu output -raw api_url 2>/dev/null || echo "")
+DATABASE_URL=$(tofu output -raw database_url 2>/dev/null || echo "")
+EOF
+echo "Configuration loaded to .mise.env"
+"""
+
+[tasks.config-check]
+description = "Check configuration"
+run = """
+echo "=== Static Config ==="
+echo "App: ${DIKTATOR_APP_NAME}"
+echo "Region: ${DIKTATOR_DEFAULT_REGION}"
+
+echo ""
+echo "=== Development Config ==="
+[ -f backend/.env.development ] && cat backend/.env.development || echo "❌ Not found"
+
+echo ""
+echo "=== Production Config ==="
+[ -f .mise.env ] && cat .mise.env || echo "❌ Not found (run 'mise run config-load')"
+"""
+
+# ============================================================================
+# Infrastructure (OpenTofu)
+# ============================================================================
+
+[tasks."tofu:init"]
+description = "Initialize OpenTofu"
+run = "cd terraform && tofu init"
+
+[tasks."tofu:plan"]
+description = "Plan infrastructure changes"
+run = "cd terraform && tofu plan"
+
+[tasks."tofu:apply"]
+description = "Apply infrastructure"
+run = "cd terraform && tofu apply"
+
+[tasks."tofu:destroy"]
+description = "Destroy infrastructure"
+run = "cd terraform && tofu destroy"
+
+[tasks."tofu:fmt"]
+description = "Format terraform files"
+run = "cd terraform && tofu fmt"
+
+# ============================================================================
+# Deployment
+# ============================================================================
+
+[tasks."backend:deploy"]
+description = "Deploy backend to Cloud Run"
+run = """
+source .mise.env
+mise run config-prod
+
 cd backend
-echo "Building backend Docker image..."
 docker buildx build --platform linux/amd64 -t gcr.io/${DIKTATOR_PROJECT_ID}/${DIKTATOR_API_SERVICE_NAME}:latest --load .
 docker push gcr.io/${DIKTATOR_PROJECT_ID}/${DIKTATOR_API_SERVICE_NAME}:latest
 
-echo "Deploying backend to Cloud Run..."
 gcloud run deploy ${DIKTATOR_API_SERVICE_NAME} \
   --image gcr.io/${DIKTATOR_PROJECT_ID}/${DIKTATOR_API_SERVICE_NAME}:latest \
   --region ${DIKTATOR_REGION} \
   --platform managed \
-  --allow-unauthenticated \
-  --set-env-vars="GOOGLE_CLOUD_PROJECT=${DIKTATOR_PROJECT_ID},GOOGLE_CLOUD_QUOTA_PROJECT=${GOOGLE_CLOUD_QUOTA_PROJECT:-${DIKTATOR_PROJECT_ID}},STORAGE_BUCKET=${DIKTATOR_FIREBASE_STORAGE_BUCKET:-${DIKTATOR_PROJECT_ID}.appspot.com},GIN_MODE=release"
-
-echo "Backend deployment completed successfully!"
-echo "API URL: https://${DIKTATOR_API_SERVICE_NAME}-${DIKTATOR_REGION}.run.app"
+  --allow-unauthenticated
 """
 
-[tasks.deploy-frontend]
-description = "Deploy frontend to Cloud Storage (local development)"
+[tasks."frontend:deploy"]
+description = "Deploy frontend to Cloud Storage"
 run = """
-# Load configuration and set up production environment
-mise run config-load
 source .mise.env
 mise run config-prod
 
 cd frontend
 rm -rf out
-
-echo "Building frontend with production environment..."
 cp .env.production .env.local
-source .env.local
-NODE_ENV=production npm run build
+pnpm run build
 
-# Verify build was successful
-if [ ! -d "out" ]; then
-    echo "ERROR: Build failed. 'out' directory not found."
-    exit 1
-fi
-
-echo "Deploying to Cloud Storage..."
 gsutil -m cp -r out/* gs://${DIKTATOR_FRONTEND_BUCKET}/
-echo "Setting cache headers for deployed files..."
-
-# PWA files - should not be cached or cached for very short time
-gsutil -m setmeta -h "Cache-Control:public, max-age=0, must-revalidate" gs://${DIKTATOR_FRONTEND_BUCKET}/sw.js
-gsutil -m setmeta -h "Cache-Control:public, max-age=86400" gs://${DIKTATOR_FRONTEND_BUCKET}/manifest.json
-
-# Icon files - can be cached for a long time
-gsutil -m setmeta -h "Cache-Control:public, max-age=31536000, immutable" gs://${DIKTATOR_FRONTEND_BUCKET}/*.svg
-gsutil -m setmeta -h "Cache-Control:public, max-age=31536000, immutable" gs://${DIKTATOR_FRONTEND_BUCKET}/apple-touch-icon.*
-
-# Static assets - can be cached for a long time
-gsutil -m setmeta -h "Cache-Control:public, max-age=31536000, immutable" gs://${DIKTATOR_FRONTEND_BUCKET}/_next/static/**/*
-
-# HTML files - should not be cached to ensure fresh content
-gsutil -m setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" gs://${DIKTATOR_FRONTEND_BUCKET}/index.html
-gsutil -m setmeta -h "Cache-Control:public, max-age=300" gs://${DIKTATOR_FRONTEND_BUCKET}/**/*.html
-
-echo "Frontend deployment completed successfully!"
+gsutil -m setmeta -h "Cache-Control:no-cache" gs://${DIKTATOR_FRONTEND_BUCKET}/*.html
+gsutil -m setmeta -h "Cache-Control:public, max-age=31536000" gs://${DIKTATOR_FRONTEND_BUCKET}/_next/static/**/*
 """
 
-# Additional development utilities
-[tasks.check]
-description = "Alias for test - run all quality checks"
-run = "mise run test"
+# ============================================================================
+# CI/CD
+# ============================================================================
 
-[tasks.fmt]
-description = "Alias for format - format all code"
-run = "mise run format"
+[tasks."ci:test"]
+description = "CI: Run all tests"
+run = [
+    "cd frontend && pnpm ci && pnpm run lint && pnpm run typecheck",
+    "cd backend && go mod tidy && go test ./... && go vet ./...",
+]
 
-# Google Cloud setup tasks
-[tasks.gcloud-auth]
-description = "Authenticate with Google Cloud"
+[tasks."ci:build-backend"]
+description = "CI: Build backend image"
 run = """
-echo "Starting Google Cloud authentication..."
-gcloud auth login
-gcloud auth application-default login
-echo "Authentication completed!"
+PROJECT_ID=${GOOGLE_CLOUD_PROJECT:-${DIKTATOR_PROJECT_ID}}
+COMMIT_SHA=${GITHUB_SHA:-latest}
+cd backend
+docker buildx build --platform linux/amd64 -t gcr.io/${PROJECT_ID}/${DIKTATOR_API_SERVICE_NAME}:${COMMIT_SHA} --load .
+docker push gcr.io/${PROJECT_ID}/${DIKTATOR_API_SERVICE_NAME}:${COMMIT_SHA}
 """
 
-[tasks.gcloud-set-project]
-description = "Set Google Cloud project (pass project ID as argument)"
+[tasks."ci:build-frontend"]
+description = "CI: Build frontend"
+run = """
+cd frontend
+pnpm ci
+cp .env.production .env.local 2>/dev/null || true
+pnpm run build
+"""
+
+# ============================================================================
+# Google Cloud
+# ============================================================================
+
+[tasks."gcloud:auth"]
+description = "Authenticate with Google Cloud"
+run = "gcloud auth login && gcloud auth application-default login"
+
+[tasks."gcloud:set-project"]
+description = "Set GCP project"
 run = """
 if [ -z "$1" ]; then
-  echo "Usage: mise run gcloud-set-project -- YOUR_PROJECT_ID"
-  echo "Current project: $(gcloud config get-value project 2>/dev/null || echo 'Not set')"
+  echo "Usage: mise run gcloud:set-project -- PROJECT_ID"
   exit 1
 fi
-echo "Setting Google Cloud project to: $1"
 gcloud config set project "$1"
-echo "Project set successfully!"
-"""
-
-# Firebase setup
-[tasks.firebase-setup]
-description = "Set up Firebase emulators and configuration"
-run = """
-echo "Setting up Firebase for local development..."
-
-# Check if Firebase CLI is installed
-if ! command -v firebase &> /dev/null; then
-    echo "Installing Firebase CLI..."
-    npm install -g firebase-tools
-fi
-
-# Initialize Firebase in frontend directory if not already done
-cd frontend
-
-if [ ! -f firebase.json ]; then
-    echo "Firebase configuration not found. Setting up Firebase emulators..."
-
-    # Create basic firebase.json for emulators
-    cat > firebase.json << 'EOF'
-{
-  "emulators": {
-    "auth": {
-      "port": 9099
-    },
-    "firestore": {
-      "port": 8088
-    },
-    "ui": {
-      "enabled": true,
-      "port": 4000
-    }
-  }
-}
-EOF
-    echo "✅ firebase.json created"
-fi
-
-if [ ! -f firestore.rules ]; then
-    cat > firestore.rules << 'EOF'
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Allow users to read and write their own data
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Allow users to read and write their own test results
-    match /testResults/{resultId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-    }
-  }
-}
-EOF
-    echo "✅ firestore.rules created"
-fi
-
-if [ ! -f firestore.indexes.json ]; then
-    cat > firestore.indexes.json << 'EOF'
-{
-  "indexes": [
-    {
-      "collectionGroup": "testResults",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "userId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "completedAt",
-          "order": "DESCENDING"
-        }
-      ]
-    }
-  ],
-  "fieldOverrides": []
-}
-EOF
-    echo "✅ firestore.indexes.json created"
-fi
-
-# Create environment file if it doesn't exist
-if [ ! -f .env.local ]; then
-    if [ -f .env.local.example ]; then
-        cp .env.local.example .env.local
-        echo "✅ .env.local created from example"
-    else
-        echo "Creating basic .env.local for Firebase emulators..."
-        cat > .env.local << 'EOF'
-# Firebase Emulator Configuration
-NEXT_PUBLIC_FIREBASE_USE_EMULATOR=true
-NEXT_PUBLIC_FIREBASE_API_KEY=demo-api-key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=demo-diktator.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-diktator
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=demo-diktator.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=demo-sender-id
-NEXT_PUBLIC_FIREBASE_APP_ID=demo-app-id
-EOF
-        echo "✅ .env.local created with emulator configuration"
-    fi
-fi
-
-echo ""
-echo "Firebase setup complete! You can now run 'mise run firebase-emulators' to start the emulators."
-"""
-
-[tasks.firebase-emulators]
-description = "Start Firebase emulators (use --no-persist flag to disable data persistence)"
-run = """
-cd frontend
-
-# Setup signal handling for graceful shutdown
-cleanup() {
-    echo "Received shutdown signal, stopping Firebase emulators..."
-    if [ -n "$EMULATOR_PID" ]; then
-        kill -TERM $EMULATOR_PID 2>/dev/null || true
-        wait $EMULATOR_PID 2>/dev/null || true
-    fi
-    exit 0
-}
-trap cleanup TERM INT
-
-if [ '{{flag(name="no-persist")}}' = 'true' ]; then
-    echo "Starting Firebase emulators without data persistence..."
-    echo "This will start:"
-    echo "  - Authentication emulator on port 9099"
-    echo "  - Firestore emulator on port 8088"
-    echo "  - Emulator UI on port 4000"
-    echo ""
-    echo "⚠️  Data will NOT be persisted - perfect for testing!"
-    echo ""
-
-    firebase emulators:start --project=${GOOGLE_CLOUD_PROJECT} &
-    EMULATOR_PID=$!
-    wait $EMULATOR_PID
-else
-    echo "Starting Firebase emulators with data persistence..."
-    echo "This will start:"
-    echo "  - Authentication emulator on port 9099"
-    echo "  - Firestore emulator on port 8088"
-    echo "  - Emulator UI on port 4000"
-    echo ""
-    echo "Data will be persisted in: ./firebase-emulator-data"
-    echo "Press Ctrl+C to stop the emulators (data will be automatically exported)"
-    echo ""
-
-    # Check if emulator data exists
-    if [ -d "./firebase-emulator-data" ] && [ "$(ls -A ./firebase-emulator-data 2>/dev/null)" ]; then
-        echo "Found existing emulator data, importing..."
-        firebase emulators:start --project=${GOOGLE_CLOUD_PROJECT} --import=./firebase-emulator-data --export-on-exit=./firebase-emulator-data &
-        EMULATOR_PID=$!
-        wait $EMULATOR_PID
-    else
-        echo "No existing data found, starting fresh..."
-        firebase emulators:start --project=${GOOGLE_CLOUD_PROJECT} --export-on-exit=./firebase-emulator-data &
-        EMULATOR_PID=$!
-        wait $EMULATOR_PID
-    fi
-fi
-"""
-
-[tasks.firebase-emulators-reset]
-description = "Reset Firebase emulator data (delete all persistent data)"
-run = """
-cd frontend
-echo "WARNING: This will delete all Firebase emulator data!"
-read -p "Are you sure? (y/N): " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "Removing emulator data..."
-    rm -rf ./firebase-emulator-data
-    echo "Emulator data reset complete"
-else
-    echo "Reset cancelled"
-fi
-"""
-
-# Configuration management tasks
-[tasks.config-load]
-description = "Load dynamic configuration from terraform outputs"
-run = """
-echo "Loading dynamic configuration..."
-cd terraform
-
-# Check if terraform is initialized
-if [ ! -d .terraform ]; then
-    echo "Terraform not initialized. Run 'mise run tofu-init' first."
-    exit 1
-fi
-
-# Check if tfstate exists
-if [ ! -f terraform.tfstate ]; then
-    echo "No terraform state found. Infrastructure may not be deployed yet."
-    echo "Run 'mise run tofu-apply' to deploy infrastructure first."
-    exit 1
-fi
-
-# Extract outputs and create .mise.env
-echo "Extracting terraform outputs..."
-cat > ../.mise.env << EOF
-# Auto-generated from terraform outputs - do not edit manually
-# === PRODUCTION/DEPLOYED CONFIGURATION ===
-DIKTATOR_PROJECT_ID=$(tofu output -raw project_id 2>/dev/null || echo "")
-DIKTATOR_REGION=$(tofu output -raw region 2>/dev/null || echo "${DIKTATOR_DEFAULT_REGION}")
-DIKTATOR_FRONTEND_BUCKET=$(tofu output -raw frontend_bucket_name 2>/dev/null || echo "")
-DIKTATOR_API_URL=$(tofu output -raw api_url 2>/dev/null || echo "")
-
-# Firebase configuration from terraform outputs
-DIKTATOR_FIREBASE_API_KEY=$(tofu output -json firebase_config 2>/dev/null | jq -r '.apiKey' 2>/dev/null || echo "")
-DIKTATOR_FIREBASE_AUTH_DOMAIN=$(tofu output -json firebase_config 2>/dev/null | jq -r '.authDomain' 2>/dev/null || echo "")
-DIKTATOR_FIREBASE_STORAGE_BUCKET=$(tofu output -json firebase_config 2>/dev/null | jq -r '.storageBucket' 2>/dev/null || echo "")
-DIKTATOR_FIREBASE_MESSAGING_SENDER_ID=$(tofu output -json firebase_config 2>/dev/null | jq -r '.messagingSenderId' 2>/dev/null || echo "")
-DIKTATOR_FIREBASE_APP_ID=$(tofu output -json firebase_config 2>/dev/null | jq -r '.appId' 2>/dev/null || echo "")
-EOF
-
-echo "Configuration loaded to .mise.env"
-"""
-
-[tasks.config-dev]
-description = "Set up development environment configuration"
-run = """
-echo "Setting up development environment configuration..."
-
-# Create development backend environment
-cat > backend/.env.development << EOF
-# === BACKEND DEVELOPMENT CONFIGURATION ===
-# Google Cloud settings
-GOOGLE_CLOUD_PROJECT=diktator-dev
-GOOGLE_CLOUD_QUOTA_PROJECT=diktator-app
-STORAGE_BUCKET=diktator-dev.appspot.com
-
-# Application settings
-GIN_MODE=debug
-PORT=8080
-
-# Firebase Emulator hosts
-FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
-FIRESTORE_EMULATOR_HOST=localhost:8088
-FIREBASE_STORAGE_EMULATOR_HOST=localhost:9199
-EOF
-
-# Create development frontend environment
-mkdir -p frontend
-cat > frontend/.env.development << EOF
-# === FRONTEND DEVELOPMENT CONFIGURATION ===
-# API Configuration
-NEXT_PUBLIC_API_URL=http://localhost:8080
-
-# Firebase Emulator Configuration
-NEXT_PUBLIC_FIREBASE_USE_EMULATOR=true
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=diktator-dev
-NEXT_PUBLIC_FIREBASE_API_KEY=demo-key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=diktator-dev.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=diktator-dev.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
-NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789:web:abcdef
-
-# Development optimizations
-NEXT_TELEMETRY_DISABLED=1
-NODE_ENV=development
-EOF
-
-echo "✅ Development configuration files created:"
-echo "  - backend/.env.development"
-echo "  - frontend/.env.development"
-echo ""
-echo "These files contain environment-specific settings for local development."
-"""
-
-[tasks.config-prod]
-description = "Generate production environment configuration from terraform outputs"
-run = """
-echo "Generating production environment configuration..."
-
-# Load dynamic configuration first
-if [ -f .mise.env ]; then
-    source .mise.env
-else
-    echo "ERROR: .mise.env not found. Run 'mise run config-load' first."
-    exit 1
-fi
-
-# Validate required environment variables
-if [ -z "${DIKTATOR_PROJECT_ID}" ]; then
-    echo "ERROR: DIKTATOR_PROJECT_ID is not set. Run 'mise run config-load' first."
-    exit 1
-fi
-
-# Create production backend environment
-cat > backend/.env.production << EOF
-# === BACKEND PRODUCTION CONFIGURATION ===
-# Google Cloud settings
-GOOGLE_CLOUD_PROJECT=${DIKTATOR_PROJECT_ID}
-GOOGLE_CLOUD_QUOTA_PROJECT=${GOOGLE_CLOUD_QUOTA_PROJECT:-${DIKTATOR_PROJECT_ID}}
-STORAGE_BUCKET=${DIKTATOR_FIREBASE_STORAGE_BUCKET:-${DIKTATOR_PROJECT_ID}.appspot.com}
-
-# Application settings
-GIN_MODE=release
-PORT=8080
-
-# No emulator hosts in production (use real Firebase services)
-EOF
-
-# Create production frontend environment
-mkdir -p frontend
-cat > frontend/.env.production << EOF
-# === FRONTEND PRODUCTION CONFIGURATION ===
-# API Configuration
-NEXT_PUBLIC_API_URL=${DIKTATOR_API_URL:-"https://${DIKTATOR_API_SERVICE_NAME}-${DIKTATOR_REGION:-${DIKTATOR_DEFAULT_REGION}}.run.app"}
-
-# Firebase Production Configuration
-NEXT_PUBLIC_FIREBASE_USE_EMULATOR=false
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=${DIKTATOR_PROJECT_ID}
-NEXT_PUBLIC_FIREBASE_API_KEY=${DIKTATOR_FIREBASE_API_KEY:-""}
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${DIKTATOR_FIREBASE_AUTH_DOMAIN:-""}
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${DIKTATOR_FIREBASE_STORAGE_BUCKET:-""}
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${DIKTATOR_FIREBASE_MESSAGING_SENDER_ID:-""}
-NEXT_PUBLIC_FIREBASE_APP_ID=${DIKTATOR_FIREBASE_APP_ID:-""}
-
-# Production optimizations
-NEXT_TELEMETRY_DISABLED=1
-NODE_ENV=production
-EOF
-
-echo "✅ Production configuration files created:"
-echo "  - backend/.env.production"
-echo "  - frontend/.env.production"
-echo ""
-echo "=== Production Configuration Summary ==="
-echo "API URL: ${DIKTATOR_API_URL:-"https://${DIKTATOR_API_SERVICE_NAME}-${DIKTATOR_REGION:-${DIKTATOR_DEFAULT_REGION}}.run.app"}"
-echo "Firebase Project: ${DIKTATOR_PROJECT_ID}"
-echo "Storage Bucket: ${DIKTATOR_FIREBASE_STORAGE_BUCKET:-${DIKTATOR_PROJECT_ID}.appspot.com}"
-"""
-
-[tasks.config-check]
-description = "Check all configuration values across environments"
-run = """
-echo "=== STATIC CONFIGURATION (mise.toml) ==="
-echo "App Name: ${DIKTATOR_APP_NAME}"
-echo "API Service: ${DIKTATOR_API_SERVICE_NAME}"
-echo "Default Region: ${DIKTATOR_DEFAULT_REGION}"
-echo "Bucket Location: ${DIKTATOR_BUCKET_LOCATION}"
-echo ""
-
-echo "=== DEVELOPMENT CONFIGURATION ==="
-if [ -f backend/.env.development ]; then
-    echo "Backend Development Config (backend/.env.development):"
-    echo "  $(grep GOOGLE_CLOUD_PROJECT backend/.env.development || echo 'GOOGLE_CLOUD_PROJECT: Not set')"
-    echo "  $(grep GIN_MODE backend/.env.development || echo 'GIN_MODE: Not set')"
-    echo "  $(grep FIREBASE_AUTH_EMULATOR_HOST backend/.env.development || echo 'Firebase emulators: Not configured')"
-else
-    echo "❌ Backend development config not found. Run 'mise run config-dev'"
-fi
-
-if [ -f frontend/.env.development ]; then
-    echo "Frontend Development Config (frontend/.env.development):"
-    echo "  $(grep NEXT_PUBLIC_API_URL frontend/.env.development || echo 'API URL: Not set')"
-    echo "  $(grep NEXT_PUBLIC_FIREBASE_USE_EMULATOR frontend/.env.development || echo 'Firebase emulator: Not set')"
-    echo "  $(grep NEXT_PUBLIC_FIREBASE_PROJECT_ID frontend/.env.development || echo 'Firebase project: Not set')"
-else
-    echo "❌ Frontend development config not found. Run 'mise run config-dev'"
-fi
-echo ""
-
-echo "=== PRODUCTION CONFIGURATION ==="
-if [ -f .mise.env ]; then
-    echo "Terraform Outputs (.mise.env):"
-    source .mise.env
-    echo "  Project ID: ${DIKTATOR_PROJECT_ID:-'Not set'}"
-    echo "  Region: ${DIKTATOR_REGION:-'Not set'}"
-    echo "  Frontend Bucket: ${DIKTATOR_FRONTEND_BUCKET:-'Not set'}"
-    echo "  API URL: ${DIKTATOR_API_URL:-'Not set'}"
-    echo "  Firebase API Key: ${DIKTATOR_FIREBASE_API_KEY:+Set}"${DIKTATOR_FIREBASE_API_KEY:-'Not set'}"
-else
-    echo "❌ No terraform outputs found. Run 'mise run config-load'"
-fi
-
-if [ -f backend/.env.production ]; then
-    echo "Backend Production Config (backend/.env.production):"
-    echo "  $(grep GOOGLE_CLOUD_PROJECT backend/.env.production || echo 'GOOGLE_CLOUD_PROJECT: Not set')"
-    echo "  $(grep GIN_MODE backend/.env.production || echo 'GIN_MODE: Not set')"
-else
-    echo "❌ Backend production config not found. Run 'mise run config-prod'"
-fi
-
-if [ -f frontend/.env.production ]; then
-    echo "Frontend Production Config (frontend/.env.production):"
-    echo "  $(grep NEXT_PUBLIC_API_URL frontend/.env.production || echo 'API URL: Not set')"
-    echo "  $(grep NEXT_PUBLIC_FIREBASE_USE_EMULATOR frontend/.env.production || echo 'Firebase emulator: Not set')"
-else
-    echo "❌ Frontend production config not found. Run 'mise run config-prod'"
-fi
-echo ""
-
-echo "=== CURRENT MISE ENVIRONMENT ==="
-echo "NODE_ENV: ${NODE_ENV}"
-echo "GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}"
-echo "NEXT_PUBLIC_FIREBASE_USE_EMULATOR: ${NEXT_PUBLIC_FIREBASE_USE_EMULATOR}"
-echo ""
-
-echo "=== CONFIGURATION SETUP COMMANDS ==="
-echo "For development: mise run config-dev"
-echo "For production: mise run config-load && mise run config-prod"
 """

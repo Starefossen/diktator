@@ -30,9 +30,10 @@ export const initializeAudioForIOS = (): void => {
     }
 
     // Pre-load a silent audio element to enable HTML5 audio
+    // Using OGG Opus format for better browser compatibility (especially Firefox)
     const silentAudio = new Audio();
     silentAudio.src =
-      "data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAAGZ1bmRyZWFkYXBfdGVjaG5vbG9neQBURU5EAAAAEQAAAGZ1bmRyZWFkYXBfc2VydmljZQAQAAAABABAAAAAAAA";
+      "data:audio/ogg;base64,T2dnUwACAAAAAAAAAAAAAAAAAAAAAABW4AEAAAAAAKp0I0UBHgF2b3JiaXMAAAAAAUSsAAAAAAAAgLsAAAAAAAC4AU9nZ1MAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAC7pF06Az3///////////////+BA3ZvcmJpcysAAABYaXBoLk9yZyBsaWJWb3JiaXMgSSAyMDEyMDIwMyAoT21uaXByZXNlbnQpAAAAAAEFdm9yYmlzEkJDVgEAQAAAJHMYKkalcxaEEBpCUBnjHELOa+wZQkwRghwyTFvLJXOQIaSgQohbKIHQkFUAAEAAAIdBeBSEikEIIYQlPViSgyc9CCGEiDl4FIRpQQghhBBCCCGEEEIIIYRFOWiSgydBCB2E4zA4DIPlOPgchEU5WBCDJ0HoIIQPQriag6w5CCGEJDVIUIMGOegchMIsKIqCxDC4FoQENSiMguQwyNSDC0KImoNJNfgchGtBCCGEJEFoEoQovIHIMBiKgsQwuBaAKDkIkYMgNUiQgwZByBiERkFYkoMGObgUhMtBqBqEKjkHJem4RycAvgcAHgcAADhBhAkCzgJAggIYCIACUGEOLMgxp7CSIDYAGAAACPwHAAAAAAAQAIBA4CYAgMCBIxUCYAGAAAAAIAAAgAIHjoQDAAR/AAYAAICjCAAAIAAAEEAAcMABATAABgoIOCBA4KYBAgAAAAAABHgA";
     silentAudio.preload = "auto";
 
     // Try to play and immediately pause to unlock audio
@@ -54,56 +55,102 @@ export const initializeAudioForIOS = (): void => {
 };
 
 /**
- * Plays audio with iOS Safari compatibility handling
+ * Plays audio with iOS Safari compatibility handling and Firefox Blob URL support
  */
 const playAudioWithiOSSupport = async (
   audioUrl: string,
   requireUserInteraction: boolean,
   onEnd?: () => void,
 ): Promise<void> => {
-  const audio = new Audio(audioUrl);
-  audio.preload = "auto";
+  // Fetch the audio as a blob for better Firefox compatibility
+  let blobUrl: string | null = null;
 
-  return new Promise((resolve, reject) => {
-    const cleanup = () => {
-      audio.removeEventListener("ended", onEndHandler);
-      audio.removeEventListener("error", onErrorHandler);
-      audio.removeEventListener("canplaythrough", onCanPlayHandler);
-    };
+  try {
+    const response = await fetch(audioUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch audio: ${response.status}`);
+    }
 
-    const onEndHandler = () => {
-      cleanup();
-      onEnd?.();
-      resolve();
-    };
+    const blob = await response.blob();
+    blobUrl = URL.createObjectURL(blob);
 
-    const onErrorHandler = () => {
-      cleanup();
-      reject(new Error("Audio loading failed"));
-    };
+    const audio = new Audio();
+    audio.preload = "auto";
 
-    const onCanPlayHandler = async () => {
-      try {
-        // Check if we need user interaction and haven't enabled audio yet
-        if (requireUserInteraction && !iOSAudioEnabled) {
-          throw new Error("User interaction required for audio playback");
+    return new Promise((resolve, reject) => {
+      const cleanup = () => {
+        audio.removeEventListener("ended", onEndHandler);
+        audio.removeEventListener("error", onErrorHandler);
+        audio.removeEventListener("canplaythrough", onCanPlayHandler);
+        audio.removeEventListener("loadeddata", onLoadedDataHandler);
+        // Revoke blob URL to free memory
+        if (blobUrl) {
+          URL.revokeObjectURL(blobUrl);
         }
+      };
 
-        await audio.play();
-        // If we reach here, playback started successfully
-      } catch (playError) {
+      const onEndHandler = () => {
         cleanup();
-        reject(playError);
+        onEnd?.();
+        resolve();
+      };
+
+      const onErrorHandler = (event: ErrorEvent | Event) => {
+        cleanup();
+        reject(new Error("Audio playback failed"));
+      };
+
+      const onLoadedDataHandler = async () => {
+        // Firefox-compatible: wait for loadeddata instead of canplaythrough
+        try {
+          if (requireUserInteraction && !iOSAudioEnabled) {
+            throw new Error("User interaction required for audio playback");
+          }
+
+          await audio.play();
+          // If we reach here, playback started successfully
+        } catch (playError) {
+          cleanup();
+          reject(playError);
+        }
+      };
+
+      const onCanPlayHandler = async () => {
+        try {
+          // Check if we need user interaction and haven't enabled audio yet
+          if (requireUserInteraction && !iOSAudioEnabled) {
+            throw new Error("User interaction required for audio playback");
+          }
+
+          await audio.play();
+          // If we reach here, playback started successfully
+        } catch (playError) {
+          cleanup();
+          reject(playError);
+        }
+      };
+
+      audio.addEventListener("ended", onEndHandler);
+      audio.addEventListener("error", onErrorHandler);
+      audio.addEventListener("canplaythrough", onCanPlayHandler);
+      audio.addEventListener("loadeddata", onLoadedDataHandler);
+
+      // Set blob URL as source (better for Firefox)
+      if (blobUrl) {
+        audio.src = blobUrl;
+        audio.load();
+      } else {
+        reject(new Error("Failed to create blob URL"));
+        return;
       }
-    };
-
-    audio.addEventListener("ended", onEndHandler);
-    audio.addEventListener("error", onErrorHandler);
-    audio.addEventListener("canplaythrough", onCanPlayHandler);
-
-    // Start loading the audio
-    audio.load();
-  });
+    });
+  } catch (fetchError) {
+    // Clean up blob URL if fetch failed
+    if (blobUrl) {
+      URL.revokeObjectURL(blobUrl);
+    }
+    throw fetchError;
+  }
 };
 
 export interface AudioPlayerOptions {
@@ -113,12 +160,13 @@ export interface AudioPlayerOptions {
   autoDelay?: number;
   speechRate?: number;
   requireUserInteraction?: boolean; // Add flag to handle iOS autoplay restrictions
+  preloadNext?: boolean; // Whether to preload the next word in the sequence
 }
 
 /**
- * Plays audio for a word, prioritizing generated audio with fallback to speech synthesis
+ * Plays audio for a word using streaming endpoint with browser caching
  * @param word - The word to play audio for
- * @param wordSet - The word set containing the word and potential audio data
+ * @param wordSet - The word set containing the word
  * @param options - Optional callbacks and configuration
  * @returns Promise that resolves when audio starts playing
  */
@@ -134,50 +182,56 @@ export const playWordAudio = async (
     autoDelay = 0,
     speechRate = 0.8,
     requireUserInteraction = false,
+    preloadNext = false,
   } = options;
 
   const playFn = async () => {
     try {
       onStart?.();
 
-      // First, try to use generated audio if available
-      const wordItem = wordSet.words.find((w: WordItem) => w.word === word);
-      const audioInfo = wordItem?.audio;
+      const apiBaseUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-      if (audioInfo && audioInfo.audioId) {
-        // Use the generated audio from the API
-        const apiBaseUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-        const audioUrl = `${apiBaseUrl}/api/wordsets/${wordSet.id}/audio/${audioInfo.audioId}`;
+      // Use streaming endpoint with language parameter - browser will cache this
+      // Including language in URL avoids database lookup on backend
+      const streamingUrl = `${apiBaseUrl}/api/wordsets/${wordSet.id}/words/${encodeURIComponent(word)}/audio?lang=${encodeURIComponent(wordSet.language)}`;
 
-        try {
-          await playAudioWithiOSSupport(
-            audioUrl,
-            requireUserInteraction,
-            onEnd,
-          );
-        } catch (audioError) {
-          console.log(
-            "Generated audio failed, falling back to speech synthesis:",
-            audioError,
-          );
-          // Fallback to speech synthesis
-          fallbackToSpeechSynthesis();
+      try {
+        await playAudioWithiOSSupport(
+          streamingUrl,
+          requireUserInteraction,
+          onEnd,
+        );
+
+        if (process.env.NODE_ENV === "development") {
+          console.log("Successfully played streaming audio for:", word);
         }
-      } else {
-        // Fallback to speech synthesis if no generated audio
-        fallbackToSpeechSynthesis();
+
+        // Opportunistically preload next word if requested
+        if (preloadNext) {
+          preloadNextWord(word, wordSet);
+        }
+      } catch (streamingError) {
+        if (process.env.NODE_ENV === "development") {
+          console.log(
+            "Streaming audio failed, falling back to browser TTS:",
+            streamingError,
+          );
+        }
+
+        // Fall back to browser speech synthesis
+        await fallbackToSpeechSynthesis();
       }
     } catch (error) {
       console.log(
         "Audio playback failed, falling back to speech synthesis:",
         error,
       );
-      fallbackToSpeechSynthesis();
+      await fallbackToSpeechSynthesis();
     }
   };
 
-  const fallbackToSpeechSynthesis = () => {
+  const fallbackToSpeechSynthesis = async () => {
     if (!("speechSynthesis" in window)) {
       const error = new Error("Speech synthesis not supported");
       onError?.(error);
@@ -188,9 +242,29 @@ export const playWordAudio = async (
     try {
       speechSynthesis.cancel();
 
+      // Get available voices with Safari compatibility
+      const voices = await getVoicesWithFallback();
+
       const utterance = new SpeechSynthesisUtterance(word);
       utterance.lang = wordSet.language === "no" ? "nb-NO" : "en-US";
       utterance.rate = speechRate;
+
+      // Explicitly select the best voice for Norwegian if available
+      if (wordSet.language === "no" && voices.length > 0) {
+        const norwegianVoice = selectBestNorwegianVoice(voices);
+        if (norwegianVoice) {
+          utterance.voice = norwegianVoice;
+          if (process.env.NODE_ENV === "development") {
+            console.log(
+              "Using Norwegian voice:",
+              norwegianVoice.name,
+              norwegianVoice.lang,
+            );
+          }
+        } else if (process.env.NODE_ENV === "development") {
+          console.warn("No Norwegian voice found, using default");
+        }
+      }
 
       utterance.onend = () => {
         onEnd?.();
@@ -263,31 +337,106 @@ export const requiresUserInteractionForAudio = (): boolean => {
 };
 
 /**
- * Test function to verify detection logic for specific user agent
- * @param testUA - User agent string to test
- * @returns detection result
+ * Gets available speech synthesis voices with Safari compatibility
+ * Safari requires waiting for onvoiceschanged event
  */
-export const testUserAgentDetection = (testUA: string) => {
-  const userAgent = testUA.toLowerCase();
-  const isIOS = /iphone|ipad|ipod/.test(userAgent);
-  const isMacOS = /macintosh|mac os x/.test(userAgent);
-  const isSafari = /safari/.test(userAgent) && !/chrome/.test(userAgent);
-  const isMobile =
-    /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(
-      userAgent,
-    );
+const getVoicesWithFallback = (): Promise<SpeechSynthesisVoice[]> => {
+  return new Promise((resolve) => {
+    let voices = speechSynthesis.getVoices();
 
-  const requiresInteraction = isIOS || (isSafari && (isMacOS || isMobile));
+    // If voices are already loaded (Chrome, Firefox)
+    if (voices.length > 0) {
+      resolve(voices);
+      return;
+    }
 
-  return {
-    originalUA: testUA,
-    userAgentLower: userAgent,
-    isIOS,
-    isMacOS,
-    isSafari,
-    isMobile,
-    requiresInteraction,
-  };
+    // Safari needs to wait for onvoiceschanged
+    const voicesChangedHandler = () => {
+      voices = speechSynthesis.getVoices();
+      speechSynthesis.removeEventListener(
+        "voiceschanged",
+        voicesChangedHandler,
+      );
+      resolve(voices);
+    };
+
+    speechSynthesis.addEventListener("voiceschanged", voicesChangedHandler);
+
+    // Fallback timeout in case event never fires
+    setTimeout(() => {
+      speechSynthesis.removeEventListener(
+        "voiceschanged",
+        voicesChangedHandler,
+      );
+      resolve(speechSynthesis.getVoices());
+    }, 1000);
+  });
+};
+
+/**
+ * Selects the best Norwegian voice from available voices
+ * Prioritizes: nb-NO (Bokmål) > no-NO (generic) > nn-NO (Nynorsk)
+ */
+const selectBestNorwegianVoice = (
+  voices: SpeechSynthesisVoice[],
+): SpeechSynthesisVoice | null => {
+  // Priority 1: Bokmål (nb-NO)
+  let norwegianVoice = voices.find((voice) => voice.lang === "nb-NO");
+
+  if (norwegianVoice) return norwegianVoice;
+
+  // Priority 2: Generic Norwegian (no-NO)
+  norwegianVoice = voices.find((voice) => voice.lang === "no-NO");
+
+  if (norwegianVoice) return norwegianVoice;
+
+  // Priority 3: Nynorsk (nn-NO)
+  norwegianVoice = voices.find((voice) => voice.lang === "nn-NO");
+
+  if (norwegianVoice) return norwegianVoice;
+
+  // Priority 4: Any voice starting with nb-, no-, or nn-
+  norwegianVoice = voices.find(
+    (voice) =>
+      voice.lang.startsWith("nb-") ||
+      voice.lang.startsWith("no-") ||
+      voice.lang.startsWith("nn-"),
+  );
+
+  return norwegianVoice || null;
+};
+
+/**
+ * Preloads the next word's audio in the background for smoother playback
+ */
+const preloadNextWord = (currentWord: string, wordSet: WordSet): void => {
+  const currentIndex = wordSet.words.findIndex((w) => w.word === currentWord);
+
+  if (currentIndex === -1 || currentIndex >= wordSet.words.length - 1) {
+    // No next word to preload
+    return;
+  }
+
+  const nextWord = wordSet.words[currentIndex + 1].word;
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  const nextWordUrl = `${apiBaseUrl}/api/wordsets/${wordSet.id}/words/${encodeURIComponent(nextWord)}/audio?lang=${encodeURIComponent(wordSet.language)}`;
+
+  // Preload using fetch (browser will cache it)
+  fetch(nextWordUrl, {
+    method: "GET",
+    cache: "force-cache", // Use cached version if available
+  })
+    .then(() => {
+      if (process.env.NODE_ENV === "development") {
+        console.log("Preloaded audio for next word:", nextWord);
+      }
+    })
+    .catch((error) => {
+      // Silently fail - this is just an optimization
+      if (process.env.NODE_ENV === "development") {
+        console.log("Failed to preload next word:", error);
+      }
+    });
 };
 
 /**
@@ -304,112 +453,22 @@ export const stopAudio = (): void => {
 };
 
 /**
- * Checks if a word has generated audio available
- * @param word - The word to check
- * @param wordSet - The word set containing the word
- * @returns true if generated audio is available, false otherwise
+ * Checks if audio is available for a word (either generated audio or speech synthesis)
+ * @param wordItem - The word item to check
+ * @returns true if any form of audio is available
  */
-export const hasGeneratedAudio = (word: string, wordSet: WordSet): boolean => {
-  const wordItem = wordSet.words.find((w: WordItem) => w.word === word);
-  return !!(wordItem?.audio?.audioId && wordItem?.audio?.audioUrl);
-};
+export const hasAudioAvailable = (wordItem: WordItem | undefined): boolean => {
+  if (!wordItem) return false;
 
-/**
- * Gets the audio URL for a word if generated audio is available
- * @param word - The word to get audio URL for
- * @param wordSet - The word set containing the word
- * @returns The audio URL or null if not available
- */
-export const getWordAudioUrl = (
-  word: string,
-  wordSet: WordSet,
-): string | null => {
-  const wordItem = wordSet.words.find((w: WordItem) => w.word === word);
-  const audioInfo = wordItem?.audio;
-
-  if (audioInfo && audioInfo.audioId) {
-    const apiBaseUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-    return `${apiBaseUrl}/api/wordsets/${wordSet.id}/audio/${audioInfo.audioId}`;
+  // Check if generated audio is available
+  if (wordItem.audio?.audioUrl || wordItem.audio?.audioId) {
+    return true;
   }
 
-  return null;
-};
+  // Check if speech synthesis is available as fallback
+  if (typeof window !== "undefined" && "speechSynthesis" in window) {
+    return true;
+  }
 
-/**
- * Gets statistics about audio availability in a wordset
- * @param wordSet - The word set to analyze
- * @returns Object with audio statistics
- */
-export const getWordSetAudioStats = (wordSet: WordSet) => {
-  const totalWords = wordSet.words.length;
-  const wordsWithAudio = wordSet.words.filter((w) => w.audio?.audioUrl).length;
-  const hasAnyAudio = wordsWithAudio > 0;
-  const hasAllAudio = wordsWithAudio === totalWords;
-
-  return {
-    totalWords,
-    wordsWithAudio,
-    hasAnyAudio,
-    hasAllAudio,
-    audioPercentage:
-      totalWords > 0 ? Math.round((wordsWithAudio / totalWords) * 100) : 0,
-  };
-};
-
-/**
- * Creates a reusable audio player hook-like function for managing audio state
- * @returns Object with audio control functions and state management helpers
- */
-export const createAudioController = () => {
-  let currentAudio: HTMLAudioElement | null = null;
-  let isPlaying = false;
-
-  const stop = () => {
-    if (currentAudio) {
-      currentAudio.pause();
-      currentAudio.currentTime = 0;
-      currentAudio = null;
-    }
-    stopAudio(); // Also stop speech synthesis
-    isPlaying = false;
-  };
-
-  const play = async (
-    word: string,
-    wordSet: WordSet,
-    options: AudioPlayerOptions = {},
-  ): Promise<void> => {
-    // Stop any currently playing audio
-    stop();
-
-    isPlaying = true;
-
-    const enhancedOptions = {
-      ...options,
-      onEnd: () => {
-        isPlaying = false;
-        currentAudio = null;
-        options.onEnd?.();
-      },
-      onError: (error: Error) => {
-        isPlaying = false;
-        currentAudio = null;
-        options.onError?.(error);
-      },
-    };
-
-    await playWordAudio(word, wordSet, enhancedOptions);
-  };
-
-  const initializeForUserInteraction = () => {
-    initializeAudioForIOS();
-  };
-
-  return {
-    play,
-    stop,
-    isPlaying: () => isPlaying,
-    initializeForUserInteraction,
-  };
+  return false;
 };

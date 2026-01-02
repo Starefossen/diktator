@@ -12,7 +12,7 @@ Name | Type | Description | Notes
 ## Example
 
 ```typescript
-import { ModelsAPIResponse } from 'diktator-api-client';
+import { ModelsAPIResponse } from './api';
 
 const instance: ModelsAPIResponse = {
     data,

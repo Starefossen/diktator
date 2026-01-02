@@ -53,21 +53,20 @@ export const no = {
   "home.demo.cta.desc": "Opprett ditt første ordsett for å begynne å øve",
   "home.demo.cta.button": "Kom i gang",
 
-  "home.benefits.title": "Perfekt for alle",
-  "home.benefits.subtitle":
-    "Enten du er forelder, lærer eller student, tilpasser Diktator seg dine behov",
+  "home.benefits.title": "Perfekt for familier",
+  "home.benefits.subtitle": "Designet for foreldre og barn som lærer sammen",
   "home.benefits.parents.title": "For foreldre",
   "home.benefits.parents.1": "Følg barnets stavefremgang",
   "home.benefits.parents.2": "Opprett tilpassede ordlister",
   "home.benefits.parents.3": "Trygt, reklamefritt miljø",
-  "home.benefits.teachers.title": "For lærere",
-  "home.benefits.teachers.1": "Administrer flere elevkontoer",
-  "home.benefits.teachers.2": "Læreplantilpassede ordsett",
-  "home.benefits.teachers.3": "Detaljerte fremgangsrapporter",
-  "home.benefits.students.title": "For elever",
-  "home.benefits.students.1": "Morsom, spillaktig opplevelse",
-  "home.benefits.students.2": "Umiddelbar tilbakemelding",
-  "home.benefits.students.3": "Selvpasert læring",
+  "home.benefits.children.title": "For barn",
+  "home.benefits.children.1": "Morsom, spillaktig opplevelse",
+  "home.benefits.children.2": "Lyduttale for hvert ord",
+  "home.benefits.children.3": "Umiddelbar tilbakemelding på svar",
+  "home.benefits.family.title": "For familien",
+  "home.benefits.family.1": "Del ordsett på tvers av kontoer",
+  "home.benefits.family.2": "Flere barneprofiler støttes",
+  "home.benefits.family.3": "Selvpasert læring for hvert barn",
 
   "home.pwa.title": "Installer som app",
   "home.pwa.subtitle":
@@ -99,8 +98,8 @@ export const no = {
   "home.cta.footer": "Ingen nedlastinger nødvendig • Fungerer på alle enheter",
 
   // Existing features
-  "home.features.auth": "Firebase autentisering",
-  "home.features.database": "Firestore database",
+  "home.features.auth": "OIDC autentisering",
+  "home.features.database": "PostgreSQL database",
   "home.features.i18n": "Flerspråklig støtte (EN/NO)",
   "home.features.wordsets": "Tilpassede ordsett og tester",
   "home.features.profiles": "Brukerprofiler og statistikk",
@@ -110,7 +109,7 @@ export const no = {
   "home.features.results.desc": "Fremgangssporing og detaljerte resultater",
   "home.features.profiles.desc": "Familiekontoer med individuell sporing",
   "home.features.i18n.desc": "Norsk og engelsk språkstøtte",
-  "home.features.emulators": "Firebase emulatorer",
+  "home.features.emulators": "Lokale utviklingstjenester",
   "home.nextPhase.title": "Klar for fase 2:",
   "home.nextPhase.desc":
     "Tilpassede ordsett, familiedeling og avansert analyse",
@@ -136,7 +135,7 @@ export const no = {
   // Phase 1
   "home.progress.phase1.title": "Autentisering",
   "home.progress.phase1.subtitle": "Brukerbehandling",
-  "home.progress.phase1.point1": "Firebase autentisering",
+  "home.progress.phase1.point1": "OIDC autentisering",
   "home.progress.phase1.point2": "Beskyttede ruter og sikkerhet",
   "home.progress.phase1.point3": "Brukerprofiler og familier",
 

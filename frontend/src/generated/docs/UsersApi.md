@@ -12,7 +12,7 @@ All URIs are relative to *http://localhost:8080/api*
 # **apiUsersPost**
 > ModelsAPIResponse apiUsersPost(request)
 
-Create a new user account after Firebase authentication
+Create a new user account after OIDC authentication
 
 ### Example
 
@@ -21,7 +21,7 @@ import {
     UsersApi,
     Configuration,
     ApiUsersPostRequest
-} from 'diktator-api-client';
+} from './api';
 
 const configuration = new Configuration();
 const apiInstance = new UsersApi(configuration);
@@ -59,7 +59,7 @@ const { status, data } = await apiInstance.apiUsersPost(
 |-------------|-------------|------------------|
 |**201** | User created successfully |  -  |
 |**400** | Invalid request data |  -  |
-|**401** | Firebase UID not found in token |  -  |
+|**401** | Auth identity not found in token |  -  |
 |**500** | Internal server error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
@@ -75,7 +75,7 @@ Get the current user\'s profile information
 import {
     UsersApi,
     Configuration
-} from 'diktator-api-client';
+} from './api';
 
 const configuration = new Configuration();
 const apiInstance = new UsersApi(configuration);
@@ -122,7 +122,7 @@ Get test results for the authenticated user
 import {
     UsersApi,
     Configuration
-} from 'diktator-api-client';
+} from './api';
 
 const configuration = new Configuration();
 const apiInstance = new UsersApi(configuration);
@@ -169,7 +169,7 @@ import {
     UsersApi,
     Configuration,
     ModelsSaveResultRequest
-} from 'diktator-api-client';
+} from './api';
 
 const configuration = new Configuration();
 const apiInstance = new UsersApi(configuration);

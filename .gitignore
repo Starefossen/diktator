@@ -89,12 +89,7 @@ backend/bin/*
 # Temporary files
 *.tmp
 *.temp
-
-# Firebase
-.firebase/
-firebase-debug.log
-firebase-emulator-data/
-# Optionally commit firebase-emulator-data/ to persist data in git if desired
+.tmp/
 
 # Terraform & OpenTofu
 *.tfstate

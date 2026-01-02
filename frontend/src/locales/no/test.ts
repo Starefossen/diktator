@@ -26,4 +26,10 @@ export const test = {
 
   // Context/definition
   "test.context": "Sammenheng:",
+
+  // Translation mode
+  "test.translateWord": "Oversett",
+  "test.typeTranslationHere": "Skriv oversettelsen her...",
+  "test.translateToTarget": "Oversett til",
+  "test.translateToSource": "Oversett til",
 };

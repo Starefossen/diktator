@@ -30,19 +30,19 @@ func setupIntegrationTest(t *testing.T) *gin.Engine {
 		// Mock token validation - extract user info from token
 		if authHeader == "Bearer valid-parent-smith" {
 			c.Set("userID", "parent-smith")
-			c.Set("firebaseUID", "firebase-parent-smith")
+			c.Set("authID", "oidc-parent-smith")
 			c.Set("userRole", "parent")
 			c.Set("familyID", "family-smith")
 			c.Set("validatedFamilyID", "family-smith")
 		} else if authHeader == "Bearer valid-parent-johnson" {
 			c.Set("userID", "parent-johnson")
-			c.Set("firebaseUID", "firebase-parent-johnson")
+			c.Set("authID", "oidc-parent-johnson")
 			c.Set("userRole", "parent")
 			c.Set("familyID", "family-johnson")
 			c.Set("validatedFamilyID", "family-johnson")
 		} else if authHeader == "Bearer valid-child-smith" {
 			c.Set("userID", "child-smith-1")
-			c.Set("firebaseUID", "firebase-child-smith-1")
+			c.Set("authID", "oidc-child-smith-1")
 			c.Set("userRole", "child")
 			c.Set("familyID", "family-smith")
 			c.Set("validatedFamilyID", "family-smith")

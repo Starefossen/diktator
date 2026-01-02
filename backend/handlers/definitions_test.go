@@ -20,7 +20,7 @@ func TestWordSetDefinitions(t *testing.T) {
 	// Mock authentication middleware for testing
 	router.Use(func(c *gin.Context) {
 		c.Set("userID", "test-user-1")
-		c.Set("firebaseUID", "firebase-test-user-1")
+		c.Set("authID", "oidc-test-user-1")
 		c.Set("userRole", "parent")
 		c.Set("familyID", "test-family-1")
 		c.Set("validatedFamilyID", "test-family-1")
@@ -49,12 +49,14 @@ func TestWordSetDefinitions(t *testing.T) {
 		// Convert WordInput to WordSet Words structure
 		for _, wordInput := range req.Words {
 			word := struct {
-				Word       string           `firestore:"word" json:"word"`
-				Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
-				Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
+				Word         string               `json:"word"`
+				Audio        models.WordAudio     `json:"audio,omitempty"`
+				Definition   string               `json:"definition,omitempty"`
+				Translations []models.Translation `json:"translations,omitempty"`
 			}{
-				Word:       wordInput.Word,
-				Definition: wordInput.Definition,
+				Word:         wordInput.Word,
+				Definition:   wordInput.Definition,
+				Translations: wordInput.Translations,
 			}
 			wordSet.Words = append(wordSet.Words, word)
 		}
@@ -307,9 +309,10 @@ func TestDefinitionDisplayInTest(t *testing.T) {
 			ID:   "test-homophone-set",
 			Name: "Homophone Test",
 			Words: []struct {
-				Word       string           `firestore:"word" json:"word"`
-				Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
-				Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
+				Word         string               `json:"word"`
+				Audio        models.WordAudio     `json:"audio,omitempty"`
+				Definition   string               `json:"definition,omitempty"`
+				Translations []models.Translation `json:"translations,omitempty"`
 			}{
 				{
 					Word:       "bear",
@@ -347,9 +350,10 @@ func TestDefinitionDisplayInTest(t *testing.T) {
 		// Test case for regular words without context needs
 		wordSet := models.WordSet{
 			Words: []struct {
-				Word       string           `firestore:"word" json:"word"`
-				Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
-				Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
+				Word         string               `json:"word"`
+				Audio        models.WordAudio     `json:"audio,omitempty"`
+				Definition   string               `json:"definition,omitempty"`
+				Translations []models.Translation `json:"translations,omitempty"`
 			}{
 				{
 					Word:       "simple",

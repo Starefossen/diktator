@@ -15,14 +15,14 @@ import (
 )
 
 // setupResultsTest creates a test router with mocked services
-func setupResultsTest(t *testing.T) (*gin.Engine, *MockFirestoreService) {
+func setupResultsTest(t *testing.T) (*gin.Engine, *MockDBService) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 
 	// Create mock service
-	mockFirestore := NewMockFirestoreService()
+	mockDB := NewMockDBService()
 	mockServiceManager := &MockServiceManager{
-		Firestore: mockFirestore,
+		DB: mockDB,
 	}
 
 	// Add service manager to context
@@ -46,13 +46,13 @@ func setupResultsTest(t *testing.T) (*gin.Engine, *MockFirestoreService) {
 		switch authHeader {
 		case "Bearer valid-parent-token":
 			c.Set("userID", "parent-user-123")
-			c.Set("firebaseUID", "firebase-parent-123")
+			c.Set("authID", "oidc-parent-123")
 			c.Set("userRole", "parent")
 			c.Set("familyID", "family-123")
 			c.Set("validatedFamilyID", "family-123")
 		case "Bearer valid-child-token":
 			c.Set("userID", "child-user-456")
-			c.Set("firebaseUID", "firebase-child-456")
+			c.Set("authID", "oidc-child-456")
 			c.Set("userRole", "child")
 			c.Set("familyID", "family-123")
 			c.Set("validatedFamilyID", "family-123")
@@ -73,7 +73,7 @@ func setupResultsTest(t *testing.T) (*gin.Engine, *MockFirestoreService) {
 	r.GET("/api/families/results", testGetFamilyResults)
 	r.GET("/health", HealthCheck)
 
-	return r, mockFirestore
+	return r, mockDB
 }
 
 // Test-specific handlers that work with MockServiceManager
@@ -96,7 +96,7 @@ func testGetResults(c *gin.Context) {
 	}
 
 	mockSM := sm.(*MockServiceManager)
-	results, err := mockSM.Firestore.GetTestResults(userID.(string))
+	results, err := mockSM.DB.GetTestResults(userID.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve test results",
@@ -139,7 +139,7 @@ func testSaveResult(c *gin.Context) {
 	result.UserID = userID.(string)
 
 	mockSM := sm.(*MockServiceManager)
-	err := mockSM.Firestore.SaveTestResult(&result)
+	err := mockSM.DB.SaveTestResult(&result)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to save test result",
@@ -171,7 +171,7 @@ func testGetFamilyResults(c *gin.Context) {
 	}
 
 	mockSM := sm.(*MockServiceManager)
-	results, err := mockSM.Firestore.GetFamilyResults(familyID.(string))
+	results, err := mockSM.DB.GetFamilyResults(familyID.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve family results",
@@ -185,7 +185,7 @@ func testGetFamilyResults(c *gin.Context) {
 }
 
 func TestGetUserResults(t *testing.T) {
-	r, mockFirestore := setupResultsTest(t)
+	r, mockDB := setupResultsTest(t)
 
 	t.Run("should return user results successfully", func(t *testing.T) {
 		// Mock data
@@ -216,7 +216,7 @@ func TestGetUserResults(t *testing.T) {
 			},
 		}
 
-		mockFirestore.On("GetTestResults", "parent-user-123").Return(expectedResults, nil)
+		mockDB.On("GetTestResults", "parent-user-123").Return(expectedResults, nil)
 
 		// Create request
 		req, _ := http.NewRequest("GET", "/api/users/results", nil)
@@ -238,7 +238,7 @@ func TestGetUserResults(t *testing.T) {
 		assert.True(t, ok)
 		assert.Len(t, resultsData, 2)
 
-		mockFirestore.AssertExpectations(t)
+		mockDB.AssertExpectations(t)
 	})
 
 	t.Run("should return 401 when no authorization header", func(t *testing.T) {
@@ -262,7 +262,7 @@ func TestGetUserResults(t *testing.T) {
 }
 
 func TestSaveUserResult(t *testing.T) {
-	r, mockFirestore := setupResultsTest(t)
+	r, mockDB := setupResultsTest(t)
 
 	t.Run("should save user result successfully", func(t *testing.T) {
 		// Prepare request data
@@ -295,7 +295,7 @@ func TestSaveUserResult(t *testing.T) {
 			TimeSpent: 95,
 		}
 
-		mockFirestore.On("SaveTestResult", mock.AnythingOfType("*models.TestResult")).Return(nil)
+		mockDB.On("SaveTestResult", mock.AnythingOfType("*models.TestResult")).Return(nil)
 
 		// Create request
 		jsonData, _ := json.Marshal(saveRequest)
@@ -315,7 +315,7 @@ func TestSaveUserResult(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "Test result saved successfully", response.Message)
 
-		mockFirestore.AssertExpectations(t)
+		mockDB.AssertExpectations(t)
 	})
 
 	t.Run("should return 400 when invalid request data", func(t *testing.T) {
@@ -338,7 +338,7 @@ func TestSaveUserResult(t *testing.T) {
 
 func TestGetFamilyResults(t *testing.T) {
 	t.Run("should return family results successfully", func(t *testing.T) {
-		r, mockFirestore := setupResultsTest(t)
+		r, mockDB := setupResultsTest(t)
 		// Mock data - results from multiple family members
 		expectedResults := []models.TestResult{
 			{
@@ -367,7 +367,7 @@ func TestGetFamilyResults(t *testing.T) {
 			},
 		}
 
-		mockFirestore.On("GetFamilyResults", "family-123").Return(expectedResults, nil)
+		mockDB.On("GetFamilyResults", "family-123").Return(expectedResults, nil)
 
 		// Create request
 		req, _ := http.NewRequest("GET", "/api/families/results", nil)
@@ -389,11 +389,11 @@ func TestGetFamilyResults(t *testing.T) {
 		assert.True(t, ok)
 		assert.Len(t, resultsData, 2)
 
-		mockFirestore.AssertExpectations(t)
+		mockDB.AssertExpectations(t)
 	})
 
 	t.Run("should work for child users too", func(t *testing.T) {
-		r, mockFirestore := setupResultsTest(t)
+		r, mockDB := setupResultsTest(t)
 
 		expectedResults := []models.TestResult{
 			{
@@ -403,7 +403,7 @@ func TestGetFamilyResults(t *testing.T) {
 			},
 		}
 
-		mockFirestore.On("GetFamilyResults", "family-123").Return(expectedResults, nil)
+		mockDB.On("GetFamilyResults", "family-123").Return(expectedResults, nil)
 
 		req, _ := http.NewRequest("GET", "/api/families/results", nil)
 		req.Header.Set("Authorization", "Bearer valid-child-token")
@@ -412,13 +412,13 @@ func TestGetFamilyResults(t *testing.T) {
 		r.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		mockFirestore.AssertExpectations(t)
+		mockDB.AssertExpectations(t)
 	})
 
 	t.Run("should return empty array when no results found", func(t *testing.T) {
-		r, mockFirestore := setupResultsTest(t)
+		r, mockDB := setupResultsTest(t)
 
-		mockFirestore.On("GetFamilyResults", "family-123").Return([]models.TestResult{}, nil)
+		mockDB.On("GetFamilyResults", "family-123").Return([]models.TestResult{}, nil)
 
 		req, _ := http.NewRequest("GET", "/api/families/results", nil)
 		req.Header.Set("Authorization", "Bearer valid-parent-token")
@@ -436,7 +436,7 @@ func TestGetFamilyResults(t *testing.T) {
 		assert.True(t, ok)
 		assert.Len(t, resultsData, 0)
 
-		mockFirestore.AssertExpectations(t)
+		mockDB.AssertExpectations(t)
 	})
 }
 

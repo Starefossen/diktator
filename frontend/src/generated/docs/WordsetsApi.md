@@ -5,10 +5,9 @@ All URIs are relative to *http://localhost:8080/api*
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|
 |[**apiWordsetsGet**](#apiwordsetsget) | **GET** /api/wordsets | Get Word Sets|
-|[**apiWordsetsIdAudioAudioIdGet**](#apiwordsetsidaudioaudioidget) | **GET** /api/wordsets/{id}/audio/{audioId} | Stream Audio File by ID|
 |[**apiWordsetsIdDelete**](#apiwordsetsiddelete) | **DELETE** /api/wordsets/{id} | Delete Word Set|
-|[**apiWordsetsIdGenerateAudioPost**](#apiwordsetsidgenerateaudiopost) | **POST** /api/wordsets/{id}/generate-audio | Generate Audio|
 |[**apiWordsetsIdPut**](#apiwordsetsidput) | **PUT** /api/wordsets/{id} | Update Word Set|
+|[**apiWordsetsIdWordsWordAudioGet**](#apiwordsetsidwordswordaudioget) | **GET** /api/wordsets/{id}/words/{word}/audio | Stream Audio for Word|
 |[**apiWordsetsPost**](#apiwordsetspost) | **POST** /api/wordsets | Create Word Set|
 |[**apiWordsetsVoicesGet**](#apiwordsetsvoicesget) | **GET** /api/wordsets/voices | List available TTS voices|
 
@@ -23,7 +22,7 @@ Get word sets for the authenticated user\'s family
 import {
     WordsetsApi,
     Configuration
-} from 'diktator-api-client';
+} from './api';
 
 const configuration = new Configuration();
 const apiInstance = new WordsetsApi(configuration);
@@ -58,63 +57,6 @@ This endpoint does not have any parameters.
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **apiWordsetsIdAudioAudioIdGet**
-> File apiWordsetsIdAudioAudioIdGet()
-
-Stream audio file for a specific audio ID within a wordset
-
-### Example
-
-```typescript
-import {
-    WordsetsApi,
-    Configuration
-} from 'diktator-api-client';
-
-const configuration = new Configuration();
-const apiInstance = new WordsetsApi(configuration);
-
-let id: string; //WordSet ID (default to undefined)
-let audioId: string; //Audio ID to stream (default to undefined)
-
-const { status, data } = await apiInstance.apiWordsetsIdAudioAudioIdGet(
-    id,
-    audioId
-);
-```
-
-### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **id** | [**string**] | WordSet ID | defaults to undefined|
-| **audioId** | [**string**] | Audio ID to stream | defaults to undefined|
-
-
-### Return type
-
-**File**
-
-### Authorization
-
-[BearerAuth](../README.md#BearerAuth)
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: audio/mpeg
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**200** | Audio file content |  -  |
-|**400** | Invalid request |  -  |
-|**404** | Audio file not found |  -  |
-|**500** | Internal server error |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
 # **apiWordsetsIdDelete**
 > ModelsAPIResponse apiWordsetsIdDelete()
 
@@ -126,7 +68,7 @@ Delete a word set by ID and all associated audio files from storage
 import {
     WordsetsApi,
     Configuration
-} from 'diktator-api-client';
+} from './api';
 
 const configuration = new Configuration();
 const apiInstance = new WordsetsApi(configuration);
@@ -169,60 +111,6 @@ const { status, data } = await apiInstance.apiWordsetsIdDelete(
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **apiWordsetsIdGenerateAudioPost**
-> ModelsAPIResponse apiWordsetsIdGenerateAudioPost()
-
-Generate TTS audio for all words in a word set
-
-### Example
-
-```typescript
-import {
-    WordsetsApi,
-    Configuration
-} from 'diktator-api-client';
-
-const configuration = new Configuration();
-const apiInstance = new WordsetsApi(configuration);
-
-let id: string; //Word Set ID (default to undefined)
-
-const { status, data } = await apiInstance.apiWordsetsIdGenerateAudioPost(
-    id
-);
-```
-
-### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **id** | [**string**] | Word Set ID | defaults to undefined|
-
-
-### Return type
-
-**ModelsAPIResponse**
-
-### Authorization
-
-[BearerAuth](../README.md#BearerAuth)
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**202** | Audio generation started |  -  |
-|**400** | Word set ID is required |  -  |
-|**404** | Word set not found |  -  |
-|**500** | Failed to start audio generation |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
 # **apiWordsetsIdPut**
 > ModelsAPIResponse apiWordsetsIdPut(request)
 
@@ -235,7 +123,7 @@ import {
     WordsetsApi,
     Configuration,
     ModelsUpdateWordSetRequest
-} from 'diktator-api-client';
+} from './api';
 
 const configuration = new Configuration();
 const apiInstance = new WordsetsApi(configuration);
@@ -282,6 +170,63 @@ const { status, data } = await apiInstance.apiWordsetsIdPut(
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **apiWordsetsIdWordsWordAudioGet**
+> File apiWordsetsIdWordsWordAudioGet()
+
+Stream TTS audio for a specific word in a word set (generates on-demand, cached by browser)
+
+### Example
+
+```typescript
+import {
+    WordsetsApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new WordsetsApi(configuration);
+
+let id: string; //Word Set ID (default to undefined)
+let word: string; //Word to generate audio for (default to undefined)
+
+const { status, data } = await apiInstance.apiWordsetsIdWordsWordAudioGet(
+    id,
+    word
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**string**] | Word Set ID | defaults to undefined|
+| **word** | [**string**] | Word to generate audio for | defaults to undefined|
+
+
+### Return type
+
+**File**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: audio/ogg
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Audio file content (OGG Opus) |  -  |
+|**400** | Invalid request |  -  |
+|**404** | Word set not found |  -  |
+|**500** | Failed to generate audio |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **apiWordsetsPost**
 > ModelsAPIResponse apiWordsetsPost(request)
 
@@ -294,7 +239,7 @@ import {
     WordsetsApi,
     Configuration,
     ModelsCreateWordSetRequest
-} from 'diktator-api-client';
+} from './api';
 
 const configuration = new Configuration();
 const apiInstance = new WordsetsApi(configuration);
@@ -348,7 +293,7 @@ Get a list of available Text-to-Speech voices for a specific language
 import {
     WordsetsApi,
     Configuration
-} from 'diktator-api-client';
+} from './api';
 
 const configuration = new Configuration();
 const apiInstance = new WordsetsApi(configuration);

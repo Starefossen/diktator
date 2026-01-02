@@ -13,20 +13,20 @@ export const family = {
   "family.back": "← Tilbake til Familie",
 
   // Child Account Management
-  "family.child.create.title": "Opprett barnekonto",
+  "family.child.create.title": "Legg til barn i familie",
   "family.child.create.cancel": "Avbryt",
-  "family.child.create.button": "Opprett konto",
-  "family.child.create.creating": "Oppretter...",
+  "family.child.create.button": "Legg til barn",
+  "family.child.create.creating": "Legger til...",
   "family.child.create.required": "Alle felt er påkrevd",
-  "family.child.create.success": "Barnekonto opprettet!",
-  "family.child.create.error": "Kunne ikke opprette barnekonto. Prøv igjen.",
+  "family.child.create.success": "Barn lagt til i familie!",
+  "family.child.create.error":
+    "Kunne ikke legge til barn i familie. Prøv igjen.",
   "family.child.displayName": "Barnets navn",
   "family.child.displayName.placeholder": "Skriv inn barnets navn",
   "family.child.email": "E-postadresse",
   "family.child.email.placeholder": "Skriv inn barnets e-post",
-  "family.child.password": "Passord",
-  "family.child.password.placeholder": "Lag et passord",
-  "family.child.password.help": "Passordet må være minst 6 tegn langt",
+  "family.child.email.help":
+    "Barnet må allerede ha en konto i Zitadel. De vil bli koblet når de logger inn.",
   "family.child.lastActive": "Sist aktiv",
   "family.child.active": "Aktiv",
   "family.child.inactive": "Inaktiv",

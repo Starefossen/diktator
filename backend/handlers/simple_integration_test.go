@@ -16,9 +16,9 @@ func TestSimpleIntegration(t *testing.T) {
 	r := gin.New()
 
 	// Create mock service
-	mockFirestore := NewMockFirestoreService()
+	mockDB := NewMockDBService()
 	mockServiceManager := &MockServiceManager{
-		Firestore: mockFirestore,
+		DB: mockDB,
 	}
 
 	// Add service manager to context
@@ -44,10 +44,10 @@ func TestSimpleIntegration(t *testing.T) {
 		expectedResults := []models.TestResult{
 			{ID: "test-result-1", UserID: userID},
 		}
-		mockSM.Firestore.On("GetTestResults", userID).Return(expectedResults, nil)
+		mockSM.DB.On("GetTestResults", userID).Return(expectedResults, nil)
 
 		// Call the mock
-		results, err := mockSM.Firestore.GetTestResults(userID)
+		results, err := mockSM.DB.GetTestResults(userID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -72,5 +72,5 @@ func TestSimpleIntegration(t *testing.T) {
 	assert.Len(t, resultsData, 1)
 
 	// Verify mock was called
-	mockFirestore.AssertCalled(t, "GetTestResults", "test-user-123")
+	mockDB.AssertCalled(t, "GetTestResults", "test-user-123")
 }

@@ -17,7 +17,7 @@ Returns the health status of the API
 import {
     HealthApi,
     Configuration
-} from 'diktator-api-client';
+} from './api';
 
 const configuration = new Configuration();
 const apiInstance = new HealthApi(configuration);

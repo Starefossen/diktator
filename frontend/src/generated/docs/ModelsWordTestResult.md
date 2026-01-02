@@ -17,7 +17,7 @@ Name | Type | Description | Notes
 ## Example
 
 ```typescript
-import { ModelsWordTestResult } from 'diktator-api-client';
+import { ModelsWordTestResult } from './api';
 
 const instance: ModelsWordTestResult = {
     attempts,

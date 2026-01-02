@@ -2,11 +2,12 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import type { Language } from "@/locales";
 import {
   WordSet,
-  Language,
   TestConfiguration,
   DEFAULT_TEST_CONFIG,
+  Translation,
 } from "@/types";
 import {
   ModelsUpdateWordSetRequest,
@@ -42,7 +43,9 @@ interface EditableWord {
   id: string;
   word: string;
   definition: string;
+  translations: Translation[];
   isEditing: boolean;
+  showTranslations?: boolean;
 }
 
 export default function WordSetEditor({
@@ -60,9 +63,16 @@ export default function WordSetEditor({
   const [selectedLanguage, setSelectedLanguage] = useState<Language>(
     (initialData?.language as Language) || (language as Language),
   );
-  const [testConfiguration] = useState<TestConfiguration>(
-    initialData?.testConfiguration || DEFAULT_TEST_CONFIG,
+  const [defaultMode, setDefaultMode] = useState<
+    "standard" | "dictation" | "translation"
+  >(initialData?.testConfiguration?.defaultMode || "standard");
+  const [targetLanguage, setTargetLanguage] = useState<Language>(
+    (initialData?.testConfiguration?.targetLanguage as Language) || "en",
   );
+  const [testConfiguration, _setTestConfiguration] =
+    useState<TestConfiguration>(
+      initialData?.testConfiguration || DEFAULT_TEST_CONFIG,
+    );
 
   // Words state with inline editing
   const [words, setWords] = useState<EditableWord[]>(() => {
@@ -71,7 +81,9 @@ export default function WordSetEditor({
         id: `${w.word}-${index}`,
         word: w.word,
         definition: w.definition || "",
+        translations: w.translations || [],
         isEditing: false,
+        showTranslations: false,
       }));
     }
     return [];
@@ -80,6 +92,9 @@ export default function WordSetEditor({
   // New word form state
   const [newWord, setNewWord] = useState("");
   const [newDefinition, setNewDefinition] = useState("");
+  const [_newTranslationLang, _setNewTranslationLang] =
+    useState<Language>("en");
+  const [newTranslationText, setNewTranslationText] = useState("");
 
   // Refs for focus management
   const newWordRef = useRef<HTMLInputElement>(null);
@@ -98,6 +113,11 @@ export default function WordSetEditor({
   const handleAddWord = () => {
     if (!newWord.trim()) return;
 
+    // Validate translation mode requirements
+    if (defaultMode === "translation" && !newTranslationText.trim()) {
+      return;
+    }
+
     const wordExists = words.some(
       (w) => w.word.toLowerCase() === newWord.trim().toLowerCase(),
     );
@@ -106,16 +126,27 @@ export default function WordSetEditor({
       return;
     }
 
+    const translations: Translation[] = [];
+    if (defaultMode === "translation" && newTranslationText.trim()) {
+      translations.push({
+        language: targetLanguage,
+        text: newTranslationText.trim(),
+      });
+    }
+
     const newWordItem: EditableWord = {
       id: `${newWord.trim()}-${Date.now()}`,
       word: newWord.trim(),
       definition: newDefinition.trim(),
+      translations,
       isEditing: false,
+      showTranslations: false,
     };
 
     setWords([...words, newWordItem]);
     setNewWord("");
     setNewDefinition("");
+    setNewTranslationText("");
     // Focus back to the word input for easy continuation
     if (newWordRef.current) {
       newWordRef.current.focus();
@@ -167,13 +198,21 @@ export default function WordSetEditor({
     const wordInputs: ModelsWordInput[] = words.map((w) => ({
       word: w.word,
       definition: w.definition || undefined,
+      translations: w.translations.length > 0 ? w.translations : undefined,
     }));
+
+    const updatedTestConfig: TestConfiguration = {
+      ...testConfiguration,
+      defaultMode,
+      targetLanguage:
+        defaultMode === "translation" ? targetLanguage : undefined,
+    };
 
     const formData = {
       name: name.trim(),
       words: wordInputs,
       language: selectedLanguage,
-      testConfiguration,
+      testConfiguration: updatedTestConfig,
     };
 
     await onSave(formData);
@@ -253,6 +292,173 @@ export default function WordSetEditor({
               </div>
             </div>
 
+            {/* Default Mode Selection */}
+            <div>
+              <label className="block mb-3 font-medium text-gray-900 text-sm/6">
+                {t("wordsets.editor.defaultTestMode")}
+              </label>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <label className="relative flex p-4 bg-white border rounded-lg shadow-sm cursor-pointer focus:outline-none">
+                  <input
+                    type="radio"
+                    name="default-mode"
+                    value="standard"
+                    checked={defaultMode === "standard"}
+                    onChange={(e) =>
+                      setDefaultMode(
+                        e.target.value as
+                        | "standard"
+                        | "dictation"
+                        | "translation",
+                      )
+                    }
+                    className="sr-only"
+                  />
+                  <span className="flex flex-1">
+                    <span className="flex flex-col">
+                      <span className="block text-sm font-medium text-gray-900">
+                        Standard
+                      </span>
+                      <span className="flex items-center mt-1 text-sm text-gray-500">
+                        {t("wordsets.editor.mode.standard.description")}
+                      </span>
+                    </span>
+                  </span>
+                  <svg
+                    className={`h-5 w-5 ${defaultMode === "standard" ? "text-indigo-600" : "text-transparent"}`}
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </label>
+
+                <label className="relative flex p-4 bg-white border rounded-lg shadow-sm cursor-pointer focus:outline-none">
+                  <input
+                    type="radio"
+                    name="default-mode"
+                    value="dictation"
+                    checked={defaultMode === "dictation"}
+                    onChange={(e) =>
+                      setDefaultMode(
+                        e.target.value as
+                        | "standard"
+                        | "dictation"
+                        | "translation",
+                      )
+                    }
+                    className="sr-only"
+                  />
+                  <span className="flex flex-1">
+                    <span className="flex flex-col">
+                      <span className="block text-sm font-medium text-gray-900">
+                        Dictation
+                      </span>
+                      <span className="flex items-center mt-1 text-sm text-gray-500">
+                        {t("wordsets.editor.mode.dictation.description")}
+                      </span>
+                    </span>
+                  </span>
+                  <svg
+                    className={`h-5 w-5 ${defaultMode === "dictation" ? "text-indigo-600" : "text-transparent"}`}
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </label>
+
+                <label className="relative flex p-4 bg-white border rounded-lg shadow-sm cursor-pointer focus:outline-none">
+                  <input
+                    type="radio"
+                    name="default-mode"
+                    value="translation"
+                    checked={defaultMode === "translation"}
+                    onChange={(e) =>
+                      setDefaultMode(
+                        e.target.value as
+                        | "standard"
+                        | "dictation"
+                        | "translation",
+                      )
+                    }
+                    className="sr-only"
+                  />
+                  <span className="flex flex-1">
+                    <span className="flex flex-col">
+                      <span className="block text-sm font-medium text-gray-900">
+                        Translation
+                      </span>
+                      <span className="flex items-center mt-1 text-sm text-gray-500">
+                        {t("wordsets.editor.mode.translation.description")}
+                      </span>
+                    </span>
+                  </span>
+                  <svg
+                    className={`h-5 w-5 ${defaultMode === "translation" ? "text-indigo-600" : "text-transparent"}`}
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </label>
+              </div>
+
+              {/* Target Language for Translation Mode */}
+              {defaultMode === "translation" && (
+                <div className="mt-4">
+                  <label
+                    htmlFor="target-language"
+                    className="block font-medium text-gray-900 text-sm/6"
+                  >
+                    {t("wordsets.editor.targetLanguage")}
+                  </label>
+                  <div className="grid grid-cols-1 mt-2">
+                    <select
+                      id="target-language"
+                      value={targetLanguage}
+                      onChange={(e) =>
+                        setTargetLanguage(e.target.value as Language)
+                      }
+                      className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                    >
+                      <option value="en">{t("common.english")}</option>
+                      <option value="no">{t("common.norwegian")}</option>
+                    </select>
+                    <svg
+                      className="self-center col-start-1 row-start-1 mr-2 text-gray-500 pointer-events-none size-5 justify-self-end sm:size-4"
+                      viewBox="0 0 16 16"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <p className="mt-2 text-sm text-gray-500">
+                    Users will translate from{" "}
+                    {selectedLanguage === "en" ? "English" : "Norwegian"} to{" "}
+                    {targetLanguage === "en" ? "English" : "Norwegian"}
+                  </p>
+                </div>
+              )}
+            </div>
+
             {/* Words Section */}
             <div>
               <div className="flex items-center justify-between">
@@ -271,10 +477,18 @@ export default function WordSetEditor({
                       value={newWord}
                       onChange={(e) => setNewWord(e.target.value)}
                       className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-                      placeholder={t("wordsets.addWord.placeholder")}
+                      placeholder={
+                        defaultMode === "translation"
+                          ? `Source word (${selectedLanguage})`
+                          : t("wordsets.addWord.placeholder")
+                      }
                       onKeyPress={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
+                          if (defaultMode === "translation") {
+                            // Don't submit if translation is required but empty
+                            return;
+                          }
                           handleAddWord();
                         }
                       }}
@@ -286,7 +500,35 @@ export default function WordSetEditor({
                       value={newDefinition}
                       onChange={(e) => setNewDefinition(e.target.value)}
                       className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-                      placeholder="Definition/context (optional) - helps distinguish homophones like 'to', 'two', 'too'"
+                      placeholder={t(
+                        "wordsets.editor.definition.placeholder",
+                      )}
+                      onKeyPress={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          if (
+                            defaultMode === "translation" &&
+                            !newTranslationText.trim()
+                          ) {
+                            // Don't submit if translation is required but empty
+                            return;
+                          }
+                          handleAddWord();
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Translation input for translation mode */}
+                {defaultMode === "translation" && (
+                  <div className="mb-3">
+                    <input
+                      type="text"
+                      value={newTranslationText}
+                      onChange={(e) => setNewTranslationText(e.target.value)}
+                      className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                      placeholder={`Translation (${targetLanguage}) - required for translation mode`}
                       onKeyPress={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
@@ -295,12 +537,17 @@ export default function WordSetEditor({
                       }}
                     />
                   </div>
-                </div>
+                )}
+
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={handleAddWord}
-                    disabled={!newWord.trim()}
+                    disabled={
+                      !newWord.trim() ||
+                      (defaultMode === "translation" &&
+                        !newTranslationText.trim())
+                    }
                     className="rounded-md bg-indigo-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-xs ring-1 ring-indigo-600 ring-inset hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <HeroPlusIcon className="inline w-4 h-4 mr-1" />
@@ -313,9 +560,9 @@ export default function WordSetEditor({
               <div className="mt-6 space-y-2">
                 {words.length === 0 ? (
                   <div className="py-8 text-center text-gray-500">
-                    <p>No words added yet</p>
+                    <p>{t("wordsets.editor.noWords")}</p>
                     <p className="mt-1 text-sm">
-                      Use the form above to add words to this set
+                      {t("wordsets.editor.noWordsHint")}
                     </p>
                   </div>
                 ) : (
@@ -364,7 +611,9 @@ export default function WordSetEditor({
                                 )
                               }
                               className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
-                              placeholder="Definition/context (optional)"
+                              placeholder={t(
+                                "wordsets.editor.definition.placeholderShort",
+                              )}
                               onKeyPress={(e) => {
                                 if (e.key === "Enter") {
                                   e.preventDefault();
@@ -439,7 +688,7 @@ export default function WordSetEditor({
           </form>
         </ModalContent>
 
-        <ModalActions className="flex-shrink-0 mt-6 sm:mt-6 md:mt-8">
+        <ModalActions className="mt-6 shrink-0 sm:mt-6 md:mt-8">
           {/* Primary action first in DOM for proper tab order and focus management */}
           <ModalButton
             onClick={() => {

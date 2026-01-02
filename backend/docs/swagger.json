@@ -103,7 +103,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a new child account (parent only)",
+                "description": "Add an existing child user to the family (parent only)\nThis assumes the child already has an account in Zitadel.\nThe child will be linked to the family when they first log in.",
                 "consumes": [
                     "application/json"
                 ],
@@ -113,7 +113,7 @@
                 "tags": [
                     "children"
                 ],
-                "summary": "Create Child Account",
+                "summary": "Add Child to Family",
                 "parameters": [
                     {
                         "description": "Child account creation request",
@@ -127,7 +127,7 @@
                 ],
                 "responses": {
                     "201": {
-                        "description": "Child account created successfully",
+                        "description": "Child added to family successfully",
                         "schema": {
                             "$ref": "#/definitions/models.APIResponse"
                         }
@@ -145,7 +145,7 @@
                         }
                     },
                     "500": {
-                        "description": "Service unavailable or failed to create child account",
+                        "description": "Service unavailable or failed to add child",
                         "schema": {
                             "$ref": "#/definitions/models.APIResponse"
                         }
@@ -513,7 +513,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a new user account after Firebase authentication",
+                "description": "Create a new user account after OIDC authentication",
                 "consumes": [
                     "application/json"
                 ],
@@ -534,6 +534,9 @@
                             "type": "object",
                             "properties": {
                                 "displayName": {
+                                    "type": "string"
+                                },
+                                "email": {
                                     "type": "string"
                                 },
                                 "role": {
@@ -557,7 +560,7 @@
                         }
                     },
                     "401": {
-                        "description": "Firebase UID not found in token",
+                        "description": "Auth identity not found in token",
                         "schema": {
                             "$ref": "#/definitions/models.APIResponse"
                         }
@@ -846,9 +849,7 @@
                                     "properties": {
                                         "data": {
                                             "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
+                                            "items": {}
                                         }
                                     }
                                 }
@@ -987,43 +988,38 @@
                 }
             }
         },
-        "/api/wordsets/{id}/audio/{audioId}": {
+        "/api/wordsets/{id}/words/{word}/audio": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Stream audio file for a specific audio ID within a wordset",
+                "description": "Stream TTS audio for a specific word in a word set (generates on-demand, cached by browser)",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
-                    "audio/mpeg"
+                    "audio/ogg"
                 ],
                 "tags": [
                     "wordsets"
                 ],
-                "summary": "Stream Audio File by ID",
+                "summary": "Stream Audio for Word",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "WordSet ID",
+                        "description": "Word Set ID",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Audio ID to stream",
-                        "name": "audioId",
+                        "description": "Word to generate audio for",
+                        "name": "word",
                         "in": "path",
                         "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Audio file content",
+                        "description": "Audio file content (OGG Opus)",
                         "schema": {
                             "type": "file"
                         }
@@ -1035,68 +1031,13 @@
                         }
                     },
                     "404": {
-                        "description": "Audio file not found",
-                        "schema": {
-                            "$ref": "#/definitions/models.APIResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/models.APIResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/wordsets/{id}/generate-audio": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Generate TTS audio for all words in a word set",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "wordsets"
-                ],
-                "summary": "Generate Audio",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Word Set ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "202": {
-                        "description": "Audio generation started",
-                        "schema": {
-                            "$ref": "#/definitions/models.APIResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Word set ID is required",
-                        "schema": {
-                            "$ref": "#/definitions/models.APIResponse"
-                        }
-                    },
-                    "404": {
                         "description": "Word set not found",
                         "schema": {
                             "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "500": {
-                        "description": "Failed to start audio generation",
+                        "description": "Failed to generate audio",
                         "schema": {
                             "$ref": "#/definitions/models.APIResponse"
                         }
@@ -1182,8 +1123,7 @@
             "required": [
                 "displayName",
                 "email",
-                "familyId",
-                "password"
+                "familyId"
             ],
             "properties": {
                 "displayName": {
@@ -1194,10 +1134,6 @@
                 },
                 "familyId": {
                     "type": "string"
-                },
-                "password": {
-                    "type": "string",
-                    "minLength": 6
                 }
             }
         },
@@ -1231,6 +1167,7 @@
             "type": "object",
             "required": [
                 "correctWords",
+                "mode",
                 "score",
                 "totalWords",
                 "wordSetId"
@@ -1245,6 +1182,14 @@
                     "items": {
                         "type": "string"
                     }
+                },
+                "mode": {
+                    "type": "string",
+                    "enum": [
+                        "standard",
+                        "dictation",
+                        "translation"
+                    ]
                 },
                 "score": {
                     "type": "number"
@@ -1264,6 +1209,26 @@
                     "items": {
                         "$ref": "#/definitions/models.WordTestResult"
                     }
+                }
+            }
+        },
+        "models.Translation": {
+            "type": "object",
+            "properties": {
+                "audioId": {
+                    "type": "string"
+                },
+                "audioUrl": {
+                    "type": "string"
+                },
+                "language": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string"
+                },
+                "voiceId": {
+                    "type": "string"
                 }
             }
         },
@@ -1301,6 +1266,12 @@
             "properties": {
                 "definition": {
                     "type": "string"
+                },
+                "translations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Translation"
+                    }
                 },
                 "word": {
                     "type": "string"
@@ -1349,7 +1320,7 @@
     },
     "securityDefinitions": {
         "BearerAuth": {
-            "description": "Firebase JWT token. Format: \"Bearer {token}\"",
+            "description": "OIDC JWT token. Format: \"Bearer {token}\"",
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"

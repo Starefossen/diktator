@@ -6,15 +6,17 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **displayName** | **string** |  | [optional] [default to undefined]
+**email** | **string** |  | [optional] [default to undefined]
 **role** | **string** |  | [optional] [default to undefined]
 
 ## Example
 
 ```typescript
-import { ApiUsersPostRequest } from 'diktator-api-client';
+import { ApiUsersPostRequest } from './api';
 
 const instance: ApiUsersPostRequest = {
     displayName,
+    email,
     role,
 };
 ```

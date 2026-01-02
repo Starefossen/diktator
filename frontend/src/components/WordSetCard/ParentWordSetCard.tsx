@@ -1,8 +1,8 @@
 import React from "react";
 import { WordSet, FamilyProgress } from "@/types";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
-import { ChevronDownIcon } from '@heroicons/react/16/solid';
+import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
+import { ChevronDownIcon } from "@heroicons/react/16/solid";
 import {
   HeroBookIcon,
   HeroVolumeIcon,
@@ -14,7 +14,7 @@ import {
   HeroCheckIcon,
 } from "@/components/Icons";
 import { FlagIcon } from "@/components/FlagIcon";
-import { getWordSetAudioStats } from "@/lib/audioPlayer";
+import { hasAudioAvailable } from "@/lib/audioPlayer";
 
 interface ParentWordSetCardProps {
   wordSet: WordSet;
@@ -42,7 +42,6 @@ export function ParentWordSetCard({
   onViewAnalytics,
 }: ParentWordSetCardProps) {
   const { t } = useLanguage();
-  const audioStats = getWordSetAudioStats(wordSet);
 
   // Get children's performance for this wordset
   const getChildrenPerformance = () => {
@@ -91,7 +90,8 @@ export function ParentWordSetCard({
             className="w-5 h-4"
           />
           <p className="text-xs text-gray-500">
-            {t("wordsets.created")}: {new Date(wordSet.createdAt).toLocaleDateString()}
+            {t("wordsets.created")}:{" "}
+            {new Date(wordSet.createdAt).toLocaleDateString()}
           </p>
         </div>
       </div>
@@ -112,19 +112,22 @@ export function ParentWordSetCard({
                 <div className="flex items-center gap-2">
                   {child.score && (
                     <span
-                      className={`px-2 py-1 rounded-full font-medium ${child.score >= 90
-                        ? "text-green-700 bg-green-100"
-                        : child.score >= 70
-                          ? "text-yellow-700 bg-yellow-100"
-                          : "text-red-700 bg-red-100"
-                        }`}
+                      className={`px-2 py-1 rounded-full font-medium ${
+                        child.score >= 90
+                          ? "text-green-700 bg-green-100"
+                          : child.score >= 70
+                            ? "text-yellow-700 bg-yellow-100"
+                            : "text-red-700 bg-red-100"
+                      }`}
                     >
                       {child.score}%
                     </span>
                   )}
                   <span className="text-gray-500">
                     {child.attempts}{" "}
-                    {child.attempts === 1 ? t("wordsets.attempt") : t("wordsets.attempts")}
+                    {child.attempts === 1
+                      ? t("wordsets.attempt")
+                      : t("wordsets.attempts")}
                   </span>
                   {child.score && child.score >= 90 && (
                     <HeroCheckIcon className="w-3 h-3 text-green-600" />
@@ -145,10 +148,11 @@ export function ParentWordSetCard({
       )}
 
       {/* Content Info */}
-      <div className="flex-grow">
+      <div className="grow">
         <div className="flex flex-wrap gap-1 mb-4 overflow-y-auto max-h-16">
           {wordSet.words.slice(0, 8).map((wordItem, index) => {
-            const hasAudio = wordItem.audio?.audioUrl;
+            const hasAudio = hasAudioAvailable(wordItem);
+            const hasGeneratedAudio = wordItem.audio?.audioUrl;
             const isPlaying = playingAudio === wordItem.word;
 
             return (
@@ -157,13 +161,19 @@ export function ParentWordSetCard({
                 onClick={() =>
                   hasAudio ? onWordClick(wordItem.word, wordSet) : undefined
                 }
-                className={`inline-flex items-center px-2 py-1 text-xs rounded transition-all duration-200 ${hasAudio
-                  ? "text-blue-700 bg-blue-100 cursor-pointer hover:bg-blue-200 hover:shadow-sm"
-                  : "text-gray-700 bg-gray-100"
-                  } ${isPlaying ? "ring-2 ring-blue-500 shadow-md" : ""}`}
+                className={`inline-flex items-center px-2 py-1 text-xs rounded transition-all duration-200 ${
+                  hasAudio
+                    ? "text-blue-700 bg-blue-100 cursor-pointer hover:bg-blue-200 hover:shadow-sm"
+                    : "text-gray-700 bg-gray-100"
+                } ${isPlaying ? "ring-2 ring-blue-500 shadow-md" : ""}`}
+                title={hasGeneratedAudio ? "Generated audio" : "Text-to-speech"}
               >
                 {hasAudio && (
-                  <HeroVolumeIcon className="w-3 h-3 mr-1 text-blue-500" />
+                  <HeroVolumeIcon
+                    className={`w-3 h-3 mr-1 ${
+                      hasGeneratedAudio ? "text-blue-500" : "text-gray-500"
+                    }`}
+                  />
                 )}
                 {wordItem.word}
               </span>
@@ -175,23 +185,6 @@ export function ParentWordSetCard({
             </span>
           )}
         </div>
-
-        {/* Audio Processing Indicator */}
-        {wordSet.audioProcessing === "pending" && (
-          <div className="mb-3">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-sm text-amber-600">
-                {t("wordsets.audioProcessingInProgress")}
-              </span>
-            </div>
-            <div className="w-full h-2 bg-gray-200 rounded-full">
-              <div
-                className="h-2 rounded-full bg-amber-500 animate-pulse"
-                style={{ width: "100%" }}
-              ></div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Action Buttons - Parent Focused */}
@@ -199,19 +192,19 @@ export function ParentWordSetCard({
         <div className="inline-flex flex-1 rounded-md shadow-xs">
           <button
             onClick={() => onStartTest(wordSet)}
-            className="relative inline-flex items-center justify-center flex-1 px-3 py-2 text-sm font-semibold text-white transition-all duration-200 rounded-l-md bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 focus:z-10"
+            className="relative inline-flex items-center justify-center flex-1 px-3 py-2 text-sm font-semibold text-white transition-all duration-200 rounded-l-md bg-linear-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 focus:z-10"
           >
             <HeroPlayIcon className="w-4 h-4 mr-1" />
             {t("wordsets.startTest")}
           </button>
-          <Menu as="div" className="relative -ml-px block">
-            <MenuButton className="relative inline-flex items-center rounded-r-md bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 px-2 py-2 text-white focus:z-10">
+          <Menu as="div" className="relative block -ml-px">
+            <MenuButton className="relative inline-flex items-center px-2 py-2 text-white rounded-r-md bg-linear-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 focus:z-10">
               <span className="sr-only">Open options</span>
               <ChevronDownIcon aria-hidden="true" className="w-5 h-5" />
             </MenuButton>
             <MenuItems
               transition
-              className="absolute right-0 z-10 mt-2 -mr-1 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 transition focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
+              className="absolute right-0 z-10 w-48 mt-2 -mr-1 transition origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black/5 focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
             >
               <div className="py-1">
                 <MenuItem>

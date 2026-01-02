@@ -21,13 +21,13 @@ It can be used in both TypeScript and JavaScript. In TypeScript, the definition 
 
 To build and compile the typescript sources to javascript use:
 ```
-npm install
-npm run build
+pnpm install
+pnpm run build
 ```
 
 ### Publishing
 
-First build the package then run `npm publish`
+First build the package then run `pnpm publish`
 
 ### Consuming
 
@@ -36,13 +36,13 @@ navigate to the folder of your consuming project and run one of the following co
 _published:_
 
 ```
-npm install diktator-api-client@1.0.0 --save
+pnpm install diktator-api-client@1.0.0 --save
 ```
 
 _unPublished (not recommended):_
 
 ```
-npm install PATH_TO_GENERATED_PACKAGE --save
+pnpm install PATH_TO_GENERATED_PACKAGE --save
 ```
 
 ### Documentation for API Endpoints

@@ -1,10 +1,9 @@
 /**
  * API client shim that provides user-friendly method names and automatic authentication
- * This wraps the generated OpenAPI client with Firebase authentication
+ * This wraps the generated OpenAPI client with OIDC authentication
  */
 
-import { auth } from "@/lib/firebase";
-import { onAuthStateChanged, User } from "firebase/auth";
+import { getAccessToken, isMockMode, mockToken } from "@/lib/oidc";
 import {
   Configuration,
   ChildrenApi,
@@ -20,24 +19,7 @@ import {
   ModelsChildAccount,
 } from "@/generated";
 
-// Wait for auth state to be ready
-const waitForAuthState = (): Promise<User | null> => {
-  return new Promise((resolve) => {
-    // If we already have a current user, return immediately
-    if (auth.currentUser) {
-      resolve(auth.currentUser);
-      return;
-    }
-
-    // Otherwise, wait for the auth state to be determined
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      unsubscribe();
-      resolve(user);
-    });
-  });
-};
-
-// Create a configuration that automatically includes Firebase auth token
+// Create a configuration that automatically includes OIDC auth token
 const createConfiguration = async (
   requireAuth = true,
 ): Promise<Configuration> => {
@@ -46,18 +28,12 @@ const createConfiguration = async (
   };
 
   if (requireAuth) {
-    // Wait for auth state to be ready
-    const user = await waitForAuthState();
+    // Get OIDC access token
+    const token = isMockMode ? mockToken : getAccessToken();
 
-    if (user) {
-      try {
-        const idToken = await user.getIdToken();
-        authHeaders["Authorization"] = `Bearer ${idToken}`;
-      } catch (error) {
-        console.error("Failed to get Firebase auth token:", error);
-        throw new Error("Authentication failed");
-      }
-    } else {
+    if (token) {
+      authHeaders["Authorization"] = `Bearer ${token}`;
+    } else if (!isMockMode) {
       throw new Error("User not authenticated");
     }
   }
@@ -163,11 +139,6 @@ export const generatedApiClient = {
     return wordsetsApi.apiWordsetsIdDelete(id);
   },
 
-  async generateAudio(id: string) {
-    const { wordsetsApi } = await createApiInstances();
-    return wordsetsApi.apiWordsetsIdGenerateAudioPost(id);
-  },
-
   // Results management
   async getResults() {
     const { usersApi } = await createApiInstances();
@@ -191,5 +162,3 @@ export const generatedApiClient = {
     return healthApi.healthGet();
   },
 };
-
-export default generatedApiClient;

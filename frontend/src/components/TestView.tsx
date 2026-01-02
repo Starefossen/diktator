@@ -14,6 +14,8 @@ interface TestViewProps {
   currentTries: number;
   answers: TestAnswer[];
   isAudioPlaying: boolean;
+  testMode: "standard" | "dictation" | "translation";
+  wordDirections: ("toTarget" | "toSource")[];
   onUserAnswerChange: (answer: string) => void;
   onSubmitAnswer: () => void;
   onPlayCurrentWord: () => void;
@@ -30,6 +32,8 @@ export function TestView({
   currentTries,
   answers,
   isAudioPlaying,
+  testMode,
+  wordDirections,
   onUserAnswerChange,
   onSubmitAnswer,
   onPlayCurrentWord,
@@ -37,22 +41,56 @@ export function TestView({
 }: TestViewProps) {
   const { t } = useLanguage();
   const testConfig = getEffectiveTestConfig(activeTest);
+  const currentWord = activeTest.words[currentWordIndex];
+
+  // For translation mode, get direction from the hook
+  const targetLanguage = activeTest.testConfiguration?.targetLanguage;
+  const wordDirection =
+    wordDirections.length > currentWordIndex
+      ? wordDirections[currentWordIndex]
+      : "toTarget";
+
+  const translation =
+    testMode === "translation" && targetLanguage
+      ? currentWord?.translations?.find((tr) => tr.language === targetLanguage)
+      : undefined;
+
+  // Determine what to show based on direction
+  const showWord =
+    wordDirection === "toTarget" ? currentWord.word : translation?.text;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
       <div className="container px-4 py-8 mx-auto">
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="mb-2 text-3xl font-bold text-gray-800">
             {activeTest.name}
           </h1>
+          {testMode === "translation" && translation && (
+            <p className="mt-2 text-xl text-gray-700">
+              {wordDirection === "toTarget" ? (
+                <>
+                  {t("test.translateToTarget")}:{" "}
+                  <span className="font-semibold">{showWord}</span> →{" "}
+                  {targetLanguage?.toUpperCase()}
+                </>
+              ) : (
+                <>
+                  {t("test.translateToSource")}:{" "}
+                  <span className="font-semibold">{showWord}</span> →{" "}
+                  {activeTest.language.toUpperCase()}
+                </>
+              )}
+            </p>
+          )}
           <p className="text-gray-600">
             {t("test.progress")} {currentWordIndex + 1} {t("common.of")}{" "}
             {processedWords.length}
           </p>
           <div className="w-full h-2 mt-4 bg-gray-200 rounded-full">
             <div
-              className="h-2 transition-all duration-300 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+              className="h-2 transition-all duration-300 rounded-full bg-linear-to-r from-blue-500 to-purple-500"
               style={{
                 width: `${((currentWordIndex + 1) / processedWords.length) * 100}%`,
               }}
@@ -82,7 +120,7 @@ export function TestView({
                 )}
                 <button
                   onClick={onPlayCurrentWord}
-                  className="relative p-4 text-4xl text-white transition-all duration-200 transform rounded-full shadow-lg sm:p-6 sm:text-6xl bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 hover:shadow-xl hover:scale-105"
+                  className="relative p-4 text-4xl text-white transition-all duration-200 transform rounded-full shadow-lg sm:p-6 sm:text-6xl bg-linear-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 hover:shadow-xl hover:scale-105"
                 >
                   <HeroVolumeIcon className="w-12 h-12 text-white sm:w-16 sm:h-16" />
                 </button>
@@ -133,7 +171,11 @@ export function TestView({
                   onChange={(e) => onUserAnswerChange(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && onSubmitAnswer()}
                   className="w-full px-4 py-3 text-xl text-center transition-all duration-200 border-2 border-gray-300 rounded-lg sm:px-6 sm:py-4 sm:text-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder={t("test.typeWordHere")}
+                  placeholder={
+                    testMode === "translation"
+                      ? t("test.typeTranslationHere")
+                      : t("test.typeWordHere")
+                  }
                   autoFocus
                   autoCorrect={testConfig?.enableAutocorrect ? "on" : "off"}
                   autoCapitalize={testConfig?.enableAutocorrect ? "on" : "off"}
@@ -150,21 +192,25 @@ export function TestView({
             </div>
 
             <div className="flex flex-wrap justify-center gap-2 sm:gap-4">
-              {/* Play Again Button */}
-              <button
-                onClick={onPlayCurrentWord}
-                className="flex items-center px-4 py-2 font-semibold text-white transition-colors bg-blue-500 rounded-lg sm:px-6 sm:py-3 hover:bg-blue-600"
-                disabled={showFeedback}
-              >
-                <HeroVolumeIcon className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">{t("test.playAgain")}</span>
-              </button>
+              {/* Play Again Button - Hidden in dictation mode since it auto-plays */}
+              {testMode !== "dictation" && (
+                <button
+                  onClick={onPlayCurrentWord}
+                  className="flex items-center px-4 py-2 font-semibold text-white transition-colors bg-blue-500 rounded-lg sm:px-6 sm:py-3 hover:bg-blue-600"
+                  disabled={showFeedback}
+                >
+                  <HeroVolumeIcon className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">
+                    {t("test.playAgain")}
+                  </span>
+                </button>
+              )}
 
               {/* Next/Finish Button */}
               <button
                 onClick={onSubmitAnswer}
                 disabled={!userAnswer.trim() || showFeedback}
-                className="px-4 py-2 font-semibold text-white transition-all duration-200 rounded-lg sm:px-6 sm:py-3 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 font-semibold text-white transition-all duration-200 rounded-lg sm:px-6 sm:py-3 bg-linear-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="sm:hidden">
                   {currentWordIndex < processedWords.length - 1

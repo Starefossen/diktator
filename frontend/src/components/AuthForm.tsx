@@ -32,7 +32,6 @@ export default function AuthForm({ onToggleMode, isSignUp }: AuthFormProps) {
       lowerError.includes("connection") ||
       lowerError.includes("service") ||
       lowerError.includes("emulator") ||
-      lowerError.includes("firebase") ||
       lowerError.includes("development environment") ||
       lowerError.includes("timeout")
     ) {
@@ -119,11 +118,11 @@ export default function AuthForm({ onToggleMode, isSignUp }: AuthFormProps) {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen px-4 bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="flex items-center justify-center min-h-screen px-4 bg-linear-to-br from-blue-50 via-white to-purple-50">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <div className="flex items-center justify-center mb-6">
-            <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
+            <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-linear-to-br from-blue-500 to-purple-600">
               <span className="text-2xl font-bold text-white">D</span>
             </div>
           </div>
@@ -150,7 +149,7 @@ export default function AuthForm({ onToggleMode, isSignUp }: AuthFormProps) {
               }`}
             >
               <div className="flex items-start">
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   {errorType === "connection" ? (
                     <svg
                       className="w-5 h-5 text-yellow-600"
@@ -211,7 +210,7 @@ export default function AuthForm({ onToggleMode, isSignUp }: AuthFormProps) {
                     <p className="mt-1 text-xs text-yellow-600">
                       If you&apos;re in development mode, try running:{" "}
                       <code className="px-1 bg-yellow-100 rounded">
-                        mise run firebase-emulators
+                        mise run dev
                       </code>
                     </p>
                   )}
@@ -306,7 +305,7 @@ export default function AuthForm({ onToggleMode, isSignUp }: AuthFormProps) {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex justify-center w-full px-4 py-3 text-sm font-medium text-white transition-all duration-200 border border-transparent rounded-md shadow-sm bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex justify-center w-full px-4 py-3 text-sm font-medium text-white transition-all duration-200 border border-transparent rounded-md shadow-sm bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <LoadingSpinner size="sm" />

@@ -1,10 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import {
-  WordSet,
-  TestAnswer,
-  getEffectiveTestConfig,
-  SaveResultRequest,
-} from "@/types";
+import { WordSet, TestAnswer, getEffectiveTestConfig } from "@/types";
+import type { ModelsSaveResultRequest as SaveResultRequest } from "@/generated";
 import { generatedApiClient } from "@/lib/api-generated";
 import {
   playWordAudio as playWordAudioHelper,
@@ -33,9 +29,14 @@ export interface UseTestModeReturn {
   isAudioPlaying: boolean;
   currentWordAnswers: string[];
   currentWordAudioPlays: number;
+  testMode: "standard" | "dictation" | "translation";
+  wordDirections: ("toTarget" | "toSource")[]; // For translation mode only
 
   // Actions
-  startTest: (wordSet: WordSet) => void;
+  startTest: (
+    wordSet: WordSet,
+    mode?: "standard" | "dictation" | "translation",
+  ) => void;
   exitTest: () => void;
   restartTest: () => void;
   setUserAnswer: (answer: string) => void;
@@ -47,6 +48,9 @@ export interface UseTestModeReturn {
 export function useTestMode(): UseTestModeReturn {
   // Test state
   const [activeTest, setActiveTest] = useState<WordSet | null>(null);
+  const [testMode, setTestMode] = useState<
+    "standard" | "dictation" | "translation"
+  >("standard");
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState("");
   const [answers, setAnswers] = useState<TestAnswer[]>([]);
@@ -57,6 +61,9 @@ export function useTestMode(): UseTestModeReturn {
   const [showFeedback, setShowFeedback] = useState(false);
   const [lastAnswerCorrect, setLastAnswerCorrect] = useState(false);
   const [processedWords, setProcessedWords] = useState<string[]>([]);
+  const [wordDirections, setWordDirections] = useState<
+    ("toTarget" | "toSource")[]
+  >([]);
   const [testInitialized, setTestInitialized] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [currentWordAnswers, setCurrentWordAnswers] = useState<string[]>([]);
@@ -105,6 +112,7 @@ export function useTestMode(): UseTestModeReturn {
       autoDelay: needsUserInteraction ? 0 : autoDelay,
       speechRate: 0.8,
       requireUserInteraction: needsUserInteraction,
+      preloadNext: true,
     });
   }, []);
 
@@ -115,35 +123,57 @@ export function useTestMode(): UseTestModeReturn {
     }
   }, [playTestWordAudio, currentWordIndex]);
 
-  const startTest = useCallback((wordSet: WordSet) => {
-    initializeAudioForIOS();
+  const startTest = useCallback(
+    (wordSet: WordSet, mode?: "standard" | "dictation" | "translation") => {
+      initializeAudioForIOS();
 
-    setActiveTest(wordSet);
+      const selectedMode =
+        mode || wordSet.testConfiguration?.defaultMode || "standard";
+      setTestMode(selectedMode);
+      setActiveTest(wordSet);
 
-    const config = getEffectiveTestConfig(wordSet);
-    const wordStrings = wordSet.words.map((w) => w.word);
-    const words = config.shuffleWords
-      ? [...wordStrings].sort(() => Math.random() - 0.5)
-      : wordStrings;
+      const config = getEffectiveTestConfig(wordSet);
+      const wordStrings = wordSet.words.map((w) => w.word);
+      const words = config.shuffleWords
+        ? [...wordStrings].sort(() => Math.random() - 0.5)
+        : wordStrings;
 
-    setProcessedWords(words);
-    setCurrentWordIndex(0);
-    setUserAnswer("");
-    setAnswers([]);
-    setStartTime(new Date());
-    setWordStartTime(new Date());
-    setShowResult(false);
-    setCurrentTries(0);
-    setShowFeedback(false);
-    setTestInitialized(false);
-    setIsAudioPlaying(false);
-    setCurrentWordAnswers([]);
-    setCurrentWordAudioPlays(0);
+      setProcessedWords(words);
 
-    isPlayingAudioRef.current = false;
-    lastAutoPlayIndexRef.current = -1;
-    stopAudio();
-  }, []);
+      // For translation mode, generate direction for each word
+      if (selectedMode === "translation") {
+        const translationDirection =
+          wordSet.testConfiguration?.translationDirection || "toTarget";
+        const directions = words.map(() => {
+          if (translationDirection === "mixed") {
+            return Math.random() < 0.5 ? "toTarget" : "toSource";
+          }
+          return translationDirection as "toTarget" | "toSource";
+        });
+        setWordDirections(directions);
+      } else {
+        setWordDirections([]);
+      }
+
+      setCurrentWordIndex(0);
+      setUserAnswer("");
+      setAnswers([]);
+      setStartTime(new Date());
+      setWordStartTime(new Date());
+      setShowResult(false);
+      setCurrentTries(0);
+      setShowFeedback(false);
+      setTestInitialized(false);
+      setIsAudioPlaying(false);
+      setCurrentWordAnswers([]);
+      setCurrentWordAudioPlays(0);
+
+      isPlayingAudioRef.current = false;
+      lastAutoPlayIndexRef.current = -1;
+      stopAudio();
+    },
+    [],
+  );
 
   const resetTestState = useCallback(() => {
     setCurrentWordIndex(0);
@@ -206,6 +236,7 @@ export function useTestMode(): UseTestModeReturn {
           score,
           totalWords: finalAnswers.length,
           correctWords: correctAnswers.length,
+          mode: testMode as SaveResultRequest["mode"],
           incorrectWords,
           words: wordsResults,
           timeSpent: totalTimeSpent,
@@ -219,15 +250,36 @@ export function useTestMode(): UseTestModeReturn {
       playCompletionTone();
       setShowResult(true);
     },
-    [activeTest, startTime],
+    [activeTest, startTime, testMode],
   );
 
   const handleSubmitAnswer = useCallback(() => {
     if (!activeTest || !wordStartTime || !processedWords.length) return;
 
     const currentWord = processedWords[currentWordIndex];
+
+    // Determine expected answer based on mode and direction
+    let expectedAnswer = currentWord;
+    if (
+      testMode === "translation" &&
+      wordDirections.length > currentWordIndex
+    ) {
+      const direction = wordDirections[currentWordIndex];
+      const targetLanguage = activeTest.testConfiguration?.targetLanguage;
+      const wordObj = activeTest.words.find((w) => w.word === currentWord);
+      const translation = wordObj?.translations?.find(
+        (tr) => tr.language === targetLanguage,
+      );
+
+      if (direction === "toTarget" && translation) {
+        expectedAnswer = translation.text;
+      } else if (direction === "toSource") {
+        expectedAnswer = currentWord;
+      }
+    }
+
     const isCorrect =
-      userAnswer.toLowerCase().trim() === currentWord.toLowerCase();
+      userAnswer.toLowerCase().trim() === expectedAnswer.toLowerCase();
     const newTries = currentTries + 1;
     const newAnswers = [...currentWordAnswers, userAnswer.trim()];
 
@@ -295,6 +347,8 @@ export function useTestMode(): UseTestModeReturn {
     answers,
     completeTest,
     playTestWordAudio,
+    testMode,
+    wordDirections,
   ]);
 
   // Initialize test and handle auto-play
@@ -344,6 +398,8 @@ export function useTestMode(): UseTestModeReturn {
     isAudioPlaying,
     currentWordAnswers,
     currentWordAudioPlays,
+    testMode,
+    wordDirections,
 
     // Actions
     startTest,

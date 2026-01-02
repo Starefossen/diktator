@@ -1,14 +1,12 @@
 package handlers
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"strings"
 	"time"
 
-	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/starefossen/diktator/backend/internal/models"
@@ -102,7 +100,7 @@ func GetWordSets(c *gin.Context) {
 		return
 	}
 
-	wordSets, err := serviceManager.Firestore.GetWordSets(familyIDStr)
+	wordSets, err := serviceManager.DB.GetWordSets(familyIDStr)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve word sets",
@@ -165,19 +163,22 @@ func CreateWordSet(c *gin.Context) {
 
 	// Convert WordInput to WordItem structs
 	words := make([]struct {
-		Word       string           `firestore:"word" json:"word"`
-		Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
-		Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
+		Word         string               `json:"word"`
+		Audio        models.WordAudio     `json:"audio,omitempty"`
+		Definition   string               `json:"definition,omitempty"`
+		Translations []models.Translation `json:"translations,omitempty"`
 	}, len(req.Words))
 
 	for i, wordInput := range req.Words {
 		words[i] = struct {
-			Word       string           `firestore:"word" json:"word"`
-			Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
-			Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
+			Word         string               `json:"word"`
+			Audio        models.WordAudio     `json:"audio,omitempty"`
+			Definition   string               `json:"definition,omitempty"`
+			Translations []models.Translation `json:"translations,omitempty"`
 		}{
-			Word:       wordInput.Word,
-			Definition: wordInput.Definition,
+			Word:         wordInput.Word,
+			Definition:   wordInput.Definition,
+			Translations: wordInput.Translations,
 		}
 	}
 
@@ -185,17 +186,30 @@ func CreateWordSet(c *gin.Context) {
 	wordSet := &models.WordSet{
 		ID:                uuid.New().String(),
 		Name:              req.Name,
-		Words:             words,
 		FamilyID:          familyID.(string),
 		CreatedBy:         userID.(string),
 		Language:          req.Language,
-		AudioProcessing:   "pending", // Mark as pending for audio generation
 		TestConfiguration: req.TestConfiguration,
 		CreatedAt:         time.Now(),
 		UpdatedAt:         time.Now(),
 	}
 
-	err := serviceManager.Firestore.CreateWordSet(wordSet)
+	// Convert Words manually to avoid type mismatch
+	for _, w := range words {
+		wordSet.Words = append(wordSet.Words, struct {
+			Word         string               `json:"word"`
+			Audio        models.WordAudio     `json:"audio,omitempty"`
+			Definition   string               `json:"definition,omitempty"`
+			Translations []models.Translation `json:"translations,omitempty"`
+		}{
+			Word:         w.Word,
+			Audio:        w.Audio,
+			Definition:   w.Definition,
+			Translations: w.Translations,
+		})
+	}
+
+	err := serviceManager.DB.CreateWordSet(wordSet)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to create word set",
@@ -203,30 +217,9 @@ func CreateWordSet(c *gin.Context) {
 		return
 	}
 
-	// Start audio generation in background
-	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				log.Printf("Panic in audio generation goroutine for wordset %s: %v", wordSet.ID, r)
-			}
-		}()
-
-		if serviceManager == nil {
-			log.Printf("Error: Service manager is nil in goroutine for wordset %s", wordSet.ID)
-			return
-		}
-
-		err := serviceManager.GenerateAudioForWordSet(wordSet.ID)
-		if err != nil {
-			log.Printf("Error generating audio for word set %s: %v", wordSet.ID, err)
-		} else {
-			log.Printf("Successfully completed audio generation for word set %s", wordSet.ID)
-		}
-	}()
-
 	c.JSON(http.StatusCreated, models.APIResponse{
 		Data:    wordSet,
-		Message: "Word set created successfully. Audio generation started in background.",
+		Message: "Word set created successfully. Audio is generated on-demand when needed.",
 	})
 }
 
@@ -289,7 +282,7 @@ func UpdateWordSet(c *gin.Context) {
 	}
 
 	// Get existing word set to check ownership and get current state
-	existingWordSet, err := serviceManager.Firestore.GetWordSet(id)
+	existingWordSet, err := serviceManager.DB.GetWordSet(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, models.APIResponse{
 			Error: "Word set not found",
@@ -313,36 +306,33 @@ func UpdateWordSet(c *gin.Context) {
 
 	// Convert string words to WordItem structs, preserving existing audio for unchanged words
 	words := make([]struct {
-		Word       string           `firestore:"word" json:"word"`
-		Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
-		Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
+		Word         string               `json:"word"`
+		Audio        models.WordAudio     `json:"audio,omitempty"`
+		Definition   string               `json:"definition,omitempty"`
+		Translations []models.Translation `json:"translations,omitempty"`
 	}, len(req.Words))
 
-	hasNewWords := false
 	for i, wordInput := range req.Words {
 		words[i] = struct {
-			Word       string           `firestore:"word" json:"word"`
-			Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
-			Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
+			Word         string               `json:"word"`
+			Audio        models.WordAudio     `json:"audio,omitempty"`
+			Definition   string               `json:"definition,omitempty"`
+			Translations []models.Translation `json:"translations,omitempty"`
 		}{
-			Word:       wordInput.Word,
-			Definition: wordInput.Definition,
+			Word:         wordInput.Word,
+			Definition:   wordInput.Definition,
+			Translations: wordInput.Translations,
 		}
 
-		// Check if this is a new word or if audio needs regeneration
-		if !originalWords[wordInput.Word] {
-			hasNewWords = true
-		} else {
-			// Preserve existing audio for unchanged words
-			for _, existingWord := range existingWordSet.Words {
-				if existingWord.Word == wordInput.Word {
-					words[i].Audio = existingWord.Audio
-					// Only preserve existing definition if new one is empty
-					if wordInput.Definition == "" {
-						words[i].Definition = existingWord.Definition
-					}
-					break
+		// Preserve existing audio for unchanged words
+		for _, existingWord := range existingWordSet.Words {
+			if existingWord.Word == wordInput.Word {
+				words[i].Audio = existingWord.Audio
+				// Only preserve existing definition if new one is empty
+				if wordInput.Definition == "" {
+					words[i].Definition = existingWord.Definition
 				}
+				break
 			}
 		}
 	}
@@ -351,7 +341,6 @@ func UpdateWordSet(c *gin.Context) {
 	updatedWordSet := &models.WordSet{
 		ID:                existingWordSet.ID,
 		Name:              req.Name,
-		Words:             words,
 		FamilyID:          existingWordSet.FamilyID,
 		CreatedBy:         existingWordSet.CreatedBy,
 		Language:          req.Language,
@@ -360,44 +349,29 @@ func UpdateWordSet(c *gin.Context) {
 		UpdatedAt:         time.Now(),
 	}
 
-	// Set audio processing status if there are new words or language changed
-	if hasNewWords || req.Language != existingWordSet.Language {
-		updatedWordSet.AudioProcessing = "pending"
-		updatedWordSet.AudioProcessedAt = nil
-	} else {
-		updatedWordSet.AudioProcessing = existingWordSet.AudioProcessing
-		updatedWordSet.AudioProcessedAt = existingWordSet.AudioProcessedAt
+	// Convert Words manually to avoid type mismatch
+	for _, w := range words {
+		updatedWordSet.Words = append(updatedWordSet.Words, struct {
+			Word         string               `json:"word"`
+			Audio        models.WordAudio     `json:"audio,omitempty"`
+			Definition   string               `json:"definition,omitempty"`
+			Translations []models.Translation `json:"translations,omitempty"`
+		}{
+			Word:         w.Word,
+			Audio:        w.Audio,
+			Definition:   w.Definition,
+			Translations: w.Translations,
+		})
 	}
 
-	err = serviceManager.Firestore.UpdateWordSet(updatedWordSet)
+	// Audio is now generated on-demand, no pre-generation status tracking needed
+
+	err = serviceManager.DB.UpdateWordSet(updatedWordSet)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to update word set",
 		})
 		return
-	}
-
-	// Generate audio for new words in background if needed
-	if hasNewWords || req.Language != existingWordSet.Language {
-		go func() {
-			defer func() {
-				if r := recover(); r != nil {
-					log.Printf("Panic in audio generation goroutine for updated wordset %s: %v", updatedWordSet.ID, r)
-				}
-			}()
-
-			if serviceManager == nil {
-				log.Printf("Error: Service manager is nil in goroutine for updated wordset %s", updatedWordSet.ID)
-				return
-			}
-
-			err := serviceManager.GenerateAudioForWordSet(updatedWordSet.ID)
-			if err != nil {
-				log.Printf("Error generating audio for updated word set %s: %v", updatedWordSet.ID, err)
-			} else {
-				log.Printf("Successfully completed audio generation for updated word set %s", updatedWordSet.ID)
-			}
-		}()
 	}
 
 	c.JSON(http.StatusOK, models.APIResponse{
@@ -437,7 +411,7 @@ func DeleteWordSet(c *gin.Context) {
 		return
 	}
 
-	err := sm.DeleteWordSetWithAudio(id)
+	err := sm.DB.DeleteWordSet(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to delete word set",
@@ -446,65 +420,7 @@ func DeleteWordSet(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, models.APIResponse{
-		Message: "Word set and associated audio files deleted successfully",
-	})
-}
-
-// @Summary		Generate Audio
-// @Description	Generate TTS audio for all words in a word set
-// @Tags			wordsets
-// @Accept			json
-// @Produce		json
-// @Param			id	path		string	true	"Word Set ID"
-// @Success		202	{object}	models.APIResponse	"Audio generation started"
-// @Failure		400	{object}	models.APIResponse	"Word set ID is required"
-// @Failure		404	{object}	models.APIResponse	"Word set not found"
-// @Failure		500	{object}	models.APIResponse	"Failed to start audio generation"
-// @Security		BearerAuth
-// @Router			/api/wordsets/{id}/generate-audio [post]
-func GenerateAudio(c *gin.Context) {
-	id := c.Param("id")
-	if id == "" {
-		c.JSON(http.StatusBadRequest, models.APIResponse{
-			Error: "Word set ID is required",
-		})
-		return
-	}
-
-	// Check if serviceManager is properly initialized
-	if serviceManager == nil {
-		c.JSON(http.StatusInternalServerError, models.APIResponse{
-			Error: "Service manager not initialized",
-		})
-		return
-	}
-
-	// Capture serviceManager in closure to avoid nil pointer issues
-	manager := serviceManager
-
-	// Start audio generation in background
-	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				log.Printf("Panic in audio generation goroutine: %v", r)
-			}
-		}()
-
-		if manager == nil {
-			log.Printf("Error: Service manager is nil in goroutine")
-			return
-		}
-
-		err := manager.GenerateAudioForWordSet(id)
-		if err != nil {
-			log.Printf("Error generating audio for word set %s: %v", id, err)
-		} else {
-			log.Printf("Successfully completed audio generation for word set %s", id)
-		}
-	}()
-
-	c.JSON(http.StatusAccepted, models.APIResponse{
-		Message: "Audio generation started",
+		Message: "Word set deleted successfully",
 	})
 }
 
@@ -546,6 +462,34 @@ func SaveResult(c *gin.Context) {
 		return
 	}
 
+	// Validate translation mode requirements
+	if req.Mode == "translation" {
+		// Get the wordset to check if translations exist
+		wordSet, err := serviceManager.DB.GetWordSet(req.WordSetID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, models.APIResponse{
+				Error: "Failed to validate wordset for translation mode",
+			})
+			return
+		}
+
+		// Check if any word has translations
+		hasTranslations := false
+		for _, word := range wordSet.Words {
+			if len(word.Translations) > 0 {
+				hasTranslations = true
+				break
+			}
+		}
+
+		if !hasTranslations {
+			c.JSON(http.StatusBadRequest, models.APIResponse{
+				Error: "Cannot save translation mode result: wordset has no translations",
+			})
+			return
+		}
+	}
+
 	// Create test result
 	result := &models.TestResult{
 		ID:             uuid.New().String(),
@@ -554,6 +498,7 @@ func SaveResult(c *gin.Context) {
 		Score:          req.Score,
 		TotalWords:     req.TotalWords,
 		CorrectWords:   req.CorrectWords,
+		Mode:           req.Mode,
 		IncorrectWords: req.IncorrectWords, // Keep for backward compatibility
 		Words:          req.Words,          // New detailed word information
 		TimeSpent:      req.TimeSpent,
@@ -561,7 +506,7 @@ func SaveResult(c *gin.Context) {
 		CreatedAt:      time.Now(),
 	}
 
-	err := serviceManager.Firestore.SaveTestResult(result)
+	err := serviceManager.DB.SaveTestResult(result)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to save test result",
@@ -603,7 +548,7 @@ func GetResults(c *gin.Context) {
 		return
 	}
 
-	results, err := serviceManager.Firestore.GetTestResults(userID.(string))
+	results, err := serviceManager.DB.GetTestResults(userID.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve test results",
@@ -645,7 +590,7 @@ func GetFamily(c *gin.Context) {
 		return
 	}
 
-	family, err := serviceManager.Firestore.GetFamily(familyID.(string))
+	family, err := serviceManager.DB.GetFamily(familyID.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve family",
@@ -685,7 +630,7 @@ func GetFamilyStats(c *gin.Context) {
 		return
 	}
 
-	stats, err := serviceManager.Firestore.GetFamilyStats(familyID.(string))
+	stats, err := serviceManager.DB.GetFamilyStats(familyID.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve family stats",
@@ -725,7 +670,7 @@ func GetFamilyResults(c *gin.Context) {
 		return
 	}
 
-	familyResults, err := serviceManager.Firestore.GetFamilyResults(familyID.(string))
+	familyResults, err := serviceManager.DB.GetFamilyResults(familyID.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve family results",
@@ -765,7 +710,7 @@ func GetFamilyChildren(c *gin.Context) {
 		return
 	}
 
-	children, err := serviceManager.Firestore.GetFamilyChildren(familyID.(string))
+	children, err := serviceManager.DB.GetFamilyChildren(familyID.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve children",
@@ -805,7 +750,7 @@ func GetFamilyProgress(c *gin.Context) {
 		return
 	}
 
-	progress, err := serviceManager.Firestore.GetFamilyProgress(familyID.(string))
+	progress, err := serviceManager.DB.GetFamilyProgress(familyID.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve family progress",
@@ -818,16 +763,18 @@ func GetFamilyProgress(c *gin.Context) {
 	})
 }
 
-// @Summary		Create Child Account
-// @Description	Create a new child account (parent only)
+// @Summary		Add Child to Family
+// @Description	Add an existing child user to the family (parent only)
+// @Description	This assumes the child already has an account in Zitadel.
+// @Description	The child will be linked to the family when they first log in.
 // @Tags			children
 // @Accept			json
 // @Produce		json
 // @Param			request	body		models.CreateChildAccountRequest	true	"Child account creation request"
-// @Success		201		{object}	models.APIResponse					"Child account created successfully"
+// @Success		201		{object}	models.APIResponse					"Child added to family successfully"
 // @Failure		400		{object}	models.APIResponse					"Invalid request data"
 // @Failure		403		{object}	models.APIResponse					"Parent role required"
-// @Failure		500		{object}	models.APIResponse					"Service unavailable or failed to create child account"
+// @Failure		500		{object}	models.APIResponse					"Service unavailable or failed to add child"
 // @Security		BearerAuth
 // @Router			/api/families/children [post]
 func CreateChildAccount(c *gin.Context) {
@@ -850,62 +797,102 @@ func CreateChildAccount(c *gin.Context) {
 	userID, _ := c.Get("userID")
 	familyID, _ := c.Get("validatedFamilyID")
 
-	// Create child account using Firebase Auth
-	createRequest := (&auth.UserToCreate{}).
-		Email(req.Email).
-		DisplayName(req.DisplayName).
-		Password(req.Password)
+	// TODO: IMPLEMENT PROPER ZITADEL INTEGRATION
+	// ==========================================
+	// This current implementation creates a "pending" child record that will be
+	// linked when the child logs in via OIDC for the first time.
+	//
+	// For proper integration, implement ONE of these approaches:
+	//
+	// OPTION 1: Zitadel Admin API - Create account directly
+	// ------------------------------------------------------
+	// 1. Use Zitadel Admin API to create user account:
+	//    POST https://{instance}.zitadel.cloud/management/v1/users/human
+	//    {
+	//      "userName": req.Email,
+	//      "profile": { "displayName": req.DisplayName },
+	//      "email": { "email": req.Email, "isEmailVerified": false }
+	//    }
+	// 2. Get the user ID from the response
+	// 3. Optionally send password reset email via Zitadel
+	// 4. Store the Zitadel user ID as authID in our database
+	//
+	// OPTION 2: Invitation Link - Let Zitadel handle registration
+	// -----------------------------------------------------------
+	// 1. Generate an invitation code/token in your system
+	// 2. Send email to child with registration link:
+	//    https://yourapp.com/accept-invite?token=xxx
+	// 3. When clicked, redirect to Zitadel registration with prefilled email
+	// 4. After successful registration, link the authID from JWT to family
+	//
+	// OPTION 3: Email Matching - Current implementation (INTERIM)
+	// -----------------------------------------------------------
+	// 1. Parent adds child by email (no password)
+	// 2. Create "pending" child record with placeholder authID
+	// 3. When child logs in via OIDC, match by email and update authID
+	// 4. This requires additional middleware to handle the linking
+	//
+	// RECOMMENDED: Use Option 1 (Admin API) for immediate account creation
+	// or Option 2 (Invitation) for better UX and security.
 
-	firebaseUserRecord, err := serviceManager.Auth.CreateUser(context.Background(), createRequest)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.APIResponse{
-			Error: "Failed to create Firebase user: " + err.Error(),
-		})
-		return
-	}
+	// Generate a temporary/placeholder ID for the child
+	// This will be replaced with the actual Zitadel user ID when they log in
+	childAuthID := "pending-" + uuid.New().String()
 
 	// Create child record in our database
 	child := &models.ChildAccount{
-		ID:           firebaseUserRecord.UID,
+		ID:           childAuthID,
 		Email:        req.Email,
 		DisplayName:  req.DisplayName,
 		FamilyID:     familyID.(string),
 		ParentID:     userID.(string),
 		Role:         "child",
-		IsActive:     true,
+		IsActive:     false, // Set to false until they log in via OIDC
 		CreatedAt:    time.Now(),
 		LastActiveAt: time.Now(),
 	}
 
-	if err := serviceManager.Firestore.CreateChild(child); err != nil {
-		// If database creation fails, clean up Firebase user
-		_ = serviceManager.Auth.DeleteUser(context.Background(), firebaseUserRecord.UID)
+	if err := serviceManager.DB.CreateChild(child); err != nil {
+		log.Printf("ERROR creating child account: %v (email=%s, family=%s, parent=%s)", err, req.Email, familyID, userID)
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
-			Error: "Failed to create child account",
+			Error: "Failed to add child to family: " + err.Error(),
 		})
 		return
 	}
 
-	// IMPORTANT: Also create a User record so the child can log in
+	// Create a User record with pending status
+	// This user will be activated when they log in via OIDC
 	childUser := &models.User{
-		ID:           firebaseUserRecord.UID,
-		FirebaseUID:  firebaseUserRecord.UID,
+		ID:           childAuthID,
+		AuthID:       childAuthID, // Will be updated to real Zitadel ID on first login
 		Email:        req.Email,
 		DisplayName:  req.DisplayName,
 		FamilyID:     familyID.(string),
 		Role:         "child",
 		ParentID:     &[]string{userID.(string)}[0], // Convert string to *string
-		IsActive:     true,
+		IsActive:     false,                         // Inactive until they log in
 		CreatedAt:    time.Now(),
 		LastActiveAt: time.Now(),
 	}
 
-	if err := serviceManager.Firestore.CreateUser(childUser); err != nil {
-		// If user creation fails, clean up both child account and Firebase user
-		_ = serviceManager.Firestore.DeleteChild(firebaseUserRecord.UID)
-		_ = serviceManager.Auth.DeleteUser(context.Background(), firebaseUserRecord.UID)
+	if err := serviceManager.DB.CreateUser(childUser); err != nil {
+		log.Printf("ERROR creating child user record: %v (childID=%s)", err, childAuthID)
+		// If user creation fails, clean up child account
+		_ = serviceManager.DB.DeleteChild(childAuthID)
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
-			Error: "Failed to create child user record",
+			Error: "Failed to create child user record: " + err.Error(),
+		})
+		return
+	}
+
+	// Add child to family_members table
+	if err := serviceManager.DB.AddFamilyMember(familyID.(string), childAuthID, "child"); err != nil {
+		log.Printf("ERROR adding child to family_members: %v (childID=%s, familyID=%s)", err, childAuthID, familyID)
+		// Clean up on failure
+		_ = serviceManager.DB.DeleteUser(childAuthID)
+		_ = serviceManager.DB.DeleteChild(childAuthID)
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to add child to family: " + err.Error(),
 		})
 		return
 	}
@@ -949,7 +936,7 @@ func UpdateChildAccount(c *gin.Context) {
 
 	child.ID = childID
 
-	if err := serviceManager.Firestore.UpdateChild(&child); err != nil {
+	if err := serviceManager.DB.UpdateChild(&child); err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to update child account",
 		})
@@ -984,30 +971,26 @@ func DeleteChildAccount(c *gin.Context) {
 
 	childID := c.Param("childId")
 
-	// First delete from Firebase Auth
-	if err := serviceManager.Auth.DeleteUser(context.Background(), childID); err != nil {
-		c.JSON(http.StatusInternalServerError, models.APIResponse{
-			Error: "Failed to delete child from Firebase Auth: " + err.Error(),
-		})
-		return
-	}
+	// TODO: In full OIDC setup, also delete from identity provider (Zitadel)
+	// For now, we only delete from our database
+	// The child's OIDC account (if it exists) can be cleaned up separately via Zitadel admin
+
+	// First delete from users table
 
 	// Delete child record from our database
-	if err := serviceManager.Firestore.DeleteChild(childID); err != nil {
-		// Firebase user is already deleted, but log the database error
-		log.Printf("Warning: Failed to delete child record from database after Firebase deletion: %v", err)
+	if err := serviceManager.DB.DeleteChild(childID); err != nil {
+		log.Printf("Warning: Failed to delete child record from database: %v", err)
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
-			Error: "Child deleted from authentication but failed to remove from database",
+			Error: "Failed to delete child from database",
 		})
 		return
 	}
 
 	// Delete user record from our database
-	if err := serviceManager.Firestore.DeleteUser(childID); err != nil {
-		// Child and Firebase user are already deleted, but log the database error
+	if err := serviceManager.DB.DeleteUser(childID); err != nil {
 		log.Printf("Warning: Failed to delete user record from database: %v", err)
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
-			Error: "Child account partially deleted - authentication removed but user record cleanup failed",
+			Error: "Child account partially deleted - child record removed but user record cleanup failed",
 		})
 		return
 	}
@@ -1040,7 +1023,7 @@ func GetChildProgress(c *gin.Context) {
 
 	childID := c.Param("childId")
 
-	progress, err := serviceManager.Firestore.GetUserProgress(childID)
+	progress, err := serviceManager.DB.GetUserProgress(childID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve child progress",
@@ -1076,7 +1059,7 @@ func GetChildResults(c *gin.Context) {
 
 	childID := c.Param("childId")
 
-	results, err := serviceManager.Firestore.GetTestResults(childID)
+	results, err := serviceManager.DB.GetTestResults(childID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve child results",
@@ -1092,14 +1075,14 @@ func GetChildResults(c *gin.Context) {
 // User management handlers
 
 // @Summary		Create User
-// @Description	Create a new user account after Firebase authentication
+// @Description	Create a new user account after OIDC authentication
 // @Tags			users
 // @Accept			json
 // @Produce		json
-// @Param			request	body		object{displayName=string,role=string}	true	"User creation request"
+// @Param			request	body		object{displayName=string,role=string,email=string}	true	"User creation request"
 // @Success		201		{object}	models.APIResponse						"User created successfully"
 // @Failure		400		{object}	models.APIResponse						"Invalid request data"
-// @Failure		401		{object}	models.APIResponse						"Firebase UID not found in token"
+// @Failure		401		{object}	models.APIResponse						"Auth identity not found in token"
 // @Failure		500		{object}	models.APIResponse						"Internal server error"
 // @Security		BearerAuth
 // @Router			/api/users [post]
@@ -1107,6 +1090,7 @@ func CreateUser(c *gin.Context) {
 	var req struct {
 		DisplayName string `json:"displayName" binding:"required"`
 		Role        string `json:"role" binding:"required,oneof=parent child"`
+		Email       string `json:"email"` // Email can come from request or identity claims
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -1116,14 +1100,15 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	// Get Firebase user info from middleware context
-	firebaseUID, exists := c.Get("firebaseUID")
+	// Get identity info from OIDC middleware context
+	authIdentityID, exists := c.Get("authIdentityID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, models.APIResponse{
-			Error: "Firebase UID not found in token",
+			Error: "Auth identity not found in token",
 		})
 		return
 	}
+	authID := authIdentityID.(string)
 
 	serviceManager := GetServiceManager(c)
 	if serviceManager == nil {
@@ -1133,54 +1118,73 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	// Get user record from Firebase to get email
-	userRecord, err := serviceManager.Auth.GetUser(context.Background(), firebaseUID.(string))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.APIResponse{
-			Error: "Failed to get user information from Firebase",
+	// Get email from request or from identity claims
+	email := req.Email
+	if email == "" {
+		// Try to get email from identity claims if available
+		if identity, exists := c.Get("identity"); exists {
+			if id, ok := identity.(interface{ Email() string }); ok {
+				email = id.Email()
+			}
+		}
+	}
+	if email == "" {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Email is required",
 		})
 		return
 	}
-	email := userRecord.Email
 
-	// Create family for parent users
-	var familyID string
-	if req.Role == "parent" {
-		family := &models.Family{
-			ID:        "family-" + firebaseUID.(string),
-			Name:      req.DisplayName + "'s Family",
-			CreatedBy: firebaseUID.(string),
-			Members:   []string{firebaseUID.(string)},
-			CreatedAt: time.Now(),
-		}
-
-		if err := serviceManager.Firestore.CreateFamily(family); err != nil {
-			c.JSON(http.StatusInternalServerError, models.APIResponse{
-				Error: "Failed to create family",
-			})
-			return
-		}
-		familyID = family.ID
-	}
-
-	// Create user
+	// Create user first (without family for parents, will be updated after)
 	newUser := &models.User{
-		ID:           firebaseUID.(string),
-		FirebaseUID:  firebaseUID.(string),
+		ID:           authID,
+		AuthID:       authID,
 		Email:        email,
 		DisplayName:  req.DisplayName,
-		FamilyID:     familyID,
+		FamilyID:     "", // Will be set after family creation for parents
 		Role:         req.Role,
 		IsActive:     true,
 		CreatedAt:    time.Now(),
 		LastActiveAt: time.Now(),
 	}
 
-	if err := serviceManager.Firestore.CreateUser(newUser); err != nil {
+	if err := serviceManager.DB.CreateUser(newUser); err != nil {
+		log.Printf("ERROR creating user: %v", err)
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to create user",
 		})
 		return
+	}
+
+	// Create family for parent users and update user with family ID
+	if req.Role == "parent" {
+		family := &models.Family{
+			ID:        "family-" + authID,
+			Name:      req.DisplayName + "'s Family",
+			CreatedBy: newUser.ID, // Now user exists
+			Members:   []string{newUser.ID},
+			CreatedAt: time.Now(),
+		}
+
+		if err := serviceManager.DB.CreateFamily(family); err != nil {
+			log.Printf("ERROR creating family: %v", err)
+			// Rollback user creation on failure
+			serviceManager.DB.DeleteUser(newUser.ID)
+			c.JSON(http.StatusInternalServerError, models.APIResponse{
+				Error: "Failed to create family",
+			})
+			return
+		}
+
+		// Update user with family ID
+		newUser.FamilyID = family.ID
+		if err := serviceManager.DB.UpdateUser(newUser); err != nil {
+			log.Printf("ERROR updating user with family ID: %v", err)
+			c.JSON(http.StatusInternalServerError, models.APIResponse{
+				Error: "Failed to update user with family",
+			})
+			return
+		}
 	}
 
 	// Return user data
@@ -1210,11 +1214,11 @@ func CreateUser(c *gin.Context) {
 // @Security		BearerAuth
 // @Router			/api/users/profile [get]
 func GetUserProfile(c *gin.Context) {
-	// Check if user exists in context from BasicAuthMiddleware
+	// Check if user exists in context from OIDCAuthMiddleware
 	user, exists := c.Get("user")
 	if !exists {
-		// User doesn't exist in our database yet, try to get from Firebase
-		firebaseUID, exists := c.Get("firebaseUID")
+		// User not in context, try to lookup by authIdentityID
+		authIdentityID, exists := c.Get("authIdentityID")
 		if !exists {
 			c.JSON(http.StatusUnauthorized, models.APIResponse{
 				Error: "User not authenticated",
@@ -1222,10 +1226,36 @@ func GetUserProfile(c *gin.Context) {
 			return
 		}
 
+		authID := authIdentityID.(string)
+
+		// Get service manager and try to lookup user
+		serviceManager := GetServiceManager(c)
+		if serviceManager != nil {
+			userData, err := serviceManager.DB.GetUserByAuthID(authID)
+			if err == nil && userData != nil {
+				// User found, return profile
+				c.JSON(http.StatusOK, models.APIResponse{
+					Data: map[string]interface{}{
+						"id":           userData.ID,
+						"email":        userData.Email,
+						"displayName":  userData.DisplayName,
+						"familyId":     userData.FamilyID,
+						"role":         userData.Role,
+						"parentId":     userData.ParentID,
+						"isActive":     userData.IsActive,
+						"createdAt":    userData.CreatedAt.Format(time.RFC3339),
+						"lastActiveAt": userData.LastActiveAt.Format(time.RFC3339),
+					},
+				})
+				return
+			}
+		}
+
+		// User doesn't exist in our database yet
 		c.JSON(http.StatusNotFound, models.APIResponse{
 			Error: "User not found in system. Please complete registration.",
 			Data: map[string]interface{}{
-				"firebaseUID":       firebaseUID,
+				"authId":            authIdentityID,
 				"needsRegistration": true,
 			},
 		})
@@ -1334,100 +1364,3 @@ func ListVoices(c *gin.Context) {
 // @Summary		Stream Audio File by ID
 // @Description	Stream audio file for a specific audio ID within a wordset
 // @Tags			wordsets
-// @Accept			json
-// @Produce		audio/mpeg
-// @Param			id			path		string	true	"WordSet ID"
-// @Param			audioId		path		string	true	"Audio ID to stream"
-// @Success		200			{file}		audio	"Audio file content"
-// @Failure		400			{object}	models.APIResponse	"Invalid request"
-// @Failure		404			{object}	models.APIResponse	"Audio file not found"
-// @Failure		500			{object}	models.APIResponse	"Internal server error"
-// @Security		BearerAuth
-// @Router			/api/wordsets/{id}/audio/{audioId} [get]
-func StreamAudioByID(c *gin.Context) {
-	wordSetID := c.Param("id")
-	audioID := c.Param("audioId")
-
-	if wordSetID == "" {
-		c.JSON(http.StatusBadRequest, models.APIResponse{
-			Error: "WordSet ID parameter is required",
-		})
-		return
-	}
-
-	if audioID == "" {
-		c.JSON(http.StatusBadRequest, models.APIResponse{
-			Error: "Audio ID parameter is required",
-		})
-		return
-	}
-
-	// Check if serviceManager is properly initialized
-	if serviceManager == nil {
-		c.JSON(http.StatusInternalServerError, models.APIResponse{
-			Error: "Service manager not initialized",
-		})
-		return
-	}
-
-	// Use the global service manager for public endpoints
-	sm := serviceManager
-
-	// Get the wordset to verify access and find the audio
-	wordSet, err := sm.Firestore.GetWordSet(wordSetID)
-	if err != nil {
-		log.Printf("StreamAudioByID: Error getting wordset '%s': %v", wordSetID, err)
-		c.JSON(http.StatusNotFound, models.APIResponse{
-			Error: "WordSet not found",
-		})
-		return
-	}
-
-	log.Printf("StreamAudioByID: Found wordset '%s' with %d words", wordSet.Name, len(wordSet.Words))
-
-	// Find the audio file in the wordset
-	var audioFile *models.WordAudio
-	var word string
-	for i, wordItem := range wordSet.Words {
-		log.Printf("StreamAudioByID: Checking word %d: '%s', audioID='%s'", i, wordItem.Word, wordItem.Audio.AudioID)
-		if wordItem.Audio.AudioID == audioID {
-			audioFile = &wordItem.Audio
-			word = wordItem.Word
-			log.Printf("StreamAudioByID: Found matching audio for word '%s'", word)
-			break
-		}
-	}
-
-	if audioFile == nil || audioFile.AudioID == "" {
-		log.Printf("StreamAudioByID: Audio file with ID '%s' not found in wordset", audioID)
-		c.JSON(http.StatusNotFound, models.APIResponse{
-			Error: fmt.Sprintf("Audio file with ID '%s' not found in wordset", audioID),
-		})
-		return
-	}
-
-	// Get the audio file data from storage using the audioId (which is the filename)
-	storagePath := fmt.Sprintf("audio/%s", audioID)
-	log.Printf("StreamAudioByID: Attempting to get audio data from storage path: '%s'", storagePath)
-	audioData, err := sm.Storage.GetAudioData(storagePath)
-	if err != nil {
-		log.Printf("StreamAudioByID: Error getting audio data for audio ID '%s' from path '%s': %v", audioID, storagePath, err)
-		c.JSON(http.StatusNotFound, models.APIResponse{
-			Error: fmt.Sprintf("Audio file not found in storage for ID '%s'", audioID),
-		})
-		return
-	}
-
-	log.Printf("StreamAudioByID: Successfully retrieved audio data, size: %d bytes", len(audioData))
-
-	// Determine content type based on file extension
-	contentType := "audio/mpeg" // Default to MP3
-
-	// Set appropriate headers
-	c.Header("Content-Type", contentType)
-	c.Header("Cache-Control", "public, max-age=3600") // Cache for 1 hour
-	c.Header("Content-Disposition", fmt.Sprintf("inline; filename=\"%s_%s.mp3\"", word, wordSet.Language))
-
-	// Stream the audio data
-	c.Data(http.StatusOK, contentType, audioData)
-}

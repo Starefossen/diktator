@@ -20,17 +20,6 @@ const nextConfig = {
     NEXT_PUBLIC_APP_URL:
       process.env.NEXT_PUBLIC_APP_URL || "https://diktator.gc.flaatten.org",
     NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
-    NEXT_PUBLIC_FIREBASE_API_KEY:
-      process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
-    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN:
-      process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "",
-    NEXT_PUBLIC_FIREBASE_PROJECT_ID:
-      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "",
-    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET:
-      process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "",
-    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID:
-      process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "",
-    NEXT_PUBLIC_FIREBASE_APP_ID: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "",
   },
 
   // Note: headers() function is not supported with output: "export"
@@ -46,4 +35,4 @@ const nextConfig = {
   // CSS/JS files: Cache-Control: public, max-age=3600
 };
 
-module.exports = nextConfig;
+export default nextConfig;

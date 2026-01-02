@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Navigation } from "@/components/Navigation";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { FirebaseConnectionStatus } from "@/components/FirebaseConnectionStatus";
 import { ClientSideRouter } from "@/components/ClientSideRouter";
 import { PWAInstaller } from "@/components/PWAInstaller";
+import { HydrationMarker } from "@/components/HydrationMarker";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,7 +13,18 @@ export const metadata: Metadata = {
   ),
   title: "Diktator - Spelling Practice for Kids",
   description: "A fun spelling practice app for children",
+  applicationName: "Diktator",
   manifest: "/manifest.json",
+  authors: [{ name: "Diktator Team" }],
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
+  referrer: "strict-origin-when-cross-origin",
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
@@ -31,6 +42,12 @@ export const metadata: Metadata = {
   },
   formatDetection: {
     telephone: false,
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+    "msapplication-config": "/browserconfig.xml",
+    "msapplication-TileColor": "#3b82f6",
+    "msapplication-tap-highlight": "no",
   },
   openGraph: {
     type: "website",
@@ -68,46 +85,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <head>
-        {/* PWA Meta Tags */}
-        <meta name="application-name" content="Diktator" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Diktator" />
-        <meta name="format-detection" content="telephone=no" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="msapplication-config" content="/browserconfig.xml" />
-        <meta name="msapplication-TileColor" content="#3b82f6" />
-        <meta name="msapplication-tap-highlight" content="no" />
-
-        {/* Additional Meta Tags */}
-        <meta name="robots" content="index,follow" />
-        <meta name="googlebot" content="index,follow" />
-        <meta name="author" content="Diktator Team" />
-        <meta name="referrer" content="strict-origin-when-cross-origin" />
-
-        {/* Preload critical resources */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="dns-prefetch" href="https://firebase.googleapis.com" />
-      </head>
-      <body className="min-h-screen bg-gray-50 preload">
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              setTimeout(() => {
-                document.body.classList.remove('preload');
-              }, 100);
-            `,
-          }}
-        />
+    <html suppressHydrationWarning>
+      <body className="min-h-screen bg-gray-50">
+        <HydrationMarker />
         <AuthProvider>
           <LanguageProvider>
             <PWAInstaller />
             <ClientSideRouter />
             <Navigation />
             <main className="pb-8">{children}</main>
-            <FirebaseConnectionStatus />
           </LanguageProvider>
         </AuthProvider>
       </body>

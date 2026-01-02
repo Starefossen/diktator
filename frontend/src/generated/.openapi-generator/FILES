@@ -1,7 +1,5 @@
 .gitignore
 .npmignore
-.openapi-generator-ignore
-README.md
 api.ts
 base.ts
 common.ts
@@ -16,6 +14,7 @@ docs/ModelsChildAccount.md
 docs/ModelsCreateChildAccountRequest.md
 docs/ModelsCreateWordSetRequest.md
 docs/ModelsSaveResultRequest.md
+docs/ModelsTranslation.md
 docs/ModelsUpdateWordSetRequest.md
 docs/ModelsWordInput.md
 docs/ModelsWordTestResult.md
@@ -23,6 +22,3 @@ docs/UsersApi.md
 docs/WordsetsApi.md
 git_push.sh
 index.ts
-package.json
-tsconfig.esm.json
-tsconfig.json

@@ -26,4 +26,10 @@ export const test = {
 
   // Context/definition
   "test.context": "Context:",
+
+  // Translation mode
+  "test.translateWord": "Translate",
+  "test.typeTranslationHere": "Type the translation here...",
+  "test.translateToTarget": "Translate to",
+  "test.translateToSource": "Translate to",
 };

@@ -92,7 +92,7 @@ export function SettingsModal({
             {requiresUserInteractionForAudio() && config.autoPlayAudio && (
               <div className="rounded-md bg-yellow-50 p-4">
                 <div className="flex">
-                  <div className="flex-shrink-0">
+                  <div className="shrink-0">
                     <HeroExclamationTriangleIcon className="h-5 w-5 text-yellow-400" />
                   </div>
                   <div className="ml-3">

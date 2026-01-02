@@ -15,14 +15,14 @@ import (
 )
 
 // setupChildAccessTest creates a test router specifically for testing child user access
-func setupChildAccessTest(t *testing.T) (*gin.Engine, *MockFirestoreService) {
+func setupChildAccessTest(t *testing.T) (*gin.Engine, *MockDBService) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 
 	// Create mock service
-	mockFirestore := NewMockFirestoreService()
+	mockDB := NewMockDBService()
 	mockServiceManager := &MockServiceManager{
-		Firestore: mockFirestore,
+		DB: mockDB,
 	}
 
 	// Add service manager to context
@@ -46,19 +46,19 @@ func setupChildAccessTest(t *testing.T) (*gin.Engine, *MockFirestoreService) {
 		switch authHeader {
 		case "Bearer valid-child-alice":
 			c.Set("userID", "child-alice-123")
-			c.Set("firebaseUID", "firebase-child-alice")
+			c.Set("authID", "oidc-child-alice")
 			c.Set("userRole", "child")
 			c.Set("familyID", "family-smith")
 			c.Set("validatedFamilyID", "family-smith")
 		case "Bearer valid-child-bob":
 			c.Set("userID", "child-bob-456")
-			c.Set("firebaseUID", "firebase-child-bob")
+			c.Set("authID", "oidc-child-bob")
 			c.Set("userRole", "child")
 			c.Set("familyID", "family-johnson")
 			c.Set("validatedFamilyID", "family-johnson")
 		case "Bearer valid-parent-smith":
 			c.Set("userID", "parent-smith")
-			c.Set("firebaseUID", "firebase-parent-smith")
+			c.Set("authID", "oidc-parent-smith")
 			c.Set("userRole", "parent")
 			c.Set("familyID", "family-smith")
 			c.Set("validatedFamilyID", "family-smith")
@@ -122,7 +122,7 @@ func setupChildAccessTest(t *testing.T) (*gin.Engine, *MockFirestoreService) {
 		}
 	}
 
-	return r, mockFirestore
+	return r, mockDB
 }
 
 // Test-specific handlers for child access testing
@@ -137,11 +137,11 @@ func testGetUserProfile(c *gin.Context) {
 
 	// Mock user profile response
 	profile := models.User{
-		ID:          userID.(string),
-		FirebaseUID: c.GetString("firebaseUID"),
-		FamilyID:    c.GetString("familyID"),
-		Role:        c.GetString("userRole"),
-		CreatedAt:   time.Now(),
+		ID:        userID.(string),
+		AuthID:    c.GetString("authID"),
+		FamilyID:  c.GetString("familyID"),
+		Role:      c.GetString("userRole"),
+		CreatedAt: time.Now(),
 	}
 
 	c.JSON(http.StatusOK, models.APIResponse{
@@ -273,7 +273,7 @@ func childTestGetResults(c *gin.Context) {
 	}
 
 	mockSM := sm.(*MockServiceManager)
-	results, err := mockSM.Firestore.GetTestResults(userID.(string))
+	results, err := mockSM.DB.GetTestResults(userID.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve test results",
@@ -316,7 +316,7 @@ func childTestSaveResult(c *gin.Context) {
 	result.UserID = userID.(string)
 
 	mockSM := sm.(*MockServiceManager)
-	err := mockSM.Firestore.SaveTestResult(&result)
+	err := mockSM.DB.SaveTestResult(&result)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to save test result",
@@ -348,7 +348,7 @@ func childTestGetFamilyResults(c *gin.Context) {
 	}
 
 	mockSM := sm.(*MockServiceManager)
-	results, err := mockSM.Firestore.GetFamilyResults(familyID.(string))
+	results, err := mockSM.DB.GetFamilyResults(familyID.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve family results",
@@ -406,7 +406,7 @@ func TestChildAuthentication(t *testing.T) {
 
 func TestChildUserDataAccess(t *testing.T) {
 	t.Run("child can access their own test results", func(t *testing.T) {
-		r, mockFirestore := setupChildAccessTest(t)
+		r, mockDB := setupChildAccessTest(t)
 
 		// Mock child's test results
 		expectedResults := []models.TestResult{
@@ -422,7 +422,7 @@ func TestChildUserDataAccess(t *testing.T) {
 			},
 		}
 
-		mockFirestore.On("GetTestResults", "child-alice-123").Return(expectedResults, nil)
+		mockDB.On("GetTestResults", "child-alice-123").Return(expectedResults, nil)
 
 		req, _ := http.NewRequest("GET", "/api/users/results", nil)
 		req.Header.Set("Authorization", "Bearer valid-child-alice")
@@ -443,11 +443,11 @@ func TestChildUserDataAccess(t *testing.T) {
 		assert.Equal(t, "child-alice-123", result["userId"])
 		assert.Equal(t, 78.5, result["score"])
 
-		mockFirestore.AssertExpectations(t)
+		mockDB.AssertExpectations(t)
 	})
 
 	t.Run("child can save their own test results", func(t *testing.T) {
-		r, mockFirestore := setupChildAccessTest(t)
+		r, mockDB := setupChildAccessTest(t)
 
 		saveRequest := models.SaveResultRequest{
 			WordSetID:      "wordset-family-smith-1",
@@ -487,7 +487,7 @@ func TestChildUserDataAccess(t *testing.T) {
 			TimeSpent: 150,
 		}
 
-		mockFirestore.On("SaveTestResult", mock.AnythingOfType("*models.TestResult")).Return(nil)
+		mockDB.On("SaveTestResult", mock.AnythingOfType("*models.TestResult")).Return(nil)
 
 		jsonData, _ := json.Marshal(saveRequest)
 		req, _ := http.NewRequest("POST", "/api/users/results", bytes.NewBuffer(jsonData))
@@ -504,7 +504,7 @@ func TestChildUserDataAccess(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "Test result saved successfully", response.Message)
 
-		mockFirestore.AssertExpectations(t)
+		mockDB.AssertExpectations(t)
 	})
 
 	t.Run("child can access family word sets", func(t *testing.T) {
@@ -671,11 +671,11 @@ func TestChildUserIsolation(t *testing.T) {
 }
 
 func TestChildAccountCreationCreatesUserRecord(t *testing.T) {
-	r, mockFirestore := setupChildAccessTest(t)
+	r, mockDB := setupChildAccessTest(t)
 
 	// Mock successful child creation
-	mockFirestore.On("CreateChild", mock.AnythingOfType("*models.ChildAccount")).Return(nil)
-	mockFirestore.On("CreateUser", mock.AnythingOfType("*models.User")).Return(nil)
+	mockDB.On("CreateChild", mock.AnythingOfType("*models.ChildAccount")).Return(nil)
+	mockDB.On("CreateUser", mock.AnythingOfType("*models.User")).Return(nil)
 
 	childData := map[string]interface{}{
 		"email":       "newchild@example.com",

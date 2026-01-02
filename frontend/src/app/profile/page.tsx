@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { TestResult, FamilyStats, ChildAccount } from "@/types";
+import { generatedApiClient } from "@/lib/api-generated";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import {
@@ -33,13 +34,53 @@ export default function ProfilePage() {
     try {
       setLoading(true);
 
-      // TODO: Replace with actual API calls when available
-      // For now, we'll show empty states to demonstrate the UI structure
-      setRecentResults([]);
-
       if (isParent) {
-        setFamilyStats(null);
-        setChildren([]);
+        // Load all data for parents in parallel
+        const [resultsResponse, statsResponse, childrenResponse] =
+          await Promise.all([
+            generatedApiClient.getResults(),
+            generatedApiClient.getFamilyStats(),
+            generatedApiClient.getFamilyChildren(),
+          ]);
+
+        if (resultsResponse.data?.data) {
+          const allResults = resultsResponse.data.data as TestResult[];
+          // Show only the most recent 10 results
+          setRecentResults(
+            allResults
+              .sort(
+                (a, b) =>
+                  new Date(b.completedAt).getTime() -
+                  new Date(a.completedAt).getTime(),
+              )
+              .slice(0, 10),
+          );
+        }
+
+        if (statsResponse.data?.data) {
+          setFamilyStats(statsResponse.data.data as FamilyStats);
+        }
+
+        if (childrenResponse.data?.data) {
+          setChildren(childrenResponse.data.data as ChildAccount[]);
+        }
+      } else {
+        // Load only results for children
+        const resultsResponse = await generatedApiClient.getResults();
+
+        if (resultsResponse.data?.data) {
+          const allResults = resultsResponse.data.data as TestResult[];
+          // Show only the most recent 10 results
+          setRecentResults(
+            allResults
+              .sort(
+                (a, b) =>
+                  new Date(b.completedAt).getTime() -
+                  new Date(a.completedAt).getTime(),
+              )
+              .slice(0, 10),
+          );
+        }
       }
     } catch (err) {
       console.error("Error loading profile data:", err);
@@ -58,9 +99,9 @@ export default function ProfilePage() {
   const averageScore =
     totalTests > 0
       ? Math.round(
-          recentResults.reduce((sum, result) => sum + result.score, 0) /
-            totalTests,
-        )
+        recentResults.reduce((sum, result) => sum + result.score, 0) /
+        totalTests,
+      )
       : 0;
 
   const formatDate = (dateString: string) => {
@@ -70,7 +111,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <ProtectedRoute>
-        <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
           <div className="text-center">
             <LoadingSpinner />
             <p className="mt-4 text-gray-600">{t("profile.loading")}</p>
@@ -83,7 +124,7 @@ export default function ProfilePage() {
   if (error) {
     return (
       <ProtectedRoute>
-        <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
           <div className="text-center">
             <p className="text-red-600">{error}</p>
             <button
@@ -100,10 +141,10 @@ export default function ProfilePage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
         <div className="container max-w-4xl px-4 py-8 mx-auto">
           <div className="mb-8">
-            <h1 className="mb-4 text-4xl font-bold text-transparent bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text">
+            <h1 className="mb-4 text-4xl font-bold text-transparent bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text">
               {t("profile.title")}
             </h1>
             <p className="text-lg text-gray-600">
@@ -115,7 +156,7 @@ export default function ProfilePage() {
           <div className="p-8 mb-8 bg-white shadow-lg rounded-xl">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
               <div className="flex items-center mb-6 space-x-6 md:mb-0">
-                <div className="flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600">
+                <div className="flex items-center justify-center w-20 h-20 rounded-full bg-linear-to-br from-blue-500 to-purple-600">
                   <span className="text-3xl font-bold text-white">
                     {userData?.displayName?.charAt(0)?.toUpperCase() ||
                       user?.email?.charAt(0)?.toUpperCase()}
@@ -255,13 +296,12 @@ export default function ProfilePage() {
                     </div>
                     <div className="text-right">
                       <div
-                        className={`inline-block px-3 py-1 rounded-full font-semibold ${
-                          result.score >= 90
+                        className={`inline-block px-3 py-1 rounded-full font-semibold ${result.score >= 90
                             ? "text-green-600 bg-green-50"
                             : result.score >= 70
                               ? "text-yellow-600 bg-yellow-50"
                               : "text-red-600 bg-red-50"
-                        }`}
+                          }`}
                       >
                         {result.score}%
                       </div>
@@ -321,11 +361,10 @@ export default function ProfilePage() {
                             {child.displayName}
                           </span>
                           <span
-                            className={`text-xs px-2 py-1 rounded ${
-                              child.isActive
+                            className={`text-xs px-2 py-1 rounded ${child.isActive
                                 ? "bg-green-100 text-green-700"
                                 : "bg-gray-100 text-gray-600"
-                            }`}
+                              }`}
                           >
                             {child.isActive
                               ? t("profile.family.active")
@@ -395,7 +434,7 @@ export default function ProfilePage() {
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {averageScore >= 90 && (
-                  <div className="p-4 text-white rounded-lg bg-gradient-to-r from-yellow-400 to-orange-500">
+                  <div className="p-4 text-white rounded-lg bg-linear-to-r from-yellow-400 to-orange-500">
                     <div className="flex items-center space-x-3">
                       <HeroTrophyIcon className="w-8 h-8" />
                       <div>
@@ -411,7 +450,7 @@ export default function ProfilePage() {
                 )}
 
                 {totalTests >= 2 && (
-                  <div className="p-4 text-white rounded-lg bg-gradient-to-r from-purple-500 to-pink-500">
+                  <div className="p-4 text-white rounded-lg bg-linear-to-r from-purple-500 to-pink-500">
                     <div className="flex items-center space-x-3">
                       <HeroBookIcon className="w-8 h-8" />
                       <div>

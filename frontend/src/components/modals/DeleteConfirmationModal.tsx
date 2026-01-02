@@ -45,7 +45,7 @@ export function DeleteConfirmationModal({
 
             <div className="p-3 mt-4 border border-yellow-200 rounded-lg bg-yellow-50">
               <div className="flex items-start">
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   <HeroExclamationTriangleIcon className="w-5 h-5 text-yellow-400" />
                 </div>
                 <div className="ml-3">

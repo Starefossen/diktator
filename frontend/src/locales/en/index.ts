@@ -53,21 +53,21 @@ export const en = {
   "home.demo.cta.desc": "Create your first word set to begin practicing",
   "home.demo.cta.button": "Get Started",
 
-  "home.benefits.title": "Perfect for Everyone",
+  "home.benefits.title": "Perfect for Families",
   "home.benefits.subtitle":
-    "Whether you're a parent, teacher, or student, Diktator adapts to your needs",
+    "Designed for parents and children learning together",
   "home.benefits.parents.title": "For Parents",
   "home.benefits.parents.1": "Track your child's spelling progress",
   "home.benefits.parents.2": "Create custom word lists",
   "home.benefits.parents.3": "Safe, ad-free environment",
-  "home.benefits.teachers.title": "For Teachers",
-  "home.benefits.teachers.1": "Manage multiple student accounts",
-  "home.benefits.teachers.2": "Curriculum-aligned word sets",
-  "home.benefits.teachers.3": "Detailed progress reports",
-  "home.benefits.students.title": "For Students",
-  "home.benefits.students.1": "Fun, game-like experience",
-  "home.benefits.students.2": "Immediate feedback",
-  "home.benefits.students.3": "Self-paced learning",
+  "home.benefits.children.title": "For Children",
+  "home.benefits.children.1": "Fun, game-like experience",
+  "home.benefits.children.2": "Audio pronunciation for every word",
+  "home.benefits.children.3": "Immediate feedback on answers",
+  "home.benefits.family.title": "For the Family",
+  "home.benefits.family.1": "Share word sets across accounts",
+  "home.benefits.family.2": "Multiple child profiles supported",
+  "home.benefits.family.3": "Self-paced learning for each child",
 
   "home.pwa.title": "Install as App",
   "home.pwa.subtitle":
@@ -100,8 +100,8 @@ export const en = {
   "home.cta.footer": "No downloads required • Works on all devices",
 
   // Existing features
-  "home.features.auth": "Firebase Authentication",
-  "home.features.database": "Firestore Database",
+  "home.features.auth": "OIDC Authentication",
+  "home.features.database": "PostgreSQL Database",
   "home.features.i18n": "Multilingual Support (EN/NO)",
   "home.features.wordsets": "Custom Word Sets & Tests",
   "home.features.profiles": "User Profiles & Statistics",
@@ -111,7 +111,7 @@ export const en = {
   "home.features.results.desc": "Progress tracking and detailed results",
   "home.features.profiles.desc": "Family accounts with individual tracking",
   "home.features.i18n.desc": "Norwegian and English language support",
-  "home.features.emulators": "Firebase Emulators",
+  "home.features.emulators": "Local development services",
   "home.nextPhase.title": "Ready for Phase 2:",
   "home.nextPhase.desc":
     "Custom word sets, family sharing, and advanced analytics",
@@ -137,7 +137,7 @@ export const en = {
   // Phase 1
   "home.progress.phase1.title": "Authentication",
   "home.progress.phase1.subtitle": "User Management",
-  "home.progress.phase1.point1": "Firebase Authentication",
+  "home.progress.phase1.point1": "OIDC Authentication",
   "home.progress.phase1.point2": "Protected routes & security",
   "home.progress.phase1.point3": "User profiles & families",
 

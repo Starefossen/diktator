@@ -40,6 +40,12 @@ export interface ApiUsersPostRequest {
      * @type {string}
      * @memberof ApiUsersPostRequest
      */
+    'email'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiUsersPostRequest
+     */
     'role'?: string;
 }
 /**
@@ -177,12 +183,6 @@ export interface ModelsCreateChildAccountRequest {
      * @memberof ModelsCreateChildAccountRequest
      */
     'familyId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsCreateChildAccountRequest
-     */
-    'password': string;
 }
 /**
  * 
@@ -235,6 +235,12 @@ export interface ModelsSaveResultRequest {
     'incorrectWords'?: Array<string>;
     /**
      * 
+     * @type {string}
+     * @memberof ModelsSaveResultRequest
+     */
+    'mode': ModelsSaveResultRequestModeEnum;
+    /**
+     * 
      * @type {number}
      * @memberof ModelsSaveResultRequest
      */
@@ -263,6 +269,52 @@ export interface ModelsSaveResultRequest {
      * @memberof ModelsSaveResultRequest
      */
     'words'?: Array<ModelsWordTestResult>;
+}
+
+export const ModelsSaveResultRequestModeEnum = {
+    Standard: 'standard',
+    Dictation: 'dictation',
+    Translation: 'translation'
+} as const;
+
+export type ModelsSaveResultRequestModeEnum = typeof ModelsSaveResultRequestModeEnum[keyof typeof ModelsSaveResultRequestModeEnum];
+
+/**
+ * 
+ * @export
+ * @interface ModelsTranslation
+ */
+export interface ModelsTranslation {
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelsTranslation
+     */
+    'audioId'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelsTranslation
+     */
+    'audioUrl'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelsTranslation
+     */
+    'language'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelsTranslation
+     */
+    'text'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelsTranslation
+     */
+    'voiceId'?: string;
 }
 /**
  * 
@@ -307,6 +359,12 @@ export interface ModelsWordInput {
      * @memberof ModelsWordInput
      */
     'definition'?: string;
+    /**
+     * 
+     * @type {Array<ModelsTranslation>}
+     * @memberof ModelsWordInput
+     */
+    'translations'?: Array<ModelsTranslation>;
     /**
      * 
      * @type {string}
@@ -531,8 +589,8 @@ export const ChildrenApiAxiosParamCreator = function (configuration?: Configurat
             };
         },
         /**
-         * Create a new child account (parent only)
-         * @summary Create Child Account
+         * Add an existing child user to the family (parent only) This assumes the child already has an account in Zitadel. The child will be linked to the family when they first log in.
+         * @summary Add Child to Family
          * @param {ModelsCreateChildAccountRequest} request Child account creation request
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -633,8 +691,8 @@ export const ChildrenApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Create a new child account (parent only)
-         * @summary Create Child Account
+         * Add an existing child user to the family (parent only) This assumes the child already has an account in Zitadel. The child will be linked to the family when they first log in.
+         * @summary Add Child to Family
          * @param {ModelsCreateChildAccountRequest} request Child account creation request
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -697,8 +755,8 @@ export const ChildrenApiFactory = function (configuration?: Configuration, baseP
             return localVarFp.apiFamiliesChildrenChildIdResultsGet(childId, options).then((request) => request(axios, basePath));
         },
         /**
-         * Create a new child account (parent only)
-         * @summary Create Child Account
+         * Add an existing child user to the family (parent only) This assumes the child already has an account in Zitadel. The child will be linked to the family when they first log in.
+         * @summary Add Child to Family
          * @param {ModelsCreateChildAccountRequest} request Child account creation request
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -710,71 +768,12 @@ export const ChildrenApiFactory = function (configuration?: Configuration, baseP
 };
 
 /**
- * ChildrenApi - interface
- * @export
- * @interface ChildrenApi
- */
-export interface ChildrenApiInterface {
-    /**
-     * Delete a child account (parent only)
-     * @summary Delete Child Account
-     * @param {string} childId Child ID
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof ChildrenApiInterface
-     */
-    apiFamiliesChildrenChildIdDelete(childId: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
-
-    /**
-     * Get progress data for a specific child
-     * @summary Get Child Progress
-     * @param {string} childId Child ID
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof ChildrenApiInterface
-     */
-    apiFamiliesChildrenChildIdProgressGet(childId: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
-
-    /**
-     * Update an existing child account (parent only)
-     * @summary Update Child Account
-     * @param {string} childId Child ID
-     * @param {ModelsChildAccount} request Updated child account data
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof ChildrenApiInterface
-     */
-    apiFamiliesChildrenChildIdPut(childId: string, request: ModelsChildAccount, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
-
-    /**
-     * Get test results for a specific child
-     * @summary Get Child Results
-     * @param {string} childId Child ID
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof ChildrenApiInterface
-     */
-    apiFamiliesChildrenChildIdResultsGet(childId: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
-
-    /**
-     * Create a new child account (parent only)
-     * @summary Create Child Account
-     * @param {ModelsCreateChildAccountRequest} request Child account creation request
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof ChildrenApiInterface
-     */
-    apiFamiliesChildrenPost(request: ModelsCreateChildAccountRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
-
-}
-
-/**
  * ChildrenApi - object-oriented interface
  * @export
  * @class ChildrenApi
  * @extends {BaseAPI}
  */
-export class ChildrenApi extends BaseAPI implements ChildrenApiInterface {
+export class ChildrenApi extends BaseAPI {
     /**
      * Delete a child account (parent only)
      * @summary Delete Child Account
@@ -825,8 +824,8 @@ export class ChildrenApi extends BaseAPI implements ChildrenApiInterface {
     }
 
     /**
-     * Create a new child account (parent only)
-     * @summary Create Child Account
+     * Add an existing child user to the family (parent only) This assumes the child already has an account in Zitadel. The child will be linked to the family when they first log in.
+     * @summary Add Child to Family
      * @param {ModelsCreateChildAccountRequest} request Child account creation request
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -1139,65 +1138,12 @@ export const FamiliesApiFactory = function (configuration?: Configuration, baseP
 };
 
 /**
- * FamiliesApi - interface
- * @export
- * @interface FamiliesApi
- */
-export interface FamiliesApiInterface {
-    /**
-     * Get all children in the authenticated user\'s family
-     * @summary Get Family Children
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof FamiliesApiInterface
-     */
-    apiFamiliesChildrenGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
-
-    /**
-     * Get information about the user\'s family
-     * @summary Get Family Information
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof FamiliesApiInterface
-     */
-    apiFamiliesGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
-
-    /**
-     * Get progress data for all family members
-     * @summary Get Family Progress
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof FamiliesApiInterface
-     */
-    apiFamiliesProgressGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
-
-    /**
-     * Get test results for all members of the authenticated user\'s family
-     * @summary Get Family Results
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof FamiliesApiInterface
-     */
-    apiFamiliesResultsGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
-
-    /**
-     * Get statistical data for the authenticated user\'s family
-     * @summary Get Family Statistics
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof FamiliesApiInterface
-     */
-    apiFamiliesStatsGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
-
-}
-
-/**
  * FamiliesApi - object-oriented interface
  * @export
  * @class FamiliesApi
  * @extends {BaseAPI}
  */
-export class FamiliesApi extends BaseAPI implements FamiliesApiInterface {
+export class FamiliesApi extends BaseAPI {
     /**
      * Get all children in the authenticated user\'s family
      * @summary Get Family Children
@@ -1337,29 +1283,12 @@ export const HealthApiFactory = function (configuration?: Configuration, basePat
 };
 
 /**
- * HealthApi - interface
- * @export
- * @interface HealthApi
- */
-export interface HealthApiInterface {
-    /**
-     * Returns the health status of the API
-     * @summary Health Check
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof HealthApiInterface
-     */
-    healthGet(options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: any; }>;
-
-}
-
-/**
  * HealthApi - object-oriented interface
  * @export
  * @class HealthApi
  * @extends {BaseAPI}
  */
-export class HealthApi extends BaseAPI implements HealthApiInterface {
+export class HealthApi extends BaseAPI {
     /**
      * Returns the health status of the API
      * @summary Health Check
@@ -1381,7 +1310,7 @@ export class HealthApi extends BaseAPI implements HealthApiInterface {
 export const UsersApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
         /**
-         * Create a new user account after Firebase authentication
+         * Create a new user account after OIDC authentication
          * @summary Create User
          * @param {ApiUsersPostRequest} request User creation request
          * @param {*} [options] Override http request option.
@@ -1535,7 +1464,7 @@ export const UsersApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = UsersApiAxiosParamCreator(configuration)
     return {
         /**
-         * Create a new user account after Firebase authentication
+         * Create a new user account after OIDC authentication
          * @summary Create User
          * @param {ApiUsersPostRequest} request User creation request
          * @param {*} [options] Override http request option.
@@ -1595,7 +1524,7 @@ export const UsersApiFactory = function (configuration?: Configuration, basePath
     const localVarFp = UsersApiFp(configuration)
     return {
         /**
-         * Create a new user account after Firebase authentication
+         * Create a new user account after OIDC authentication
          * @summary Create User
          * @param {ApiUsersPostRequest} request User creation request
          * @param {*} [options] Override http request option.
@@ -1636,60 +1565,14 @@ export const UsersApiFactory = function (configuration?: Configuration, basePath
 };
 
 /**
- * UsersApi - interface
- * @export
- * @interface UsersApi
- */
-export interface UsersApiInterface {
-    /**
-     * Create a new user account after Firebase authentication
-     * @summary Create User
-     * @param {ApiUsersPostRequest} request User creation request
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof UsersApiInterface
-     */
-    apiUsersPost(request: ApiUsersPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
-
-    /**
-     * Get the current user\'s profile information
-     * @summary Get User Profile
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof UsersApiInterface
-     */
-    apiUsersProfileGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
-
-    /**
-     * Get test results for the authenticated user
-     * @summary Get Test Results
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof UsersApiInterface
-     */
-    apiUsersResultsGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
-
-    /**
-     * Save a test result for the authenticated user
-     * @summary Save Test Result
-     * @param {ModelsSaveResultRequest} request Test result data
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof UsersApiInterface
-     */
-    apiUsersResultsPost(request: ModelsSaveResultRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
-
-}
-
-/**
  * UsersApi - object-oriented interface
  * @export
  * @class UsersApi
  * @extends {BaseAPI}
  */
-export class UsersApi extends BaseAPI implements UsersApiInterface {
+export class UsersApi extends BaseAPI {
     /**
-     * Create a new user account after Firebase authentication
+     * Create a new user account after OIDC authentication
      * @summary Create User
      * @param {ApiUsersPostRequest} request User creation request
      * @param {*} [options] Override http request option.
@@ -1777,47 +1660,6 @@ export const WordsetsApiAxiosParamCreator = function (configuration?: Configurat
             };
         },
         /**
-         * Stream audio file for a specific audio ID within a wordset
-         * @summary Stream Audio File by ID
-         * @param {string} id WordSet ID
-         * @param {string} audioId Audio ID to stream
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiWordsetsIdAudioAudioIdGet: async (id: string, audioId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('apiWordsetsIdAudioAudioIdGet', 'id', id)
-            // verify required parameter 'audioId' is not null or undefined
-            assertParamExists('apiWordsetsIdAudioAudioIdGet', 'audioId', audioId)
-            const localVarPath = `/api/wordsets/{id}/audio/{audioId}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
-                .replace(`{${"audioId"}}`, encodeURIComponent(String(audioId)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Delete a word set by ID and all associated audio files from storage
          * @summary Delete Word Set
          * @param {string} id Word Set ID
@@ -1837,43 +1679,6 @@ export const WordsetsApiAxiosParamCreator = function (configuration?: Configurat
             }
 
             const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Generate TTS audio for all words in a word set
-         * @summary Generate Audio
-         * @param {string} id Word Set ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiWordsetsIdGenerateAudioPost: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('apiWordsetsIdGenerateAudioPost', 'id', id)
-            const localVarPath = `/api/wordsets/{id}/generate-audio`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
@@ -1928,6 +1733,44 @@ export const WordsetsApiAxiosParamCreator = function (configuration?: Configurat
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(request, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Stream TTS audio for a specific word in a word set (generates on-demand, cached by browser)
+         * @summary Stream Audio for Word
+         * @param {string} id Word Set ID
+         * @param {string} word Word to generate audio for
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiWordsetsIdWordsWordAudioGet: async (id: string, word: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('apiWordsetsIdWordsWordAudioGet', 'id', id)
+            // verify required parameter 'word' is not null or undefined
+            assertParamExists('apiWordsetsIdWordsWordAudioGet', 'word', word)
+            const localVarPath = `/api/wordsets/{id}/words/{word}/audio`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
+                .replace(`{${"word"}}`, encodeURIComponent(String(word)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2034,20 +1877,6 @@ export const WordsetsApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Stream audio file for a specific audio ID within a wordset
-         * @summary Stream Audio File by ID
-         * @param {string} id WordSet ID
-         * @param {string} audioId Audio ID to stream
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiWordsetsIdAudioAudioIdGet(id: string, audioId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiWordsetsIdAudioAudioIdGet(id, audioId, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['WordsetsApi.apiWordsetsIdAudioAudioIdGet']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
          * Delete a word set by ID and all associated audio files from storage
          * @summary Delete Word Set
          * @param {string} id Word Set ID
@@ -2058,19 +1887,6 @@ export const WordsetsApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiWordsetsIdDelete(id, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['WordsetsApi.apiWordsetsIdDelete']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Generate TTS audio for all words in a word set
-         * @summary Generate Audio
-         * @param {string} id Word Set ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiWordsetsIdGenerateAudioPost(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAPIResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiWordsetsIdGenerateAudioPost(id, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['WordsetsApi.apiWordsetsIdGenerateAudioPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -2085,6 +1901,20 @@ export const WordsetsApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiWordsetsIdPut(id, request, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['WordsetsApi.apiWordsetsIdPut']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Stream TTS audio for a specific word in a word set (generates on-demand, cached by browser)
+         * @summary Stream Audio for Word
+         * @param {string} id Word Set ID
+         * @param {string} word Word to generate audio for
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiWordsetsIdWordsWordAudioGet(id: string, word: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiWordsetsIdWordsWordAudioGet(id, word, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WordsetsApi.apiWordsetsIdWordsWordAudioGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -2133,17 +1963,6 @@ export const WordsetsApiFactory = function (configuration?: Configuration, baseP
             return localVarFp.apiWordsetsGet(options).then((request) => request(axios, basePath));
         },
         /**
-         * Stream audio file for a specific audio ID within a wordset
-         * @summary Stream Audio File by ID
-         * @param {string} id WordSet ID
-         * @param {string} audioId Audio ID to stream
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiWordsetsIdAudioAudioIdGet(id: string, audioId: string, options?: RawAxiosRequestConfig): AxiosPromise<File> {
-            return localVarFp.apiWordsetsIdAudioAudioIdGet(id, audioId, options).then((request) => request(axios, basePath));
-        },
-        /**
          * Delete a word set by ID and all associated audio files from storage
          * @summary Delete Word Set
          * @param {string} id Word Set ID
@@ -2152,16 +1971,6 @@ export const WordsetsApiFactory = function (configuration?: Configuration, baseP
          */
         apiWordsetsIdDelete(id: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
             return localVarFp.apiWordsetsIdDelete(id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Generate TTS audio for all words in a word set
-         * @summary Generate Audio
-         * @param {string} id Word Set ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiWordsetsIdGenerateAudioPost(id: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
-            return localVarFp.apiWordsetsIdGenerateAudioPost(id, options).then((request) => request(axios, basePath));
         },
         /**
          * Update an existing word set name, words, and configuration. Audio will be regenerated automatically for new/changed words.
@@ -2173,6 +1982,17 @@ export const WordsetsApiFactory = function (configuration?: Configuration, baseP
          */
         apiWordsetsIdPut(id: string, request: ModelsUpdateWordSetRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
             return localVarFp.apiWordsetsIdPut(id, request, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Stream TTS audio for a specific word in a word set (generates on-demand, cached by browser)
+         * @summary Stream Audio for Word
+         * @param {string} id Word Set ID
+         * @param {string} word Word to generate audio for
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiWordsetsIdWordsWordAudioGet(id: string, word: string, options?: RawAxiosRequestConfig): AxiosPromise<File> {
+            return localVarFp.apiWordsetsIdWordsWordAudioGet(id, word, options).then((request) => request(axios, basePath));
         },
         /**
          * Create a new word set for practice
@@ -2198,91 +2018,12 @@ export const WordsetsApiFactory = function (configuration?: Configuration, baseP
 };
 
 /**
- * WordsetsApi - interface
- * @export
- * @interface WordsetsApi
- */
-export interface WordsetsApiInterface {
-    /**
-     * Get word sets for the authenticated user\'s family
-     * @summary Get Word Sets
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof WordsetsApiInterface
-     */
-    apiWordsetsGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
-
-    /**
-     * Stream audio file for a specific audio ID within a wordset
-     * @summary Stream Audio File by ID
-     * @param {string} id WordSet ID
-     * @param {string} audioId Audio ID to stream
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof WordsetsApiInterface
-     */
-    apiWordsetsIdAudioAudioIdGet(id: string, audioId: string, options?: RawAxiosRequestConfig): AxiosPromise<File>;
-
-    /**
-     * Delete a word set by ID and all associated audio files from storage
-     * @summary Delete Word Set
-     * @param {string} id Word Set ID
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof WordsetsApiInterface
-     */
-    apiWordsetsIdDelete(id: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
-
-    /**
-     * Generate TTS audio for all words in a word set
-     * @summary Generate Audio
-     * @param {string} id Word Set ID
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof WordsetsApiInterface
-     */
-    apiWordsetsIdGenerateAudioPost(id: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
-
-    /**
-     * Update an existing word set name, words, and configuration. Audio will be regenerated automatically for new/changed words.
-     * @summary Update Word Set
-     * @param {string} id Word Set ID
-     * @param {ModelsUpdateWordSetRequest} request Word set update request
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof WordsetsApiInterface
-     */
-    apiWordsetsIdPut(id: string, request: ModelsUpdateWordSetRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
-
-    /**
-     * Create a new word set for practice
-     * @summary Create Word Set
-     * @param {ModelsCreateWordSetRequest} request Word set creation request
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof WordsetsApiInterface
-     */
-    apiWordsetsPost(request: ModelsCreateWordSetRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
-
-    /**
-     * Get a list of available Text-to-Speech voices for a specific language
-     * @summary List available TTS voices
-     * @param {string} [language] Language code (e.g., \&#39;en\&#39;, \&#39;nb-NO\&#39;)
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof WordsetsApiInterface
-     */
-    apiWordsetsVoicesGet(language?: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiWordsetsVoicesGet200Response>;
-
-}
-
-/**
  * WordsetsApi - object-oriented interface
  * @export
  * @class WordsetsApi
  * @extends {BaseAPI}
  */
-export class WordsetsApi extends BaseAPI implements WordsetsApiInterface {
+export class WordsetsApi extends BaseAPI {
     /**
      * Get word sets for the authenticated user\'s family
      * @summary Get Word Sets
@@ -2292,19 +2033,6 @@ export class WordsetsApi extends BaseAPI implements WordsetsApiInterface {
      */
     public apiWordsetsGet(options?: RawAxiosRequestConfig) {
         return WordsetsApiFp(this.configuration).apiWordsetsGet(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Stream audio file for a specific audio ID within a wordset
-     * @summary Stream Audio File by ID
-     * @param {string} id WordSet ID
-     * @param {string} audioId Audio ID to stream
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof WordsetsApi
-     */
-    public apiWordsetsIdAudioAudioIdGet(id: string, audioId: string, options?: RawAxiosRequestConfig) {
-        return WordsetsApiFp(this.configuration).apiWordsetsIdAudioAudioIdGet(id, audioId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -2320,18 +2048,6 @@ export class WordsetsApi extends BaseAPI implements WordsetsApiInterface {
     }
 
     /**
-     * Generate TTS audio for all words in a word set
-     * @summary Generate Audio
-     * @param {string} id Word Set ID
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof WordsetsApi
-     */
-    public apiWordsetsIdGenerateAudioPost(id: string, options?: RawAxiosRequestConfig) {
-        return WordsetsApiFp(this.configuration).apiWordsetsIdGenerateAudioPost(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
      * Update an existing word set name, words, and configuration. Audio will be regenerated automatically for new/changed words.
      * @summary Update Word Set
      * @param {string} id Word Set ID
@@ -2342,6 +2058,19 @@ export class WordsetsApi extends BaseAPI implements WordsetsApiInterface {
      */
     public apiWordsetsIdPut(id: string, request: ModelsUpdateWordSetRequest, options?: RawAxiosRequestConfig) {
         return WordsetsApiFp(this.configuration).apiWordsetsIdPut(id, request, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Stream TTS audio for a specific word in a word set (generates on-demand, cached by browser)
+     * @summary Stream Audio for Word
+     * @param {string} id Word Set ID
+     * @param {string} word Word to generate audio for
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WordsetsApi
+     */
+    public apiWordsetsIdWordsWordAudioGet(id: string, word: string, options?: RawAxiosRequestConfig) {
+        return WordsetsApiFp(this.configuration).apiWordsetsIdWordsWordAudioGet(id, word, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

@@ -26,6 +26,7 @@ export const wordsets = {
   "wordsets.audioError": "Kunne ikke generere lyd",
   "wordsets.clickToPlay": "Klikk for å spille av",
   "wordsets.noAudio": "Ingen lyd tilgjengelig",
+  "wordsets.usingTextToSpeech": "Bruker nettlesertalesyntetisering",
   "wordsets.delete": "Slett",
   "wordsets.edit": "Rediger",
   "wordsets.settings": "Innstillinger",
@@ -39,10 +40,6 @@ export const wordsets = {
   "wordsets.noSubtitle": "Opprett ditt første ordsett for å komme i gang",
   "wordsets.saveSettings": "Lagre innstillinger",
   "wordsets.withAudio": "med lyd",
-  "wordsets.audioProcessing": "Lydbehandling...",
-  "wordsets.audioReady": "Lyd klar",
-  "wordsets.audioProcessingFailed": "Lydbehandling feilet",
-  "wordsets.audioProcessingInProgress": "Lydbehandling pågår...",
   "wordsets.deleting": "Sletter...",
   "wordsets.deleteConfirmMessage":
     'Er du sikker på at du vil slette "{name}"? Denne handlingen kan ikke angres.',
@@ -113,4 +110,40 @@ export const wordsets = {
   "wordsets.attempts": "forsøk",
   "wordsets.moreChildren": "flere barn",
   "wordsets.created": "Opprettet",
+
+  // Mode selection
+  "wordsets.mode.title": "Testmodus",
+  "wordsets.mode.select": "Velg testmodus",
+  "wordsets.mode.description": "Velg hvordan du vil øve med dette ordsettet",
+  "wordsets.mode.standard": "Standard",
+  "wordsets.mode.standard.desc": "Stav ord etter å ha hørt dem",
+  "wordsets.mode.dictation": "Diktat",
+  "wordsets.mode.dictation.desc":
+    "Lytt og skriv stavemåten - ubegrensede gjentakelser",
+  "wordsets.mode.translation": "Oversettelse",
+  "wordsets.mode.translation.desc": "Oversett ord mellom språk",
+  "wordsets.mode.translation.unavailable":
+    "Legg til oversettelser i ordene for å aktivere oversettelsesmodus",
+  "wordsets.mode.translation.noTranslations":
+    "Ingen oversettelser tilgjengelig. Rediger ordsettet for å legge til oversettelser.",
+  "wordsets.mode.recommended": "Anbefalt",
+  "wordsets.mode.unavailable": "Ikke tilgjengelig (ingen oversettelser)",
+  "wordsets.mode.defaultMode": "Standardmodus",
+  "wordsets.mode.targetLanguage": "Målspråk",
+  "wordsets.mode.translationFor": "Oversettelse for",
+  "wordsets.mode.addTranslation": "Legg til oversettelse",
+
+  // Word Set Editor
+  "wordsets.editor.defaultTestMode": "Standard testmodus",
+  "wordsets.editor.mode.standard.description": "Se ord, skriv stavemåten",
+  "wordsets.editor.mode.dictation.description": "Lytt og stav",
+  "wordsets.editor.mode.translation.description": "Oversett ord",
+  "wordsets.editor.targetLanguage": "Målspråk",
+  "wordsets.editor.definition.placeholder":
+    "Definisjon/kontekst (valgfritt) - hjelper å skille homofoner som 'de', 'dem', 'dei'",
+  "wordsets.editor.definition.placeholderShort":
+    "Definisjon/kontekst (valgfritt)",
+  "wordsets.editor.noWords": "Ingen ord lagt til ennå",
+  "wordsets.editor.noWordsHint":
+    "Bruk skjemaet ovenfor for å legge til ord i dette settet",
 };

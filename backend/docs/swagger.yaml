@@ -40,14 +40,10 @@ definitions:
         type: string
       familyId:
         type: string
-      password:
-        minLength: 6
-        type: string
     required:
     - displayName
     - email
     - familyId
-    - password
     type: object
   models.CreateWordSetRequest:
     properties:
@@ -76,6 +72,12 @@ definitions:
         items:
           type: string
         type: array
+      mode:
+        enum:
+        - standard
+        - dictation
+        - translation
+        type: string
       score:
         type: number
       timeSpent:
@@ -91,9 +93,23 @@ definitions:
         type: array
     required:
     - correctWords
+    - mode
     - score
     - totalWords
     - wordSetId
+    type: object
+  models.Translation:
+    properties:
+      audioId:
+        type: string
+      audioUrl:
+        type: string
+      language:
+        type: string
+      text:
+        type: string
+      voiceId:
+        type: string
     type: object
   models.UpdateWordSetRequest:
     properties:
@@ -117,6 +133,10 @@ definitions:
     properties:
       definition:
         type: string
+      translations:
+        items:
+          $ref: '#/definitions/models.Translation'
+        type: array
       word:
         type: string
     required:
@@ -217,7 +237,10 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new child account (parent only)
+      description: |-
+        Add an existing child user to the family (parent only)
+        This assumes the child already has an account in Zitadel.
+        The child will be linked to the family when they first log in.
       parameters:
       - description: Child account creation request
         in: body
@@ -229,7 +252,7 @@ paths:
       - application/json
       responses:
         "201":
-          description: Child account created successfully
+          description: Child added to family successfully
           schema:
             $ref: '#/definitions/models.APIResponse'
         "400":
@@ -241,12 +264,12 @@ paths:
           schema:
             $ref: '#/definitions/models.APIResponse'
         "500":
-          description: Service unavailable or failed to create child account
+          description: Service unavailable or failed to add child
           schema:
             $ref: '#/definitions/models.APIResponse'
       security:
       - BearerAuth: []
-      summary: Create Child Account
+      summary: Add Child to Family
       tags:
       - children
   /api/families/children/{childId}:
@@ -477,7 +500,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new user account after Firebase authentication
+      description: Create a new user account after OIDC authentication
       parameters:
       - description: User creation request
         in: body
@@ -486,6 +509,8 @@ paths:
         schema:
           properties:
             displayName:
+              type: string
+            email:
               type: string
             role:
               type: string
@@ -502,7 +527,7 @@ paths:
           schema:
             $ref: '#/definitions/models.APIResponse'
         "401":
-          description: Firebase UID not found in token
+          description: Auth identity not found in token
           schema:
             $ref: '#/definitions/models.APIResponse'
         "500":
@@ -743,27 +768,28 @@ paths:
       summary: Update Word Set
       tags:
       - wordsets
-  /api/wordsets/{id}/audio/{audioId}:
+  /api/wordsets/{id}/words/{word}/audio:
     get:
       consumes:
       - application/json
-      description: Stream audio file for a specific audio ID within a wordset
+      description: Stream TTS audio for a specific word in a word set (generates on-demand,
+        cached by browser)
       parameters:
-      - description: WordSet ID
+      - description: Word Set ID
         in: path
         name: id
         required: true
         type: string
-      - description: Audio ID to stream
+      - description: Word to generate audio for
         in: path
-        name: audioId
+        name: word
         required: true
         type: string
       produces:
-      - audio/mpeg
+      - audio/ogg
       responses:
         "200":
-          description: Audio file content
+          description: Audio file content (OGG Opus)
           schema:
             type: file
         "400":
@@ -771,51 +797,14 @@ paths:
           schema:
             $ref: '#/definitions/models.APIResponse'
         "404":
-          description: Audio file not found
-          schema:
-            $ref: '#/definitions/models.APIResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/models.APIResponse'
-      security:
-      - BearerAuth: []
-      summary: Stream Audio File by ID
-      tags:
-      - wordsets
-  /api/wordsets/{id}/generate-audio:
-    post:
-      consumes:
-      - application/json
-      description: Generate TTS audio for all words in a word set
-      parameters:
-      - description: Word Set ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "202":
-          description: Audio generation started
-          schema:
-            $ref: '#/definitions/models.APIResponse'
-        "400":
-          description: Word set ID is required
-          schema:
-            $ref: '#/definitions/models.APIResponse'
-        "404":
           description: Word set not found
           schema:
             $ref: '#/definitions/models.APIResponse'
         "500":
-          description: Failed to start audio generation
+          description: Failed to generate audio
           schema:
             $ref: '#/definitions/models.APIResponse'
-      security:
-      - BearerAuth: []
-      summary: Generate Audio
+      summary: Stream Audio for Word
       tags:
       - wordsets
   /api/wordsets/voices:
@@ -838,8 +827,7 @@ paths:
             - $ref: '#/definitions/models.APIResponse'
             - properties:
                 data:
-                  items:
-                    type: object
+                  items: {}
                   type: array
               type: object
         "500":
@@ -869,7 +857,7 @@ paths:
       - health
 securityDefinitions:
   BearerAuth:
-    description: 'Firebase JWT token. Format: "Bearer {token}"'
+    description: 'OIDC JWT token. Format: "Bearer {token}"'
     in: header
     name: Authorization
     type: apiKey

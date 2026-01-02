@@ -13,7 +13,7 @@ Name | Type | Description | Notes
 ## Example
 
 ```typescript
-import { ModelsUpdateWordSetRequest } from 'diktator-api-client';
+import { ModelsUpdateWordSetRequest } from './api';
 
 const instance: ModelsUpdateWordSetRequest = {
     language,

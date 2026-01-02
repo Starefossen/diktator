@@ -95,20 +95,6 @@ export function useWordSetsData(): UseWordSetsDataReturn {
     }
   }, []);
 
-  // Auto-refresh for pending audio processing
-  useEffect(() => {
-    const hasPendingAudio = wordSets.some(
-      (ws) => ws.audioProcessing === "pending",
-    );
-
-    if (hasPendingAudio) {
-      const interval = setInterval(loadWordSets, 5000);
-      return () => clearInterval(interval);
-    }
-
-    return undefined;
-  }, [wordSets, loadWordSets]);
-
   useEffect(() => {
     loadWordSets();
   }, [loadWordSets]);

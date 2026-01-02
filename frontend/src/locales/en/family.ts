@@ -13,21 +13,20 @@ export const family = {
   "family.back": "← Back to Family",
 
   // Child Account Management
-  "family.child.create.title": "Create Child Account",
+  "family.child.create.title": "Add Child to Family",
   "family.child.create.cancel": "Cancel",
-  "family.child.create.button": "Create Account",
-  "family.child.create.creating": "Creating...",
+  "family.child.create.button": "Add Child",
+  "family.child.create.creating": "Adding...",
   "family.child.create.required": "All fields are required",
-  "family.child.create.success": "Child account created successfully!",
+  "family.child.create.success": "Child added to family successfully!",
   "family.child.create.error":
-    "Failed to create child account. Please try again.",
+    "Failed to add child to family. Please try again.",
   "family.child.displayName": "Child's Name",
   "family.child.displayName.placeholder": "Enter child's name",
   "family.child.email": "Email Address",
   "family.child.email.placeholder": "Enter child's email",
-  "family.child.password": "Password",
-  "family.child.password.placeholder": "Create a password",
-  "family.child.password.help": "Password must be at least 6 characters long",
+  "family.child.email.help":
+    "The child must already have an account in Zitadel. They will be linked when they log in.",
   "family.child.lastActive": "Last active",
   "family.child.active": "Active",
   "family.child.inactive": "Inactive",

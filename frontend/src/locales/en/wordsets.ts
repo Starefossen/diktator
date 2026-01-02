@@ -26,6 +26,7 @@ export const wordsets = {
   "wordsets.audioError": "Failed to generate audio",
   "wordsets.clickToPlay": "Click to play audio",
   "wordsets.noAudio": "No audio available",
+  "wordsets.usingTextToSpeech": "Using browser text-to-speech",
   "wordsets.delete": "Delete",
   "wordsets.edit": "Edit",
   "wordsets.settings": "Settings",
@@ -39,10 +40,6 @@ export const wordsets = {
   "wordsets.noSubtitle": "Create your first word set to get started",
   "wordsets.saveSettings": "Save Settings",
   "wordsets.withAudio": "with audio",
-  "wordsets.audioProcessing": "Audio processing...",
-  "wordsets.audioReady": "Audio ready",
-  "wordsets.audioProcessingFailed": "Audio processing failed",
-  "wordsets.audioProcessingInProgress": "Audio processing in progress...",
   "wordsets.deleting": "Deleting...",
   "wordsets.deleteConfirmMessage":
     'Are you sure you want to delete "{name}"? This action cannot be undone.',
@@ -112,4 +109,40 @@ export const wordsets = {
   "wordsets.attempts": "attempts",
   "wordsets.moreChildren": "more children",
   "wordsets.created": "Created",
+
+  // Mode selection
+  "wordsets.mode.title": "Test Mode",
+  "wordsets.mode.select": "Select Test Mode",
+  "wordsets.mode.description":
+    "Choose how you want to practice with this word set",
+  "wordsets.mode.standard": "Standard",
+  "wordsets.mode.standard.desc": "Spell words after hearing them",
+  "wordsets.mode.dictation": "Dictation",
+  "wordsets.mode.dictation.desc":
+    "Listen and type the spelling - unlimited replays",
+  "wordsets.mode.translation": "Translation",
+  "wordsets.mode.translation.desc": "Translate words between languages",
+  "wordsets.mode.translation.unavailable":
+    "Add translations to words to enable translation mode",
+  "wordsets.mode.translation.noTranslations":
+    "No translations available. Edit the wordset to add translations.",
+  "wordsets.mode.recommended": "Recommended",
+  "wordsets.mode.unavailable": "Unavailable (no translations)",
+  "wordsets.mode.defaultMode": "Default Mode",
+  "wordsets.mode.targetLanguage": "Target Language",
+  "wordsets.mode.translationFor": "Translation for",
+  "wordsets.mode.addTranslation": "Add translation",
+
+  // Word Set Editor
+  "wordsets.editor.defaultTestMode": "Default Test Mode",
+  "wordsets.editor.mode.standard.description": "See word, type to spell",
+  "wordsets.editor.mode.dictation.description": "Listen and spell",
+  "wordsets.editor.mode.translation.description": "Translate words",
+  "wordsets.editor.targetLanguage": "Target Language",
+  "wordsets.editor.definition.placeholder":
+    "Definition/context (optional) - helps distinguish homophones like 'to', 'two', 'too'",
+  "wordsets.editor.definition.placeholderShort":
+    "Definition/context (optional)",
+  "wordsets.editor.noWords": "No words added yet",
+  "wordsets.editor.noWordsHint": "Use the form above to add words to this set",
 };

@@ -18,10 +18,14 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 
 interface LanguageProviderProps {
   children: ReactNode;
+  initialLanguage?: Language;
 }
 
-export function LanguageProvider({ children }: LanguageProviderProps) {
-  const [language, setLanguage] = useState<Language>("no");
+export function LanguageProvider({
+  children,
+  initialLanguage = "no",
+}: LanguageProviderProps) {
+  const [language, setLanguage] = useState<Language>(initialLanguage);
 
   const t = (key: TranslationKey): string => {
     return translations[language][key] || key;

@@ -8,58 +8,63 @@ import (
 	"strings"
 	"testing"
 
-	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/starefossen/diktator/backend/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-// MockFirebaseAuth mocks the Firebase Auth client
-type MockFirebaseAuth struct {
+// MockAuthProvider mocks an OIDC auth provider for testing
+type MockAuthProvider struct {
 	mock.Mock
 }
 
-func (m *MockFirebaseAuth) VerifyIDToken(ctx context.Context, idToken string) (*auth.Token, error) {
+// MockToken represents a mock JWT token for testing
+type MockToken struct {
+	Subject string
+	Claims  map[string]interface{}
+}
+
+func (m *MockAuthProvider) VerifyIDToken(ctx context.Context, idToken string) (*MockToken, error) {
 	args := m.Called(ctx, idToken)
-	return args.Get(0).(*auth.Token), args.Error(1)
+	return args.Get(0).(*MockToken), args.Error(1)
 }
 
-// MockFirestoreService mocks the Firestore service
-type MockFirestoreService struct {
+// MockDBService mocks the database service
+type MockDBService struct {
 	mock.Mock
 }
 
-func (m *MockFirestoreService) GetUserByFirebaseUID(firebaseUID string) (*models.User, error) {
-	args := m.Called(firebaseUID)
+func (m *MockDBService) GetUserByAuthID(authID string) (*models.User, error) {
+	args := m.Called(authID)
 	return args.Get(0).(*models.User), args.Error(1)
 }
 
-func (m *MockFirestoreService) VerifyChildOwnership(parentID, childID string) error {
+func (m *MockDBService) VerifyChildOwnership(parentID, childID string) error {
 	args := m.Called(parentID, childID)
 	return args.Error(0)
 }
 
-func (m *MockFirestoreService) VerifyWordSetAccess(familyID, wordSetID string) error {
+func (m *MockDBService) VerifyWordSetAccess(familyID, wordSetID string) error {
 	args := m.Called(familyID, wordSetID)
 	return args.Error(0)
 }
 
 // MockServiceManager mocks the service manager
 type MockServiceManager struct {
-	Auth      *MockFirebaseAuth
-	Firestore *MockFirestoreService
+	Auth *MockAuthProvider
+	DB   *MockDBService
 }
 
 func setupTestAuth() (*gin.Engine, *MockServiceManager) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 
-	mockAuth := &MockFirebaseAuth{}
-	mockFirestore := &MockFirestoreService{}
+	mockAuth := &MockAuthProvider{}
+	mockDB := &MockDBService{}
 	mockManager := &MockServiceManager{
-		Auth:      mockAuth,
-		Firestore: mockFirestore,
+		Auth: mockAuth,
+		DB:   mockDB,
 	}
 
 	// For testing, we'll create a simplified auth middleware that doesn't depend on Firebase
@@ -84,7 +89,7 @@ func setupTestAuth() (*gin.Engine, *MockServiceManager) {
 				// Mock successful auth
 				userID := strings.TrimPrefix(authHeader, "Bearer valid-")
 				c.Set("userID", userID)
-				c.Set("firebaseUID", "firebase-"+userID)
+				c.Set("authID", "oidc-"+userID)
 			} else {
 				c.JSON(http.StatusUnauthorized, models.APIResponse{
 					Error: "Invalid token",

@@ -8,7 +8,7 @@ All URIs are relative to *http://localhost:8080/api*
 |[**apiFamiliesChildrenChildIdProgressGet**](#apifamilieschildrenchildidprogressget) | **GET** /api/families/children/{childId}/progress | Get Child Progress|
 |[**apiFamiliesChildrenChildIdPut**](#apifamilieschildrenchildidput) | **PUT** /api/families/children/{childId} | Update Child Account|
 |[**apiFamiliesChildrenChildIdResultsGet**](#apifamilieschildrenchildidresultsget) | **GET** /api/families/children/{childId}/results | Get Child Results|
-|[**apiFamiliesChildrenPost**](#apifamilieschildrenpost) | **POST** /api/families/children | Create Child Account|
+|[**apiFamiliesChildrenPost**](#apifamilieschildrenpost) | **POST** /api/families/children | Add Child to Family|
 
 # **apiFamiliesChildrenChildIdDelete**
 > ModelsAPIResponse apiFamiliesChildrenChildIdDelete()
@@ -21,7 +21,7 @@ Delete a child account (parent only)
 import {
     ChildrenApi,
     Configuration
-} from 'diktator-api-client';
+} from './api';
 
 const configuration = new Configuration();
 const apiInstance = new ChildrenApi(configuration);
@@ -75,7 +75,7 @@ Get progress data for a specific child
 import {
     ChildrenApi,
     Configuration
-} from 'diktator-api-client';
+} from './api';
 
 const configuration = new Configuration();
 const apiInstance = new ChildrenApi(configuration);
@@ -130,7 +130,7 @@ import {
     ChildrenApi,
     Configuration,
     ModelsChildAccount
-} from 'diktator-api-client';
+} from './api';
 
 const configuration = new Configuration();
 const apiInstance = new ChildrenApi(configuration);
@@ -188,7 +188,7 @@ Get test results for a specific child
 import {
     ChildrenApi,
     Configuration
-} from 'diktator-api-client';
+} from './api';
 
 const configuration = new Configuration();
 const apiInstance = new ChildrenApi(configuration);
@@ -234,7 +234,7 @@ const { status, data } = await apiInstance.apiFamiliesChildrenChildIdResultsGet(
 # **apiFamiliesChildrenPost**
 > ModelsAPIResponse apiFamiliesChildrenPost(request)
 
-Create a new child account (parent only)
+Add an existing child user to the family (parent only) This assumes the child already has an account in Zitadel. The child will be linked to the family when they first log in.
 
 ### Example
 
@@ -243,7 +243,7 @@ import {
     ChildrenApi,
     Configuration,
     ModelsCreateChildAccountRequest
-} from 'diktator-api-client';
+} from './api';
 
 const configuration = new Configuration();
 const apiInstance = new ChildrenApi(configuration);
@@ -279,10 +279,10 @@ const { status, data } = await apiInstance.apiFamiliesChildrenPost(
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-|**201** | Child account created successfully |  -  |
+|**201** | Child added to family successfully |  -  |
 |**400** | Invalid request data |  -  |
 |**403** | Parent role required |  -  |
-|**500** | Service unavailable or failed to create child account |  -  |
+|**500** | Service unavailable or failed to add child |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

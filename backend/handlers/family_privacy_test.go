@@ -15,8 +15,8 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// MockFirestoreService implements all Firestore methods for testing
-type MockFirestoreService struct {
+// MockDBService implements all database methods for testing
+type MockDBService struct {
 	mock.Mock
 	users    map[string]*models.User
 	families map[string]*models.Family
@@ -24,8 +24,8 @@ type MockFirestoreService struct {
 	results  map[string][]models.TestResult
 }
 
-func NewMockFirestoreService() *MockFirestoreService {
-	return &MockFirestoreService{
+func NewMockDBService() *MockDBService {
+	return &MockDBService{
 		users:    make(map[string]*models.User),
 		families: make(map[string]*models.Family),
 		wordSets: make(map[string]*models.WordSet),
@@ -34,7 +34,7 @@ func NewMockFirestoreService() *MockFirestoreService {
 }
 
 // User methods
-func (m *MockFirestoreService) GetUser(userID string) (*models.User, error) {
+func (m *MockDBService) GetUser(userID string) (*models.User, error) {
 	args := m.Called(userID)
 	if user, exists := m.users[userID]; exists {
 		return user, nil
@@ -42,36 +42,36 @@ func (m *MockFirestoreService) GetUser(userID string) (*models.User, error) {
 	return args.Get(0).(*models.User), args.Error(1)
 }
 
-func (m *MockFirestoreService) GetUserByFirebaseUID(firebaseUID string) (*models.User, error) {
-	args := m.Called(firebaseUID)
+func (m *MockDBService) GetUserByAuthID(authID string) (*models.User, error) {
+	args := m.Called(authID)
 	for _, user := range m.users {
-		if user.FirebaseUID == firebaseUID {
+		if user.AuthID == authID {
 			return user, nil
 		}
 	}
 	return args.Get(0).(*models.User), args.Error(1)
 }
 
-func (m *MockFirestoreService) CreateUser(user *models.User) error {
+func (m *MockDBService) CreateUser(user *models.User) error {
 	args := m.Called(user)
 	m.users[user.ID] = user
 	return args.Error(0)
 }
 
-func (m *MockFirestoreService) UpdateUser(user *models.User) error {
+func (m *MockDBService) UpdateUser(user *models.User) error {
 	args := m.Called(user)
 	m.users[user.ID] = user
 	return args.Error(0)
 }
 
-func (m *MockFirestoreService) DeleteUser(userID string) error {
+func (m *MockDBService) DeleteUser(userID string) error {
 	args := m.Called(userID)
 	delete(m.users, userID)
 	return args.Error(0)
 }
 
 // Word set methods
-func (m *MockFirestoreService) GetWordSets(familyID string) ([]models.WordSet, error) {
+func (m *MockDBService) GetWordSets(familyID string) ([]models.WordSet, error) {
 	args := m.Called(familyID)
 	var wordSets []models.WordSet
 	for _, ws := range m.wordSets {
@@ -82,19 +82,19 @@ func (m *MockFirestoreService) GetWordSets(familyID string) ([]models.WordSet, e
 	return wordSets, args.Error(1)
 }
 
-func (m *MockFirestoreService) CreateWordSet(wordSet *models.WordSet) error {
+func (m *MockDBService) CreateWordSet(wordSet *models.WordSet) error {
 	args := m.Called(wordSet)
 	m.wordSets[wordSet.ID] = wordSet
 	return args.Error(0)
 }
 
-func (m *MockFirestoreService) DeleteWordSet(wordSetID string) error {
+func (m *MockDBService) DeleteWordSet(wordSetID string) error {
 	args := m.Called(wordSetID)
 	delete(m.wordSets, wordSetID)
 	return args.Error(0)
 }
 
-func (m *MockFirestoreService) VerifyWordSetAccess(familyID, wordSetID string) error {
+func (m *MockDBService) VerifyWordSetAccess(familyID, wordSetID string) error {
 	args := m.Called(familyID, wordSetID)
 	if ws, exists := m.wordSets[wordSetID]; exists {
 		if ws.FamilyID != familyID {
@@ -106,7 +106,7 @@ func (m *MockFirestoreService) VerifyWordSetAccess(familyID, wordSetID string) e
 }
 
 // Test result methods
-func (m *MockFirestoreService) GetTestResults(userID string) ([]models.TestResult, error) {
+func (m *MockDBService) GetTestResults(userID string) ([]models.TestResult, error) {
 	args := m.Called(userID)
 
 	// If error is mocked, return it
@@ -130,14 +130,14 @@ func (m *MockFirestoreService) GetTestResults(userID string) ([]models.TestResul
 	return []models.TestResult{}, nil
 }
 
-func (m *MockFirestoreService) SaveTestResult(result *models.TestResult) error {
+func (m *MockDBService) SaveTestResult(result *models.TestResult) error {
 	args := m.Called(result)
 	m.results[result.UserID] = append(m.results[result.UserID], *result)
 	return args.Error(0)
 }
 
 // Family methods
-func (m *MockFirestoreService) GetFamily(familyID string) (*models.Family, error) {
+func (m *MockDBService) GetFamily(familyID string) (*models.Family, error) {
 	args := m.Called(familyID)
 	if family, exists := m.families[familyID]; exists {
 		return family, nil
@@ -145,7 +145,7 @@ func (m *MockFirestoreService) GetFamily(familyID string) (*models.Family, error
 	return args.Get(0).(*models.Family), args.Error(1)
 }
 
-func (m *MockFirestoreService) GetFamilyChildren(familyID string) ([]models.ChildAccount, error) {
+func (m *MockDBService) GetFamilyChildren(familyID string) ([]models.ChildAccount, error) {
 	args := m.Called(familyID)
 	var children []models.ChildAccount
 	for _, user := range m.users {
@@ -167,18 +167,18 @@ func (m *MockFirestoreService) GetFamilyChildren(familyID string) ([]models.Chil
 	return children, args.Error(1)
 }
 
-func (m *MockFirestoreService) GetFamilyProgress(familyID string) ([]models.FamilyProgress, error) {
+func (m *MockDBService) GetFamilyProgress(familyID string) ([]models.FamilyProgress, error) {
 	args := m.Called(familyID)
 	return args.Get(0).([]models.FamilyProgress), args.Error(1)
 }
 
-func (m *MockFirestoreService) GetFamilyStats(familyID string) (*models.FamilyStats, error) {
+func (m *MockDBService) GetFamilyStats(familyID string) (*models.FamilyStats, error) {
 	args := m.Called(familyID)
 	// Simplified implementation for testing
 	return &models.FamilyStats{}, args.Error(1)
 }
 
-func (m *MockFirestoreService) GetFamilyResults(familyID string) ([]models.TestResult, error) {
+func (m *MockDBService) GetFamilyResults(familyID string) ([]models.TestResult, error) {
 	args := m.Called(familyID)
 
 	// If error is mocked, return it
@@ -205,7 +205,7 @@ func (m *MockFirestoreService) GetFamilyResults(familyID string) ([]models.TestR
 }
 
 // Security verification methods
-func (m *MockFirestoreService) VerifyParentPermission(userID, familyID string) error {
+func (m *MockDBService) VerifyParentPermission(userID, familyID string) error {
 	args := m.Called(userID, familyID)
 	if user, exists := m.users[userID]; exists {
 		if user.FamilyID != familyID || user.Role != "parent" {
@@ -216,7 +216,7 @@ func (m *MockFirestoreService) VerifyParentPermission(userID, familyID string) e
 	return args.Error(0)
 }
 
-func (m *MockFirestoreService) VerifyChildOwnership(parentID, childID string) error {
+func (m *MockDBService) VerifyChildOwnership(parentID, childID string) error {
 	args := m.Called(parentID, childID)
 	if child, exists := m.users[childID]; exists {
 		if child.ParentID == nil || *child.ParentID != parentID {
@@ -229,14 +229,14 @@ func (m *MockFirestoreService) VerifyChildOwnership(parentID, childID string) er
 
 // MockServiceManager for testing
 type MockServiceManager struct {
-	Firestore *MockFirestoreService
+	DB *MockDBService
 }
 
 // DeleteWordSetWithAudio mock implementation for testing
 func (m *MockServiceManager) DeleteWordSetWithAudio(wordSetID string) error {
 	// For testing, we'll just call the Firestore DeleteWordSet method
 	// In a more sophisticated test, we could mock the storage operations too
-	return m.Firestore.DeleteWordSet(wordSetID)
+	return m.DB.DeleteWordSet(wordSetID)
 }
 
 // MockGetWordSets is a test-specific wrapper for GetWordSets that handles mock services
@@ -275,7 +275,7 @@ func MockGetWordSets(c *gin.Context) {
 		return
 	}
 
-	wordSets, err := mockSM.Firestore.GetWordSets(familyIDStr)
+	wordSets, err := mockSM.DB.GetWordSets(familyIDStr)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve word sets",
@@ -301,7 +301,7 @@ func MockGetFamilyChildren(c *gin.Context) {
 	mockSM := sm.(*MockServiceManager)
 	familyID, _ := c.Get("validatedFamilyID")
 
-	children, err := mockSM.Firestore.GetFamilyChildren(familyID.(string))
+	children, err := mockSM.DB.GetFamilyChildren(familyID.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{Error: "Failed to retrieve children"})
 		return
@@ -325,7 +325,7 @@ func MockCreateChildAccount(c *gin.Context) {
 
 	sm := c.MustGet("serviceManager").(*MockServiceManager)
 
-	if err := sm.Firestore.CreateChild(&child); err != nil {
+	if err := sm.DB.CreateChild(&child); err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{Error: "Failed to create child account"})
 		return
 	}
@@ -338,7 +338,7 @@ func MockDeleteChildAccount(c *gin.Context) {
 	childID := c.Param("childId")
 	sm := c.MustGet("serviceManager").(*MockServiceManager)
 
-	if err := sm.Firestore.DeleteChild(childID); err != nil {
+	if err := sm.DB.DeleteChild(childID); err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{Error: "Failed to delete child account"})
 		return
 	}
@@ -351,7 +351,7 @@ func MockGetChildResults(c *gin.Context) {
 	childID := c.Param("childId")
 	sm := c.MustGet("serviceManager").(*MockServiceManager)
 
-	results, err := sm.Firestore.GetTestResults(childID)
+	results, err := sm.DB.GetTestResults(childID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{Error: "Failed to retrieve child results"})
 		return
@@ -370,7 +370,7 @@ func MockCreateWordSet(c *gin.Context) {
 
 	sm := c.MustGet("serviceManager").(*MockServiceManager)
 
-	if err := sm.Firestore.CreateWordSet(&wordSet); err != nil {
+	if err := sm.DB.CreateWordSet(&wordSet); err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{Error: "Failed to create word set"})
 		return
 	}
@@ -408,7 +408,7 @@ func MockUpdateWordSet(c *gin.Context) {
 	}
 
 	// Get existing word set to check ownership and get current state
-	existingWordSet, err := sm.Firestore.GetWordSet(id)
+	existingWordSet, err := sm.DB.GetWordSet(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, models.APIResponse{Error: "Word set not found"})
 		return
@@ -422,19 +422,22 @@ func MockUpdateWordSet(c *gin.Context) {
 
 	// Convert string words to WordItem structs (simplified for testing)
 	words := make([]struct {
-		Word       string           `firestore:"word" json:"word"`
-		Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
-		Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
+		Word         string               `json:"word"`
+		Audio        models.WordAudio     `json:"audio,omitempty"`
+		Definition   string               `json:"definition,omitempty"`
+		Translations []models.Translation `json:"translations,omitempty"`
 	}, len(req.Words))
 
 	for i, wordInput := range req.Words {
 		words[i] = struct {
-			Word       string           `firestore:"word" json:"word"`
-			Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
-			Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
+			Word         string               `json:"word"`
+			Audio        models.WordAudio     `json:"audio,omitempty"`
+			Definition   string               `json:"definition,omitempty"`
+			Translations []models.Translation `json:"translations,omitempty"`
 		}{
-			Word:       wordInput.Word,
-			Definition: wordInput.Definition,
+			Word:         wordInput.Word,
+			Definition:   wordInput.Definition,
+			Translations: wordInput.Translations,
 		}
 	}
 
@@ -451,7 +454,7 @@ func MockUpdateWordSet(c *gin.Context) {
 		UpdatedAt:         time.Now(),
 	}
 
-	err = sm.Firestore.UpdateWordSet(updatedWordSet)
+	err = sm.DB.UpdateWordSet(updatedWordSet)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{Error: "Failed to update word set"})
 		return
@@ -482,13 +485,13 @@ func MockDeleteWordSet(c *gin.Context) {
 	c.JSON(http.StatusOK, models.APIResponse{Message: "Word set deleted successfully"})
 }
 
-func setupTestRouter() (*gin.Engine, *MockFirestoreService) {
+func setupTestRouter() (*gin.Engine, *MockDBService) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 
-	mockFirestore := NewMockFirestoreService()
+	mockDB := NewMockDBService()
 	mockManager := &MockServiceManager{
-		Firestore: mockFirestore,
+		DB: mockDB,
 	}
 
 	// Mock authentication middleware
@@ -510,10 +513,10 @@ func setupTestRouter() (*gin.Engine, *MockFirestoreService) {
 		api.GET("/families/children/:childId/results", MockGetChildResults)
 	}
 
-	return r, mockFirestore
+	return r, mockDB
 }
 
-func setupTestData(mockFirestore *MockFirestoreService) {
+func setupTestData(mockDB *MockDBService) {
 	// Family 1 - Smith Family
 	family1 := &models.Family{
 		ID:        "family-smith",
@@ -522,7 +525,7 @@ func setupTestData(mockFirestore *MockFirestoreService) {
 		Members:   []string{"parent-smith", "child-smith-1", "child-smith-2"},
 		CreatedAt: time.Now(),
 	}
-	mockFirestore.families["family-smith"] = family1
+	mockDB.families["family-smith"] = family1
 
 	// Family 2 - Johnson Family
 	family2 := &models.Family{
@@ -532,12 +535,12 @@ func setupTestData(mockFirestore *MockFirestoreService) {
 		Members:   []string{"parent-johnson", "child-johnson-1"},
 		CreatedAt: time.Now(),
 	}
-	mockFirestore.families["family-johnson"] = family2
+	mockDB.families["family-johnson"] = family2
 
 	// Users for Family 1
 	parentSmith := &models.User{
 		ID:           "parent-smith",
-		FirebaseUID:  "firebase-parent-smith",
+		AuthID:       "oidc-parent-smith",
 		Email:        "parent@smith.com",
 		DisplayName:  "John Smith",
 		FamilyID:     "family-smith",
@@ -546,11 +549,11 @@ func setupTestData(mockFirestore *MockFirestoreService) {
 		CreatedAt:    time.Now(),
 		LastActiveAt: time.Now(),
 	}
-	mockFirestore.users["parent-smith"] = parentSmith
+	mockDB.users["parent-smith"] = parentSmith
 
 	childSmith1 := &models.User{
 		ID:           "child-smith-1",
-		FirebaseUID:  "firebase-child-smith-1",
+		AuthID:       "oidc-child-smith-1",
 		Email:        "child1@smith.com",
 		DisplayName:  "Alice Smith",
 		FamilyID:     "family-smith",
@@ -560,11 +563,11 @@ func setupTestData(mockFirestore *MockFirestoreService) {
 		CreatedAt:    time.Now(),
 		LastActiveAt: time.Now(),
 	}
-	mockFirestore.users["child-smith-1"] = childSmith1
+	mockDB.users["child-smith-1"] = childSmith1
 
 	childSmith2 := &models.User{
 		ID:           "child-smith-2",
-		FirebaseUID:  "firebase-child-smith-2",
+		AuthID:       "oidc-child-smith-2",
 		Email:        "child2@smith.com",
 		DisplayName:  "Bob Smith",
 		FamilyID:     "family-smith",
@@ -574,12 +577,12 @@ func setupTestData(mockFirestore *MockFirestoreService) {
 		CreatedAt:    time.Now(),
 		LastActiveAt: time.Now(),
 	}
-	mockFirestore.users["child-smith-2"] = childSmith2
+	mockDB.users["child-smith-2"] = childSmith2
 
 	// Users for Family 2
 	parentJohnson := &models.User{
 		ID:           "parent-johnson",
-		FirebaseUID:  "firebase-parent-johnson",
+		AuthID:       "oidc-parent-johnson",
 		Email:        "parent@johnson.com",
 		DisplayName:  "Mary Johnson",
 		FamilyID:     "family-johnson",
@@ -588,11 +591,11 @@ func setupTestData(mockFirestore *MockFirestoreService) {
 		CreatedAt:    time.Now(),
 		LastActiveAt: time.Now(),
 	}
-	mockFirestore.users["parent-johnson"] = parentJohnson
+	mockDB.users["parent-johnson"] = parentJohnson
 
 	childJohnson1 := &models.User{
 		ID:           "child-johnson-1",
-		FirebaseUID:  "firebase-child-johnson-1",
+		AuthID:       "oidc-child-johnson-1",
 		Email:        "child1@johnson.com",
 		DisplayName:  "Emma Johnson",
 		FamilyID:     "family-johnson",
@@ -602,25 +605,28 @@ func setupTestData(mockFirestore *MockFirestoreService) {
 		CreatedAt:    time.Now(),
 		LastActiveAt: time.Now(),
 	}
-	mockFirestore.users["child-johnson-1"] = childJohnson1
+	mockDB.users["child-johnson-1"] = childJohnson1
 
 	// Word sets for each family
 	// Helper function to convert strings to WordItems
 	stringToWordItems := func(words []string) []struct {
-		Word       string           `firestore:"word" json:"word"`
-		Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
-		Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
+		Word         string               `json:"word"`
+		Audio        models.WordAudio     `json:"audio,omitempty"`
+		Definition   string               `json:"definition,omitempty"`
+		Translations []models.Translation `json:"translations,omitempty"`
 	} {
 		result := make([]struct {
-			Word       string           `firestore:"word" json:"word"`
-			Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
-			Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
+			Word         string               `json:"word"`
+			Audio        models.WordAudio     `json:"audio,omitempty"`
+			Definition   string               `json:"definition,omitempty"`
+			Translations []models.Translation `json:"translations,omitempty"`
 		}, len(words))
 		for i, word := range words {
 			result[i] = struct {
-				Word       string           `firestore:"word" json:"word"`
-				Audio      models.WordAudio `firestore:"audio,omitempty" json:"audio,omitempty"`
-				Definition string           `firestore:"definition,omitempty" json:"definition,omitempty"`
+				Word         string               `json:"word"`
+				Audio        models.WordAudio     `json:"audio,omitempty"`
+				Definition   string               `json:"definition,omitempty"`
+				Translations []models.Translation `json:"translations,omitempty"`
 			}{Word: word}
 		}
 		return result
@@ -635,7 +641,7 @@ func setupTestData(mockFirestore *MockFirestoreService) {
 		Language:  "en",
 		CreatedAt: time.Now(),
 	}
-	mockFirestore.wordSets["wordset-smith-1"] = wordSetSmith
+	mockDB.wordSets["wordset-smith-1"] = wordSetSmith
 
 	wordSetJohnson := &models.WordSet{
 		ID:        "wordset-johnson-1",
@@ -646,7 +652,7 @@ func setupTestData(mockFirestore *MockFirestoreService) {
 		Language:  "en",
 		CreatedAt: time.Now(),
 	}
-	mockFirestore.wordSets["wordset-johnson-1"] = wordSetJohnson
+	mockDB.wordSets["wordset-johnson-1"] = wordSetJohnson
 
 	// Test results for children
 	smithChild1Results := []models.TestResult{
@@ -660,7 +666,7 @@ func setupTestData(mockFirestore *MockFirestoreService) {
 			CompletedAt:  time.Now(),
 		},
 	}
-	mockFirestore.results["child-smith-1"] = smithChild1Results
+	mockDB.results["child-smith-1"] = smithChild1Results
 
 	johnsonChild1Results := []models.TestResult{
 		{
@@ -673,16 +679,16 @@ func setupTestData(mockFirestore *MockFirestoreService) {
 			CompletedAt:  time.Now(),
 		},
 	}
-	mockFirestore.results["child-johnson-1"] = johnsonChild1Results
+	mockDB.results["child-johnson-1"] = johnsonChild1Results
 }
 
 // Test: Family A cannot access Family B's word sets
 func TestFamilyPrivacy_WordSetsIsolation(t *testing.T) {
-	_, mockFirestore := setupTestRouter()
-	setupTestData(mockFirestore)
+	_, mockDB := setupTestRouter()
+	setupTestData(mockDB)
 
 	// Mock successful calls for Family A
-	mockFirestore.On("GetWordSets", "family-smith").Return([]models.WordSet{}, nil)
+	mockDB.On("GetWordSets", "family-smith").Return([]models.WordSet{}, nil)
 
 	// Set context as Smith family parent
 	req := httptest.NewRequest("GET", "/api/wordsets", nil)
@@ -692,10 +698,10 @@ func TestFamilyPrivacy_WordSetsIsolation(t *testing.T) {
 	// Add authentication context manually for this test
 	c, _ := gin.CreateTestContext(w)
 	c.Request = req
-	c.Set("serviceManager", &MockServiceManager{Firestore: mockFirestore})
+	c.Set("serviceManager", &MockServiceManager{DB: mockDB})
 	c.Set("validatedFamilyID", "family-smith")
 	c.Set("userID", "parent-smith")
-	c.Set("user", mockFirestore.users["parent-smith"])
+	c.Set("user", mockDB.users["parent-smith"])
 
 	MockGetWordSets(c)
 
@@ -707,17 +713,17 @@ func TestFamilyPrivacy_WordSetsIsolation(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Verify the mock was called with the correct family ID
-	mockFirestore.AssertCalled(t, "GetWordSets", "family-smith")
-	mockFirestore.AssertNotCalled(t, "GetWordSets", "family-johnson")
+	mockDB.AssertCalled(t, "GetWordSets", "family-smith")
+	mockDB.AssertNotCalled(t, "GetWordSets", "family-johnson")
 }
 
 // Test: Parent A cannot access Parent B's children
 func TestFamilyPrivacy_ChildrenIsolation(t *testing.T) {
-	_, mockFirestore := setupTestRouter()
-	setupTestData(mockFirestore)
+	_, mockDB := setupTestRouter()
+	setupTestData(mockDB)
 
 	// Mock calls
-	mockFirestore.On("GetFamilyChildren", "family-smith").Return([]models.ChildAccount{}, nil)
+	mockDB.On("GetFamilyChildren", "family-smith").Return([]models.ChildAccount{}, nil)
 
 	req := httptest.NewRequest("GET", "/api/families/children", nil)
 	w := httptest.NewRecorder()
@@ -725,27 +731,27 @@ func TestFamilyPrivacy_ChildrenIsolation(t *testing.T) {
 	// Set context as Smith family parent
 	c, _ := gin.CreateTestContext(w)
 	c.Request = req
-	c.Set("serviceManager", &MockServiceManager{Firestore: mockFirestore})
+	c.Set("serviceManager", &MockServiceManager{DB: mockDB})
 	c.Set("validatedFamilyID", "family-smith")
 	c.Set("userID", "parent-smith")
-	c.Set("user", mockFirestore.users["parent-smith"])
+	c.Set("user", mockDB.users["parent-smith"])
 
 	MockGetFamilyChildren(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	// Verify only Smith family children are accessed
-	mockFirestore.AssertCalled(t, "GetFamilyChildren", "family-smith")
-	mockFirestore.AssertNotCalled(t, "GetFamilyChildren", "family-johnson")
+	mockDB.AssertCalled(t, "GetFamilyChildren", "family-smith")
+	mockDB.AssertNotCalled(t, "GetFamilyChildren", "family-johnson")
 }
 
 // Test: Parent A cannot access Child B's test results
 func TestFamilyPrivacy_ChildResultsIsolation(t *testing.T) {
-	_, mockFirestore := setupTestRouter()
-	setupTestData(mockFirestore)
+	_, mockDB := setupTestRouter()
+	setupTestData(mockDB)
 
 	// Mock GetTestResults call - should fail for cross-family access
-	mockFirestore.On("GetTestResults", "child-johnson-1").Return([]models.TestResult{}, fmt.Errorf("access denied"))
+	mockDB.On("GetTestResults", "child-johnson-1").Return([]models.TestResult{}, fmt.Errorf("access denied"))
 
 	req := httptest.NewRequest("GET", "/api/families/children/child-johnson-1/results", nil)
 	w := httptest.NewRecorder()
@@ -754,10 +760,10 @@ func TestFamilyPrivacy_ChildResultsIsolation(t *testing.T) {
 	c, _ := gin.CreateTestContext(w)
 	c.Request = req
 	c.Params = []gin.Param{{Key: "childId", Value: "child-johnson-1"}}
-	c.Set("serviceManager", &MockServiceManager{Firestore: mockFirestore})
+	c.Set("serviceManager", &MockServiceManager{DB: mockDB})
 	c.Set("validatedFamilyID", "family-smith")
 	c.Set("userID", "parent-smith")
-	c.Set("user", mockFirestore.users["parent-smith"])
+	c.Set("user", mockDB.users["parent-smith"])
 
 	MockGetChildResults(c)
 
@@ -765,19 +771,18 @@ func TestFamilyPrivacy_ChildResultsIsolation(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
 	// Verify GetTestResults was called
-	mockFirestore.AssertCalled(t, "GetTestResults", "child-johnson-1")
+	mockDB.AssertCalled(t, "GetTestResults", "child-johnson-1")
 }
 
 // Test: Child A cannot create accounts (role-based access)
 func TestFamilyPrivacy_RoleBasedAccess(t *testing.T) {
-	_, mockFirestore := setupTestRouter()
-	setupTestData(mockFirestore)
+	_, mockDB := setupTestRouter()
+	setupTestData(mockDB)
 
 	// Create a request as a child trying to create another child account
 	requestBody := models.CreateChildAccountRequest{
 		Email:       "newchild@smith.com",
 		DisplayName: "New Child",
-		Password:    "password123",
 		FamilyID:    "family-smith",
 	}
 	bodyBytes, _ := json.Marshal(requestBody)
@@ -789,14 +794,14 @@ func TestFamilyPrivacy_RoleBasedAccess(t *testing.T) {
 	// Set context as child (should be rejected by role middleware)
 	c, _ := gin.CreateTestContext(w)
 	c.Request = req
-	c.Set("serviceManager", &MockServiceManager{Firestore: mockFirestore})
+	c.Set("serviceManager", &MockServiceManager{DB: mockDB})
 	c.Set("validatedFamilyID", "family-smith")
 	c.Set("userID", "child-smith-1")
 	c.Set("userRole", "child")
-	c.Set("user", mockFirestore.users["child-smith-1"])
+	c.Set("user", mockDB.users["child-smith-1"])
 
 	// This should succeed in the handler but would be blocked by middleware in real scenario
-	mockFirestore.On("CreateChild", mock.AnythingOfType("*models.ChildAccount")).Return(nil)
+	mockDB.On("CreateChild", mock.AnythingOfType("*models.ChildAccount")).Return(nil)
 
 	MockCreateChildAccount(c)
 
@@ -807,11 +812,11 @@ func TestFamilyPrivacy_RoleBasedAccess(t *testing.T) {
 
 // Test: Word set access verification
 func TestFamilyPrivacy_WordSetAccess(t *testing.T) {
-	_, mockFirestore := setupTestRouter()
-	setupTestData(mockFirestore)
+	_, mockDB := setupTestRouter()
+	setupTestData(mockDB)
 
 	// Test accessing a word set from another family
-	mockFirestore.On("DeleteWordSet", "wordset-johnson-1").Return(nil)
+	mockDB.On("DeleteWordSet", "wordset-johnson-1").Return(nil)
 
 	req := httptest.NewRequest("DELETE", "/api/wordsets/wordset-johnson-1", nil)
 	w := httptest.NewRecorder()
@@ -819,7 +824,7 @@ func TestFamilyPrivacy_WordSetAccess(t *testing.T) {
 	c, _ := gin.CreateTestContext(w)
 	c.Request = req
 	c.Params = []gin.Param{{Key: "id", Value: "wordset-johnson-1"}}
-	c.Set("serviceManager", &MockServiceManager{Firestore: mockFirestore})
+	c.Set("serviceManager", &MockServiceManager{DB: mockDB})
 	c.Set("validatedFamilyID", "family-smith")
 	c.Set("userID", "parent-smith")
 
@@ -829,7 +834,7 @@ func TestFamilyPrivacy_WordSetAccess(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	// Verify the deletion was attempted
-	mockFirestore.AssertCalled(t, "DeleteWordSet", "wordset-johnson-1")
+	mockDB.AssertCalled(t, "DeleteWordSet", "wordset-johnson-1")
 }
 
 // Integration test simulating full middleware chain
@@ -837,11 +842,11 @@ func TestFamilyPrivacy_FullMiddlewareChain(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 
-	mockFirestore := NewMockFirestoreService()
-	setupTestData(mockFirestore)
+	mockDB := NewMockDBService()
+	setupTestData(mockDB)
 
 	// Mock service manager
-	mockManager := &MockServiceManager{Firestore: mockFirestore}
+	mockManager := &MockServiceManager{DB: mockDB}
 
 	// Set up middleware that simulates the auth and access control
 	r.Use(func(c *gin.Context) {
@@ -855,7 +860,7 @@ func TestFamilyPrivacy_FullMiddlewareChain(t *testing.T) {
 			return
 		}
 
-		user, exists := mockFirestore.users[userID]
+		user, exists := mockDB.users[userID]
 		if !exists {
 			c.JSON(http.StatusUnauthorized, models.APIResponse{Error: "User not found"})
 			c.Abort()
@@ -877,7 +882,7 @@ func TestFamilyPrivacy_FullMiddlewareChain(t *testing.T) {
 		familyID, _ := c.Get("validatedFamilyID")
 
 		if wordSetID != "" {
-			err := mockFirestore.VerifyWordSetAccess(familyID.(string), wordSetID)
+			err := mockDB.VerifyWordSetAccess(familyID.(string), wordSetID)
 			if err != nil {
 				c.JSON(http.StatusForbidden, models.APIResponse{Error: "Access denied"})
 				c.Abort()
@@ -890,8 +895,8 @@ func TestFamilyPrivacy_FullMiddlewareChain(t *testing.T) {
 	wordSetGroup.DELETE("/:id", MockDeleteWordSet)
 
 	// Test 1: Smith parent tries to delete Smith word set (should succeed)
-	mockFirestore.On("VerifyWordSetAccess", "family-smith", "wordset-smith-1").Return(nil)
-	mockFirestore.On("DeleteWordSet", "wordset-smith-1").Return(nil)
+	mockDB.On("VerifyWordSetAccess", "family-smith", "wordset-smith-1").Return(nil)
+	mockDB.On("DeleteWordSet", "wordset-smith-1").Return(nil)
 
 	req1 := httptest.NewRequest("DELETE", "/api/wordsets/wordset-smith-1", nil)
 	req1.Header.Set("X-User-ID", "parent-smith")
@@ -901,7 +906,7 @@ func TestFamilyPrivacy_FullMiddlewareChain(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w1.Code)
 
 	// Test 2: Smith parent tries to delete Johnson word set (should fail)
-	mockFirestore.On("VerifyWordSetAccess", "family-smith", "wordset-johnson-1").Return(fmt.Errorf("access denied"))
+	mockDB.On("VerifyWordSetAccess", "family-smith", "wordset-johnson-1").Return(fmt.Errorf("access denied"))
 	// Don't need to mock DeleteWordSet since middleware should block
 
 	req2 := httptest.NewRequest("DELETE", "/api/wordsets/wordset-johnson-1", nil)
@@ -916,24 +921,24 @@ func TestFamilyPrivacy_FullMiddlewareChain(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "Access denied", response.Error)
 
-	mockFirestore.AssertExpectations(t)
+	mockDB.AssertExpectations(t)
 }
 
 func TestFamilyPrivacy_ChildOwnershipValidation(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 
-	mockFirestore := NewMockFirestoreService()
-	setupTestData(mockFirestore)
+	mockDB := NewMockDBService()
+	setupTestData(mockDB)
 
-	mockManager := &MockServiceManager{Firestore: mockFirestore}
+	mockManager := &MockServiceManager{DB: mockDB}
 
 	// Middleware to simulate authentication and child ownership verification
 	r.Use(func(c *gin.Context) {
 		c.Set("serviceManager", mockManager)
 
 		userID := c.GetHeader("X-User-ID")
-		user, exists := mockFirestore.users[userID]
+		user, exists := mockDB.users[userID]
 		if !exists {
 			c.JSON(http.StatusUnauthorized, models.APIResponse{Error: "User not found"})
 			c.Abort()
@@ -955,7 +960,7 @@ func TestFamilyPrivacy_ChildOwnershipValidation(t *testing.T) {
 		childID := c.Param("childId")
 
 		if childID != "" {
-			err := mockFirestore.VerifyChildOwnership(userID.(string), childID)
+			err := mockDB.VerifyChildOwnership(userID.(string), childID)
 			if err != nil {
 				c.JSON(http.StatusForbidden, models.APIResponse{Error: "Access denied: You can only access your own children"})
 				c.Abort()
@@ -968,8 +973,8 @@ func TestFamilyPrivacy_ChildOwnershipValidation(t *testing.T) {
 	childGroup.DELETE("/:childId", MockDeleteChildAccount)
 
 	// Test 1: Smith parent deletes their own child (should succeed)
-	mockFirestore.On("VerifyChildOwnership", "parent-smith", "child-smith-1").Return(nil)
-	mockFirestore.On("DeleteChild", "child-smith-1").Return(nil)
+	mockDB.On("VerifyChildOwnership", "parent-smith", "child-smith-1").Return(nil)
+	mockDB.On("DeleteChild", "child-smith-1").Return(nil)
 
 	req1 := httptest.NewRequest("DELETE", "/api/families/children/child-smith-1", nil)
 	req1.Header.Set("X-User-ID", "parent-smith")
@@ -979,7 +984,7 @@ func TestFamilyPrivacy_ChildOwnershipValidation(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w1.Code)
 
 	// Test 2: Smith parent tries to delete Johnson child (should fail)
-	mockFirestore.On("VerifyChildOwnership", "parent-smith", "child-johnson-1").Return(fmt.Errorf("access denied"))
+	mockDB.On("VerifyChildOwnership", "parent-smith", "child-johnson-1").Return(fmt.Errorf("access denied"))
 	// Don't need to mock DeleteChild since middleware should block
 
 	req2 := httptest.NewRequest("DELETE", "/api/families/children/child-johnson-1", nil)
@@ -994,10 +999,10 @@ func TestFamilyPrivacy_ChildOwnershipValidation(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Contains(t, response.Error, "Access denied")
 
-	mockFirestore.AssertExpectations(t)
+	mockDB.AssertExpectations(t)
 }
 
-func (m *MockFirestoreService) CreateChild(child *models.ChildAccount) error {
+func (m *MockDBService) CreateChild(child *models.ChildAccount) error {
 	args := m.Called(child)
 	m.users[child.ID] = &models.User{
 		ID:           child.ID,
@@ -1013,13 +1018,13 @@ func (m *MockFirestoreService) CreateChild(child *models.ChildAccount) error {
 	return args.Error(0)
 }
 
-func (m *MockFirestoreService) DeleteChild(childID string) error {
+func (m *MockDBService) DeleteChild(childID string) error {
 	args := m.Called(childID)
 	delete(m.users, childID)
 	return args.Error(0)
 }
 
-func (m *MockFirestoreService) GetChild(childID string) (*models.ChildAccount, error) {
+func (m *MockDBService) GetChild(childID string) (*models.ChildAccount, error) {
 	args := m.Called(childID)
 	if user, exists := m.users[childID]; exists && user.Role == "child" {
 		child := &models.ChildAccount{
@@ -1032,7 +1037,7 @@ func (m *MockFirestoreService) GetChild(childID string) (*models.ChildAccount, e
 	return args.Get(0).(*models.ChildAccount), args.Error(1)
 }
 
-func (m *MockFirestoreService) UpdateChild(child *models.ChildAccount) error {
+func (m *MockDBService) UpdateChild(child *models.ChildAccount) error {
 	args := m.Called(child)
 	if user, exists := m.users[child.ID]; exists {
 		user.FamilyID = child.FamilyID
@@ -1042,31 +1047,31 @@ func (m *MockFirestoreService) UpdateChild(child *models.ChildAccount) error {
 	return args.Error(0)
 }
 
-func (m *MockFirestoreService) CreateFamily(family *models.Family) error {
+func (m *MockDBService) CreateFamily(family *models.Family) error {
 	args := m.Called(family)
 	m.families[family.ID] = family
 	return args.Error(0)
 }
 
-func (m *MockFirestoreService) UpdateFamily(family *models.Family) error {
+func (m *MockDBService) UpdateFamily(family *models.Family) error {
 	args := m.Called(family)
 	m.families[family.ID] = family
 	return args.Error(0)
 }
 
-func (m *MockFirestoreService) DeleteFamily(familyID string) error {
+func (m *MockDBService) DeleteFamily(familyID string) error {
 	args := m.Called(familyID)
 	delete(m.families, familyID)
 	return args.Error(0)
 }
 
-func (m *MockFirestoreService) UpdateWordSet(wordSet *models.WordSet) error {
+func (m *MockDBService) UpdateWordSet(wordSet *models.WordSet) error {
 	args := m.Called(wordSet)
 	m.wordSets[wordSet.ID] = wordSet
 	return args.Error(0)
 }
 
-func (m *MockFirestoreService) GetWordSet(wordSetID string) (*models.WordSet, error) {
+func (m *MockDBService) GetWordSet(wordSetID string) (*models.WordSet, error) {
 	args := m.Called(wordSetID)
 	if wordSet, exists := m.wordSets[wordSetID]; exists {
 		return wordSet, args.Error(1)
@@ -1074,12 +1079,12 @@ func (m *MockFirestoreService) GetWordSet(wordSetID string) (*models.WordSet, er
 	return args.Get(0).(*models.WordSet), args.Error(1)
 }
 
-func (m *MockFirestoreService) GetUserProgress(userID string) (*models.FamilyProgress, error) {
+func (m *MockDBService) GetUserProgress(userID string) (*models.FamilyProgress, error) {
 	args := m.Called(userID)
 	return args.Get(0).(*models.FamilyProgress), args.Error(1)
 }
 
-func (m *MockFirestoreService) VerifyFamilyAccess(userID, familyID string) error {
+func (m *MockDBService) VerifyFamilyAccess(userID, familyID string) error {
 	args := m.Called(userID, familyID)
 	if user, exists := m.users[userID]; exists {
 		if user.FamilyID != familyID {
@@ -1092,8 +1097,8 @@ func (m *MockFirestoreService) VerifyFamilyAccess(userID, familyID string) error
 
 // TestUpdateWordSet tests the PUT /api/wordsets/:id endpoint
 func TestUpdateWordSet(t *testing.T) {
-	_, mockFirestore := setupTestRouter()
-	setupTestData(mockFirestore)
+	_, mockDB := setupTestRouter()
+	setupTestData(mockDB)
 
 	tests := []struct {
 		name           string
@@ -1125,8 +1130,8 @@ func TestUpdateWordSet(t *testing.T) {
 					Language:  "en",
 					CreatedAt: time.Now(),
 				}
-				mockFirestore.On("GetWordSet", "wordset-smith-1").Return(existingWordSet, nil)
-				mockFirestore.On("UpdateWordSet", mock.AnythingOfType("*models.WordSet")).Return(nil)
+				mockDB.On("GetWordSet", "wordset-smith-1").Return(existingWordSet, nil)
+				mockDB.On("UpdateWordSet", mock.AnythingOfType("*models.WordSet")).Return(nil)
 			},
 			expectedStatus: http.StatusOK,
 		},
@@ -1141,7 +1146,7 @@ func TestUpdateWordSet(t *testing.T) {
 				Language: "en",
 			},
 			setupMocks: func() {
-				mockFirestore.On("GetWordSet", "nonexistent-wordset").Return((*models.WordSet)(nil), fmt.Errorf("word set not found"))
+				mockDB.On("GetWordSet", "nonexistent-wordset").Return((*models.WordSet)(nil), fmt.Errorf("word set not found"))
 			},
 			expectedStatus: http.StatusNotFound,
 			expectedError:  "Word set not found",
@@ -1166,7 +1171,7 @@ func TestUpdateWordSet(t *testing.T) {
 					Language:  "en",
 					CreatedAt: time.Now(),
 				}
-				mockFirestore.On("GetWordSet", "wordset-johnson-1").Return(existingWordSet, nil)
+				mockDB.On("GetWordSet", "wordset-johnson-1").Return(existingWordSet, nil)
 			},
 			expectedStatus: http.StatusNotFound,
 			expectedError:  "Word set not found",
@@ -1203,8 +1208,8 @@ func TestUpdateWordSet(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Reset mock expectations
-			mockFirestore.ExpectedCalls = nil
-			mockFirestore.Calls = nil
+			mockDB.ExpectedCalls = nil
+			mockDB.Calls = nil
 
 			// Setup mocks for this test
 			tt.setupMocks()
@@ -1228,7 +1233,7 @@ func TestUpdateWordSet(t *testing.T) {
 			// Set up context with user info
 			c, _ := gin.CreateTestContext(w)
 			c.Request = req
-			c.Set("serviceManager", &MockServiceManager{Firestore: mockFirestore})
+			c.Set("serviceManager", &MockServiceManager{DB: mockDB})
 			c.Set("userID", tt.userID)
 			c.Set("validatedFamilyID", tt.familyID)
 
@@ -1263,7 +1268,7 @@ func TestUpdateWordSet(t *testing.T) {
 			}
 
 			// Verify mock expectations
-			mockFirestore.AssertExpectations(t)
+			mockDB.AssertExpectations(t)
 		})
 	}
 }

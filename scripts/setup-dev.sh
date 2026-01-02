@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Diktator Local Development Setup Script
-# This script sets up the complete development environment with Firebase emulators
+# This script sets up the complete development environment with PostgreSQL
 
 set -e
 
@@ -15,33 +15,38 @@ if ! command -v mise &> /dev/null; then
 fi
 
 # Navigate to project root
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 
 echo "📦 Installing tools and dependencies..."
 mise install
 
-echo "🔧 Setting up Firebase for local development..."
-mise run firebase-setup
-
 echo "📚 Installing frontend dependencies..."
-cd frontend && npm install && cd ..
+cd frontend && pnpm install && cd ..
 
 echo "🗃️ Installing backend dependencies..."
 cd backend && go mod tidy && cd ..
 
+echo "⚙️ Setting up development configuration..."
+mise run config-dev
+
+echo "🐘 Starting PostgreSQL..."
+mise run db-start
+
+echo "🗄️ Running database migrations..."
+sleep 3
+mise run db-migrate
+
 echo "✅ Setup complete!"
 echo ""
 echo "🎯 Quick start commands:"
-echo "  Start with Firebase emulators: mise run dev-with-firebase"
-echo "  Start frontend only:           mise run frontend"
-echo "  Start Firebase emulators only: mise run firebase-emulators"
+echo "  Start full dev environment:  mise run dev"
+echo "  Start frontend only:         mise run frontend"
+echo "  Start backend only:          mise run backend"
+echo "  Start backend in background: mise run backend-start"
 echo ""
 echo "🌐 Development URLs:"
 echo "  Frontend:         http://localhost:3000"
 echo "  Backend API:      http://localhost:8080"
-echo "  Firebase UI:      http://localhost:4000"
-echo "  Firebase Auth:    http://localhost:9099"
-echo "  Firestore:        http://localhost:8088"
+echo "  PostgreSQL:       localhost:5432"
 echo ""
-echo "🔥 The app is configured to use Firebase emulators with demo data."
-echo "   No real Firebase project needed for local development!"
+echo "🔧 Auth is configured in 'mock' mode - no OIDC provider needed."

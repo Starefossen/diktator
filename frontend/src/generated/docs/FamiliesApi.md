@@ -21,7 +21,7 @@ Get all children in the authenticated user\'s family
 import {
     FamiliesApi,
     Configuration
-} from 'diktator-api-client';
+} from './api';
 
 const configuration = new Configuration();
 const apiInstance = new FamiliesApi(configuration);
@@ -67,7 +67,7 @@ Get information about the user\'s family
 import {
     FamiliesApi,
     Configuration
-} from 'diktator-api-client';
+} from './api';
 
 const configuration = new Configuration();
 const apiInstance = new FamiliesApi(configuration);
@@ -113,7 +113,7 @@ Get progress data for all family members
 import {
     FamiliesApi,
     Configuration
-} from 'diktator-api-client';
+} from './api';
 
 const configuration = new Configuration();
 const apiInstance = new FamiliesApi(configuration);
@@ -159,7 +159,7 @@ Get test results for all members of the authenticated user\'s family
 import {
     FamiliesApi,
     Configuration
-} from 'diktator-api-client';
+} from './api';
 
 const configuration = new Configuration();
 const apiInstance = new FamiliesApi(configuration);
@@ -205,7 +205,7 @@ Get statistical data for the authenticated user\'s family
 import {
     FamiliesApi,
     Configuration
-} from 'diktator-api-client';
+} from './api';
 
 const configuration = new Configuration();
 const apiInstance = new FamiliesApi(configuration);

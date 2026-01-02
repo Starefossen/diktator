@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { FamilyProgress, TestResult, WordSet } from "@/types";
@@ -14,18 +14,19 @@ import {
   HeroTrophyIcon,
   HeroBookIcon,
 } from "@/components/Icons";
-import { ChevronDownIcon } from "@heroicons/react/16/solid";
 
-export default function FamilyProgressPage() {
+function FamilyProgressPageContent() {
   const { t } = useLanguage();
   const { userData } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const selectedChildId = searchParams.get("childId");
 
   const [familyMembers, setFamilyMembers] = useState<FamilyProgress[]>([]);
   const [results, setResults] = useState<TestResult[]>([]);
   const [wordSets, setWordSets] = useState<WordSet[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedChildId, setSelectedChildId] = useState<string>("all");
 
   const loadFamilyData = useCallback(async () => {
     if (!userData) return;
@@ -60,7 +61,7 @@ export default function FamilyProgressPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
         <div className="text-center">
           <LoadingSpinner />
           <p className="mt-4 text-gray-600">{t("family.loading")}</p>
@@ -69,54 +70,55 @@ export default function FamilyProgressPage() {
     );
   }
 
-  // Calculate overall family statistics
-  const totalTests = familyMembers.reduce(
-    (sum, member) => sum + member.totalTests,
-    0,
+  // Calculate overall or child-specific statistics
+  const isChildView = selectedChildId !== null;
+  const selectedChild = familyMembers.find(
+    (member) => member.userId === selectedChildId,
   );
-  const totalWords = familyMembers.reduce(
-    (sum, member) => sum + member.totalWords,
-    0,
-  );
-  const totalCorrectWords = familyMembers.reduce(
-    (sum, member) => sum + member.correctWords,
-    0,
-  );
-  const averageScore =
-    totalWords > 0 ? (totalCorrectWords / totalWords) * 100 : 0;
+
+  const totalTests = isChildView
+    ? selectedChild?.totalTests || 0
+    : familyMembers.reduce((sum, member) => sum + member.totalTests, 0);
+  const totalWords = isChildView
+    ? selectedChild?.totalWords || 0
+    : familyMembers.reduce((sum, member) => sum + member.totalWords, 0);
+  const totalCorrectWords = isChildView
+    ? selectedChild?.correctWords || 0
+    : familyMembers.reduce((sum, member) => sum + member.correctWords, 0);
+  const averageScore = isChildView
+    ? selectedChild?.averageScore || 0
+    : totalWords > 0
+      ? (totalCorrectWords / totalWords) * 100
+      : 0;
 
   // Filter results based on selected child
-  const filteredResults =
-    selectedChildId === "all"
-      ? results
-      : results.filter((result) => result.userId === selectedChildId);
-
-  // Get user name for selected child
-  const getSelectedChildName = () => {
-    if (selectedChildId === "all") return t("family.progress.allChildren");
-    const selectedMember = familyMembers.find(
-      (member) => member.userId === selectedChildId,
-    );
-    return selectedMember?.userName || t("family.progress.unknown");
-  };
+  const filteredResults = isChildView
+    ? results.filter((result) => result.userId === selectedChildId)
+    : results;
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
         <div className="container px-4 py-8 mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="mb-4 text-4xl font-bold text-transparent bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text">
-                {t("family.title")}
+              <h1 className="mb-4 text-4xl font-bold text-transparent bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text">
+                {isChildView
+                  ? selectedChild?.userName || t("family.progress.unknown")
+                  : t("family.title")}
               </h1>
-              <p className="text-lg text-gray-600">{t("family.subtitle")}</p>
+              <p className="text-lg text-gray-600">
+                {isChildView ? "Progress Overview" : t("family.subtitle")}
+              </p>
             </div>
             <button
-              onClick={() => router.push("/family")}
+              onClick={() =>
+                router.push(isChildView ? "/family/progress" : "/family")
+              }
               className="px-4 py-2 text-gray-600 transition-colors rounded-lg hover:text-gray-800 hover:bg-gray-100"
             >
-              {t("family.back")}
+              {t("common.back")}
             </button>
           </div>
 
@@ -180,20 +182,12 @@ export default function FamilyProgressPage() {
           </div>
 
           {/* Family Members Progress */}
-          {familyMembers.length > 0 && (
+          {!isChildView && familyMembers.length > 0 && (
             <div className="p-6 mb-8 bg-white rounded-lg shadow-lg">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-semibold text-gray-800">
                   {t("family.children.title")} ({familyMembers.length})
                 </h2>
-                {selectedChildId !== "all" && (
-                  <button
-                    onClick={() => setSelectedChildId("all")}
-                    className="px-3 py-1 text-sm text-blue-600 transition-colors border border-blue-600 rounded-lg hover:bg-blue-50"
-                  >
-                    {t("family.progress.viewAll")}
-                  </button>
-                )}
               </div>
               <p className="mb-4 text-sm text-gray-500">
                 {t("family.progress.instruction")}
@@ -202,47 +196,20 @@ export default function FamilyProgressPage() {
                 {familyMembers.map((member) => (
                   <div
                     key={member.userId}
-                    onClick={() => setSelectedChildId(member.userId)}
-                    className={`p-4 transition-all border rounded-lg cursor-pointer hover:shadow-md ${
-                      selectedChildId === member.userId
-                        ? "border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-200"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
+                    onClick={() =>
+                      router.push(`/family/progress?childId=${member.userId}`)
+                    }
+                    className="p-4 transition-all border border-gray-200 rounded-lg cursor-pointer hover:shadow-md hover:border-gray-300"
                   >
                     <div className="flex items-center mb-3 space-x-3">
-                      <div
-                        className={`flex items-center justify-center w-10 h-10 font-bold text-white rounded-full ${
-                          selectedChildId === member.userId
-                            ? "bg-gradient-to-br from-blue-600 to-purple-600"
-                            : "bg-gradient-to-br from-blue-500 to-purple-500"
-                        }`}
-                      >
+                      <div className="flex items-center justify-center w-10 h-10 font-bold text-white rounded-full bg-linear-to-br from-blue-500 to-purple-500">
                         {member.userName.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <h3
-                          className={`font-semibold ${
-                            selectedChildId === member.userId
-                              ? "text-blue-900"
-                              : "text-gray-800"
-                          }`}
-                        >
+                        <h3 className="font-semibold text-gray-800">
                           {member.userName}
-                          {selectedChildId === member.userId && (
-                            <span className="ml-2 text-xs font-medium text-blue-600">
-                              ({t("family.child.progress.selected")})
-                            </span>
-                          )}
                         </h3>
-                        <p
-                          className={`text-sm ${
-                            selectedChildId === member.userId
-                              ? "text-blue-700"
-                              : "text-gray-600"
-                          }`}
-                        >
-                          {member.role}
-                        </p>
+                        <p className="text-sm text-gray-600">{member.role}</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
@@ -291,49 +258,57 @@ export default function FamilyProgressPage() {
           {/* Recent Test Results */}
           <div className="bg-white rounded-lg shadow-lg">
             <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-semibold text-gray-800">
                   {t("results.title")} ({filteredResults.length})
                 </h2>
-
-                {/* Child Selector */}
-                {familyMembers.length > 0 && (
-                  <div className="relative">
-                    <select
-                      value={selectedChildId}
-                      onChange={(e) => setSelectedChildId(e.target.value)}
-                      className="px-4 py-2 pr-10 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg appearance-none hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="all">
-                        {t("family.progress.allChildren")}
-                      </option>
-                      {familyMembers.map((member) => (
-                        <option key={member.userId} value={member.userId}>
-                          {member.userName}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDownIcon className="absolute w-4 h-4 text-gray-500 transform -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-                  </div>
+                {isChildView && (
+                  <button
+                    onClick={() => router.push("/family/progress")}
+                    className="px-3 py-1 text-sm text-blue-600 transition-colors border border-blue-600 rounded-lg hover:bg-blue-50"
+                  >
+                    {t("family.progress.viewAll")}
+                  </button>
                 )}
               </div>
-
-              {selectedChildId !== "all" && (
-                <p className="text-sm text-gray-600">
+              {isChildView && selectedChild && (
+                <p className="mt-2 text-sm text-gray-600">
                   {t("family.progress.showingResultsFor")}{" "}
-                  <span className="font-medium">{getSelectedChildName()}</span>
+                  <span className="font-medium">{selectedChild.userName}</span>
+                </p>
+              )}
+              {!isChildView && (
+                <p className="mt-2 text-sm text-gray-600">
+                  {t("family.progress.allChildren")}
                 </p>
               )}
             </div>
 
             <TestResultsList
-              results={filteredResults.slice(0, 10)}
+              results={filteredResults.slice(0, 20)}
               wordSets={wordSets}
-              showUserName={selectedChildId === "all"}
+              showUserName={!isChildView}
             />
           </div>
         </div>
       </div>
     </ProtectedRoute>
+  );
+}
+
+export default function FamilyProgressPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
+          <div className="text-center">
+            <div className="w-12 h-12 mx-auto border-b-2 border-blue-600 rounded-full animate-spin" />
+            <p className="mt-4 text-gray-600">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <FamilyProgressPageContent />
+    </Suspense>
   );
 }

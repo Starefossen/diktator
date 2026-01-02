@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -23,6 +24,7 @@ import { PracticeView } from "@/components/PracticeView";
 import { TestResultsView } from "@/components/TestResultsView";
 import { SettingsModal } from "@/components/modals/SettingsModal";
 import { DeleteConfirmationModal } from "@/components/modals/DeleteConfirmationModal";
+import { ModeSelectionModal } from "@/components/ModeSelectionModal";
 import { HeroPlusIcon } from "@/components/Icons";
 
 // Custom hooks
@@ -31,9 +33,20 @@ import { useTestMode } from "@/hooks/useTestMode";
 import { usePracticeMode } from "@/hooks/usePracticeMode";
 import { useModalState } from "@/hooks/useModalState";
 
-export default function WordSetsPage() {
+function WordSetsPageContent() {
   const { t } = useLanguage();
   const { userData } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Get query parameters for routing
+  const view = searchParams.get("view"); // "test" | "practice" | null
+  const wordSetId = searchParams.get("id");
+  const mode = searchParams.get("mode") as
+    | "standard"
+    | "dictation"
+    | "translation"
+    | null;
 
   // Data management
   const {
@@ -61,8 +74,30 @@ export default function WordSetsPage() {
   // UI state management
   const modalState = useModalState();
 
+  // Mode selection modal state
+  const [modeSelectionOpen, setModeSelectionOpen] = useState(false);
+  const [selectedWordSetForTest, setSelectedWordSetForTest] =
+    useState<WordSet | null>(null);
+
   // Audio state for word list
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
+
+  // Handle URL-based navigation for test/practice modes
+  useEffect(() => {
+    if (view === "test" && wordSetId && mode) {
+      // Find and start test
+      const wordSet = wordSets.find((ws) => ws.id === wordSetId);
+      if (wordSet && !testMode.activeTest) {
+        testMode.startTest(wordSet, mode);
+      }
+    } else if (view === "practice" && wordSetId) {
+      // Find and start practice
+      const wordSet = wordSets.find((ws) => ws.id === wordSetId);
+      if (wordSet && !practiceMode.practiceMode) {
+        practiceMode.startPractice(wordSet);
+      }
+    }
+  }, [view, wordSetId, mode, wordSets, testMode, practiceMode]);
 
   // Load personalization data when component mounts or userData changes
   useEffect(() => {
@@ -111,6 +146,7 @@ export default function WordSetsPage() {
           setPlayingAudio(null);
           console.error("Failed to play audio for word:", word, error);
         },
+        preloadNext: true,
       });
     },
     [],
@@ -124,18 +160,27 @@ export default function WordSetsPage() {
       const validatedConfig = validateTestConfiguration(
         modalState.settingsConfig,
       );
-      // TODO: Implement API call to update wordset configuration
-      console.log(
-        "Saving settings for wordset:",
-        modalState.settingsWordSet.id,
-        validatedConfig,
-      );
+
+      // Update word set with new test configuration
+      await updateWordSet(modalState.settingsWordSet.id, {
+        name: modalState.settingsWordSet.name,
+        language: modalState.settingsWordSet.language,
+        words: modalState.settingsWordSet.words.map((w) => ({
+          word: w.word,
+          definition: w.definition,
+          translations: w.translations,
+        })),
+        testConfiguration: validatedConfig as unknown as Record<
+          string,
+          unknown
+        >,
+      });
 
       modalState.closeSettingsModal();
     } catch (error) {
       console.error("Failed to save settings:", error);
     }
-  }, [modalState]);
+  }, [modalState, updateWordSet]);
 
   // Editor handlers
   const handleCreateSave = useCallback(
@@ -190,7 +235,7 @@ export default function WordSetsPage() {
   // Loading state
   if (loading || personalizationLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
         <div className="text-center">
           <div className="w-12 h-12 mx-auto border-b-2 border-blue-600 rounded-full animate-spin"></div>
           <p className="mt-4 text-gray-600">
@@ -201,7 +246,7 @@ export default function WordSetsPage() {
     );
   }
 
-  // Practice mode view
+  // Practice mode view (triggered by URL params)
   if (practiceMode.practiceMode && practiceMode.practiceWords.length > 0) {
     return (
       <ProtectedRoute>
@@ -217,14 +262,22 @@ export default function WordSetsPage() {
           onPrevious={practiceMode.previousPracticeWord}
           onPlayAudio={practiceMode.playPracticeWordAudio}
           onShuffle={practiceMode.shufflePracticeWords}
-          onStartTest={testMode.startTest}
-          onExit={practiceMode.exitPractice}
+          onStartTest={(wordSet) => {
+            // Exit practice and show mode selection modal
+            practiceMode.exitPractice();
+            setSelectedWordSetForTest(wordSet);
+            setModeSelectionOpen(true);
+          }}
+          onExit={() => {
+            practiceMode.exitPractice();
+            router.push("/wordsets");
+          }}
         />
       </ProtectedRoute>
     );
   }
 
-  // Test results view
+  // Test results view (triggered by URL params)
   if (testMode.activeTest && testMode.showResult) {
     return (
       <ProtectedRoute>
@@ -232,14 +285,17 @@ export default function WordSetsPage() {
           activeTest={testMode.activeTest}
           answers={testMode.answers}
           onRestart={testMode.restartTest}
-          onExit={testMode.exitTest}
+          onExit={() => {
+            testMode.exitTest();
+            router.push("/wordsets");
+          }}
           onPlayAudio={testMode.playTestWordAudio}
         />
       </ProtectedRoute>
     );
   }
 
-  // Test interface view
+  // Test interface view (triggered by URL params)
   if (testMode.activeTest && !testMode.showResult) {
     return (
       <ProtectedRoute>
@@ -253,10 +309,15 @@ export default function WordSetsPage() {
           currentTries={testMode.currentTries}
           answers={testMode.answers}
           isAudioPlaying={testMode.isAudioPlaying}
+          testMode={testMode.testMode}
+          wordDirections={testMode.wordDirections}
           onUserAnswerChange={testMode.setUserAnswer}
           onSubmitAnswer={testMode.handleSubmitAnswer}
           onPlayCurrentWord={testMode.playCurrentWord}
-          onExitTest={testMode.exitTest}
+          onExitTest={() => {
+            testMode.exitTest();
+            router.push("/wordsets");
+          }}
         />
       </ProtectedRoute>
     );
@@ -265,10 +326,10 @@ export default function WordSetsPage() {
   // Main word sets list view
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
         <div className="container px-4 py-8 mx-auto">
           <div className="mb-8">
-            <h1 className="mb-4 text-4xl font-bold text-transparent bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text">
+            <h1 className="mb-4 text-4xl font-bold text-transparent bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text">
               {t("wordsets.title")}
             </h1>
             <p className="text-lg text-gray-600">{t("wordsets.subtitle")}</p>
@@ -278,7 +339,7 @@ export default function WordSetsPage() {
           <div className="mb-8">
             <button
               onClick={modalState.openCreateForm}
-              className="flex items-center px-6 py-3 font-semibold text-white transition-all duration-200 rounded-lg shadow-lg bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 hover:shadow-xl hover:scale-105"
+              className="flex items-center px-6 py-3 font-semibold text-white transition-all duration-200 rounded-lg shadow-lg bg-linear-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 hover:shadow-xl hover:scale-105"
             >
               <HeroPlusIcon className="w-5 h-5 mr-2" />
               {t("wordsets.create")}
@@ -302,8 +363,13 @@ export default function WordSetsPage() {
             playingAudio={playingAudio}
             userResults={userResults}
             familyProgress={familyProgress}
-            onStartTest={testMode.startTest}
-            onStartPractice={practiceMode.startPractice}
+            onStartTest={(wordSet) => {
+              setSelectedWordSetForTest(wordSet);
+              setModeSelectionOpen(true);
+            }}
+            onStartPractice={(wordSet) => {
+              router.push(`/wordsets?view=practice&id=${wordSet.id}`);
+            }}
             onWordClick={handleWordClick}
             onOpenSettings={modalState.openSettingsModal}
             onOpenEdit={modalState.openEditForm}
@@ -344,6 +410,25 @@ export default function WordSetsPage() {
           />
         )}
 
+        {/* Mode Selection Modal */}
+        {modeSelectionOpen && selectedWordSetForTest && (
+          <ModeSelectionModal
+            wordSet={selectedWordSetForTest}
+            isOpen={modeSelectionOpen}
+            onSelectMode={(mode: "standard" | "dictation" | "translation") => {
+              router.push(
+                `/wordsets?view=test&id=${selectedWordSetForTest.id}&mode=${mode}`,
+              );
+              setModeSelectionOpen(false);
+              setSelectedWordSetForTest(null);
+            }}
+            onClose={() => {
+              setModeSelectionOpen(false);
+              setSelectedWordSetForTest(null);
+            }}
+          />
+        )}
+
         {/* Footer */}
         <footer className="pb-4 mt-12 text-center">
           <div className="text-xs text-gray-400">
@@ -354,5 +439,22 @@ export default function WordSetsPage() {
         </footer>
       </div>
     </ProtectedRoute>
+  );
+}
+
+export default function WordSetsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
+          <div className="text-center">
+            <div className="w-12 h-12 mx-auto border-b-2 border-blue-600 rounded-full animate-spin"></div>
+            <p className="mt-4 text-gray-600">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <WordSetsPageContent />
+    </Suspense>
   );
 }

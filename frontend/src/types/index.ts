@@ -1,15 +1,6 @@
-// src/types/index.ts - Enhanced for Phase 2
+// src/types/index.ts - Shared type definitions
 
-// Family Management Types
-export interface Family {
-  id: string;
-  name: string;
-  createdBy: string; // Parent's user ID
-  members: string[]; // Array of user IDs in the family
-  createdAt: string;
-  updatedAt: string;
-}
-
+// Child Account Type
 export interface ChildAccount {
   id: string;
   email: string;
@@ -20,43 +11,6 @@ export interface ChildAccount {
   isActive: boolean; // Parents can deactivate child accounts
   createdAt: string;
   lastActiveAt: string;
-}
-
-export interface ParentUser {
-  id: string;
-  email: string;
-  displayName: string;
-  familyId: string;
-  role: "parent";
-  children: string[]; // Array of child user IDs
-  createdAt: string;
-  lastActiveAt: string;
-}
-
-// Enhanced User data interface to support family management
-export interface EnhancedUserData {
-  id: string;
-  email: string;
-  displayName: string;
-  familyId: string;
-  role: "parent" | "child";
-  parentId?: string; // Only for child accounts
-  children?: string[]; // Only for parent accounts
-  isActive: boolean;
-  createdAt: string;
-  lastActiveAt: string;
-}
-
-// Family invitation system
-export interface FamilyInvitation {
-  id: string;
-  familyId: string;
-  email: string;
-  role: "child" | "parent";
-  invitedBy: string;
-  status: "pending" | "accepted" | "declined" | "expired";
-  createdAt: string;
-  expiresAt: string;
 }
 
 // Progress tracking for family members
@@ -83,33 +37,27 @@ export interface FamilyStats {
   lastActivity: string;
 }
 
-// API Request types for family management
 export interface CreateChildAccountRequest {
   email: string;
   displayName: string;
-  password: string;
+  familyId?: string; // Optional - can be set by backend from authenticated user
 }
 
-export interface InviteFamilyMemberRequest {
-  email: string;
-  role: "child" | "parent";
-  familyId: string;
-}
-
-// Existing User, WordSet, TestResult, AudioFile, and other types...
-export interface User {
-  id: string;
-  email: string;
-  familyId: string;
-  createdAt: string;
-}
-
+// WordSet Types
 export interface WordAudio {
   word: string;
   audioUrl: string;
   audioId: string;
   voiceId: string;
   createdAt: string;
+}
+
+export interface Translation {
+  language: string;
+  text: string;
+  audioUrl?: string;
+  audioId?: string;
+  voiceId?: string;
 }
 
 export interface WordSet {
@@ -121,9 +69,6 @@ export interface WordSet {
   language: "en" | "no";
   createdAt: string;
   updatedAt: string;
-  // Audio processing status
-  audioProcessing?: "pending" | "completed" | "failed";
-  audioProcessedAt?: string;
   // Test configuration for this wordset
   testConfiguration?: TestConfiguration;
 }
@@ -132,6 +77,7 @@ export interface WordItem {
   word: string;
   definition?: string;
   audio?: WordAudio; // Audio info for this specific word
+  translations?: Translation[]; // Translations to other languages
 }
 
 export interface WordTestResult {
@@ -152,6 +98,7 @@ export interface TestResult {
   score: number; // Percentage (0-100)
   totalWords: number;
   correctWords: number;
+  mode: "standard" | "dictation" | "translation"; // Test mode used
   incorrectWords?: string[] | null; // Deprecated: Use words field for detailed information
   words: WordTestResult[]; // Detailed information for each word in the test
   timeSpent: number; // Total time spent on test in seconds
@@ -159,60 +106,7 @@ export interface TestResult {
   createdAt: string;
 }
 
-export interface AudioFile {
-  id: string;
-  word: string;
-  language: "en" | "no";
-  voiceId: string;
-  storagePath: string;
-  url: string;
-  createdAt: string;
-}
-
-// API Request types
-export interface CreateWordSetRequest {
-  name: string;
-  words: WordInput[]; // Changed from string[] to WordInput[] to support definitions
-  language: "en" | "no";
-  testConfiguration?: TestConfiguration;
-}
-
-export interface UpdateWordSetRequest {
-  name: string;
-  words: WordInput[]; // Changed from string[] to WordInput[] to support definitions
-  language: "en" | "no";
-  testConfiguration?: TestConfiguration;
-}
-
-export interface WordInput {
-  word: string;
-  definition?: string;
-}
-
-export interface SaveResultRequest {
-  wordSetId: string;
-  score: number;
-  totalWords: number;
-  correctWords: number;
-  incorrectWords?: string[]; // Deprecated: Use words field for detailed information
-  words: WordTestResult[]; // Detailed information for each word in the test
-  timeSpent: number;
-}
-
-// API Response
-export interface ApiResponse<T> {
-  data?: T;
-  message?: string;
-  error?: string;
-}
-
-// Form types
-export interface CreateWordSetForm {
-  name: string;
-  words: string[];
-  language: "en" | "no";
-}
-
+// Test Types
 export interface TestAnswer {
   word: string;
   userAnswers: string[]; // All answers the user provided for this word
@@ -232,6 +126,9 @@ export interface TestConfiguration {
   autoPlayAudio: boolean; // Auto-play word audio when starting/moving to next word (default: true)
   shuffleWords: boolean; // Randomize word order during test (default: false)
   enableAutocorrect: boolean; // Enable browser autocorrect/spellcheck in input field (default: false)
+  defaultMode?: "standard" | "dictation" | "translation"; // Default test mode (default: standard)
+  targetLanguage?: string; // Target language for translation mode
+  translationDirection?: "toTarget" | "toSource" | "mixed"; // Direction for translation mode: toTarget (source→target), toSource (target→source), mixed (random)
 }
 
 // Default test configuration
@@ -242,31 +139,8 @@ export const DEFAULT_TEST_CONFIG: TestConfiguration = {
   autoPlayAudio: true,
   shuffleWords: false,
   enableAutocorrect: false,
+  translationDirection: "toTarget",
 };
-
-export interface TestSession {
-  wordSetId: string;
-  words: string[];
-  currentWordIndex: number;
-  answers: TestAnswer[];
-  startTime: Date;
-  isCompleted: boolean;
-  configuration: TestConfiguration;
-  currentAttempts: { [wordIndex: number]: number }; // Track attempts per word
-}
-
-// UI State types
-export type Language = "en" | "no";
-
-export interface LoadingState {
-  isLoading: boolean;
-  message?: string;
-}
-
-export interface ErrorState {
-  hasError: boolean;
-  message?: string;
-}
 
 // Helper functions for test configuration
 export function getEffectiveTestConfig(wordSet: WordSet): TestConfiguration {

@@ -12,7 +12,7 @@ Name | Type | Description | Notes
 ## Example
 
 ```typescript
-import { ApiWordsetsVoicesGet200Response } from 'diktator-api-client';
+import { ApiWordsetsVoicesGet200Response } from './api';
 
 const instance: ApiWordsetsVoicesGet200Response = {
     data,

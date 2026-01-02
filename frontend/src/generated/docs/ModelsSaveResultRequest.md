@@ -7,6 +7,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **correctWords** | **number** |  | [default to undefined]
 **incorrectWords** | **Array&lt;string&gt;** | Deprecated: Use Words field for detailed information | [optional] [default to undefined]
+**mode** | **string** |  | [default to undefined]
 **score** | **number** |  | [default to undefined]
 **timeSpent** | **number** |  | [optional] [default to undefined]
 **totalWords** | **number** |  | [default to undefined]
@@ -16,11 +17,12 @@ Name | Type | Description | Notes
 ## Example
 
 ```typescript
-import { ModelsSaveResultRequest } from 'diktator-api-client';
+import { ModelsSaveResultRequest } from './api';
 
 const instance: ModelsSaveResultRequest = {
     correctWords,
     incorrectWords,
+    mode,
     score,
     timeSpent,
     totalWords,
