@@ -852,7 +852,7 @@ func TestFamilyPrivacy_FullMiddlewareChain(t *testing.T) {
 	r.Use(func(c *gin.Context) {
 		c.Set("serviceManager", mockManager)
 
-		// Simulate user authentication (normally done by Firebase)
+
 		userID := c.GetHeader("X-User-ID")
 		if userID == "" {
 			c.JSON(http.StatusUnauthorized, models.APIResponse{Error: "Authentication required"})

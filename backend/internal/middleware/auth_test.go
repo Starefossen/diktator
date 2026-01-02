@@ -67,8 +67,7 @@ func setupTestAuth() (*gin.Engine, *MockServiceManager) {
 		DB:   mockDB,
 	}
 
-	// For testing, we'll create a simplified auth middleware that doesn't depend on Firebase
-	// This tests the middleware logic without the external dependencies
+
 	testAuthMiddleware := func() gin.HandlerFunc {
 		return func(c *gin.Context) {
 			// Set mock service manager in context
