@@ -67,7 +67,6 @@ func setupTestAuth() (*gin.Engine, *MockServiceManager) {
 		DB:   mockDB,
 	}
 
-
 	testAuthMiddleware := func() gin.HandlerFunc {
 		return func(c *gin.Context) {
 			// Set mock service manager in context

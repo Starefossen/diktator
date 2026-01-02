@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"math/big"
 	"net/http"
 	"strings"
@@ -208,6 +209,7 @@ func (o *OIDCValidator) ValidateSessionFromCookie(ctx context.Context, cookieVal
 // validateToken parses and validates a JWT token
 func (o *OIDCValidator) validateToken(tokenString string) (*Identity, error) {
 	if tokenString == "" {
+		log.Printf("[OIDC] Token validation failed: empty token")
 		return nil, ErrInvalidSession
 	}
 
@@ -215,18 +217,21 @@ func (o *OIDCValidator) validateToken(tokenString string) (*Identity, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Verify signing method
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			log.Printf("[OIDC] Token validation failed: unexpected signing method: %v", token.Header["alg"])
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
 		// Get the key ID
 		kid, ok := token.Header["kid"].(string)
 		if !ok {
+			log.Printf("[OIDC] Token validation failed: missing kid header")
 			return nil, fmt.Errorf("token missing kid header")
 		}
 
 		// Get the signing key
 		jwk, err := o.getKey(kid)
 		if err != nil {
+			log.Printf("[OIDC] Token validation failed: key lookup error for kid=%s: %v", kid, err)
 			return nil, err
 		}
 
@@ -235,10 +240,12 @@ func (o *OIDCValidator) validateToken(tokenString string) (*Identity, error) {
 	})
 
 	if err != nil {
+		log.Printf("[OIDC] Token parsing failed: %v", err)
 		return nil, fmt.Errorf("%w: %v", ErrInvalidSession, err)
 	}
 
 	if !token.Valid {
+		log.Printf("[OIDC] Token validation failed: token marked as invalid")
 		return nil, ErrInvalidSession
 	}
 
@@ -250,6 +257,11 @@ func (o *OIDCValidator) validateToken(tokenString string) (*Identity, error) {
 
 	// Validate issuer
 	if iss, ok := claims["iss"].(string); !ok || iss != o.issuer {
+		if !ok {
+			log.Printf("[OIDC] Token validation failed: missing issuer claim")
+		} else {
+			log.Printf("[OIDC] Token validation failed: invalid issuer (got=%s, expected=%s)", iss, o.issuer)
+		}
 		return nil, fmt.Errorf("%w: invalid issuer", ErrInvalidSession)
 	}
 
@@ -268,13 +280,17 @@ func (o *OIDCValidator) validateToken(tokenString string) (*Identity, error) {
 			}
 		}
 		if !audValid {
+			audValue := claims["aud"]
+			log.Printf("[OIDC] Token validation failed: invalid audience (got=%v, expected=%s)", audValue, o.audience)
 			return nil, fmt.Errorf("%w: invalid audience", ErrInvalidSession)
 		}
 	}
 
 	// Validate expiration
 	if exp, ok := claims["exp"].(float64); ok {
-		if time.Unix(int64(exp), 0).Before(time.Now()) {
+		expTime := time.Unix(int64(exp), 0)
+		if expTime.Before(time.Now()) {
+			log.Printf("[OIDC] Token validation failed: token expired (exp=%s, now=%s)", expTime.Format(time.RFC3339), time.Now().Format(time.RFC3339))
 			return nil, fmt.Errorf("%w: token expired", ErrInvalidSession)
 		}
 	}
