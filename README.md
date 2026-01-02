@@ -179,12 +179,11 @@ In development, the app runs with:
 ### Production Mode
 
 For production, configure:
-- **AUTH_MODE=oidc**: Real OIDC provider (Keycloak, Auth0, etc.)
+
+- **AUTH_MODE=oidc**: Real OIDC provider (Zitadel, Keycloak, Auth0, etc.)
 - **DATABASE_URL**: Production PostgreSQL connection string
 - **OIDC_ISSUER_URL**: Your OIDC provider URL
 - **OIDC_AUDIENCE**: Expected token audience
-
-See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for detailed configuration options.
 
 ## Project Structure
 
@@ -217,12 +216,14 @@ See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for detailed configuration op
 ## Authentication Flow
 
 ### Development (Mock Mode)
+
 1. Set `AUTH_MODE=mock` in backend
 2. Set `NEXT_PUBLIC_AUTH_MODE=mock` in frontend
 3. Any login credentials work, creating a mock user session
 
 ### Production (OIDC)
-1. Configure OIDC provider (Keycloak, Auth0, Okta, etc.)
+
+1. Configure OIDC provider (Zitadel, Keycloak, Auth0, etc.)
 2. Set `AUTH_MODE=oidc` with `OIDC_ISSUER_URL` and `OIDC_AUDIENCE`
 3. Frontend redirects to OIDC provider for login
 4. Backend validates JWT tokens from provider
