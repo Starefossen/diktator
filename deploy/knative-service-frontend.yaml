@@ -1,0 +1,54 @@
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: www
+  namespace: diktator
+spec:
+  template:
+    metadata:
+      annotations:
+        # Keep only latest 2 revisions
+        serving.knative.dev/revisionHistoryLimit: "2"
+        autoscaling.knative.dev/min-scale: "1"
+        autoscaling.knative.dev/max-scale: "3"
+    spec:
+      containers:
+        - name: frontend
+          image: registry.intern.flaatten.org:5000/www:BUILD_TAG
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          # securityContext:
+          #   allowPrivilegeEscalation: false
+          #   runAsNonRoot: true
+          #   runAsUser: 101  # nginx-micro runs as uid 101
+          #   capabilities:
+          #     drop:
+          #       - ALL
+          #   seccompProfile:
+          #     type: RuntimeDefault
+          env:
+            - name: NEXT_PUBLIC_API_URL
+              value: "https://api.diktator.fn.flaatten.org"
+            - name: NEXT_PUBLIC_AUTH_MODE
+              value: "oidc"
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5

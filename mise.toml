@@ -892,3 +892,344 @@ if [ -z "$1" ]; then
 fi
 gcloud config set project "$1"
 """
+
+# ============================================================================
+# Homelab Deployment (Knative)
+# ============================================================================
+
+[tasks."homelab:build-backend"]
+description = "Build backend binaries and Docker image for homelab"
+run = """
+  echo "🔨 Building backend binaries..."
+  cd backend
+
+  # Build for linux/amd64
+  CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/server-linux-amd64 ./cmd/server
+
+  # Build for linux/arm64
+  CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o bin/server-linux-arm64 ./cmd/server
+
+  echo "📦 Building and pushing Docker image..."
+  BUILD_TAG=$(date +%s)
+  REGISTRY_URL=${REGISTRY_URL:-registry.intern.flaatten.org:5000}
+  SERVICE_NAME=${BACKEND_SERVICE:-api}
+
+  # Build multi-arch image
+  docker buildx build \
+    --platform linux/amd64,linux/arm64 \
+    --build-arg TARGETARCH=amd64 \
+    -t ${REGISTRY_URL}/${SERVICE_NAME}:${BUILD_TAG} \
+    --push \
+    .
+
+  # Save build tag for deployment
+  echo ${BUILD_TAG} > ../.build-tag-backend
+  echo "✅ Backend built: ${REGISTRY_URL}/${SERVICE_NAME}:${BUILD_TAG}"
+"""
+
+[tasks."homelab:install-frontend"]
+description = "Install frontend dependencies"
+run = """
+  cd frontend
+  echo "📦 Installing frontend dependencies..."
+  pnpm install
+"""
+
+[tasks."homelab:build-frontend"]
+description = "Build frontend and Docker image for homelab"
+depends = ["homelab:install-frontend"]
+run = """
+  echo "🔨 Building frontend static files..."
+  cd frontend
+  # Set production API URL for static export
+  export NEXT_PUBLIC_API_URL="https://api.diktator.fn.flaatten.org"
+  export NEXT_PUBLIC_AUTH_MODE="oidc"
+  pnpm run build
+
+  echo "📦 Building and pushing Docker image..."
+  BUILD_TAG=$(date +%s)
+  REGISTRY_URL=${REGISTRY_URL:-registry.intern.flaatten.org:5000}
+  SERVICE_NAME=${FRONTEND_SERVICE:-www}
+
+  # Build multi-arch image
+  docker buildx build \
+    --platform linux/amd64,linux/arm64 \
+    -t ${REGISTRY_URL}/${SERVICE_NAME}:${BUILD_TAG} \
+    --push \
+    .
+
+  # Save build tag for deployment
+  echo ${BUILD_TAG} > ../.build-tag-frontend
+  echo "✅ Frontend built: ${REGISTRY_URL}/${SERVICE_NAME}:${BUILD_TAG}"
+"""
+
+[tasks."homelab:build"]
+description = "Build both backend and frontend for homelab"
+depends = ["homelab:build-backend", "homelab:build-frontend"]
+
+[tasks."homelab:gcp-export-credentials"]
+description = "Export Google Cloud credentials from Terraform"
+run = """
+  DEPLOY_DIR=${DEPLOY_DIR:-deploy}
+
+  echo "📥 Exporting Google Cloud credentials..."
+
+  if [ ! -d "terraform/.terraform" ]; then
+    echo "❌ Terraform not initialized. Run 'mise run tofu:init' first."
+    exit 1
+  fi
+
+  cd terraform
+  if ! tofu output app_service_account_key >/dev/null 2>&1; then
+    echo "❌ No service account found. Run 'mise run tofu:apply' first."
+    exit 1
+  fi
+
+  tofu output -raw app_service_account_key | base64 -d > ../${DEPLOY_DIR}/gcp-credentials.json
+  echo "✅ Credentials exported to ${DEPLOY_DIR}/gcp-credentials.json"
+"""
+
+[tasks."homelab:gcp-create-secret"]
+description = "Create Kubernetes secret for Google Cloud credentials"
+depends = ["homelab:create-namespace", "homelab:gcp-export-credentials"]
+run = """
+  NAMESPACE=${NAMESPACE:-diktator}
+  DEPLOY_DIR=${DEPLOY_DIR:-deploy}
+
+  if [ ! -f "${DEPLOY_DIR}/gcp-credentials.json" ]; then
+    echo "❌ Credentials file not found. Run 'mise run homelab:gcp-export-credentials' first."
+    exit 1
+  fi
+
+  echo "🔐 Creating Kubernetes secret..."
+
+  # Delete existing secret if it exists
+  kubectl delete secret gcp-credentials -n ${NAMESPACE} 2>/dev/null || true
+
+  # Create new secret
+  kubectl create secret generic gcp-credentials \
+    --from-file=key.json=${DEPLOY_DIR}/gcp-credentials.json \
+    -n ${NAMESPACE}
+
+  # Delete credentials file from disk
+  rm -f ${DEPLOY_DIR}/gcp-credentials.json
+
+  echo "✅ Secret 'gcp-credentials' created in namespace ${NAMESPACE}"
+  echo "🗑️  Credentials file removed from disk"
+"""
+
+[tasks."homelab:create-namespace"]
+description = "Create namespace if it doesn't exist"
+run = """
+  NAMESPACE=${NAMESPACE:-diktator}
+  if ! kubectl get namespace ${NAMESPACE} >/dev/null 2>&1; then
+    kubectl create namespace ${NAMESPACE}
+    echo "✅ Created namespace: ${NAMESPACE}"
+  else
+    echo "✓ Namespace ${NAMESPACE} already exists"
+  fi
+"""
+
+[tasks."homelab:apply-network-policies"]
+description = "Apply Cilium network policies"
+depends = ["homelab:create-namespace"]
+run = """
+  NAMESPACE=${NAMESPACE:-diktator}
+  DEPLOY_DIR=${DEPLOY_DIR:-deploy}
+
+  echo "🔒 Applying network policies..."
+  kubectl apply -f ${DEPLOY_DIR}/networkpolicy.yaml
+
+  echo "✅ Network policies applied"
+"""
+
+[tasks."homelab:deploy-backend"]
+description = "Deploy backend to Knative"
+depends = ["homelab:gcp-create-secret"]
+run = """
+  if [ ! -f ".build-tag-backend" ]; then
+    echo "❌ No build tag found. Run 'mise run homelab:build-backend' first."
+    exit 1
+  fi
+
+  BUILD_TAG=$(cat .build-tag-backend)
+  REGISTRY_URL=${REGISTRY_URL:-registry.intern.flaatten.org:5000}
+  SERVICE_NAME=${BACKEND_SERVICE:-api}
+  NAMESPACE=${NAMESPACE:-diktator}
+  DEPLOY_DIR=${DEPLOY_DIR:-deploy}
+
+  echo "🚀 Deploying backend: ${SERVICE_NAME}:${BUILD_TAG}"
+
+  # Update image tag in manifest
+  sed "s|BUILD_TAG|${BUILD_TAG}|" \
+    ${DEPLOY_DIR}/knative-service-backend.yaml | kubectl apply -f -
+
+  echo "⏳ Waiting for backend to be ready..."
+  kubectl wait --for=condition=Ready \
+    --timeout=300s \
+    -n ${NAMESPACE} \
+    ksvc/${SERVICE_NAME}
+
+  echo "✅ Backend deployed successfully"
+"""
+
+[tasks."homelab:deploy-frontend"]
+description = "Deploy frontend to Knative"
+run = """
+  if [ ! -f ".build-tag-frontend" ]; then
+    echo "❌ No build tag found. Run 'mise run homelab:build-frontend' first."
+    exit 1
+  fi
+
+  BUILD_TAG=$(cat .build-tag-frontend)
+  REGISTRY_URL=${REGISTRY_URL:-registry.intern.flaatten.org:5000}
+  SERVICE_NAME=${FRONTEND_SERVICE:-www}
+  NAMESPACE=${NAMESPACE:-diktator}
+  DEPLOY_DIR=${DEPLOY_DIR:-deploy}
+
+  echo "🚀 Deploying frontend: ${SERVICE_NAME}:${BUILD_TAG}"
+
+  # Update image tag in manifest
+  sed "s|BUILD_TAG|${BUILD_TAG}|" \
+    ${DEPLOY_DIR}/knative-service-frontend.yaml | kubectl apply -f -
+
+  echo "⏳ Waiting for frontend to be ready..."
+  kubectl wait --for=condition=Ready \
+    --timeout=300s \
+    -n ${NAMESPACE} \
+    ksvc/${SERVICE_NAME}
+
+  echo "✅ Frontend deployed successfully"
+"""
+
+[tasks."homelab:deploy"]
+description = "Deploy both backend and frontend to homelab"
+depends = [
+    "homelab:create-namespace",
+    "homelab:gcp-create-secret",
+    "homelab:apply-network-policies",
+    "homelab:db-migrate",
+    "homelab:deploy-backend",
+    "homelab:deploy-frontend",
+]
+
+[tasks."homelab:full-deploy"]
+description = "Build and deploy both services to homelab"
+depends = ["homelab:build", "homelab:deploy"]
+
+[tasks."homelab:db-create"]
+description = "Create PostgreSQL database"
+depends = ["homelab:create-namespace"]
+run = """
+  NAMESPACE=${NAMESPACE:-diktator}
+  DEPLOY_DIR=${DEPLOY_DIR:-deploy}
+
+  echo "📊 Creating database..."
+  kubectl apply -f ${DEPLOY_DIR}/postgres-cluster.yaml
+
+  echo "⏳ Waiting for database to be ready..."
+  kubectl wait --for=condition=Ready \
+    --timeout=300s \
+    -n ${NAMESPACE} \
+    cluster/diktator-db
+
+  echo "✅ Database created successfully"
+"""
+
+[tasks."homelab:db-migrate"]
+description = "Run database migrations"
+depends = ["homelab:db-create"]
+run = """
+  NAMESPACE=${NAMESPACE:-diktator}
+  DEPLOY_DIR=${DEPLOY_DIR:-deploy}
+
+  echo "🗄️  Running database migrations..."
+  kubectl apply -f ${DEPLOY_DIR}/migration-job.yaml
+
+  echo "⏳ Waiting for migration to complete..."
+  kubectl wait --for=condition=complete \
+    --timeout=300s \
+    -n ${NAMESPACE} \
+    job/diktator-migrate
+
+  echo "✅ Database migrations completed"
+"""
+
+[tasks."homelab:status"]
+description = "Show status of all services"
+run = """
+  NAMESPACE=${NAMESPACE:-diktator}
+
+  echo "=== Knative Services ==="
+  kubectl get ksvc -n ${NAMESPACE}
+  echo ""
+  echo "=== PostgreSQL Cluster ==="
+  kubectl get cluster -n ${NAMESPACE}
+  echo ""
+  echo "=== Pods ==="
+  kubectl get pods -n ${NAMESPACE}
+"""
+
+[tasks."homelab:logs-backend"]
+description = "View backend logs"
+run = """
+  NAMESPACE=${NAMESPACE:-diktator}
+  SERVICE_NAME=${BACKEND_SERVICE:-api}
+  kubectl logs -n ${NAMESPACE} -l serving.knative.dev/service=${SERVICE_NAME} --tail=100 -f
+"""
+
+[tasks."homelab:logs-frontend"]
+description = "View frontend logs"
+run = """
+  NAMESPACE=${NAMESPACE:-diktator}
+  SERVICE_NAME=${FRONTEND_SERVICE:-www}
+  kubectl logs -n ${NAMESPACE} -l serving.knative.dev/service=${SERVICE_NAME} --tail=100 -f
+"""
+
+[tasks."homelab:url-backend"]
+description = "Get backend URL"
+run = """
+  NAMESPACE=${NAMESPACE:-diktator}
+  SERVICE_NAME=${BACKEND_SERVICE:-api}
+  kn service describe ${SERVICE_NAME} -n ${NAMESPACE} -o url
+"""
+
+[tasks."homelab:url-frontend"]
+description = "Get frontend URL"
+run = """
+  NAMESPACE=${NAMESPACE:-diktator}
+  SERVICE_NAME=${FRONTEND_SERVICE:-www}
+  kn service describe ${SERVICE_NAME} -n ${NAMESPACE} -o url
+"""
+
+[tasks."homelab:delete-backend"]
+description = "Delete backend service"
+run = """
+  DEPLOY_DIR=${DEPLOY_DIR:-deploy}
+  kubectl delete -f ${DEPLOY_DIR}/knative-service-backend.yaml
+"""
+
+[tasks."homelab:delete-frontend"]
+description = "Delete frontend service"
+run = """
+  DEPLOY_DIR=${DEPLOY_DIR:-deploy}
+  kubectl delete -f ${DEPLOY_DIR}/knative-service-frontend.yaml
+"""
+
+[tasks."homelab:delete"]
+description = "Delete all services"
+run = """
+  NAMESPACE=${NAMESPACE:-diktator}
+  kubectl delete ksvc -n ${NAMESPACE} --all
+  echo "✅ All services deleted"
+  echo "💡 To delete namespace: kubectl delete namespace ${NAMESPACE}"
+"""
+
+[tasks."homelab:clean"]
+description = "Clean build artifacts"
+run = """
+  rm -f .build-tag-backend .build-tag-frontend
+  rm -rf backend/bin
+  rm -rf frontend/out frontend/.next
+  echo "✅ Build artifacts cleaned"
+"""

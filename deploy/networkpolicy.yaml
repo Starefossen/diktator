@@ -1,0 +1,198 @@
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: diktator-backend
+  namespace: diktator
+spec:
+  endpointSelector:
+    matchLabels:
+      serving.knative.dev/service: api
+
+  ingress:
+    # Allow traffic from Kourier (external ingress)
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kourier-system
+            app: 3scale-kourier-gateway
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+
+    # Allow traffic from Knative activator (health probes & scale-from-zero)
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: knative-serving
+            app: activator
+      toPorts:
+        - ports:
+            - port: "8012"   # Health check endpoint
+              protocol: TCP
+            - port: "8080"   # Application port
+              protocol: TCP
+
+    # Allow traffic from frontend
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: diktator
+            serving.knative.dev/service: www
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+
+  egress:
+    # Allow DNS
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "*"
+
+    # Allow PostgreSQL
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: diktator
+            cnpg.io/cluster: diktator-db
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+
+    # Allow Zitadel OIDC via HTTPS
+    - toFQDNs:
+        - matchName: "zitadel.zitadel.fn.flaatten.org"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+
+    # Allow Google Cloud APIs (Text-to-Speech)
+    - toFQDNs:
+        - matchPattern: "*.googleapis.com"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: diktator-frontend
+  namespace: diktator
+spec:
+  endpointSelector:
+    matchLabels:
+      serving.knative.dev/service: www
+
+  ingress:
+    # Allow traffic from Kourier (external ingress)
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kourier-system
+            app: 3scale-kourier-gateway
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+
+    # Allow traffic from Knative activator (health probes & scale-from-zero)
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: knative-serving
+            app: activator
+      toPorts:
+        - ports:
+            - port: "8012"   # Health check endpoint
+              protocol: TCP
+            - port: "8080"   # Application port
+              protocol: TCP
+
+  egress:
+    # Allow DNS
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "*"
+
+    # Allow backend API
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: diktator
+            serving.knative.dev/service: api
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: diktator-db
+  namespace: diktator
+spec:
+  endpointSelector:
+    matchLabels:
+      cnpg.io/cluster: diktator-db
+
+  ingress:
+    # Allow from backend
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: diktator
+            serving.knative.dev/service: api
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+
+    # Allow from CNPG operator
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: cnpg-system
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+            - port: "8000"
+              protocol: TCP
+
+  egress:
+    # Allow DNS
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "*"
+
+    # Allow Kubernetes API (for operator)
+    - toEntities:
+        - host
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "6443"
+              protocol: TCP

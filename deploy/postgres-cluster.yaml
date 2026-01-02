@@ -1,0 +1,25 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: diktator-db
+  namespace: diktator
+spec:
+  instances: 1
+
+  storage:
+    size: 5Gi
+    storageClass: qnap-iscsi
+
+  postgresql:
+    parameters:
+      max_connections: "100"
+      shared_buffers: "256MB"
+
+  bootstrap:
+    initdb:
+      database: diktator
+      owner: diktator
+
+  monitoring:
+    enablePodMonitor: false

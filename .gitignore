@@ -82,6 +82,9 @@ go.work.sum
 */tmp/
 backend/bin/*
 
+# Build tags (homelab deployment)
+.build-tag-backend
+.build-tag-frontend
 
 # Docker
 .dockerignore
@@ -104,3 +107,4 @@ override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
+terraform/.terraform.tfstate.lock.info

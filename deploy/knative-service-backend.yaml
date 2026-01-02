@@ -1,0 +1,85 @@
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: api
+  namespace: diktator
+spec:
+  template:
+    metadata:
+      annotations:
+        # Keep only latest 2 revisions
+        serving.knative.dev/revisionHistoryLimit: "2"
+        autoscaling.knative.dev/min-scale: "1"
+        autoscaling.knative.dev/max-scale: "3"
+    spec:
+      containers:
+        - name: api
+          image: registry.intern.flaatten.org:5000/api:BUILD_TAG
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          # securityContext:
+          #   allowPrivilegeEscalation: false
+          #   runAsNonRoot: true
+          #   capabilities:
+          #     drop:
+          #       - ALL
+          #   seccompProfile:
+          #     type: RuntimeDefault
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: diktator-db-app
+                  key: uri
+            - name: AUTH_MODE
+              value: "oidc"
+            - name: OIDC_ISSUER_URL
+              value: "https://zitadel.zitadel.fn.flaatten.org"
+            - name: OIDC_AUDIENCE
+              value: "353809168672555052"
+            - name: OIDC_INSECURE_SKIP_VERIFY
+              value: "true"  # TODO: Remove when proper cert is in place
+            - name: GIN_MODE
+              value: "release"
+            - name: STORAGE_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: diktator-config
+                  key: storage-bucket
+                  optional: true
+            # Google Cloud credentials for Text-to-Speech
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /var/secrets/google/key.json
+            - name: GOOGLE_CLOUD_PROJECT
+              value: "diktator-app"
+            - name: GOOGLE_CLOUD_QUOTA_PROJECT
+              value: "diktator-app"
+          volumeMounts:
+            - name: gcp-credentials
+              mountPath: /var/secrets/google
+              readOnly: true
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: gcp-credentials
+          secret:
+            secretName: gcp-credentials
