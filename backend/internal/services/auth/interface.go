@@ -44,8 +44,9 @@ type Config struct {
 	Mode string
 
 	// OIDC configuration
-	OIDCIssuerURL string // OIDC issuer URL (e.g., https://auth.example.com)
-	OIDCAudience  string // Expected audience (usually client ID)
+	OIDCIssuerURL        string // OIDC issuer URL (e.g., https://auth.example.com)
+	OIDCAudience         string // Expected audience (usually client ID)
+	OIDCInsecureSkipVerify bool // Skip TLS verification (development only!)
 
 	// MockIdentity is used in mock mode to return a predefined identity
 	MockIdentity *Identity
@@ -59,8 +60,9 @@ func NewSessionValidator(cfg *Config) (SessionValidator, error) {
 			return nil, errors.New("OIDC_ISSUER_URL is required when AUTH_MODE=oidc")
 		}
 		return NewOIDCValidator(&OIDCConfig{
-			IssuerURL: cfg.OIDCIssuerURL,
-			Audience:  cfg.OIDCAudience,
+			IssuerURL:          cfg.OIDCIssuerURL,
+			Audience:           cfg.OIDCAudience,
+			InsecureSkipVerify: cfg.OIDCInsecureSkipVerify,
 		})
 	case "mock", "":
 		return NewMockValidator(cfg.MockIdentity), nil

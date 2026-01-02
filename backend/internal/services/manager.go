@@ -40,9 +40,10 @@ func NewManager() (*Manager, error) {
 
 	// Initialize auth validator
 	authConfig := &auth.Config{
-		Mode:          os.Getenv("AUTH_MODE"),
-		OIDCIssuerURL: os.Getenv("OIDC_ISSUER_URL"),
-		OIDCAudience:  os.Getenv("OIDC_AUDIENCE"),
+		Mode:                   os.Getenv("AUTH_MODE"),
+		OIDCIssuerURL:          os.Getenv("OIDC_ISSUER_URL"),
+		OIDCAudience:           os.Getenv("OIDC_AUDIENCE"),
+		OIDCInsecureSkipVerify: os.Getenv("OIDC_INSECURE_SKIP_VERIFY") == "true",
 	}
 
 	// Default to mock mode for development

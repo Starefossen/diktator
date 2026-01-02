@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"crypto/rsa"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -65,6 +66,9 @@ type OIDCConfig struct {
 
 	// SkipIssuerValidation skips issuer validation (not recommended for production)
 	SkipIssuerValidation bool
+
+	// InsecureSkipVerify skips TLS certificate verification (only for development!)
+	InsecureSkipVerify bool
 }
 
 // NewOIDCValidator creates a new OIDC JWT validator
@@ -73,12 +77,24 @@ func NewOIDCValidator(cfg *OIDCConfig) (*OIDCValidator, error) {
 		return nil, fmt.Errorf("OIDC issuer URL is required")
 	}
 
+	// Create HTTP client with optional TLS config
+	httpClient := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	// Add insecure TLS config if requested (development only!)
+	if cfg.InsecureSkipVerify {
+		httpClient.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		}
+	}
+
 	validator := &OIDCValidator{
-		issuer:   strings.TrimSuffix(cfg.IssuerURL, "/"),
-		audience: cfg.Audience,
-		httpClient: &http.Client{
-			Timeout: 10 * time.Second,
-		},
+		issuer:     strings.TrimSuffix(cfg.IssuerURL, "/"),
+		audience:   cfg.Audience,
+		httpClient: httpClient,
 	}
 
 	// Discover JWKS URL from OIDC discovery document

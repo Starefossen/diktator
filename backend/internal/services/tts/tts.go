@@ -116,6 +116,16 @@ var DefaultVoices = map[string]VoiceConfig{
 func NewService() (*Service, error) {
 	ctx := context.Background()
 
+	// Allow TTS to be optional for environments without Google Cloud credentials
+	if os.Getenv("DISABLE_TTS") == "true" {
+		log.Println("⚠️  TTS service disabled (DISABLE_TTS=true)")
+		return &Service{
+			client: nil,
+			ctx:    ctx,
+			cache:  cache.NewLRUCache(1024 * 1024), // 1MB minimal cache
+		}, nil
+	}
+
 	// Get quota project from environment
 	var clientOptions []option.ClientOption
 	if quotaProject := os.Getenv("GOOGLE_CLOUD_QUOTA_PROJECT"); quotaProject != "" {
@@ -125,6 +135,15 @@ func NewService() (*Service, error) {
 
 	client, err := texttospeech.NewClient(ctx, clientOptions...)
 	if err != nil {
+		// If credentials are missing, log warning and continue without TTS
+		if strings.Contains(err.Error(), "credentials") || strings.Contains(err.Error(), "ADC") {
+			log.Println("⚠️  TTS service disabled (no Google Cloud credentials found)")
+			return &Service{
+				client: nil,
+				ctx:    ctx,
+				cache:  cache.NewLRUCache(1024 * 1024),
+			}, nil
+		}
 		return nil, fmt.Errorf("failed to create TTS client: %v", err)
 	}
 
@@ -148,11 +167,17 @@ func NewService() (*Service, error) {
 
 // Close closes the TTS client
 func (s *Service) Close() error {
-	return s.client.Close()
+	if s.client != nil {
+		return s.client.Close()
+	}
+	return nil
 }
 
 // GenerateAudio generates audio for a word using Text-to-Speech with optimal voice selection
 func (s *Service) GenerateAudio(word, language string) ([]byte, *models.AudioFile, error) {
+	if s.client == nil {
+		return nil, nil, fmt.Errorf("TTS service is disabled")
+	}
 	// Normalize language code and get voice configuration
 	voiceConfig := s.getOptimalVoiceConfig(language)
 

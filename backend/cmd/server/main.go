@@ -46,6 +46,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/gin-contrib/cors"
@@ -60,13 +61,23 @@ import (
 )
 
 func main() {
+	// Log startup immediately
+	log.Println("=== Diktator API Server Starting ===")
+	log.Printf("AUTH_MODE: %s", os.Getenv("AUTH_MODE"))
+	log.Printf("DATABASE_URL: %s", maskPassword(os.Getenv("DATABASE_URL")))
+	log.Printf("GIN_MODE: %s", os.Getenv("GIN_MODE"))
+	log.Printf("OIDC_ISSUER_URL: %s", os.Getenv("OIDC_ISSUER_URL"))
+	log.Printf("OIDC_AUDIENCE: %s", os.Getenv("OIDC_AUDIENCE"))
+
 	// Initialize services
+	log.Println("Initializing services...")
 	serviceManager, err := services.NewManager()
 	if err != nil {
 		log.Fatalf("Failed to initialize services: %v", err)
 	}
 
 	// Initialize handlers with the service manager
+	log.Println("Initializing handlers...")
 	err = handlers.InitializeServices(serviceManager)
 	if err != nil {
 		log.Fatalf("Failed to initialize handlers: %v", err)
@@ -182,4 +193,20 @@ func main() {
 
 	log.Printf("Server starting on port %s", port)
 	log.Fatal(http.ListenAndServe(":"+port, r))
+}
+
+// maskPassword masks the password in a database URL for logging
+func maskPassword(dsn string) string {
+	if dsn == "" {
+		return "<empty>"
+	}
+	// Simple masking: postgresql://user:PASSWORD@host/db -> postgresql://user:***@host/db
+	if idx := strings.Index(dsn, "://"); idx != -1 {
+		if idx2 := strings.Index(dsn[idx+3:], ":"); idx2 != -1 {
+			if idx3 := strings.Index(dsn[idx+3+idx2:], "@"); idx3 != -1 {
+				return dsn[:idx+3+idx2+1] + "***" + dsn[idx+3+idx2+idx3:]
+			}
+		}
+	}
+	return dsn
 }
