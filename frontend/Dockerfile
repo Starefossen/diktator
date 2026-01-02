@@ -15,5 +15,5 @@ COPY out/ /www/
 EXPOSE 8080
 
 # Start nginx (binary is at /nginx)
-ENTRYPOINT ["/nginx"]
-CMD ["-g", "daemon off;"]
+# Use default CMD from nginx-micro (config path is already set to /conf/nginx.conf during build)
+CMD ["/nginx", "-g", "daemon off;"]
