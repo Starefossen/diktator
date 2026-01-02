@@ -19,23 +19,21 @@ import {
 } from "@/lib/oidc";
 import { generatedApiClient } from "@/lib/api-generated";
 
-// User data interface - Enhanced for family management
 export interface UserData {
   id: string;
   email: string;
   displayName: string;
   familyId: string;
   role: "parent" | "child";
-  parentId?: string; // Only for child accounts
-  children?: string[]; // Only for parent accounts
+  parentId?: string;
+  children?: string[];
   isActive: boolean;
   createdAt: string;
   lastActiveAt: string;
 }
 
-// Unified User interface (from OIDC token)
 export interface User {
-  uid: string; // User ID - kept as 'uid' for backward compatibility
+  uid: string;
   id: string;
   email: string;
   displayName: string;
@@ -44,26 +42,14 @@ export interface User {
 }
 
 interface AuthContextType {
-  // OIDC user (from token)
   user: User | null;
-  // Backend user data
   userData: UserData | null;
-  // Loading state
   loading: boolean;
-  // Error state
   error: string | null;
-  // Auth actions
-  signIn: (email?: string, password?: string) => Promise<void>;
-  signUp: (
-    email?: string,
-    password?: string,
-    displayName?: string,
-    role?: "parent" | "child",
-  ) => Promise<void>;
+  signIn: () => Promise<void>;
   logOut: () => Promise<void>;
   clearError: () => void;
   refreshUserData: () => Promise<void>;
-  // Access token for API calls
   getToken: () => string | null;
 }
 
@@ -73,7 +59,6 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-// Convert OIDC user to internal User format
 function toUser(oidcUser: OIDCUser | null): User | null {
   if (!oidcUser) return null;
   return {
@@ -92,10 +77,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load user data from backend
   const loadUserData = useCallback(async (currentUser: User) => {
     try {
-      // Call backend to get user profile
       const userProfileResponse = await generatedApiClient.getUserProfile();
       if (userProfileResponse.data?.data) {
         setUserData(userProfileResponse.data.data as UserData);
@@ -103,7 +86,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (err: unknown) {
       console.error("Error loading user data:", err);
 
-      // Check if the error indicates the user needs registration
       if (err && typeof err === "object" && "response" in err) {
         const apiError = err as {
           response?: {
@@ -112,7 +94,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
           };
         };
 
-        // Handle 401 errors that indicate user not found in backend system
         if (
           apiError.response?.status === 401 &&
           apiError.response?.data?.error?.includes("User not found in system")
@@ -121,8 +102,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
             "User exists in OIDC but not in backend, creating user...",
           );
           try {
-            // Automatically create the user in the backend with default role "parent"
-            // Note: Email is provided from the OIDC token on the backend side
             const createResponse = await generatedApiClient.createUser({
               displayName: currentUser.displayName || currentUser.email,
               role: "parent",
@@ -138,7 +117,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
         }
 
-        // Handle 404 errors with needsRegistration flag
         if (
           apiError.response?.status === 404 &&
           apiError.response?.data?.needsRegistration
@@ -163,7 +141,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
       }
 
-      // For other errors, create a basic user data object as fallback
       const basicUserData: UserData = {
         id: currentUser.id,
         email: currentUser.email,
@@ -178,7 +155,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
-  // Check authentication state and load user
   const checkAuth = useCallback(async () => {
     try {
       setLoading(true);
@@ -205,66 +181,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [loadUserData]);
 
-  // Refresh user data from backend
   const refreshUserData = useCallback(async () => {
     if (user) {
       await loadUserData(user);
     }
   }, [user, loadUserData]);
 
-  // Sign in - redirects to OIDC provider
-  // Parameters are accepted for API compatibility but OIDC uses redirect flow
-  const signIn = useCallback(
-    async (_email?: string, _password?: string) => {
-      setError(null);
-      try {
-        if (isMockMode) {
-          // In mock mode, just refresh auth state
-          await initiateLogin();
-          await checkAuth();
-        } else {
-          // Redirect to OIDC provider
-          await initiateLogin(window.location.href);
-        }
-      } catch (err) {
-        console.error("Sign in error:", err);
-        setError("Failed to initiate login. Please try again.");
-        throw err;
+  const signIn = useCallback(async () => {
+    setError(null);
+    try {
+      if (isMockMode) {
+        await initiateLogin();
+        await checkAuth();
+      } else {
+        await initiateLogin(window.location.href);
       }
-    },
-    [checkAuth],
-  );
+    } catch (err) {
+      console.error("Sign in error:", err);
+      setError("Failed to initiate login. Please try again.");
+      throw err;
+    }
+  }, [checkAuth]);
 
-  // Sign up - redirects to OIDC provider registration
-  // Parameters are accepted for API compatibility but OIDC uses redirect flow
-  const signUp = useCallback(
-    async (
-      _email?: string,
-      _password?: string,
-      _displayName?: string,
-      _role?: "parent" | "child",
-    ) => {
-      setError(null);
-      try {
-        if (isMockMode) {
-          // In mock mode, just refresh auth state
-          await initiateLogin();
-          await checkAuth();
-        } else {
-          // Most OIDC providers use the same endpoint for login/registration
-          // The provider handles showing registration option
-          await initiateLogin(window.location.href);
-        }
-      } catch (err) {
-        console.error("Sign up error:", err);
-        setError("Failed to initiate registration. Please try again.");
-        throw err;
-      }
-    },
-    [checkAuth],
-  );
-
-  // Log out
   const logOut = useCallback(async () => {
     try {
       setError(null);
@@ -278,22 +216,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
-  // Clear error
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
-  // Get access token for API calls
   const getToken = useCallback(() => {
     return getAccessToken();
   }, []);
 
-  // Check auth on mount
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
-  // Periodically check auth (every 5 minutes)
   useEffect(() => {
     const interval = setInterval(
       () => {
@@ -311,7 +245,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     loading,
     error,
     signIn,
-    signUp,
     logOut,
     clearError,
     refreshUserData,
@@ -321,7 +254,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-// Custom hook to use auth context
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

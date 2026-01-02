@@ -37,8 +37,11 @@ function CallbackContent() {
       try {
         await handleCallback(code, state);
 
-        // Get return URL and redirect
-        const returnTo = getReturnUrl() || "/";
+        // Get return URL from session storage or OIDC lib, or default to wordsets
+        const sessionRedirect = sessionStorage.getItem("post_auth_redirect");
+        sessionStorage.removeItem("post_auth_redirect");
+        const returnTo = sessionRedirect || getReturnUrl() || "/wordsets/";
+
         router.push(returnTo);
       } catch (err) {
         console.error("Callback error:", err);

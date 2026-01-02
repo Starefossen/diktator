@@ -1,5 +1,19 @@
 // Generic OIDC authentication configuration
 // Works with any OIDC-compliant identity provider (Zitadel, Keycloak, Auth0, etc.)
+//
+// OIDC Authentication Flow (when NEXT_PUBLIC_AUTH_MODE=oidc):
+// 1. User clicks "Login" button → initiateLogin() is called
+// 2. App redirects to OIDC provider's authorization endpoint
+// 3. User authenticates at the provider (enters credentials there, NOT in our app)
+// 4. Provider redirects back to /auth/callback with authorization code
+// 5. handleCallback() exchanges code for access/ID tokens
+// 6. Tokens are stored in localStorage for API calls
+//
+// Mock Mode (when NEXT_PUBLIC_AUTH_MODE=mock):
+// - Simulates authentication without a real OIDC provider
+// - Useful for local development and testing
+// - Any credentials work (they're ignored)
+// - Mock tokens are stored immediately
 
 // OIDC Configuration from environment
 const oidcConfig = {
