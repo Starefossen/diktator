@@ -8,6 +8,7 @@ Diktator is a web application designed to help children learn Norwegian vocabula
 
 - 🌍 **Multilingual Support**: English and Norwegian (🇬🇧/🇳🇴)
 - 🔐 **OIDC Authentication**: Flexible identity provider support with mock mode for development
+- 🆕 **Parent Registration Flow**: OIDC users are redirected to /register on first login to create a parent profile and family; children are added from within the app
 - 🎮 **Gamification**: Score tracking, progress monitoring, and statistics
 - 🎯 **Practice Modes**: Hover-to-reveal word practice with speech synthesis
 - 📊 **Analytics**: Detailed test results and performance tracking
@@ -104,10 +105,11 @@ mise run typecheck        # TypeScript check + Go build check
 - `mise run db:start` - Start PostgreSQL
 - `mise run db:stop` - Stop PostgreSQL
 - `mise run db:reset` - Reset database (destroy and recreate)
-- `mise run db:migrate` - Run database migrations
 - `mise run db:shell` - Open PostgreSQL shell
 - `mise run db:seed` - Seed database with test data
 - `mise run db:reset-seed` - Reset database and seed with fresh test data
+
+**Note:** Database migrations run automatically on backend startup.
 
 ### Testing
 
@@ -194,6 +196,7 @@ For production, configure:
 │   ├── handlers/           # HTTP handlers
 │   ├── internal/           # Private application code
 │   │   ├── middleware/     # HTTP middleware (auth)
+│   │   ├── migrate/        # Database migrations (embedded)
 │   │   ├── models/         # Data models
 │   │   └── services/       # Business logic (db, tts, storage)
 │   ├── docs/               # Swagger documentation
@@ -206,7 +209,6 @@ For production, configure:
 │   │   └── lib/           # Utilities and API clients
 │   └── public/            # Static assets
 ├── terraform/             # Infrastructure as Code (OpenTofu)
-├── migrations/            # Database migrations
 ├── docs/                  # Documentation
 ├── docker-compose.dev.yml # Local development services
 ├── mise.toml              # Task runner configuration

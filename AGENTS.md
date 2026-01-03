@@ -10,7 +10,6 @@ cd backend && go test ./...                  # Backend tests - must pass 100%
 cd frontend && pnpm test                     # Frontend tests - must pass 100%
 
 # Database
-mise run db:migrate                          # Run migrations after creating them
 docker compose -f docker-compose.dev.yml exec -T postgres psql -U postgres -d diktator -c "\d tablename"
 
 # Build
@@ -45,10 +44,10 @@ backend/
   handlers/      # HTTP route handlers
   internal/      # Private application code
     middleware/  # Auth middleware (OIDC)
+    migrate/     # Database migrations (embedded, auto-run on startup)
     models/      # Data models
     services/    # Business logic (db, tts, storage)
 terraform/       # Infrastructure (modular files)
-migrations/      # Database migrations (000N_*.up.sql, 000N_*.down.sql)
 ```
 
 **Documentation:**
@@ -136,12 +135,14 @@ func (h *Handler) GetWordSet(c *gin.Context) {
 
 When adding features that affect the data model, follow this order:
 
-1. **Database**: Create migration files, run `mise run db:migrate`
+1. **Database**: Create migration files in `backend/internal/migrate/migrations/`
 2. **Backend**: Update models → services → handlers → tests
 3. **Frontend**: Update types → components → contexts → tests
 4. **i18n**: Update BOTH `en.json` AND `no.json` together
 5. **Seed**: Rebuild seed binary if needed
 6. **Tests**: Run all tests - backend AND frontend must pass 100%
+
+**Note:** Database migrations run automatically on backend startup.
 
 ## Standards
 
@@ -168,7 +169,6 @@ Family-scoped data model (see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)):
 
 ✅ **Always do:**
 - Run tests before completing changes: `cd backend && go test ./...` AND `cd frontend && pnpm test`
-- Run migrations immediately after creating them
 - Update both i18n files (`en.json` AND `no.json`) together
 - Keep types synchronized between backend models and frontend types
 - Use App Router patterns (not Pages Router)
@@ -195,7 +195,7 @@ Family-scoped data model (see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)):
 
 | Symptom                         | Cause               | Fix                                                        |
 | ------------------------------- | ------------------- | ---------------------------------------------------------- |
-| `column does not exist`         | Migration not run   | `mise run db:migrate`, verify with `\d tablename`          |
+| `relation does not exist`       | Migration not run   | Restart backend (migrations run on startup)                |
 | Shows i18n keys instead of text | Missing translation | Update both `en.json` AND `no.json`                        |
 | Type errors frontend/backend    | Types out of sync   | Sync `backend/internal/models/` with `frontend/src/types/` |
 | Changes not appearing           | Old binaries        | Rebuild: `go build ./...` or restart dev server            |

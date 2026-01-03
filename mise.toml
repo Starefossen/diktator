@@ -66,10 +66,6 @@ echo "🐘 Starting PostgreSQL..."
 docker compose -f docker-compose.dev.yml up -d
 sleep 3
 
-# Run migrations
-echo "🗄️  Running database migrations..."
-mise run db:migrate
-
 # Start backend with air (hot reload) in background
 echo "🔧 Starting backend with hot reload..."
 cd backend && set -a && source .env.development && set +a && air &
@@ -231,36 +227,11 @@ echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     docker compose -f docker-compose.dev.yml down -v
     docker compose -f docker-compose.dev.yml up -d
-    sleep 3
-    mise run db:migrate
+    echo "✅ Database reset complete. Migrations will run on next backend start."
 fi
 """
 
-[tasks."db:migrate"]
-description = "Run database migrations"
-run = """
-echo "Running database migrations..."
-for migration in migrations/*_*.up.sql; do
-    if [ -f "$migration" ]; then
-        echo "Applying $(basename "$migration") to diktator..."
-        docker compose -f docker-compose.dev.yml exec -T postgres psql -U postgres -d diktator < "$migration"
-    fi
-done
-echo "✅ All migrations completed."
-"""
-
-[tasks."db:migrate-test"]
-description = "Run database migrations on test database"
-run = """
-echo "Running test database migrations..."
-for migration in migrations/*_*.up.sql; do
-    if [ -f "$migration" ]; then
-        echo "Applying $(basename "$migration") to diktator_test..."
-        docker compose -f docker-compose.dev.yml exec -T postgres psql -U postgres -d diktator_test < "$migration"
-    fi
-done
-echo "✅ Test database migrations completed."
-"""
+# Migrations now run automatically on backend startup (see backend/internal/migrate)
 
 [tasks."db:reset-test"]
 description = "Reset test database (destroy and recreate)"
@@ -268,9 +239,7 @@ run = """
 echo "Resetting test database..."
 docker compose -f docker-compose.dev.yml exec -T postgres psql -U postgres -c "DROP DATABASE IF EXISTS diktator_test;"
 docker compose -f docker-compose.dev.yml exec -T postgres psql -U postgres -c "CREATE DATABASE diktator_test;"
-sleep 1
-mise run db:migrate-test
-echo "✅ Test database reset complete."
+echo "✅ Test database reset complete. Migrations will run on next test."
 """
 
 [tasks."db:shell"]
@@ -292,9 +261,6 @@ mise run db:reset
 
 echo "⏳ Waiting for database..."
 sleep 5
-
-echo "🗄️  Running migrations..."
-mise run db:migrate
 
 echo "🌱 Seeding test data..."
 (cd backend && go run cmd/seed/main.go)
@@ -366,14 +332,6 @@ if ! docker compose -f docker-compose.dev.yml ps postgres 2>/dev/null | grep -q 
     sleep 3
 fi
 
-# Run migrations on test database
-echo "🗄️  Running test database migrations..."
-for migration in migrations/*_*.up.sql; do
-    if [ -f "$migration" ]; then
-        docker compose -f docker-compose.dev.yml exec -T postgres psql -U postgres -d diktator_test < "$migration" 2>/dev/null || true
-    fi
-done
-
 (cd backend && DATABASE_URL="${DATABASE_TEST_URL}" go test ./...)
 
 echo ""
@@ -402,12 +360,6 @@ mise run typecheck
 
 echo ""
 echo "🔧 Backend tests..."
-echo "🗄️  Preparing test database..."
-for migration in migrations/*_*.up.sql; do
-    if [ -f "$migration" ]; then
-        docker compose -f docker-compose.dev.yml exec -T postgres psql -U postgres -d diktator_test < "$migration" 2>/dev/null || true
-    fi
-done
 (cd backend && DATABASE_URL="${DATABASE_TEST_URL}" go test ./...)
 
 echo ""
@@ -446,14 +398,6 @@ if ! docker compose -f docker-compose.dev.yml ps postgres 2>/dev/null | grep -q 
     sleep 3
 fi
 
-# Run migrations on test database
-echo "🗄️  Running test database migrations..."
-for migration in migrations/*_*.up.sql; do
-    if [ -f "$migration" ]; then
-        docker compose -f docker-compose.dev.yml exec -T postgres psql -U postgres -d diktator_test < "$migration" 2>/dev/null || true
-    fi
-done
-
 (cd backend && DATABASE_URL="${DATABASE_TEST_URL}" go test -v ./...)
 """
 
@@ -471,13 +415,6 @@ if ! docker compose -f docker-compose.dev.yml ps postgres 2>/dev/null | grep -q 
     docker compose -f docker-compose.dev.yml up -d postgres
     sleep 3
 fi
-
-# Run migrations on test database
-for migration in migrations/*_*.up.sql; do
-    if [ -f "$migration" ]; then
-        docker compose -f docker-compose.dev.yml exec -T postgres psql -U postgres -d diktator_test < "$migration" 2>/dev/null || true
-    fi
-done
 
 (cd backend && \
     DATABASE_URL="${DATABASE_TEST_URL}" go test -coverprofile=coverage.out ./... && \
@@ -676,10 +613,6 @@ echo "🐘 Starting PostgreSQL..."
 docker compose -f docker-compose.dev.yml pull
 docker compose -f docker-compose.dev.yml up -d
 sleep 3
-
-echo ""
-echo "🗄️  Running database migrations..."
-mise run db:migrate
 
 echo ""
 echo "✅ Setup complete!"
@@ -1124,7 +1057,6 @@ depends = [
   "homelab:create-namespace",
   "homelab:gcp-create-secret",
   "homelab:apply-network-policies",
-  "homelab:db-migrate",
   "homelab:deploy-backend",
   "homelab:deploy-frontend",
 ]
@@ -1143,33 +1075,42 @@ run = """
   echo "📊 Creating database..."
   kubectl apply -f ${DEPLOY_DIR}/postgres-cluster.yaml
 
-  echo "⏳ Waiting for database to be ready..."
-  kubectl wait --for=condition=Ready \
-    --timeout=300s \
-    -n ${NAMESPACE} \
-    cluster/diktator-db
+  echo "⏳ Waiting for database pod to be ready (this may take 2-5 minutes)..."
 
-  echo "✅ Database created successfully"
+  # Wait for pods to be ready (more reliable than cluster condition)
+  if kubectl wait --for=condition=Ready \
+    --timeout=600s \
+    -n ${NAMESPACE} \
+    pod -l cnpg.io/cluster=diktator-db 2>/dev/null; then
+    echo "✅ Database pod is ready"
+  else
+    echo "⚠️  Pod readiness check failed. Verifying cluster status..."
+
+    # Check if cluster resource exists and its conditions
+    echo "📋 Cluster status:"
+    kubectl get cluster diktator-db -n ${NAMESPACE} -o wide
+    echo ""
+    echo "📋 Cluster conditions:"
+    kubectl get cluster diktator-db -n ${NAMESPACE} -o jsonpath='{.status.conditions[*]}' | jq . 2>/dev/null || true
+    echo ""
+
+    # Check pod status directly
+    echo "📋 PostgreSQL pod status:"
+    kubectl get pods -n ${NAMESPACE} -l cnpg.io/cluster=diktator-db
+    echo ""
+
+    # If pod exists and is running, consider it success despite timeout
+    if kubectl get pods -n ${NAMESPACE} -l cnpg.io/cluster=diktator-db -o jsonpath='{.items[0].status.phase}' 2>/dev/null | grep -q Running; then
+      echo "✅ Database pod is Running (cluster condition may be updating)"
+    else
+      echo "❌ Database pod is not running yet"
+      echo "💡 Tip: Run 'mise run homelab:status' to check current status"
+      exit 1
+    fi
+  fi
 """
 
-[tasks."homelab:db-migrate"]
-description = "Run database migrations"
-depends = ["homelab:db-create"]
-run = """
-  NAMESPACE=${NAMESPACE:-diktator}
-  DEPLOY_DIR=${DEPLOY_DIR:-deploy}
-
-  echo "🗄️  Running database migrations..."
-  kubectl apply -f ${DEPLOY_DIR}/migration-job.yaml
-
-  echo "⏳ Waiting for migration to complete..."
-  kubectl wait --for=condition=complete \
-    --timeout=300s \
-    -n ${NAMESPACE} \
-    job/diktator-migrate
-
-  echo "✅ Database migrations completed"
-"""
+# Migrations are now run automatically on backend startup (see backend/internal/migrate)
 
 [tasks."homelab:status"]
 description = "Show status of all services"
