@@ -8,9 +8,29 @@ import { isMockMode } from "@/lib/oidc";
 
 export default function AuthForm() {
   const { signIn, error, clearError } = useAuth();
+  const { user, needsRegistration, loading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!loading && user) {
+      const redirectParam = searchParams.get("redirect");
+      const redirectTo =
+        redirectParam &&
+        redirectParam.startsWith("/") &&
+        !redirectParam.startsWith("//") &&
+        !redirectParam.includes("..")
+          ? redirectParam
+          : "/wordsets/";
+
+      if (needsRegistration) {
+        router.replace(`/register?redirect=${encodeURIComponent(redirectTo)}`);
+      } else {
+        router.replace(redirectTo);
+      }
+    }
+  }, [loading, needsRegistration, router, searchParams, user]);
 
   useEffect(() => {
     if (isMockMode) {

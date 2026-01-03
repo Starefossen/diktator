@@ -8,6 +8,7 @@ import React, {
   useCallback,
   ReactNode,
 } from "react";
+import { useRouter } from "next/navigation";
 import {
   OIDCUser,
   getUserInfo,
@@ -46,6 +47,7 @@ interface AuthContextType {
   userData: UserData | null;
   loading: boolean;
   error: string | null;
+  needsRegistration: boolean;
   signIn: () => Promise<void>;
   logOut: () => Promise<void>;
   clearError: () => void;
@@ -76,108 +78,106 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [needsRegistration, setNeedsRegistration] = useState(false);
+  const router = useRouter();
 
   const loadUserData = useCallback(async (currentUser: User) => {
     try {
+      console.log("[OIDCAuthContext] loadUserData: fetching profile for user:", currentUser.email);
       const userProfileResponse = await generatedApiClient.getUserProfile();
-      if (userProfileResponse.data?.data) {
-        setUserData(userProfileResponse.data.data as UserData);
+      const profileData = userProfileResponse.data?.data as
+        | (UserData & { needsRegistration?: boolean })
+        | undefined;
+
+      console.log("[OIDCAuthContext] loadUserData: profile response:", { profileData, needsRegistration: profileData?.needsRegistration });
+
+      if (profileData?.needsRegistration) {
+        console.log("[OIDCAuthContext] loadUserData: Setting needsRegistration=true");
+        setNeedsRegistration(true);
+        // Don't redirect here - let pages handle it based on needsRegistration flag
+        return;
+      }
+
+      if (profileData) {
+        console.log("[OIDCAuthContext] loadUserData: Profile loaded, setting needsRegistration=false");
+        setUserData(profileData as UserData);
+        setNeedsRegistration(false);
       }
     } catch (err: unknown) {
-      console.error("Error loading user data:", err);
+      console.error("[OIDCAuthContext] Error loading user data:", err);
 
       if (err && typeof err === "object" && "response" in err) {
         const apiError = err as {
           response?: {
             status?: number;
-            data?: { error?: string; needsRegistration?: boolean };
+            data?: any;
           };
         };
 
-        if (
-          apiError.response?.status === 401 &&
-          apiError.response?.data?.error?.includes("User not found in system")
-        ) {
-          console.log(
-            "User exists in OIDC but not in backend, creating user...",
-          );
-          try {
-            const createResponse = await generatedApiClient.createUser({
-              displayName: currentUser.displayName || currentUser.email,
-              role: "parent",
-            });
+        console.log("[OIDCAuthContext] loadUserData: Full error response:", {
+          status: apiError.response?.status,
+          data: apiError.response?.data,
+          dataKeys: apiError.response?.data ? Object.keys(apiError.response.data) : [],
+        });
 
-            if (createResponse.data?.data) {
-              setUserData(createResponse.data.data as UserData);
-              console.log("User successfully created in backend");
-              return;
-            }
-          } catch (createError) {
-            console.error("Failed to create user in backend:", createError);
-          }
-        }
+        if (apiError.response?.status === 404) {
+          console.log("[OIDCAuthContext] loadUserData: Got 404, checking needsRegistration in response data");
+          // Try multiple possible locations for needsRegistration flag
+          const needsReg =
+            apiError.response?.data?.needsRegistration ||
+            apiError.response?.data?.Data?.needsRegistration ||
+            apiError.response?.data?.data?.needsRegistration ||
+            (apiError.response?.data as any)?.needsRegistration;
 
-        if (
-          apiError.response?.status === 404 &&
-          apiError.response?.data?.needsRegistration
-        ) {
-          console.log(
-            "User needs to complete registration in backend, creating user...",
-          );
-          try {
-            const createResponse = await generatedApiClient.createUser({
-              displayName: currentUser.displayName || currentUser.email,
-              role: "parent",
-            });
+          console.log("[OIDCAuthContext] loadUserData: needsRegistration from 404 response:", needsReg);
 
-            if (createResponse.data?.data) {
-              setUserData(createResponse.data.data as UserData);
-              console.log("User successfully created in backend");
-              return;
-            }
-          } catch (createError) {
-            console.error("Failed to create user in backend:", createError);
+          // If we got a 404, user doesn't exist yet - they need registration
+          // This is the fallback when the flag isn't explicitly returned
+          if (needsReg === true || needsReg === undefined) {
+            console.log("[OIDCAuthContext] loadUserData: 404 indicates user needs registration");
+            setNeedsRegistration(true);
+            setUserData(null);
+            // Don't redirect here - let pages handle it based on needsRegistration flag
+            return;
           }
         }
       }
-
-      const basicUserData: UserData = {
-        id: currentUser.id,
-        email: currentUser.email,
-        displayName: currentUser.displayName,
-        familyId: "family-" + currentUser.id,
-        role: "parent",
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        lastActiveAt: new Date().toISOString(),
-      };
-      setUserData(basicUserData);
+      console.log("[OIDCAuthContext] loadUserData: Setting userdata=null");
+      setUserData(null);
     }
   }, []);
 
   const checkAuth = useCallback(async () => {
     try {
       setLoading(true);
+      console.log("[OIDCAuthContext] checkAuth: starting");
 
       if (!isAuthenticated()) {
+        console.log("[OIDCAuthContext] checkAuth: Not authenticated");
         setUser(null);
         setUserData(null);
+        setNeedsRegistration(false);
         return;
       }
 
+      console.log("[OIDCAuthContext] checkAuth: Authenticated, fetching user info");
       const oidcUser = await getUserInfo();
       const currentUser = toUser(oidcUser);
+      console.log("[OIDCAuthContext] checkAuth: Got user:", currentUser?.email);
       setUser(currentUser);
 
       if (currentUser) {
+        console.log("[OIDCAuthContext] checkAuth: Loading user data");
         await loadUserData(currentUser);
       }
     } catch (err) {
-      console.error("Error checking auth:", err);
+      console.error("[OIDCAuthContext] Error checking auth:", err);
       setUser(null);
       setUserData(null);
+      setNeedsRegistration(false);
     } finally {
       setLoading(false);
+      console.log("[OIDCAuthContext] checkAuth: finished");
     }
   }, [loadUserData]);
 
@@ -209,6 +209,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await initiateLogout();
       setUser(null);
       setUserData(null);
+      setNeedsRegistration(false);
     } catch (err) {
       console.error("Logout error:", err);
       setError("Failed to log out. Please try again.");
@@ -257,6 +258,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     userData,
     loading,
     error,
+    needsRegistration,
     signIn,
     logOut,
     clearError,

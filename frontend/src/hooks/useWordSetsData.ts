@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { WordSet } from "@/types";
 import { generatedApiClient } from "@/lib/api-generated";
 import {
@@ -22,6 +23,7 @@ export interface UseWordSetsDataReturn {
 }
 
 export function useWordSetsData(): UseWordSetsDataReturn {
+  const { needsRegistration } = useAuth();
   const [wordSets, setWordSets] = useState<WordSet[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -96,8 +98,13 @@ export function useWordSetsData(): UseWordSetsDataReturn {
   }, []);
 
   useEffect(() => {
+    // Skip loading wordsets if user needs registration (not yet in database)
+    if (needsRegistration) {
+      setLoading(false);
+      return;
+    }
     loadWordSets();
-  }, [loadWordSets]);
+  }, [loadWordSets, needsRegistration]);
 
   return {
     wordSets,

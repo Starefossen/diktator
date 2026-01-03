@@ -31,7 +31,7 @@ const oidcConfig = {
   postLogoutRedirectUri:
     process.env.NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI ||
     (typeof window !== "undefined" ? window.location.origin : ""),
-  // Scopes to request
+  // Scopes to request - explicitly include email to get email claim in token
   scopes: process.env.NEXT_PUBLIC_OIDC_SCOPES || "openid profile email",
 };
 
@@ -284,6 +284,8 @@ function parseJwt(token: string): Record<string, unknown> | null {
 
 /**
  * Get user info from token or userinfo endpoint
+ * Zitadel may not include email in ID token if not properly scoped,
+ * so we fall back to userinfo endpoint
  */
 export async function getUserInfo(): Promise<OIDCUser | null> {
   if (isMockMode) {
@@ -296,10 +298,13 @@ export async function getUserInfo(): Promise<OIDCUser | null> {
   }
 
   const idToken = getIdToken();
+  let userFromToken: OIDCUser | null = null;
+
   if (idToken) {
     const claims = parseJwt(idToken);
     if (claims) {
-      return {
+      console.log("[OIDC] ID token claims:", { sub: claims.sub, email: claims.email, name: claims.name, preferred_username: claims.preferred_username });
+      userFromToken = {
         id: claims.sub as string,
         email: (claims.email as string) || "",
         name:
@@ -310,21 +315,33 @@ export async function getUserInfo(): Promise<OIDCUser | null> {
         picture: claims.picture as string | undefined,
         ...claims,
       };
+
+      // If we got email from token, return immediately
+      if (userFromToken.email) {
+        console.log("[OIDC] Got email from ID token, returning user");
+        return userFromToken;
+      }
+
+      // Email missing from token, will try userinfo endpoint below
+      console.log("[OIDC] Email missing from ID token, will fetch from userinfo endpoint");
     }
   }
 
-  // Fallback: fetch from userinfo endpoint
+  // Fetch from userinfo endpoint to get complete user info (especially email if missing from token)
   const accessToken = getAccessToken();
   if (!accessToken) {
-    return null;
+    console.log("[OIDC] No access token, returning user from token if available");
+    return userFromToken;
   }
 
   try {
     const discovery = await getDiscoveryDocument();
     if (!discovery?.userinfo_endpoint) {
-      return null;
+      console.log("[OIDC] No userinfo endpoint in discovery, returning user from token");
+      return userFromToken;
     }
 
+    console.log("[OIDC] Fetching user info from userinfo endpoint");
     const response = await fetch(discovery.userinfo_endpoint, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -332,21 +349,28 @@ export async function getUserInfo(): Promise<OIDCUser | null> {
     });
 
     if (!response.ok) {
-      return null;
+      console.log("[OIDC] Userinfo endpoint returned non-OK status:", response.status);
+      return userFromToken;
     }
 
     const userInfo = await response.json();
-    return {
-      id: userInfo.sub,
-      email: userInfo.email || "",
-      name: userInfo.name || userInfo.preferred_username || "",
-      emailVerified: userInfo.email_verified || false,
-      picture: userInfo.picture,
+    console.log("[OIDC] Userinfo response:", { sub: userInfo.sub, email: userInfo.email, name: userInfo.name, preferred_username: userInfo.preferred_username });
+
+    // Merge with token data, userinfo takes precedence
+    const mergedUser: OIDCUser = {
+      id: userInfo.sub || (userFromToken?.id || ""),
+      email: userInfo.email || (userFromToken?.email || ""),
+      name: userInfo.name || userInfo.preferred_username || (userFromToken?.name || ""),
+      emailVerified: userInfo.email_verified !== undefined ? userInfo.email_verified : (userFromToken?.emailVerified || false),
+      picture: userInfo.picture || (userFromToken?.picture),
       ...userInfo,
     };
+
+    console.log("[OIDC] Returning merged user:", { id: mergedUser.id, email: mergedUser.email, name: mergedUser.name });
+    return mergedUser;
   } catch (error) {
-    console.error("Failed to fetch user info:", error);
-    return null;
+    console.error("[OIDC] Failed to fetch user info from endpoint:", error);
+    return userFromToken;
   }
 }
 
