@@ -41,12 +41,16 @@ Family (1) ──────┬──────── (*) FamilyMember ──
                  │            (junction table)           │
                  │                                       │ role: parent | child
                  │                                       │
-                 ├──────── (*) FamilyInvitation          └──── (*) TestResult
-                 │            (pending joins)                       │
-                 │                                                  └── (*) WordAnswer
-                 └──────── (*) WordSet ──── (*) Word
-                                              │
-                                              └── translations (no stored audio)
+                 ├──────── (*) FamilyInvitation          ├──── (*) TestResult
+                 │            (pending joins)            │          │
+                 │                                       │          └── (*) WordAnswer
+                 ├──────── (*) WordSet ──── (*) Word     │
+                 │                 │                     │
+                 │                 └── translations      │
+                 │                     (no stored audio) │
+                 │                                       │
+                 └──────── (*) WordSetAssignment ────────┘
+                           (junction: wordset ↔ child user)
 ```
 
 **Family**: Groups users together via the `family_members` junction table. A family can have multiple parents with equal permissions and any number of children. Word sets and data are family-scoped. Each family has a `created_by` field tracking the original parent, who cannot be removed.
@@ -58,6 +62,8 @@ Family (1) ──────┬──────── (*) FamilyMember ──
 **FamilyInvitation**: Pending invitation to join a family as a parent or child. Invitations are matched by email address and accepted when the user registers or logs in. Invitations do not expire.
 
 **WordSet**: A collection of words for testing. Has a language, optional translations, and test configuration.
+
+**WordSetAssignment**: Junction table linking word sets to child users. Parents can assign specific word sets to children for targeted practice. Children see all family word sets but assigned ones are prioritized in the UI. Only children can be assigned (enforced by database constraint).
 
 **TestResult**: Record of a completed test with score, mode used, and per-word answers.
 
@@ -87,6 +93,7 @@ User ──▶ OIDC Provider ──▶ JWT Token ──▶ Backend validates ─
 | Resource                | Parent | Child |
 | ----------------------- | ------ | ----- |
 | Create/edit word sets   | ✅      | ❌     |
+| Assign word sets        | ✅      | ❌     |
 | Invite parents/children | ✅      | ❌     |
 | Remove family members   | ✅*     | ❌     |
 | View family progress    | ✅      | ❌     |
@@ -98,12 +105,14 @@ _* Parents cannot remove the `created_by` parent_
 ### Multi-Parent Model
 
 Families support multiple parent accounts with equal permissions. Parents can:
+
 - Invite additional parents by email address
 - Manage all family members (except the original creator)
 - Create and edit word sets
 - View progress for all family members
 
 **Invitation Flow:**
+
 1. Existing parent enters email address of new parent
 2. System creates pending `FamilyInvitation` record
 3. When invited user logs in (or registers), they see pending invitation
@@ -113,21 +122,25 @@ Families support multiple parent accounts with equal permissions. Parents can:
 ## Key Design Decisions
 
 ### Why Knative?
+
 - Scale-to-zero for cost efficiency
 - Standard Kubernetes deployment model
 - Container-based, portable across cloud providers
 
 ### Why Go Backend?
-- Fast, low memory footprint ideal for Cloud Run
+
+- Fast, low memory footprint ideal for Knative
 - Strong typing catches errors early
 - Excellent for API servers
 
 ### Why Family-Scoped Data?
+
 - Parents need visibility into children's progress
 - Children shouldn't see other families' data
 - Simplifies authorization logic
 
 ### Why OIDC?
+
 - Industry standard, battle-tested security
 - Separates auth concerns from application
 - Supports multiple identity providers
@@ -141,17 +154,24 @@ Families support multiple parent accounts with equal permissions. Parents can:
 
 ## Infrastructure
 
-Managed via Terraform in `/terraform`. Deployed as containers to Knative:
+See HOMELAB.md in the deploy/ directory for deployment architecture and instructions.
 
-- **Knative Services**: Frontend (Nginx + static files), Backend (Go binary)
-- **Cloud SQL**: PostgreSQL instance with automated backups
-- **Networking**: Load balancer with managed SSL certificates
-- **IAM**: Service accounts for Cloud SQL and TTS API access
-- **TTS**: Cloud Text-to-Speech API called on-demand (no pre-generated storage)
+
+## Progressive Web App (PWA)
+
+The frontend is a PWA with offline support:
+
+- **Service Worker**: Caches static assets (HTML, CSS, JS) for offline access
+- **Cache Strategy**: Network-first for navigation, cache-first for static files
+- **Versioning**: Git commit SHA-based cache invalidation on deployments
+- **Updates**: User-prompted (never auto-reload to preserve in-memory state)
+- **Development**: Service worker disabled in dev mode to avoid interference
+
+Cache headers ensure `sw.js` is never cached by browsers, allowing immediate updates. The service worker can be disabled remotely via `NEXT_PUBLIC_SW_ENABLED=false` if issues arise.
 
 ## For More Information
 
 - **User stories & features**: See [USER-STORIES.md](USER-STORIES.md)
 - **Development setup**: See [README.md](../README.md)
-- **API documentation**: Run `mise run dev` then visit http://localhost:8080/docs
+- **API documentation**: Run `mise run dev` then visit <http://localhost:8080/docs>
 - **Configuration**: Run `mise run --help` for available tasks

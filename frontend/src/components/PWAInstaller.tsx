@@ -21,13 +21,48 @@ export function PWAInstaller() {
   const [updateVersion, setUpdateVersion] = useState<string>("");
 
   useEffect(() => {
+    // Feature flag for service worker (can be disabled remotely if needed)
+    const swEnabled = process.env.NEXT_PUBLIC_SW_ENABLED !== "false";
+    // Disable service worker in development to avoid random reloads
+    const isProduction = process.env.NODE_ENV === "production";
+
     // Register service worker
-    if ("serviceWorker" in navigator) {
+    if ("serviceWorker" in navigator && isProduction && swEnabled) {
+      let refreshing = false; // Guard against multiple reloads
+
+      // Handle controller change (when new SW takes control)
+      const handleControllerChange = () => {
+        if (!refreshing) {
+          refreshing = true;
+          console.log("Service worker activated, reloading page");
+          window.location.reload();
+        }
+      };
+
+      navigator.serviceWorker.addEventListener(
+        "controllerchange",
+        handleControllerChange,
+      );
+
       // Register service worker immediately, not waiting for load event
       const registerServiceWorker = async () => {
         try {
-          const registration = await navigator.serviceWorker.register("/sw.js");
-          console.log("SW registered: ", registration);
+          const registration = await navigator.serviceWorker.register("/sw.js", {
+            updateViaCache: "none", // Always check for updates
+          });
+          console.log("✓ Service worker registered successfully");
+
+          // Helper to show update prompt
+          const promptForUpdate = () => {
+            console.log("New service worker available, prompting user");
+            setShowUpdatePrompt(true);
+          };
+
+          // Check if there's already a waiting service worker
+          if (registration.waiting && navigator.serviceWorker.controller) {
+            console.log("Service worker update already waiting");
+            promptForUpdate();
+          }
 
           // Check for updates immediately
           registration.update();
@@ -35,28 +70,26 @@ export function PWAInstaller() {
           // Listen for service worker updates
           registration.addEventListener("updatefound", () => {
             const newWorker = registration.installing;
-            if (newWorker) {
-              newWorker.addEventListener("statechange", () => {
-                if (
-                  newWorker.state === "installed" &&
-                  navigator.serviceWorker.controller
-                ) {
-                  // New service worker installed and ready
-                  console.log(
-                    "New service worker installed, prompting for update",
-                  );
-                  setShowUpdatePrompt(true);
-                }
-              });
-            }
+            if (!newWorker) return;
+
+            newWorker.addEventListener("statechange", () => {
+              if (
+                newWorker.state === "installed" &&
+                navigator.serviceWorker.controller
+              ) {
+                // New service worker installed and ready
+                promptForUpdate();
+              }
+            });
           });
 
-          // Check for updates periodically (every 30 seconds when app is active)
+          // Check for updates less frequently (every 5 minutes) to avoid disrupting user experience
           const updateInterval = setInterval(() => {
             if (!document.hidden) {
+              console.log("Checking for service worker updates...");
               registration.update();
             }
-          }, 30000);
+          }, 300000); // 5 minutes instead of 30 seconds
 
           // Return cleanup function
           return updateInterval;
@@ -72,21 +105,42 @@ export function PWAInstaller() {
         updateInterval = interval;
       });
 
-      // Listen for messages from service worker (register immediately)
-      navigator.serviceWorker.addEventListener("message", (event) => {
-        if (event.data && event.data.type === "SW_UPDATED") {
-          console.log("Service worker updated to version:", event.data.version);
-          setUpdateVersion(event.data.version);
-          setShowUpdatePrompt(true);
-        }
-      });
-
       // Return cleanup function
       return () => {
         if (updateInterval) {
           clearInterval(updateInterval);
         }
+        navigator.serviceWorker.removeEventListener(
+          "controllerchange",
+          handleControllerChange,
+        );
       };
+    } else if (!isProduction || !swEnabled) {
+      const reason = !isProduction
+        ? "development mode"
+        : "feature flag disabled";
+      console.log(`Service worker disabled (${reason})`);
+      // Unregister any existing service workers
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          if (registrations.length > 0) {
+            console.log(
+              `Found ${registrations.length} service worker(s), unregistering...`,
+            );
+            registrations.forEach((registration) => {
+              registration.unregister().then((success) => {
+                if (success) {
+                  console.log("✓ Service worker unregistered successfully");
+                } else {
+                  console.warn("⚠ Failed to unregister service worker");
+                }
+              });
+            });
+          } else {
+            console.log("No service workers to unregister");
+          }
+        });
+      }
     }
 
     // Handle install prompt
@@ -148,9 +202,18 @@ export function PWAInstaller() {
     };
   }, []);
 
-  const handleUpdateClick = () => {
-    // Reload the page to activate the new service worker
-    window.location.reload();
+  const handleUpdateClick = async () => {
+    // Get the waiting service worker
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (!registration?.waiting) {
+      console.warn("No waiting service worker found");
+      return;
+    }
+
+    // Tell the waiting service worker to activate
+    // The controllerchange listener (set up in useEffect) will handle the reload
+    console.log("Sending SKIP_WAITING message to service worker");
+    registration.waiting.postMessage({ type: "SKIP_WAITING" });
   };
 
   const handleUpdateDismiss = () => {

@@ -30,8 +30,8 @@ self.addEventListener("install", (event) => {
         console.error("Cache install failed:", error);
       }),
   );
-  // Skip waiting to activate immediately for faster updates
-  self.skipWaiting();
+  // Don't skip waiting - let the user decide when to update
+  // This prevents automatic page reloads that lose in-memory data
 });
 
 // Activate service worker and clean up old caches
@@ -49,21 +49,10 @@ self.addEventListener("activate", (event) => {
             }
           }),
         );
-      })
-      .then(() => {
-        // Notify all clients about the update
-        return self.clients.matchAll().then((clients) => {
-          clients.forEach((client) => {
-            client.postMessage({
-              type: "SW_UPDATED",
-              version: CACHE_VERSION,
-            });
-          });
-        });
       }),
   );
-  // Take control of all clients immediately
-  self.clients.claim();
+  // Don't claim clients immediately - wait for user to reload
+  // This prevents losing in-memory data from unexpected reloads
 });
 
 // Handle fetch requests with cache-first strategy for static assets
@@ -92,8 +81,8 @@ self.addEventListener("fetch", (event) => {
       if (event.request.mode === "navigate") {
         return fetch(event.request)
           .then((response) => {
-            // Cache successful responses
-            if (response.status === 200) {
+            // Only cache successful responses (don't cache errors)
+            if (response.ok && response.status === 200) {
               const responseClone = response.clone();
               caches.open(CACHE_NAME).then((cache) => {
                 cache.put(event.request, responseClone);
@@ -110,8 +99,9 @@ self.addEventListener("fetch", (event) => {
       // For other requests, try network first
       return fetch(event.request)
         .then((response) => {
-          // Cache successful responses for static assets
+          // Only cache successful responses for static assets (don't cache 4xx, 5xx errors)
           if (
+            response.ok &&
             response.status === 200 &&
             (event.request.destination === "script" ||
               event.request.destination === "style" ||
@@ -169,7 +159,7 @@ self.addEventListener("notificationclick", (event) => {
   event.waitUntil(clients.openWindow("/"));
 });
 
-// Handle focus events to check for updates
+// Handle messages from clients
 self.addEventListener("message", (event) => {
   if (event.data && event.data.action === "CHECK_FOR_UPDATE") {
     console.log("Manual update check requested");
@@ -178,5 +168,11 @@ self.addEventListener("message", (event) => {
       type: "UPDATE_CHECK_COMPLETE",
       version: CACHE_VERSION,
     });
+  }
+
+  // Allow clients to trigger skipWaiting when user explicitly requests update
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    console.log("User requested service worker activation");
+    self.skipWaiting();
   }
 });
