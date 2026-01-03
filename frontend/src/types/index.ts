@@ -104,6 +104,7 @@ export interface WordSet {
   familyId: string;
   createdBy: string;
   language: "en" | "no";
+  assignedUserIds?: string[]; // IDs of child users assigned to this wordset
   createdAt: string;
   updatedAt: string;
   // Test configuration for this wordset

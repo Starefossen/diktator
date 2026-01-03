@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { WordSet, TestResult, FamilyProgress } from "@/types";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { HeroBookIcon } from "@/components/Icons";
 import { WordSetCard } from "@/components/WordSetCard";
 
@@ -32,6 +33,28 @@ export function WordSetsListView({
   onViewAnalytics,
 }: WordSetsListViewProps) {
   const { t } = useLanguage();
+  const { userData } = useAuth();
+
+  // Sort wordsets: assigned first (for children), then by createdAt DESC
+  const sortedWordSets = useMemo(() => {
+    if (userData?.role !== "child" || !userData?.id) {
+      return wordSets; // Parents see default order
+    }
+
+    return [...wordSets].sort((a, b) => {
+      const aAssigned = a.assignedUserIds?.includes(userData.id) ?? false;
+      const bAssigned = b.assignedUserIds?.includes(userData.id) ?? false;
+
+      // Assigned wordsets first
+      if (aAssigned && !bAssigned) return -1;
+      if (!aAssigned && bAssigned) return 1;
+
+      // Then by createdAt DESC (newest first)
+      return (
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+    });
+  }, [wordSets, userData]);
 
   if (wordSets.length === 0) {
     return (
@@ -49,7 +72,7 @@ export function WordSetsListView({
 
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {wordSets.map((wordSet) => (
+      {sortedWordSets.map((wordSet) => (
         <WordSetCard
           key={wordSet.id}
           wordSet={wordSet}

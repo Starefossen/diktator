@@ -131,7 +131,7 @@ export const en = {
   "home.progress.phase0.title": "Foundation",
   "home.progress.phase0.subtitle": "Core Infrastructure",
   "home.progress.phase0.point1": "Next.js + TypeScript setup",
-  "home.progress.phase0.point2": "Google Cloud deployment",
+  "home.progress.phase0.point2": "Knative Deployment",
   "home.progress.phase0.point3": "CI/CD pipeline established",
 
   // Phase 1

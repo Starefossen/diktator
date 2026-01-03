@@ -596,6 +596,25 @@ func (db *Postgres) GetWordSets(familyID string) ([]models.WordSet, error) {
 			ws.TestConfiguration = &testConfig
 		}
 
+		// Get assigned user IDs for this word set
+		assignmentsQuery := `SELECT user_id FROM wordset_assignments WHERE wordset_id = $1 ORDER BY assigned_at`
+		assignmentRows, err := db.pool.Query(ctx, assignmentsQuery, ws.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get wordset assignments: %w", err)
+		}
+
+		var assignedUserIDs []string
+		for assignmentRows.Next() {
+			var userID string
+			if err := assignmentRows.Scan(&userID); err != nil {
+				assignmentRows.Close()
+				return nil, fmt.Errorf("failed to scan assignment: %w", err)
+			}
+			assignedUserIDs = append(assignedUserIDs, userID)
+		}
+		assignmentRows.Close()
+		ws.AssignedUserIDs = assignedUserIDs
+
 		// Get words for this word set
 		wordsQuery := `
 			SELECT word, audio_url, audio_id, voice_id, audio_created_at, definition, translations
@@ -1473,4 +1492,79 @@ func (db *Postgres) VerifyWordSetAccess(familyID, wordSetID string) error {
 	}
 
 	return nil
+}
+
+// ============================================================================
+// Word Set Assignment Operations
+// ============================================================================
+
+func (db *Postgres) AssignWordSetToUser(wordSetID, userID, assignedBy string) error {
+	ctx := context.Background()
+
+	// Verify the user is a child
+	var role string
+	roleQuery := `SELECT role FROM users WHERE id = $1`
+	err := db.pool.QueryRow(ctx, roleQuery, userID).Scan(&role)
+	if err == pgx.ErrNoRows {
+		return fmt.Errorf("user not found")
+	}
+	if err != nil {
+		return fmt.Errorf("failed to verify user role: %w", err)
+	}
+	if role != "child" {
+		return fmt.Errorf("only children can be assigned to wordsets")
+	}
+
+	// Insert assignment
+	query := `
+		INSERT INTO wordset_assignments (wordset_id, user_id, assigned_by, assigned_at)
+		VALUES ($1, $2, $3, now())
+		ON CONFLICT (wordset_id, user_id) DO NOTHING`
+
+	_, err = db.pool.Exec(ctx, query, wordSetID, userID, assignedBy)
+	if err != nil {
+		return fmt.Errorf("failed to assign wordset to user: %w", err)
+	}
+
+	return nil
+}
+
+func (db *Postgres) UnassignWordSetFromUser(wordSetID, userID string) error {
+	ctx := context.Background()
+
+	query := `DELETE FROM wordset_assignments WHERE wordset_id = $1 AND user_id = $2`
+
+	result, err := db.pool.Exec(ctx, query, wordSetID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to unassign wordset from user: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("assignment not found")
+	}
+
+	return nil
+}
+
+func (db *Postgres) GetWordSetAssignments(wordSetID string) ([]string, error) {
+	ctx := context.Background()
+
+	query := `SELECT user_id FROM wordset_assignments WHERE wordset_id = $1 ORDER BY assigned_at`
+
+	rows, err := db.pool.Query(ctx, query, wordSetID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get wordset assignments: %w", err)
+	}
+	defer rows.Close()
+
+	var userIDs []string
+	for rows.Next() {
+		var userID string
+		if err := rows.Scan(&userID); err != nil {
+			return nil, fmt.Errorf("failed to scan assignment: %w", err)
+		}
+		userIDs = append(userIDs, userID)
+	}
+
+	return userIDs, nil
 }

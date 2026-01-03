@@ -67,6 +67,9 @@ export function ParentWordSetCard({
 
   const childrenPerformance = getChildrenPerformance();
 
+  // Get assignment count
+  const assignmentCount = wordSet.assignedUserIds?.length || 0;
+
   return (
     <div className="flex flex-col p-6 transition-shadow duration-200 bg-white border border-gray-100 rounded-lg shadow-lg hover:shadow-xl">
       {/* Header */}
@@ -96,6 +99,18 @@ export function ParentWordSetCard({
         </div>
       </div>
 
+      {/* Assignment Status - Subtle indicator for parents */}
+      {assignmentCount > 0 ? (
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5 mb-3 text-xs font-medium text-gray-700 bg-gray-100 border border-gray-200 rounded-md w-fit">
+          <HeroCheckIcon className="w-3.5 h-3.5" />
+          {t("wordsets.assignment.assigned")} ({assignmentCount})
+        </div>
+      ) : (
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5 mb-3 text-xs font-medium text-gray-500 bg-gray-50 border border-gray-200 rounded-md w-fit opacity-70">
+          {t("wordsets.assignment.noAssignments")}
+        </div>
+      )}
+
       {/* Children's Performance Summary */}
       {childrenPerformance.length > 0 && (
         <div className="p-3 mb-4 rounded-lg bg-gray-50">
@@ -112,13 +127,12 @@ export function ParentWordSetCard({
                 <div className="flex items-center gap-2">
                   {child.score && (
                     <span
-                      className={`px-2 py-1 rounded-full font-medium ${
-                        child.score >= 90
+                      className={`px-2 py-1 rounded-full font-medium ${child.score >= 90
                           ? "text-green-700 bg-green-100"
                           : child.score >= 70
                             ? "text-yellow-700 bg-yellow-100"
                             : "text-red-700 bg-red-100"
-                      }`}
+                        }`}
                     >
                       {child.score}%
                     </span>
@@ -161,18 +175,16 @@ export function ParentWordSetCard({
                 onClick={() =>
                   hasAudio ? onWordClick(wordItem.word, wordSet) : undefined
                 }
-                className={`inline-flex items-center px-2 py-1 text-xs rounded transition-all duration-200 ${
-                  hasAudio
+                className={`inline-flex items-center px-2 py-1 text-xs rounded transition-all duration-200 ${hasAudio
                     ? "text-blue-700 bg-blue-100 cursor-pointer hover:bg-blue-200 hover:shadow-sm"
                     : "text-gray-700 bg-gray-100"
-                } ${isPlaying ? "ring-2 ring-blue-500 shadow-md" : ""}`}
+                  } ${isPlaying ? "ring-2 ring-blue-500 shadow-md" : ""}`}
                 title={hasGeneratedAudio ? "Generated audio" : "Text-to-speech"}
               >
                 {hasAudio && (
                   <HeroVolumeIcon
-                    className={`w-3 h-3 mr-1 ${
-                      hasGeneratedAudio ? "text-blue-500" : "text-gray-500"
-                    }`}
+                    className={`w-3 h-3 mr-1 ${hasGeneratedAudio ? "text-blue-500" : "text-gray-500"
+                      }`}
                   />
                 )}
                 {wordItem.word}

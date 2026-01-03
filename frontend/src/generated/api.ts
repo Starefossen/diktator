@@ -2296,6 +2296,88 @@ export const WordsetsApiAxiosParamCreator = function (configuration?: Configurat
             };
         },
         /**
+         * Remove a word set assignment from a child user (parent only)
+         * @summary Unassign Word Set from User
+         * @param {string} id Word set ID
+         * @param {string} userId Child user ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiWordsetsIdAssignmentsUserIdDelete: async (id: string, userId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('apiWordsetsIdAssignmentsUserIdDelete', 'id', id)
+            // verify required parameter 'userId' is not null or undefined
+            assertParamExists('apiWordsetsIdAssignmentsUserIdDelete', 'userId', userId)
+            const localVarPath = `/api/wordsets/{id}/assignments/{userId}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
+                .replace(`{${"userId"}}`, encodeURIComponent(String(userId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Assign a word set to a child user (parent only)
+         * @summary Assign Word Set to User
+         * @param {string} id Word set ID
+         * @param {string} userId Child user ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiWordsetsIdAssignmentsUserIdPost: async (id: string, userId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('apiWordsetsIdAssignmentsUserIdPost', 'id', id)
+            // verify required parameter 'userId' is not null or undefined
+            assertParamExists('apiWordsetsIdAssignmentsUserIdPost', 'userId', userId)
+            const localVarPath = `/api/wordsets/{id}/assignments/{userId}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
+                .replace(`{${"userId"}}`, encodeURIComponent(String(userId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Delete a word set by ID and all associated audio files from storage
          * @summary Delete Word Set
          * @param {string} id Word Set ID
@@ -2513,6 +2595,34 @@ export const WordsetsApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * Remove a word set assignment from a child user (parent only)
+         * @summary Unassign Word Set from User
+         * @param {string} id Word set ID
+         * @param {string} userId Child user ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiWordsetsIdAssignmentsUserIdDelete(id: string, userId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAPIResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiWordsetsIdAssignmentsUserIdDelete(id, userId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WordsetsApi.apiWordsetsIdAssignmentsUserIdDelete']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Assign a word set to a child user (parent only)
+         * @summary Assign Word Set to User
+         * @param {string} id Word set ID
+         * @param {string} userId Child user ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiWordsetsIdAssignmentsUserIdPost(id: string, userId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAPIResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiWordsetsIdAssignmentsUserIdPost(id, userId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WordsetsApi.apiWordsetsIdAssignmentsUserIdPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Delete a word set by ID and all associated audio files from storage
          * @summary Delete Word Set
          * @param {string} id Word Set ID
@@ -2599,6 +2709,28 @@ export const WordsetsApiFactory = function (configuration?: Configuration, baseP
             return localVarFp.apiWordsetsGet(options).then((request) => request(axios, basePath));
         },
         /**
+         * Remove a word set assignment from a child user (parent only)
+         * @summary Unassign Word Set from User
+         * @param {string} id Word set ID
+         * @param {string} userId Child user ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiWordsetsIdAssignmentsUserIdDelete(id: string, userId: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
+            return localVarFp.apiWordsetsIdAssignmentsUserIdDelete(id, userId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Assign a word set to a child user (parent only)
+         * @summary Assign Word Set to User
+         * @param {string} id Word set ID
+         * @param {string} userId Child user ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiWordsetsIdAssignmentsUserIdPost(id: string, userId: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
+            return localVarFp.apiWordsetsIdAssignmentsUserIdPost(id, userId, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Delete a word set by ID and all associated audio files from storage
          * @summary Delete Word Set
          * @param {string} id Word Set ID
@@ -2667,6 +2799,28 @@ export interface WordsetsApiInterface {
      * @memberof WordsetsApiInterface
      */
     apiWordsetsGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Remove a word set assignment from a child user (parent only)
+     * @summary Unassign Word Set from User
+     * @param {string} id Word set ID
+     * @param {string} userId Child user ID
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WordsetsApiInterface
+     */
+    apiWordsetsIdAssignmentsUserIdDelete(id: string, userId: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Assign a word set to a child user (parent only)
+     * @summary Assign Word Set to User
+     * @param {string} id Word set ID
+     * @param {string} userId Child user ID
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WordsetsApiInterface
+     */
+    apiWordsetsIdAssignmentsUserIdPost(id: string, userId: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
 
     /**
      * Delete a word set by ID and all associated audio files from storage
@@ -2738,6 +2892,32 @@ export class WordsetsApi extends BaseAPI implements WordsetsApiInterface {
      */
     public apiWordsetsGet(options?: RawAxiosRequestConfig) {
         return WordsetsApiFp(this.configuration).apiWordsetsGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Remove a word set assignment from a child user (parent only)
+     * @summary Unassign Word Set from User
+     * @param {string} id Word set ID
+     * @param {string} userId Child user ID
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WordsetsApi
+     */
+    public apiWordsetsIdAssignmentsUserIdDelete(id: string, userId: string, options?: RawAxiosRequestConfig) {
+        return WordsetsApiFp(this.configuration).apiWordsetsIdAssignmentsUserIdDelete(id, userId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Assign a word set to a child user (parent only)
+     * @summary Assign Word Set to User
+     * @param {string} id Word set ID
+     * @param {string} userId Child user ID
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WordsetsApi
+     */
+    public apiWordsetsIdAssignmentsUserIdPost(id: string, userId: string, options?: RawAxiosRequestConfig) {
+        return WordsetsApiFp(this.configuration).apiWordsetsIdAssignmentsUserIdPost(id, userId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

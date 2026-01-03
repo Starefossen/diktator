@@ -920,6 +920,85 @@ paths:
       summary: Update Word Set
       tags:
       - wordsets
+  /api/wordsets/{id}/assignments/{userId}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a word set assignment from a child user (parent only)
+      parameters:
+      - description: Word set ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Child user ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Word set unassigned successfully
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "403":
+          description: Parent role required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to unassign word set
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Unassign Word Set from User
+      tags:
+      - wordsets
+    post:
+      consumes:
+      - application/json
+      description: Assign a word set to a child user (parent only)
+      parameters:
+      - description: Word set ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Child user ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Word set assigned successfully
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "403":
+          description: Parent role required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to assign word set
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Assign Word Set to User
+      tags:
+      - wordsets
   /api/wordsets/{id}/words/{word}/audio:
     get:
       consumes:

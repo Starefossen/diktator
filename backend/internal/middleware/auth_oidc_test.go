@@ -85,6 +85,15 @@ func (stubRepo) VerifyParentPermission(userID, familyID string) error { return n
 func (stubRepo) VerifyChildOwnership(parentID, childID string) error  { return nil }
 func (stubRepo) VerifyWordSetAccess(familyID, wordSetID string) error { return nil }
 
+// Word set assignment methods
+func (stubRepo) AssignWordSetToUser(wordSetID, userID, assignedBy string) error {
+	return nil
+}
+func (stubRepo) UnassignWordSetFromUser(wordSetID, userID string) error { return nil }
+func (stubRepo) GetWordSetAssignments(wordSetID string) ([]string, error) {
+	return nil, nil
+}
+
 func TestOIDCAuthMiddlewareRequiresRegistration(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()

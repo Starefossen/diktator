@@ -5,6 +5,8 @@ All URIs are relative to *http://localhost:8080/api*
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|
 |[**apiWordsetsGet**](#apiwordsetsget) | **GET** /api/wordsets | Get Word Sets|
+|[**apiWordsetsIdAssignmentsUserIdDelete**](#apiwordsetsidassignmentsuseriddelete) | **DELETE** /api/wordsets/{id}/assignments/{userId} | Unassign Word Set from User|
+|[**apiWordsetsIdAssignmentsUserIdPost**](#apiwordsetsidassignmentsuseridpost) | **POST** /api/wordsets/{id}/assignments/{userId} | Assign Word Set to User|
 |[**apiWordsetsIdDelete**](#apiwordsetsiddelete) | **DELETE** /api/wordsets/{id} | Delete Word Set|
 |[**apiWordsetsIdPut**](#apiwordsetsidput) | **PUT** /api/wordsets/{id} | Update Word Set|
 |[**apiWordsetsIdWordsWordAudioGet**](#apiwordsetsidwordswordaudioget) | **GET** /api/wordsets/{id}/words/{word}/audio | Stream Audio for Word|
@@ -54,6 +56,120 @@ This endpoint does not have any parameters.
 |**200** | Word sets for the family |  -  |
 |**401** | Family access validation required |  -  |
 |**500** | Service unavailable or failed to retrieve word sets |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiWordsetsIdAssignmentsUserIdDelete**
+> ModelsAPIResponse apiWordsetsIdAssignmentsUserIdDelete()
+
+Remove a word set assignment from a child user (parent only)
+
+### Example
+
+```typescript
+import {
+    WordsetsApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new WordsetsApi(configuration);
+
+let id: string; //Word set ID (default to undefined)
+let userId: string; //Child user ID (default to undefined)
+
+const { status, data } = await apiInstance.apiWordsetsIdAssignmentsUserIdDelete(
+    id,
+    userId
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**string**] | Word set ID | defaults to undefined|
+| **userId** | [**string**] | Child user ID | defaults to undefined|
+
+
+### Return type
+
+**ModelsAPIResponse**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Word set unassigned successfully |  -  |
+|**400** | Invalid request |  -  |
+|**403** | Parent role required |  -  |
+|**500** | Failed to unassign word set |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **apiWordsetsIdAssignmentsUserIdPost**
+> ModelsAPIResponse apiWordsetsIdAssignmentsUserIdPost()
+
+Assign a word set to a child user (parent only)
+
+### Example
+
+```typescript
+import {
+    WordsetsApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new WordsetsApi(configuration);
+
+let id: string; //Word set ID (default to undefined)
+let userId: string; //Child user ID (default to undefined)
+
+const { status, data } = await apiInstance.apiWordsetsIdAssignmentsUserIdPost(
+    id,
+    userId
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**string**] | Word set ID | defaults to undefined|
+| **userId** | [**string**] | Child user ID | defaults to undefined|
+
+
+### Return type
+
+**ModelsAPIResponse**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Word set assigned successfully |  -  |
+|**400** | Invalid request |  -  |
+|**403** | Parent role required |  -  |
+|**500** | Failed to assign word set |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

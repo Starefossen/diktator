@@ -10,6 +10,7 @@ import {
   HeroTargetIcon,
   HeroStarIcon,
   HeroTrophyIcon,
+  HeroCheckIcon,
 } from "@/components/Icons";
 import { FlagIcon } from "@/components/FlagIcon";
 import { hasAudioAvailable } from "@/lib/audioPlayer";
@@ -18,6 +19,7 @@ interface ChildWordSetCardProps {
   wordSet: WordSet;
   playingAudio: string | null;
   userResults?: TestResult[];
+  currentUserId?: string; // Add user ID to check assignments
   onStartTest: (wordSet: WordSet) => void;
   onStartPractice: (wordSet: WordSet) => void;
   onWordClick: (word: string, wordSet: WordSet) => void;
@@ -27,11 +29,16 @@ export function ChildWordSetCard({
   wordSet,
   playingAudio,
   userResults,
+  currentUserId,
   onStartTest,
   onStartPractice,
   onWordClick,
 }: ChildWordSetCardProps) {
   const { t } = useLanguage();
+
+  // Check if this wordset is assigned to the current user
+  const isAssignedToMe =
+    currentUserId && wordSet.assignedUserIds?.includes(currentUserId);
 
   // Get latest result for this wordset
   const latestResult = userResults?.find(
@@ -67,9 +74,9 @@ export function ChildWordSetCard({
   const needsPracticeWords =
     latestResult && latestResult.score < 90
       ? wordSet.words.slice(
-          0,
-          Math.ceil((wordSet.words.length * (100 - latestResult.score)) / 100),
-        )
+        0,
+        Math.ceil((wordSet.words.length * (100 - latestResult.score)) / 100),
+      )
       : [];
 
   // Sort words to show practice words first, then regular words (stable sort)
@@ -104,6 +111,14 @@ export function ChildWordSetCard({
 
   return (
     <div className="relative flex flex-col h-full p-4 transition-all duration-300 bg-white border-gray-100 shadow-lg borderounded-xl hover:shadow-2xl hover:border-blue-200 hover:bg-linear-to-br hover:from-blue-50 hover:to-purple-50">
+      {/* Assignment Badge - Top Right Corner */}
+      {isAssignedToMe && (
+        <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-800 bg-blue-100 border border-blue-300 rounded-md shadow-sm">
+          <HeroCheckIcon className="w-3.5 h-3.5" />
+          {t("wordsets.assignment.assignedToMe")}
+        </div>
+      )}
+
       {/* Header with Flag and Name */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center flex-1 min-w-0 gap-2">
@@ -162,13 +177,12 @@ export function ChildWordSetCard({
               onClick={() =>
                 hasAudio ? onWordClick(wordItem.word, wordSet) : undefined
               }
-              className={`inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
-                needsPractice
+              className={`inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${needsPractice
                   ? "text-orange-800 bg-orange-100 border border-orange-300 cursor-pointer hover:bg-orange-200 animate-pulse"
                   : hasAudio
                     ? "text-blue-800 bg-blue-100 border border-blue-200 cursor-pointer hover:bg-blue-200 hover:border-blue-300"
                     : "text-gray-600 bg-gray-100 border border-gray-200"
-              } ${isPlaying ? "ring-4 ring-blue-400 ring-opacity-50" : ""}`}
+                } ${isPlaying ? "ring-4 ring-blue-400 ring-opacity-50" : ""}`}
             >
               {hasAudio && (
                 <HeroVolumeIcon className="shrink-0 w-3 h-3 mr-1.5" />

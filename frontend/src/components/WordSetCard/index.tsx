@@ -23,7 +23,7 @@ export function WordSetCard(props: WordSetCardProps) {
   const isChild = userData?.role === "child";
 
   if (isChild) {
-    return <ChildWordSetCard {...props} />;
+    return <ChildWordSetCard {...props} currentUserId={userData?.id} />;
   }
 
   return <ParentWordSetCard {...props} />;

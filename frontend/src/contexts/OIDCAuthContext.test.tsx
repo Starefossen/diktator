@@ -2,7 +2,7 @@ import { render, waitFor } from "@testing-library/react";
 import React from "react";
 import { describe, expect, it, vi, beforeEach, type Mock } from "vitest";
 import { generatedApiClient } from "@/lib/api-generated";
-import { AuthProvider } from "./OIDCAuthContext";
+import { AuthProvider, useAuth } from "./OIDCAuthContext";
 
 const pushMock = vi.fn();
 
@@ -50,31 +50,41 @@ describe("OIDCAuthContext", () => {
     });
   });
 
-  it("redirects to /register when backend signals registration required", async () => {
-    render(
+  it("sets needsRegistration when backend signals registration required", async () => {
+    const TestComponent = () => {
+      const { needsRegistration } = useAuth();
+      return <div>{needsRegistration ? "needs-registration" : "registered"}</div>;
+    };
+
+    const { getByText } = render(
       <AuthProvider>
-        <div>child</div>
+        <TestComponent />
       </AuthProvider>,
     );
 
     await waitFor(() => {
-      expect(pushMock).toHaveBeenCalledWith("/register");
+      expect(getByText("needs-registration")).toBeTruthy();
     });
   });
 
-  it("redirects to /register when profile response indicates needsRegistration", async () => {
+  it("sets needsRegistration when profile response indicates needsRegistration", async () => {
     mockedGetUserProfile.mockResolvedValueOnce({
       data: { data: { needsRegistration: true } },
     });
 
-    render(
+    const TestComponent = () => {
+      const { needsRegistration } = useAuth();
+      return <div>{needsRegistration ? "needs-registration" : "registered"}</div>;
+    };
+
+    const { getByText } = render(
       <AuthProvider>
-        <div>child</div>
+        <TestComponent />
       </AuthProvider>,
     );
 
     await waitFor(() => {
-      expect(pushMock).toHaveBeenCalledWith("/register");
+      expect(getByText("needs-registration")).toBeTruthy();
     });
   });
 });

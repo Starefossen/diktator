@@ -129,7 +129,7 @@ export const no = {
   "home.progress.phase0.title": "Grunnlag",
   "home.progress.phase0.subtitle": "Grunnleggende infrastruktur",
   "home.progress.phase0.point1": "Next.js + TypeScript oppsett",
-  "home.progress.phase0.point2": "Google Cloud distribusjon",
+  "home.progress.phase0.point2": "Knative distribusjon",
   "home.progress.phase0.point3": "CI/CD-pipeline etablert",
 
   // Phase 1

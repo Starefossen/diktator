@@ -145,4 +145,15 @@ export const wordsets = {
     "Definition/context (optional)",
   "wordsets.editor.noWords": "No words added yet",
   "wordsets.editor.noWordsHint": "Use the form above to add words to this set",
+
+  // Assignment strings
+  "wordsets.assignment.assignedToMe": "Assigned to me",
+  "wordsets.assignment.assigned": "Assigned",
+  "wordsets.assignment.noAssignments": "Not assigned",
+  "wordsets.assignment.assignToChildren": "Assign to Children",
+  "wordsets.assignment.selectChildren": "Select children to assign",
+  "wordsets.assignment.assignSuccess": "Assignment updated successfully",
+  "wordsets.assignment.assignError": "Failed to update assignment",
+  "wordsets.assignment.unassignSuccess": "Child unassigned successfully",
+  "wordsets.assignment.unassignError": "Failed to unassign child",
 };

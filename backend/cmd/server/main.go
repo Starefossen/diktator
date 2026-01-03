@@ -163,6 +163,14 @@ func main() {
 				wordsets.PUT("/:id", handlers.UpdateWordSet)
 				wordsets.DELETE("/:id", handlers.DeleteWordSet)
 				wordsets.GET("/voices", handlers.ListVoices)
+
+				// Word set assignments - parent only
+				assignments := wordsets.Group("/:id/assignments")
+				assignments.Use(middleware.RequireParentRole())
+				{
+					assignments.POST("/:userId", handlers.AssignWordSetToUser)
+					assignments.DELETE("/:userId", handlers.UnassignWordSetFromUser)
+				}
 			}
 
 			// User-specific test results
@@ -195,12 +203,12 @@ func main() {
 					parentOnly.GET("/progress", handlers.GetFamilyProgress)
 					parentOnly.POST("/members", handlers.AddFamilyMember)
 					parentOnly.GET("/invitations", handlers.GetFamilyInvitations)
-				parentOnly.DELETE("/invitations/:invitationId", handlers.DeleteFamilyInvitation)
-				parentOnly.DELETE("/members/:userId", handlers.RemoveFamilyMember)
+					parentOnly.DELETE("/invitations/:invitationId", handlers.DeleteFamilyInvitation)
+					parentOnly.DELETE("/members/:userId", handlers.RemoveFamilyMember)
 
-				// Child-specific routes (with ownership verification)
-				childRoutes := parentOnly.Group("/children/:childId")
-				childRoutes.Use(middleware.RequireChildOwnership(serviceManager.DB))
+					// Child-specific routes (with ownership verification)
+					childRoutes := parentOnly.Group("/children/:childId")
+					childRoutes.Use(middleware.RequireChildOwnership(serviceManager.DB))
 					{
 						childRoutes.PUT("", handlers.UpdateChildAccount)
 						childRoutes.DELETE("", handlers.DeleteChildAccount)

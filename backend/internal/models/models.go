@@ -50,6 +50,7 @@ type WordSet struct {
 	FamilyID          string                  `json:"familyId"`
 	CreatedBy         string                  `json:"createdBy"`
 	Language          string                  `json:"language"` // 'en' or 'no'
+	AssignedUserIDs   []string                `json:"assignedUserIds,omitempty"` // IDs of child users assigned to this wordset
 	TestConfiguration *map[string]interface{} `json:"testConfiguration,omitempty"`
 	CreatedAt         time.Time               `json:"createdAt"`
 	UpdatedAt         time.Time               `json:"updatedAt"`

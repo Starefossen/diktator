@@ -41,6 +41,11 @@ type Repository interface {
 	UpdateWordSet(wordSet *models.WordSet) error
 	DeleteWordSet(id string) error
 
+	// Word set assignment operations
+	AssignWordSetToUser(wordSetID, userID, assignedBy string) error
+	UnassignWordSetFromUser(wordSetID, userID string) error
+	GetWordSetAssignments(wordSetID string) ([]string, error)
+
 	// Test result operations
 	GetTestResults(userID string) ([]models.TestResult, error)
 	GetFamilyResults(familyID string) ([]models.TestResult, error)

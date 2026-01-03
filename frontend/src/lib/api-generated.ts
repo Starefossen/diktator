@@ -182,6 +182,16 @@ export const generatedApiClient = {
     return wordsetsApi.apiWordsetsIdDelete(id);
   },
 
+  async assignWordSetToUser(wordSetId: string, userId: string) {
+    const { wordsetsApi } = await createApiInstances();
+    return wordsetsApi.apiWordsetsIdAssignmentsUserIdPost(wordSetId, userId);
+  },
+
+  async unassignWordSetFromUser(wordSetId: string, userId: string) {
+    const { wordsetsApi } = await createApiInstances();
+    return wordsetsApi.apiWordsetsIdAssignmentsUserIdDelete(wordSetId, userId);
+  },
+
   // Results management
   async getResults() {
     const { usersApi } = await createApiInstances();

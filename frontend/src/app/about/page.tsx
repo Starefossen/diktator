@@ -166,7 +166,7 @@ export default function AboutPage() {
                 </li>
                 <li className="flex items-center">
                   <HeroCheckIcon className="w-4 h-4 mr-2" />
-                  Google Cloud Run
+                  Knative
                 </li>
                 <li className="flex items-center">
                   <HeroCheckIcon className="w-4 h-4 mr-2" />

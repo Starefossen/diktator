@@ -146,4 +146,15 @@ export const wordsets = {
   "wordsets.editor.noWords": "Ingen ord lagt til ennå",
   "wordsets.editor.noWordsHint":
     "Bruk skjemaet ovenfor for å legge til ord i dette settet",
+
+  // Assignment strings
+  "wordsets.assignment.assignedToMe": "Tildelt til meg",
+  "wordsets.assignment.assigned": "Tildelt",
+  "wordsets.assignment.noAssignments": "Ikke tildelt",
+  "wordsets.assignment.assignToChildren": "Tildel til barn",
+  "wordsets.assignment.selectChildren": "Velg barn å tildele",
+  "wordsets.assignment.assignSuccess": "Tildeling oppdatert",
+  "wordsets.assignment.assignError": "Kunne ikke oppdatere tildeling",
+  "wordsets.assignment.unassignSuccess": "Barn fjernet fra tildeling",
+  "wordsets.assignment.unassignError": "Kunne ikke fjerne barn fra tildeling",
 };

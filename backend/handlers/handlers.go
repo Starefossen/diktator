@@ -425,6 +425,154 @@ func DeleteWordSet(c *gin.Context) {
 	})
 }
 
+// @Summary		Assign Word Set to User
+// @Description	Assign a word set to a child user (parent only)
+// @Tags			wordsets
+// @Accept			json
+// @Produce		json
+// @Param			id		path		string				true	"Word set ID"
+// @Param			userId	path		string				true	"Child user ID"
+// @Success		200		{object}	models.APIResponse	"Word set assigned successfully"
+// @Failure		400		{object}	models.APIResponse	"Invalid request"
+// @Failure		403		{object}	models.APIResponse	"Parent role required"
+// @Failure		500		{object}	models.APIResponse	"Failed to assign word set"
+// @Security		BearerAuth
+// @Router			/api/wordsets/{id}/assignments/{userId} [post]
+func AssignWordSetToUser(c *gin.Context) {
+	wordSetID := c.Param("id")
+	userID := c.Param("userId")
+
+	if wordSetID == "" || userID == "" {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Word set ID and user ID are required",
+		})
+		return
+	}
+
+	sm := GetServiceManager(c)
+	if sm == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service manager not available",
+		})
+		return
+	}
+
+	// Get the authenticated user ID (parent making the assignment)
+	assignedBy, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "User authentication required",
+		})
+		return
+	}
+
+	// Verify the child user is in the same family
+	familyID, exists := c.Get("validatedFamilyID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "Family access validation required",
+		})
+		return
+	}
+
+	// Verify the child belongs to the family
+	childUser, err := sm.DB.GetUser(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Child user not found",
+		})
+		return
+	}
+
+	if childUser.FamilyID != familyID.(string) {
+		c.JSON(http.StatusForbidden, models.APIResponse{
+			Error: "Child user not in your family",
+		})
+		return
+	}
+
+	err = sm.DB.AssignWordSetToUser(wordSetID, userID, assignedBy.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: fmt.Sprintf("Failed to assign word set: %v", err),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Message: "Word set assigned successfully",
+	})
+}
+
+// @Summary		Unassign Word Set from User
+// @Description	Remove a word set assignment from a child user (parent only)
+// @Tags			wordsets
+// @Accept			json
+// @Produce		json
+// @Param			id		path		string				true	"Word set ID"
+// @Param			userId	path		string				true	"Child user ID"
+// @Success		200		{object}	models.APIResponse	"Word set unassigned successfully"
+// @Failure		400		{object}	models.APIResponse	"Invalid request"
+// @Failure		403		{object}	models.APIResponse	"Parent role required"
+// @Failure		500		{object}	models.APIResponse	"Failed to unassign word set"
+// @Security		BearerAuth
+// @Router			/api/wordsets/{id}/assignments/{userId} [delete]
+func UnassignWordSetFromUser(c *gin.Context) {
+	wordSetID := c.Param("id")
+	userID := c.Param("userId")
+
+	if wordSetID == "" || userID == "" {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Word set ID and user ID are required",
+		})
+		return
+	}
+
+	sm := GetServiceManager(c)
+	if sm == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service manager not available",
+		})
+		return
+	}
+
+	// Verify the child user is in the same family
+	familyID, exists := c.Get("validatedFamilyID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "Family access validation required",
+		})
+		return
+	}
+
+	childUser, err := sm.DB.GetUser(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Child user not found",
+		})
+		return
+	}
+
+	if childUser.FamilyID != familyID.(string) {
+		c.JSON(http.StatusForbidden, models.APIResponse{
+			Error: "Child user not in your family",
+		})
+		return
+	}
+
+	err = sm.DB.UnassignWordSetFromUser(wordSetID, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: fmt.Sprintf("Failed to unassign word set: %v", err),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Message: "Word set unassigned successfully",
+	})
+}
+
 // @Summary		Save Test Result
 // @Description	Save a test result for the authenticated user
 // @Tags			users
