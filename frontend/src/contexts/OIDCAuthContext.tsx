@@ -8,7 +8,6 @@ import React, {
   useCallback,
   ReactNode,
 } from "react";
-import { useRouter } from "next/navigation";
 import {
   OIDCUser,
   getUserInfo,
@@ -79,7 +78,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [needsRegistration, setNeedsRegistration] = useState(false);
-  const router = useRouter();
 
   const loadUserData = useCallback(async (currentUser: User) => {
     try {
@@ -110,7 +108,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const apiError = err as {
           response?: {
             status?: number;
-            data?: any;
+            data?: {
+              needsRegistration?: boolean;
+              Data?: { needsRegistration?: boolean };
+              data?: { needsRegistration?: boolean };
+              [key: string]: unknown;
+            };
           };
         };
 
@@ -126,8 +129,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           const needsReg =
             apiError.response?.data?.needsRegistration ||
             apiError.response?.data?.Data?.needsRegistration ||
-            apiError.response?.data?.data?.needsRegistration ||
-            (apiError.response?.data as any)?.needsRegistration;
+            apiError.response?.data?.data?.needsRegistration;
 
           console.log("[OIDCAuthContext] loadUserData: needsRegistration from 404 response:", needsReg);
 

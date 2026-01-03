@@ -9,14 +9,15 @@ import {
   ChildrenApi,
   FamiliesApi,
   HealthApi,
+  InvitationsApi,
   UsersApi,
   WordsetsApi,
-  ModelsCreateChildAccountRequest,
   ModelsSaveResultRequest,
   ApiUsersPostRequest,
   ModelsCreateWordSetRequest,
   ModelsUpdateWordSetRequest,
   ModelsChildAccount,
+  ModelsAddFamilyMemberRequest,
 } from "@/generated";
 
 // Create a configuration that automatically includes OIDC auth token
@@ -64,6 +65,7 @@ const createApiInstances = async (requireAuth = true) => {
     childrenApi: new ChildrenApi(config),
     familiesApi: new FamiliesApi(config),
     healthApi: new HealthApi(config),
+    invitationsApi: new InvitationsApi(config),
     usersApi: new UsersApi(config),
     wordsetsApi: new WordsetsApi(config),
   };
@@ -103,10 +105,41 @@ export const generatedApiClient = {
     return familiesApi.apiFamiliesGet();
   },
 
+  async getFamilyInvitations() {
+    const { familiesApi } = await createApiInstances();
+    return familiesApi.apiFamiliesInvitationsGet();
+  },
+
+  async deleteFamilyInvitation(invitationId: string) {
+    const { familiesApi } = await createApiInstances();
+    return familiesApi.apiFamiliesInvitationsInvitationIdDelete(invitationId);
+  },
+
+  async removeFamilyMember(userId: string) {
+    const { familiesApi } = await createApiInstances();
+    return familiesApi.apiFamiliesMembersUserIdDelete(userId);
+  },
+
+  // Invitation management
+  async getPendingInvitations() {
+    const { invitationsApi } = await createApiInstances();
+    return invitationsApi.apiInvitationsPendingGet();
+  },
+
+  async acceptInvitation(invitationId: string) {
+    const { invitationsApi } = await createApiInstances();
+    return invitationsApi.apiInvitationsInvitationIdAcceptPost(invitationId);
+  },
+
   // Child account management
-  async createChildAccount(request: ModelsCreateChildAccountRequest) {
-    const { childrenApi } = await createApiInstances();
-    return childrenApi.apiFamiliesChildrenPost(request);
+  async createChildAccount(request: ModelsAddFamilyMemberRequest) {
+    const { familiesApi } = await createApiInstances();
+    return familiesApi.apiFamiliesMembersPost(request);
+  },
+
+  async addFamilyMember(request: ModelsAddFamilyMemberRequest) {
+    const { familiesApi } = await createApiInstances();
+    return familiesApi.apiFamiliesMembersPost(request);
   },
 
   async deleteChildAccount(childId: string) {

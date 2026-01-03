@@ -187,7 +187,7 @@ export function PWAInstaller() {
       const daysSinceDismissed =
         (Date.now() - parseInt(dismissedTime)) / (1000 * 60 * 60 * 24);
       if (daysSinceDismissed < 7) {
-        setShowInstallPrompt(false);
+        setTimeout(() => setShowInstallPrompt(false), 0);
       }
     }
   }, []);

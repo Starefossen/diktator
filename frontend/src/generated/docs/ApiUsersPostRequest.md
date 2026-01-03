@@ -7,6 +7,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **displayName** | **string** |  | [optional] [default to undefined]
 **email** | **string** |  | [optional] [default to undefined]
+**familyName** | **string** |  | [optional] [default to undefined]
 **role** | **string** |  | [optional] [default to undefined]
 
 ## Example
@@ -17,6 +18,7 @@ import { ApiUsersPostRequest } from './api';
 const instance: ApiUsersPostRequest = {
     displayName,
     email,
+    familyName,
     role,
 };
 ```

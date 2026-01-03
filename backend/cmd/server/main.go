@@ -172,6 +172,13 @@ func main() {
 				users.GET("/results", handlers.GetResults)
 			}
 
+			// Invitation endpoints (available to any authenticated user)
+			invitations := protected.Group("/invitations")
+			{
+				invitations.GET("/pending", handlers.GetPendingInvitations)
+				invitations.POST("/:invitationId/accept", handlers.AcceptInvitation)
+			}
+
 			// Family management - RESTRICTED: Parent access only for most endpoints
 			families := protected.Group("/families")
 			families.Use(middleware.RequireParentRole())
@@ -186,11 +193,14 @@ func main() {
 				{
 					parentOnly.GET("/children", handlers.GetFamilyChildren)
 					parentOnly.GET("/progress", handlers.GetFamilyProgress)
-					parentOnly.POST("/children", handlers.CreateChildAccount)
+					parentOnly.POST("/members", handlers.AddFamilyMember)
+					parentOnly.GET("/invitations", handlers.GetFamilyInvitations)
+				parentOnly.DELETE("/invitations/:invitationId", handlers.DeleteFamilyInvitation)
+				parentOnly.DELETE("/members/:userId", handlers.RemoveFamilyMember)
 
-					// Child-specific routes (with ownership verification)
-					childRoutes := parentOnly.Group("/children/:childId")
-					childRoutes.Use(middleware.RequireChildOwnership(serviceManager.DB))
+				// Child-specific routes (with ownership verification)
+				childRoutes := parentOnly.Group("/children/:childId")
+				childRoutes.Use(middleware.RequireChildOwnership(serviceManager.DB))
 					{
 						childRoutes.PUT("", handlers.UpdateChildAccount)
 						childRoutes.DELETE("", handlers.DeleteChildAccount)

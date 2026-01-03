@@ -1223,6 +1223,191 @@ func (db *Postgres) GetUserProgress(userID string) (*models.FamilyProgress, erro
 }
 
 // ============================================================================
+// Family Invitation Operations
+// ============================================================================
+
+func (db *Postgres) CreateFamilyInvitation(invitation *models.FamilyInvitation) error {
+	ctx := context.Background()
+	query := `
+		INSERT INTO family_invitations (id, family_id, email, role, invited_by, status, created_at, expires_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+
+	_, err := db.pool.Exec(ctx, query,
+		invitation.ID,
+		invitation.FamilyID,
+		invitation.Email,
+		invitation.Role,
+		invitation.InvitedBy,
+		invitation.Status,
+		invitation.CreatedAt,
+		invitation.ExpiresAt,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create family invitation: %w", err)
+	}
+
+	return nil
+}
+
+func (db *Postgres) GetPendingInvitationsByEmail(email string) ([]models.FamilyInvitation, error) {
+	ctx := context.Background()
+	query := `
+		SELECT i.id, i.family_id, i.email, i.role, i.invited_by, i.status, i.created_at, i.expires_at
+		FROM family_invitations i
+		WHERE LOWER(i.email) = LOWER($1) AND i.status = 'pending'
+		ORDER BY i.created_at DESC`
+
+	rows, err := db.pool.Query(ctx, query, email)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get pending invitations: %w", err)
+	}
+	defer rows.Close()
+
+	var invitations []models.FamilyInvitation
+	for rows.Next() {
+		var inv models.FamilyInvitation
+		err := rows.Scan(
+			&inv.ID,
+			&inv.FamilyID,
+			&inv.Email,
+			&inv.Role,
+			&inv.InvitedBy,
+			&inv.Status,
+			&inv.CreatedAt,
+			&inv.ExpiresAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan invitation: %w", err)
+		}
+		invitations = append(invitations, inv)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating invitations: %w", err)
+	}
+
+	return invitations, nil
+}
+
+func (db *Postgres) GetFamilyInvitations(familyID string) ([]models.FamilyInvitation, error) {
+	ctx := context.Background()
+	query := `
+		SELECT id, family_id, email, role, invited_by, status, created_at, expires_at
+		FROM family_invitations
+		WHERE family_id = $1
+		ORDER BY created_at DESC`
+
+	rows, err := db.pool.Query(ctx, query, familyID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get family invitations: %w", err)
+	}
+	defer rows.Close()
+
+	var invitations []models.FamilyInvitation
+	for rows.Next() {
+		var inv models.FamilyInvitation
+		err := rows.Scan(
+			&inv.ID,
+			&inv.FamilyID,
+			&inv.Email,
+			&inv.Role,
+			&inv.InvitedBy,
+			&inv.Status,
+			&inv.CreatedAt,
+			&inv.ExpiresAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan invitation: %w", err)
+		}
+		invitations = append(invitations, inv)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating invitations: %w", err)
+	}
+
+	return invitations, nil
+}
+
+func (db *Postgres) AcceptInvitation(invitationID, userID string) error {
+	ctx := context.Background()
+	tx, err := db.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	// Get invitation details
+	var inv models.FamilyInvitation
+	query := `
+		SELECT id, family_id, email, role, invited_by, status
+		FROM family_invitations
+		WHERE id = $1 AND status = 'pending'`
+
+	err = tx.QueryRow(ctx, query, invitationID).Scan(
+		&inv.ID,
+		&inv.FamilyID,
+		&inv.Email,
+		&inv.Role,
+		&inv.InvitedBy,
+		&inv.Status,
+	)
+	if err == pgx.ErrNoRows {
+		return fmt.Errorf("invitation not found or already processed")
+	}
+	if err != nil {
+		return fmt.Errorf("failed to get invitation: %w", err)
+	}
+
+	// Update user's family_id
+	updateUserQuery := `UPDATE users SET family_id = $1 WHERE id = $2`
+	_, err = tx.Exec(ctx, updateUserQuery, inv.FamilyID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to update user family: %w", err)
+	}
+
+	// Add user to family_members table
+	addMemberQuery := `
+		INSERT INTO family_members (family_id, user_id, role, joined_at)
+		VALUES ($1, $2, $3, NOW())
+		ON CONFLICT (family_id, user_id) DO NOTHING`
+
+	_, err = tx.Exec(ctx, addMemberQuery, inv.FamilyID, userID, inv.Role)
+	if err != nil {
+		return fmt.Errorf("failed to add family member: %w", err)
+	}
+
+	// Update invitation status
+	updateInvQuery := `UPDATE family_invitations SET status = 'accepted' WHERE id = $1`
+	_, err = tx.Exec(ctx, updateInvQuery, invitationID)
+	if err != nil {
+		return fmt.Errorf("failed to update invitation status: %w", err)
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
+
+func (db *Postgres) DeleteInvitation(invitationID string) error {
+	ctx := context.Background()
+	query := `DELETE FROM family_invitations WHERE id = $1`
+
+	result, err := db.pool.Exec(ctx, query, invitationID)
+	if err != nil {
+		return fmt.Errorf("failed to delete invitation: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("invitation not found")
+	}
+
+	return nil
+}
+
+// ============================================================================
 // Verification Operations
 // ============================================================================
 

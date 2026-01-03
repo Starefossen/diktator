@@ -12,6 +12,33 @@ export const family = {
   // Navigation
   "family.back": "← Back to Family",
 
+  // Member Management
+  "family.member.create.title": "Add Family Member",
+  "family.member.role": "Role",
+  "family.member.role.parent": "Parent",
+  "family.member.role.child": "Child",
+  "family.member.create.button": "Add Member",
+  "family.member.create.inviteSuccess": "Parent invitation sent successfully!",
+  "family.member.create.childSuccess": "Child added to family successfully!",
+  "family.member.create.error": "Failed to add member. Please try again.",
+  "family.member.remove.confirm": "Are you sure you want to remove this member from the family?",
+  "family.member.remove.success": "Member removed successfully",
+  "family.member.remove.error": "Failed to remove member",
+  "family.member.remove.cannotRemoveCreator": "Cannot remove the family creator",
+
+  // Parents Section
+  "family.parents.title": "Parents",
+  "family.parents.creator": "Creator",
+  "family.parents.joinedAt": "Joined",
+
+  // Invitations
+  "family.invitation.title": "Pending Invitations",
+  "family.invitation.empty": "No pending invitations",
+  "family.invitation.status.pending": "Pending",
+  "family.invitation.cancel": "Cancel Invitation",
+  "family.invitation.cancelSuccess": "Invitation cancelled",
+  "family.invitation.cancelError": "Failed to cancel invitation",
+
   // Child Account Management
   "family.child.create.title": "Add Child to Family",
   "family.child.create.cancel": "Cancel",

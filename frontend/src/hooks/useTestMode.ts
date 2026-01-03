@@ -354,12 +354,12 @@ export function useTestMode(): UseTestModeReturn {
   // Initialize test and handle auto-play
   useEffect(() => {
     if (activeTest && processedWords.length > 0 && !testInitialized) {
-      setTestInitialized(true);
+      setTimeout(() => setTestInitialized(true), 0);
 
       const testConfig = getEffectiveTestConfig(activeTest);
       if (testConfig?.autoPlayAudio && !requiresUserInteractionForAudio()) {
         lastAutoPlayIndexRef.current = 0;
-        playTestWordAudio(processedWords[0], 500);
+        setTimeout(() => playTestWordAudio(processedWords[0], 500), 0);
       }
     }
   }, [activeTest, processedWords, testInitialized, playTestWordAudio]);

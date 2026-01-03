@@ -95,6 +95,7 @@ export default function FamilyPage() {
       const response = await generatedApiClient.createChildAccount({
         email: childFormData.email,
         displayName: childFormData.displayName,
+        role: "child",
         familyId: userData?.familyId || "",
       });
 
@@ -362,11 +363,10 @@ export default function FamilyPage() {
                           </p>
                         </div>
                         <span
-                          className={`px-2 py-1 text-xs rounded-full ${
-                            child.isActive
+                          className={`px-2 py-1 text-xs rounded-full ${child.isActive
                               ? "bg-green-100 text-green-800"
                               : "bg-red-100 text-red-800"
-                          }`}
+                            }`}
                         >
                           {child.isActive
                             ? t("family.child.active")

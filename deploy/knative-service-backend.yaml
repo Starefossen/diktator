@@ -10,8 +10,6 @@ spec:
       annotations:
         # Keep only latest 2 revisions
         serving.knative.dev/revisionHistoryLimit: "2"
-        autoscaling.knative.dev/min-scale: "1"
-        autoscaling.knative.dev/max-scale: "3"
     spec:
       containers:
         - name: api

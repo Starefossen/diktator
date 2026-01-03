@@ -55,6 +55,13 @@ type Repository interface {
 	GetFamilyStats(familyID string) (*models.FamilyStats, error)
 	GetUserProgress(userID string) (*models.FamilyProgress, error)
 
+	// Family invitation operations
+	CreateFamilyInvitation(invitation *models.FamilyInvitation) error
+	GetPendingInvitationsByEmail(email string) ([]models.FamilyInvitation, error)
+	GetFamilyInvitations(familyID string) ([]models.FamilyInvitation, error)
+	AcceptInvitation(invitationID, userID string) error
+	DeleteInvitation(invitationID string) error
+
 	// Verification operations
 	VerifyFamilyMembership(userID, familyID string) error
 	VerifyParentPermission(userID, familyID string) error

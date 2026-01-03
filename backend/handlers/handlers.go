@@ -562,6 +562,100 @@ func GetResults(c *gin.Context) {
 	})
 }
 
+// Invitation handlers
+
+// @Summary		Get Pending Invitations
+// @Description	Get all pending invitations for the authenticated user's email
+// @Tags			invitations
+// @Accept			json
+// @Produce		json
+// @Success		200	{object}	models.APIResponse	"Pending invitations retrieved"
+// @Failure		500	{object}	models.APIResponse	"Failed to retrieve invitations"
+// @Security		BearerAuth
+// @Router			/api/invitations/pending [get]
+func GetPendingInvitations(c *gin.Context) {
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
+	// Get email from identity context
+	email, exists := c.Get("email")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "Email not found in authentication context",
+		})
+		return
+	}
+
+	invitations, err := serviceManager.DB.GetPendingInvitationsByEmail(email.(string))
+	if err != nil {
+		log.Printf("ERROR getting pending invitations: %v (email=%s)", err, email)
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to retrieve invitations",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Data: invitations,
+	})
+}
+
+// @Summary		Accept Invitation
+// @Description	Accept a pending family invitation and join the family
+// @Tags			invitations
+// @Accept			json
+// @Produce		json
+// @Param			invitationId	path		string				true	"Invitation ID"
+// @Success		200				{object}	models.APIResponse	"Invitation accepted successfully"
+// @Failure		400				{object}	models.APIResponse	"Invalid invitation ID"
+// @Failure		404				{object}	models.APIResponse	"Invitation not found"
+// @Failure		500				{object}	models.APIResponse	"Failed to accept invitation"
+// @Security		BearerAuth
+// @Router			/api/invitations/{invitationId}/accept [post]
+func AcceptInvitation(c *gin.Context) {
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
+	invitationID := c.Param("invitationId")
+	if invitationID == "" {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Invitation ID required",
+		})
+		return
+	}
+
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "User authentication required",
+		})
+		return
+	}
+
+	err := serviceManager.DB.AcceptInvitation(invitationID, userID.(string))
+	if err != nil {
+		log.Printf("ERROR accepting invitation: %v (id=%s, user=%s)", err, invitationID, userID)
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to accept invitation: " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Message: "Invitation accepted successfully",
+	})
+}
+
 // Family management handlers
 
 // @Summary		Get Family Information
@@ -764,21 +858,20 @@ func GetFamilyProgress(c *gin.Context) {
 	})
 }
 
-// @Summary		Add Child to Family
-// @Description	Add an existing child user to the family (parent only)
-// @Description	This assumes the child already has an account in Zitadel.
-// @Description	The child will be linked to the family when they first log in.
-// @Tags			children
+// @Summary		Add Family Member
+// @Description	Add a parent or child to the family. For parents, creates an invitation.
+// @Description	For children, creates a pending account linked when they log in.
+// @Tags			families
 // @Accept			json
 // @Produce		json
-// @Param			request	body		models.CreateChildAccountRequest	true	"Child account creation request"
-// @Success		201		{object}	models.APIResponse					"Child added to family successfully"
-// @Failure		400		{object}	models.APIResponse					"Invalid request data"
-// @Failure		403		{object}	models.APIResponse					"Parent role required"
-// @Failure		500		{object}	models.APIResponse					"Service unavailable or failed to add child"
+// @Param			request	body		models.AddFamilyMemberRequest	true	"Family member details"
+// @Success		201		{object}	models.APIResponse				"Member added or invited successfully"
+// @Failure		400		{object}	models.APIResponse				"Invalid request data"
+// @Failure		403		{object}	models.APIResponse				"Parent role required"
+// @Failure		500		{object}	models.APIResponse				"Service unavailable or failed to add member"
 // @Security		BearerAuth
-// @Router			/api/families/children [post]
-func CreateChildAccount(c *gin.Context) {
+// @Router			/api/families/members [post]
+func AddFamilyMember(c *gin.Context) {
 	serviceManager := GetServiceManager(c)
 	if serviceManager == nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
@@ -787,7 +880,7 @@ func CreateChildAccount(c *gin.Context) {
 		return
 	}
 
-	var req models.CreateChildAccountRequest
+	var req models.AddFamilyMemberRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, models.APIResponse{
 			Error: "Invalid request data: " + err.Error(),
@@ -797,6 +890,37 @@ func CreateChildAccount(c *gin.Context) {
 
 	userID, _ := c.Get("userID")
 	familyID, _ := c.Get("validatedFamilyID")
+
+	// Handle parent invitation vs child creation based on role
+	if req.Role == "parent" {
+		// Create invitation for parent
+		invitation := &models.FamilyInvitation{
+			ID:        uuid.New().String(),
+			FamilyID:  familyID.(string),
+			Email:     req.Email,
+			Role:      "parent",
+			InvitedBy: userID.(string),
+			Status:    "pending",
+			CreatedAt: time.Now(),
+			ExpiresAt: nil, // Non-expiring
+		}
+
+		if err := serviceManager.DB.CreateFamilyInvitation(invitation); err != nil {
+			log.Printf("ERROR creating parent invitation: %v (email=%s, family=%s)", err, req.Email, familyID)
+			c.JSON(http.StatusInternalServerError, models.APIResponse{
+				Error: "Failed to invite parent: " + err.Error(),
+			})
+			return
+		}
+
+		c.JSON(http.StatusCreated, models.APIResponse{
+			Data:    invitation,
+			Message: "Parent invitation sent",
+		})
+		return
+	}
+
+	// Handle child creation (role == "child")
 
 	// TODO: IMPLEMENT PROPER ZITADEL INTEGRATION
 	// ==========================================
@@ -900,6 +1024,142 @@ func CreateChildAccount(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, models.APIResponse{
 		Data: child,
+	})
+}
+
+// @Summary		Get Family Invitations
+// @Description	Get all invitations for the family (parent only)
+// @Tags			families
+// @Accept			json
+// @Produce		json
+// @Success		200		{object}	models.APIResponse	"Family invitations retrieved successfully"
+// @Failure		500		{object}	models.APIResponse	"Failed to retrieve invitations"
+// @Security		BearerAuth
+// @Router			/api/families/invitations [get]
+func GetFamilyInvitations(c *gin.Context) {
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
+	familyID, _ := c.Get("validatedFamilyID")
+
+	invitations, err := serviceManager.DB.GetFamilyInvitations(familyID.(string))
+	if err != nil {
+		log.Printf("ERROR getting family invitations: %v (family=%s)", err, familyID)
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to retrieve invitations",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Data: invitations,
+	})
+}
+
+// @Summary		Delete Family Invitation
+// @Description	Cancel/delete a pending invitation (parent only)
+// @Tags			families
+// @Accept			json
+// @Produce		json
+// @Param			invitationId	path		string				true	"Invitation ID"
+// @Success		200				{object}	models.APIResponse	"Invitation deleted successfully"
+// @Failure		404				{object}	models.APIResponse	"Invitation not found"
+// @Failure		500				{object}	models.APIResponse	"Failed to delete invitation"
+// @Security		BearerAuth
+// @Router			/api/families/invitations/{invitationId} [delete]
+func DeleteFamilyInvitation(c *gin.Context) {
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
+	invitationID := c.Param("invitationId")
+	if invitationID == "" {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Invitation ID required",
+		})
+		return
+	}
+
+	if err := serviceManager.DB.DeleteInvitation(invitationID); err != nil {
+		log.Printf("ERROR deleting invitation: %v (id=%s)", err, invitationID)
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to delete invitation",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Message: "Invitation deleted successfully",
+	})
+}
+
+// @Summary		Remove Family Member
+// @Description	Remove a parent or child from the family (parent only, cannot remove created_by parent)
+// @Tags			families
+// @Accept			json
+// @Produce		json
+// @Param			userId	path		string				true	"User ID"
+// @Success		200		{object}	models.APIResponse	"Member removed successfully"
+// @Failure		400		{object}	models.APIResponse	"Invalid request or cannot remove creator"
+// @Failure		404		{object}	models.APIResponse	"Member not found"
+// @Failure		500		{object}	models.APIResponse	"Failed to remove member"
+// @Security		BearerAuth
+// @Router			/api/families/members/{userId} [delete]
+func RemoveFamilyMember(c *gin.Context) {
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
+	userIDToRemove := c.Param("userId")
+	if userIDToRemove == "" {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "User ID required",
+		})
+		return
+	}
+
+	familyID, _ := c.Get("validatedFamilyID")
+
+	// Get family to check created_by
+	family, err := serviceManager.DB.GetFamily(familyID.(string))
+	if err != nil {
+		log.Printf("ERROR getting family: %v (family=%s)", err, familyID)
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to retrieve family",
+		})
+		return
+	}
+
+	// Prevent removal of created_by parent
+	if userIDToRemove == family.CreatedBy {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Cannot remove the family creator",
+		})
+		return
+	}
+
+	// TODO: Implement actual member removal
+	// This should:
+	// 1. Remove from family_members table
+	// 2. Set user's family_id to NULL
+	// 3. For children, also delete child account
+	// 4. Handle cleanup of user's data (tests, results, etc.)
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Message: "Member removed successfully (not yet implemented)",
 	})
 }
 
@@ -1151,6 +1411,26 @@ func CreateUser(c *gin.Context) {
 	if email == "" {
 		c.JSON(http.StatusBadRequest, models.APIResponse{
 			Error: "Email is required",
+		})
+		return
+	}
+
+	// Check for pending invitations before creating new family
+	pendingInvitations, err := serviceManager.DB.GetPendingInvitationsByEmail(email)
+	if err != nil {
+		log.Printf("ERROR checking pending invitations: %v", err)
+		// Continue with registration even if invitation check fails
+		pendingInvitations = nil
+	}
+
+	// If there are pending invitations, return them to the user
+	if len(pendingInvitations) > 0 {
+		c.JSON(http.StatusOK, models.APIResponse{
+			Data: map[string]interface{}{
+				"pendingInvitations": pendingInvitations,
+				"requiresChoice":     true,
+			},
+			Message: "You have pending family invitations. Please accept an invitation or create a new family.",
 		})
 		return
 	}

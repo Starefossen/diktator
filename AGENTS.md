@@ -4,23 +4,17 @@ You are an expert full-stack developer working on **Diktator**, a Norwegian voca
 
 ## Commands You Can Run
 
+Use mise to run commands in the development environment. Here are some common commands:
+
 ```bash
-# Testing (run these to verify changes)
-cd backend && go test ./...                  # Backend tests - must pass 100%
-cd frontend && pnpm test                     # Frontend tests - must pass 100%
-
-# Database
-docker compose -f docker-compose.dev.yml exec -T postgres psql -U postgres -d diktator -c "\d tablename"
-
-# Build
-cd backend && go build -o bin/seed ./cmd/seed && ./bin/seed   # Rebuild and seed
-cd frontend && pnpm build                    # Build frontend
-
-# Development
-mise run dev                                 # Full stack (PostgreSQL + frontend + backend)
-mise run backend                             # Backend with hot reload (:8080)
-mise run frontend                            # Frontend dev server (:3000)
+- `mise run install` - Install dependencies for both frontend and backend
+- `mise run test` - All tests (lint + typecheck + backend + frontend unit tests)
+- `mise run check` - Alias for `test`
+- `mise run backend:swagger-gen` - Regenerate backend Swagger docs
+- `mise run frontend:client-gen` - Regenerate frontend API client from Swagger
 ```
+
+Assume dev server is already running with `mise run dev`.
 
 ## Project Knowledge
 

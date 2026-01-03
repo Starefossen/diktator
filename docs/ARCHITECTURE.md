@@ -9,44 +9,53 @@ Diktator helps children learn vocabulary through audio-based spelling tests. Par
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │    Frontend     │────▶│    Backend      │────▶│   PostgreSQL    │
-│    (Next.js)    │     │    (Go/Gin)     │     │                 │
+│  (Next.js/SSG)  │     │    (Go/Gin)     │     │   (Cloud SQL)   │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
-                               │
-                               ▼
-                        ┌─────────────────┐
-                        │  Cloud Storage  │
-                        │  + TTS API      │
-                        └─────────────────┘
+         │                      │
+         │                      ▼
+         │               ┌─────────────────┐
+         │               │   TTS API       │
+         │               │   (on-demand)   │
+         │               └─────────────────┘
+         ▼
+  ┌─────────────────┐
+  │  OIDC Provider  │
+  │   (Zitadel)     │
+  └─────────────────┘
 ```
 
-| Component | Technology           | Hosting             | Purpose                       |
-| --------- | -------------------- | ------------------- | ----------------------------- |
-| Frontend  | Next.js + TypeScript | Cloud Storage + CDN | User interface                |
-| Backend   | Go + Gin             | Cloud Run           | API, business logic           |
-| Database  | PostgreSQL           | Cloud SQL           | User data, word sets, results |
-| Storage   | Cloud Storage        | GCS                 | Audio files                   |
-| Audio     | Text-to-Speech API   | GCP                 | Generate word pronunciations  |
-| Auth      | OIDC                 | Zitadel             | User authentication           |
+| Component | Technology           | Hosting   | Purpose                             |
+| --------- | -------------------- | --------- | ----------------------------------- |
+| Frontend  | Next.js + TypeScript | Knative   | Static UI served as container       |
+| Backend   | Go + Gin             | Knative   | API, business logic, TTS generation |
+| Database  | PostgreSQL           | Cloud SQL | User data, word sets, results       |
+| TTS       | Cloud TTS API        | GCP (JIT) | Generate audio on-demand            |
+| Auth      | OIDC (Zitadel)       | External  | User authentication                 |
 
 ## Data Model
 
 ### Core Entities
 
 ```
-Family (1) ─────────┬──────── (*) User
-                    │              │
-                    │              │ role: parent | child
-                    │              │
-                    └──── (*) WordSet ──── (*) Word
+Family (1) ──────┬──────── (*) FamilyMember ──────── (1) User
+                 │            (junction table)           │
+                 │                                       │ role: parent | child
+                 │                                       │
+                 ├──────── (*) FamilyInvitation          └──── (*) TestResult
+                 │            (pending joins)                       │
+                 │                                                  └── (*) WordAnswer
+                 └──────── (*) WordSet ──── (*) Word
                                               │
-                                              └── audio, translations
-
-User (1) ──── (*) TestResult ──── (*) WordAnswer
+                                              └── translations (no stored audio)
 ```
 
-**Family**: Groups users together. Word sets and data are family-scoped.
+**Family**: Groups users together via the `family_members` junction table. A family can have multiple parents with equal permissions and any number of children. Word sets and data are family-scoped. Each family has a `created_by` field tracking the original parent, who cannot be removed.
 
-**User**: Either a parent (can manage family, create content) or child (can take tests, view own progress).
+**FamilyMember**: Junction table linking users to families with their role (parent/child) and join date. Enables multi-parent families while maintaining role-based access control.
+
+**User**: Account authenticated via OIDC. Role (parent/child) determines permissions. Users belong to one family; their `family_id` references the family they're currently in.
+
+**FamilyInvitation**: Pending invitation to join a family as a parent or child. Invitations are matched by email address and accepted when the user registers or logs in. Invitations do not expire.
 
 **WordSet**: A collection of words for testing. Has a language, optional translations, and test configuration.
 
@@ -75,20 +84,38 @@ User ──▶ OIDC Provider ──▶ JWT Token ──▶ Backend validates ─
 
 ### Role-Based Access
 
-| Resource              | Parent | Child |
-| --------------------- | ------ | ----- |
-| Create/edit word sets | ✅      | ❌     |
-| Create child accounts | ✅      | ❌     |
-| View family progress  | ✅      | ❌     |
-| Take tests            | ✅      | ✅     |
-| View own results      | ✅      | ✅     |
+| Resource                | Parent | Child |
+| ----------------------- | ------ | ----- |
+| Create/edit word sets   | ✅      | ❌     |
+| Invite parents/children | ✅      | ❌     |
+| Remove family members   | ✅*     | ❌     |
+| View family progress    | ✅      | ❌     |
+| Take tests              | ✅      | ✅     |
+| View own results        | ✅      | ✅     |
+
+_* Parents cannot remove the `created_by` parent_
+
+### Multi-Parent Model
+
+Families support multiple parent accounts with equal permissions. Parents can:
+- Invite additional parents by email address
+- Manage all family members (except the original creator)
+- Create and edit word sets
+- View progress for all family members
+
+**Invitation Flow:**
+1. Existing parent enters email address of new parent
+2. System creates pending `FamilyInvitation` record
+3. When invited user logs in (or registers), they see pending invitation
+4. User accepts invitation and joins family as parent
+5. User can only be member of one family (accepting new invitation leaves current family)
 
 ## Key Design Decisions
 
-### Why Static Frontend?
-- Simple, cheap hosting on Cloud Storage
-- Global CDN for fast loading
-- No server-side rendering needed for this use case
+### Why Knative?
+- Scale-to-zero for cost efficiency
+- Standard Kubernetes deployment model
+- Container-based, portable across cloud providers
 
 ### Why Go Backend?
 - Fast, low memory footprint ideal for Cloud Run
@@ -114,13 +141,13 @@ User ──▶ OIDC Provider ──▶ JWT Token ──▶ Backend validates ─
 
 ## Infrastructure
 
-Managed via Terraform in `/terraform`. Key resources:
+Managed via Terraform in `/terraform`. Deployed as containers to Knative:
 
-- Cloud Run service (backend)
-- Cloud Storage buckets (frontend, audio)
-- Cloud SQL instance (PostgreSQL)
-- Load balancer with managed SSL
-- IAM service accounts
+- **Knative Services**: Frontend (Nginx + static files), Backend (Go binary)
+- **Cloud SQL**: PostgreSQL instance with automated backups
+- **Networking**: Load balancer with managed SSL certificates
+- **IAM**: Service accounts for Cloud SQL and TTS API access
+- **TTS**: Cloud Text-to-Speech API called on-demand (no pre-generated storage)
 
 ## For More Information
 

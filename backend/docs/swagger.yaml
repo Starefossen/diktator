@@ -8,6 +8,25 @@ definitions:
       message:
         type: string
     type: object
+  models.AddFamilyMemberRequest:
+    properties:
+      displayName:
+        type: string
+      email:
+        type: string
+      familyId:
+        type: string
+      role:
+        enum:
+        - parent
+        - child
+        type: string
+    required:
+    - displayName
+    - email
+    - familyId
+    - role
+    type: object
   models.ChildAccount:
     properties:
       createdAt:
@@ -31,19 +50,6 @@ definitions:
       role:
         description: Always "child"
         type: string
-    type: object
-  models.CreateChildAccountRequest:
-    properties:
-      displayName:
-        type: string
-      email:
-        type: string
-      familyId:
-        type: string
-    required:
-    - displayName
-    - email
-    - familyId
     type: object
   models.CreateWordSetRequest:
     properties:
@@ -234,44 +240,6 @@ paths:
       summary: Get Family Children
       tags:
       - families
-    post:
-      consumes:
-      - application/json
-      description: |-
-        Add an existing child user to the family (parent only)
-        This assumes the child already has an account in Zitadel.
-        The child will be linked to the family when they first log in.
-      parameters:
-      - description: Child account creation request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/models.CreateChildAccountRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Child added to family successfully
-          schema:
-            $ref: '#/definitions/models.APIResponse'
-        "400":
-          description: Invalid request data
-          schema:
-            $ref: '#/definitions/models.APIResponse'
-        "403":
-          description: Parent role required
-          schema:
-            $ref: '#/definitions/models.APIResponse'
-        "500":
-          description: Service unavailable or failed to add child
-          schema:
-            $ref: '#/definitions/models.APIResponse'
-      security:
-      - BearerAuth: []
-      summary: Add Child to Family
-      tags:
-      - children
   /api/families/children/{childId}:
     delete:
       consumes:
@@ -421,6 +389,132 @@ paths:
       summary: Get Child Results
       tags:
       - children
+  /api/families/invitations:
+    get:
+      consumes:
+      - application/json
+      description: Get all invitations for the family (parent only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Family invitations retrieved successfully
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to retrieve invitations
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Family Invitations
+      tags:
+      - families
+  /api/families/invitations/{invitationId}:
+    delete:
+      consumes:
+      - application/json
+      description: Cancel/delete a pending invitation (parent only)
+      parameters:
+      - description: Invitation ID
+        in: path
+        name: invitationId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Invitation deleted successfully
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "404":
+          description: Invitation not found
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to delete invitation
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete Family Invitation
+      tags:
+      - families
+  /api/families/members:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Add a parent or child to the family. For parents, creates an invitation.
+        For children, creates a pending account linked when they log in.
+      parameters:
+      - description: Family member details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.AddFamilyMemberRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Member added or invited successfully
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "400":
+          description: Invalid request data
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "403":
+          description: Parent role required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Service unavailable or failed to add member
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Add Family Member
+      tags:
+      - families
+  /api/families/members/{userId}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a parent or child from the family (parent only, cannot remove
+        created_by parent)
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Member removed successfully
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "400":
+          description: Invalid request or cannot remove creator
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "404":
+          description: Member not found
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to remove member
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Remove Family Member
+      tags:
+      - families
   /api/families/progress:
     get:
       consumes:
@@ -496,6 +590,62 @@ paths:
       summary: Get Family Statistics
       tags:
       - families
+  /api/invitations/{invitationId}/accept:
+    post:
+      consumes:
+      - application/json
+      description: Accept a pending family invitation and join the family
+      parameters:
+      - description: Invitation ID
+        in: path
+        name: invitationId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Invitation accepted successfully
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "400":
+          description: Invalid invitation ID
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "404":
+          description: Invitation not found
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to accept invitation
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Accept Invitation
+      tags:
+      - invitations
+  /api/invitations/pending:
+    get:
+      consumes:
+      - application/json
+      description: Get all pending invitations for the authenticated user's email
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Pending invitations retrieved
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to retrieve invitations
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Pending Invitations
+      tags:
+      - invitations
   /api/users:
     post:
       consumes:
@@ -511,6 +661,8 @@ paths:
             displayName:
               type: string
             email:
+              type: string
+            familyName:
               type: string
             role:
               type: string

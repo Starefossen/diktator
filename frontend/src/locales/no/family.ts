@@ -12,6 +12,33 @@ export const family = {
   // Navigation
   "family.back": "← Tilbake til Familie",
 
+  // Member Management
+  "family.member.create.title": "Legg til Familiemedlem",
+  "family.member.role": "Rolle",
+  "family.member.role.parent": "Forelder",
+  "family.member.role.child": "Barn",
+  "family.member.create.button": "Legg til Medlem",
+  "family.member.create.inviteSuccess": "Invitasjon til forelder sendt!",
+  "family.member.create.childSuccess": "Barn lagt til i familien!",
+  "family.member.create.error": "Kunne ikke legge til medlem. Prøv igjen.",
+  "family.member.remove.confirm": "Er du sikker på at du vil fjerne dette medlemmet fra familien?",
+  "family.member.remove.success": "Medlem fjernet",
+  "family.member.remove.error": "Kunne ikke fjerne medlem",
+  "family.member.remove.cannotRemoveCreator": "Kan ikke fjerne familieskaperen",
+
+  // Parents Section
+  "family.parents.title": "Foreldre",
+  "family.parents.creator": "Skaper",
+  "family.parents.joinedAt": "Ble med",
+
+  // Invitations
+  "family.invitation.title": "Ventende Invitasjoner",
+  "family.invitation.empty": "Ingen ventende invitasjoner",
+  "family.invitation.status.pending": "Venter",
+  "family.invitation.cancel": "Avbryt Invitasjon",
+  "family.invitation.cancelSuccess": "Invitasjon avbrutt",
+  "family.invitation.cancelError": "Kunne ikke avbryte invitasjon",
+
   // Child Account Management
   "family.child.create.title": "Legg til barn i familie",
   "family.child.create.cancel": "Avbryt",

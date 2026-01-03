@@ -8,7 +8,6 @@ All URIs are relative to *http://localhost:8080/api*
 |[**apiFamiliesChildrenChildIdProgressGet**](#apifamilieschildrenchildidprogressget) | **GET** /api/families/children/{childId}/progress | Get Child Progress|
 |[**apiFamiliesChildrenChildIdPut**](#apifamilieschildrenchildidput) | **PUT** /api/families/children/{childId} | Update Child Account|
 |[**apiFamiliesChildrenChildIdResultsGet**](#apifamilieschildrenchildidresultsget) | **GET** /api/families/children/{childId}/results | Get Child Results|
-|[**apiFamiliesChildrenPost**](#apifamilieschildrenpost) | **POST** /api/families/children | Add Child to Family|
 
 # **apiFamiliesChildrenChildIdDelete**
 > ModelsAPIResponse apiFamiliesChildrenChildIdDelete()
@@ -228,61 +227,6 @@ const { status, data } = await apiInstance.apiFamiliesChildrenChildIdResultsGet(
 |**401** | Parent access required |  -  |
 |**404** | Child not found |  -  |
 |**500** | Failed to retrieve child results |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-# **apiFamiliesChildrenPost**
-> ModelsAPIResponse apiFamiliesChildrenPost(request)
-
-Add an existing child user to the family (parent only) This assumes the child already has an account in Zitadel. The child will be linked to the family when they first log in.
-
-### Example
-
-```typescript
-import {
-    ChildrenApi,
-    Configuration,
-    ModelsCreateChildAccountRequest
-} from './api';
-
-const configuration = new Configuration();
-const apiInstance = new ChildrenApi(configuration);
-
-let request: ModelsCreateChildAccountRequest; //Child account creation request
-
-const { status, data } = await apiInstance.apiFamiliesChildrenPost(
-    request
-);
-```
-
-### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **request** | **ModelsCreateChildAccountRequest**| Child account creation request | |
-
-
-### Return type
-
-**ModelsAPIResponse**
-
-### Authorization
-
-[BearerAuth](../README.md#BearerAuth)
-
-### HTTP request headers
-
- - **Content-Type**: application/json
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**201** | Child added to family successfully |  -  |
-|**400** | Invalid request data |  -  |
-|**403** | Parent role required |  -  |
-|**500** | Service unavailable or failed to add child |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

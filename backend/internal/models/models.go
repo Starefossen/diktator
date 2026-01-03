@@ -160,14 +160,14 @@ type ChildAccount struct {
 
 // FamilyInvitation represents an invitation to join a family
 type FamilyInvitation struct {
-	ID        string    `json:"id"`
-	FamilyID  string    `json:"familyId"`
-	Email     string    `json:"email"`
-	Role      string    `json:"role"` // "child" or "parent"
-	InvitedBy string    `json:"invitedBy"`
-	Status    string    `json:"status"` // "pending", "accepted", "declined", "expired"
-	CreatedAt time.Time `json:"createdAt"`
-	ExpiresAt time.Time `json:"expiresAt"`
+	ID        string     `json:"id" db:"id"`
+	FamilyID  string     `json:"familyId" db:"family_id"`
+	Email     string     `json:"email" db:"email"`
+	Role      string     `json:"role" db:"role"` // "child" or "parent"
+	InvitedBy string     `json:"invitedBy" db:"invited_by"`
+	Status    string     `json:"status" db:"status"` // "pending", "accepted", "declined", "expired"
+	CreatedAt time.Time  `json:"createdAt" db:"created_at"`
+	ExpiresAt *time.Time `json:"expiresAt,omitempty" db:"expires_at"` // NULL for non-expiring invitations
 }
 
 // FamilyProgress represents progress tracking for family members
@@ -194,18 +194,15 @@ type FamilyStats struct {
 	LastActivity        time.Time `json:"lastActivity"`
 }
 
-// CreateChildAccountRequest represents a request to create a child account
-// This assumes the child already exists in the OIDC provider (Zitadel)
-// The child will be linked to this family when they first log in via OIDC
-type CreateChildAccountRequest struct {
+// AddFamilyMemberRequest represents a request to add a parent or child to a family
+// For children: creates pending user that links when they first log in via OIDC
+// For parents: creates invitation that user accepts on login/registration
+type AddFamilyMemberRequest struct {
 	Email       string `json:"email" binding:"required,email"`
 	DisplayName string `json:"displayName" binding:"required"`
+	Role        string `json:"role" binding:"required,oneof=parent child"`
 	FamilyID    string `json:"familyId" binding:"required"`
 }
 
-// InviteFamilyMemberRequest represents a request to invite someone to join a family
-type InviteFamilyMemberRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Role     string `json:"role" binding:"required,oneof=child parent"`
-	FamilyID string `json:"familyId" binding:"required"`
-}
+// CreateChildAccountRequest is deprecated, use AddFamilyMemberRequest instead
+type CreateChildAccountRequest = AddFamilyMemberRequest

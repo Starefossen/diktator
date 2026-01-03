@@ -46,6 +46,12 @@ export interface ApiUsersPostRequest {
      * @type {string}
      * @memberof ApiUsersPostRequest
      */
+    'familyName'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiUsersPostRequest
+     */
     'role'?: string;
 }
 /**
@@ -98,6 +104,45 @@ export interface ModelsAPIResponse {
      */
     'message'?: string;
 }
+/**
+ * 
+ * @export
+ * @interface ModelsAddFamilyMemberRequest
+ */
+export interface ModelsAddFamilyMemberRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelsAddFamilyMemberRequest
+     */
+    'displayName': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelsAddFamilyMemberRequest
+     */
+    'email': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelsAddFamilyMemberRequest
+     */
+    'familyId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelsAddFamilyMemberRequest
+     */
+    'role': ModelsAddFamilyMemberRequestRoleEnum;
+}
+
+export const ModelsAddFamilyMemberRequestRoleEnum = {
+    Parent: 'parent',
+    Child: 'child'
+} as const;
+
+export type ModelsAddFamilyMemberRequestRoleEnum = typeof ModelsAddFamilyMemberRequestRoleEnum[keyof typeof ModelsAddFamilyMemberRequestRoleEnum];
+
 /**
  * 
  * @export
@@ -158,31 +203,6 @@ export interface ModelsChildAccount {
      * @memberof ModelsChildAccount
      */
     'role'?: string;
-}
-/**
- * 
- * @export
- * @interface ModelsCreateChildAccountRequest
- */
-export interface ModelsCreateChildAccountRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsCreateChildAccountRequest
-     */
-    'displayName': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsCreateChildAccountRequest
-     */
-    'email': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsCreateChildAccountRequest
-     */
-    'familyId': string;
 }
 /**
  * 
@@ -588,45 +608,6 @@ export const ChildrenApiAxiosParamCreator = function (configuration?: Configurat
                 options: localVarRequestOptions,
             };
         },
-        /**
-         * Add an existing child user to the family (parent only) This assumes the child already has an account in Zitadel. The child will be linked to the family when they first log in.
-         * @summary Add Child to Family
-         * @param {ModelsCreateChildAccountRequest} request Child account creation request
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiFamiliesChildrenPost: async (request: ModelsCreateChildAccountRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'request' is not null or undefined
-            assertParamExists('apiFamiliesChildrenPost', 'request', request)
-            const localVarPath = `/api/families/children`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(request, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
     }
 };
 
@@ -690,19 +671,6 @@ export const ChildrenApiFp = function(configuration?: Configuration) {
             const localVarOperationServerBasePath = operationServerMap['ChildrenApi.apiFamiliesChildrenChildIdResultsGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
-        /**
-         * Add an existing child user to the family (parent only) This assumes the child already has an account in Zitadel. The child will be linked to the family when they first log in.
-         * @summary Add Child to Family
-         * @param {ModelsCreateChildAccountRequest} request Child account creation request
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiFamiliesChildrenPost(request: ModelsCreateChildAccountRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAPIResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiFamiliesChildrenPost(request, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['ChildrenApi.apiFamiliesChildrenPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
     }
 };
 
@@ -754,18 +722,57 @@ export const ChildrenApiFactory = function (configuration?: Configuration, baseP
         apiFamiliesChildrenChildIdResultsGet(childId: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
             return localVarFp.apiFamiliesChildrenChildIdResultsGet(childId, options).then((request) => request(axios, basePath));
         },
-        /**
-         * Add an existing child user to the family (parent only) This assumes the child already has an account in Zitadel. The child will be linked to the family when they first log in.
-         * @summary Add Child to Family
-         * @param {ModelsCreateChildAccountRequest} request Child account creation request
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiFamiliesChildrenPost(request: ModelsCreateChildAccountRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
-            return localVarFp.apiFamiliesChildrenPost(request, options).then((request) => request(axios, basePath));
-        },
     };
 };
+
+/**
+ * ChildrenApi - interface
+ * @export
+ * @interface ChildrenApi
+ */
+export interface ChildrenApiInterface {
+    /**
+     * Delete a child account (parent only)
+     * @summary Delete Child Account
+     * @param {string} childId Child ID
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ChildrenApiInterface
+     */
+    apiFamiliesChildrenChildIdDelete(childId: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Get progress data for a specific child
+     * @summary Get Child Progress
+     * @param {string} childId Child ID
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ChildrenApiInterface
+     */
+    apiFamiliesChildrenChildIdProgressGet(childId: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Update an existing child account (parent only)
+     * @summary Update Child Account
+     * @param {string} childId Child ID
+     * @param {ModelsChildAccount} request Updated child account data
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ChildrenApiInterface
+     */
+    apiFamiliesChildrenChildIdPut(childId: string, request: ModelsChildAccount, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Get test results for a specific child
+     * @summary Get Child Results
+     * @param {string} childId Child ID
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ChildrenApiInterface
+     */
+    apiFamiliesChildrenChildIdResultsGet(childId: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+}
 
 /**
  * ChildrenApi - object-oriented interface
@@ -773,7 +780,7 @@ export const ChildrenApiFactory = function (configuration?: Configuration, baseP
  * @class ChildrenApi
  * @extends {BaseAPI}
  */
-export class ChildrenApi extends BaseAPI {
+export class ChildrenApi extends BaseAPI implements ChildrenApiInterface {
     /**
      * Delete a child account (parent only)
      * @summary Delete Child Account
@@ -821,18 +828,6 @@ export class ChildrenApi extends BaseAPI {
      */
     public apiFamiliesChildrenChildIdResultsGet(childId: string, options?: RawAxiosRequestConfig) {
         return ChildrenApiFp(this.configuration).apiFamiliesChildrenChildIdResultsGet(childId, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Add an existing child user to the family (parent only) This assumes the child already has an account in Zitadel. The child will be linked to the family when they first log in.
-     * @summary Add Child to Family
-     * @param {ModelsCreateChildAccountRequest} request Child account creation request
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof ChildrenApi
-     */
-    public apiFamiliesChildrenPost(request: ModelsCreateChildAccountRequest, options?: RawAxiosRequestConfig) {
-        return ChildrenApiFp(this.configuration).apiFamiliesChildrenPost(request, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
@@ -893,6 +888,152 @@ export const FamiliesApiAxiosParamCreator = function (configuration?: Configurat
             }
 
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get all invitations for the family (parent only)
+         * @summary Get Family Invitations
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiFamiliesInvitationsGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/families/invitations`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Cancel/delete a pending invitation (parent only)
+         * @summary Delete Family Invitation
+         * @param {string} invitationId Invitation ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiFamiliesInvitationsInvitationIdDelete: async (invitationId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'invitationId' is not null or undefined
+            assertParamExists('apiFamiliesInvitationsInvitationIdDelete', 'invitationId', invitationId)
+            const localVarPath = `/api/families/invitations/{invitationId}`
+                .replace(`{${"invitationId"}}`, encodeURIComponent(String(invitationId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Add a parent or child to the family. For parents, creates an invitation. For children, creates a pending account linked when they log in.
+         * @summary Add Family Member
+         * @param {ModelsAddFamilyMemberRequest} request Family member details
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiFamiliesMembersPost: async (request: ModelsAddFamilyMemberRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'request' is not null or undefined
+            assertParamExists('apiFamiliesMembersPost', 'request', request)
+            const localVarPath = `/api/families/members`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(request, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Remove a parent or child from the family (parent only, cannot remove created_by parent)
+         * @summary Remove Family Member
+         * @param {string} userId User ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiFamiliesMembersUserIdDelete: async (userId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'userId' is not null or undefined
+            assertParamExists('apiFamiliesMembersUserIdDelete', 'userId', userId)
+            const localVarPath = `/api/families/members/{userId}`
+                .replace(`{${"userId"}}`, encodeURIComponent(String(userId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
@@ -1044,6 +1185,57 @@ export const FamiliesApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * Get all invitations for the family (parent only)
+         * @summary Get Family Invitations
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiFamiliesInvitationsGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAPIResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiFamiliesInvitationsGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['FamiliesApi.apiFamiliesInvitationsGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Cancel/delete a pending invitation (parent only)
+         * @summary Delete Family Invitation
+         * @param {string} invitationId Invitation ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiFamiliesInvitationsInvitationIdDelete(invitationId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAPIResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiFamiliesInvitationsInvitationIdDelete(invitationId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['FamiliesApi.apiFamiliesInvitationsInvitationIdDelete']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Add a parent or child to the family. For parents, creates an invitation. For children, creates a pending account linked when they log in.
+         * @summary Add Family Member
+         * @param {ModelsAddFamilyMemberRequest} request Family member details
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiFamiliesMembersPost(request: ModelsAddFamilyMemberRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAPIResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiFamiliesMembersPost(request, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['FamiliesApi.apiFamiliesMembersPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Remove a parent or child from the family (parent only, cannot remove created_by parent)
+         * @summary Remove Family Member
+         * @param {string} userId User ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiFamiliesMembersUserIdDelete(userId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAPIResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiFamiliesMembersUserIdDelete(userId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['FamiliesApi.apiFamiliesMembersUserIdDelete']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Get progress data for all family members
          * @summary Get Family Progress
          * @param {*} [options] Override http request option.
@@ -1108,6 +1300,45 @@ export const FamiliesApiFactory = function (configuration?: Configuration, baseP
             return localVarFp.apiFamiliesGet(options).then((request) => request(axios, basePath));
         },
         /**
+         * Get all invitations for the family (parent only)
+         * @summary Get Family Invitations
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiFamiliesInvitationsGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
+            return localVarFp.apiFamiliesInvitationsGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Cancel/delete a pending invitation (parent only)
+         * @summary Delete Family Invitation
+         * @param {string} invitationId Invitation ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiFamiliesInvitationsInvitationIdDelete(invitationId: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
+            return localVarFp.apiFamiliesInvitationsInvitationIdDelete(invitationId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Add a parent or child to the family. For parents, creates an invitation. For children, creates a pending account linked when they log in.
+         * @summary Add Family Member
+         * @param {ModelsAddFamilyMemberRequest} request Family member details
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiFamiliesMembersPost(request: ModelsAddFamilyMemberRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
+            return localVarFp.apiFamiliesMembersPost(request, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Remove a parent or child from the family (parent only, cannot remove created_by parent)
+         * @summary Remove Family Member
+         * @param {string} userId User ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiFamiliesMembersUserIdDelete(userId: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
+            return localVarFp.apiFamiliesMembersUserIdDelete(userId, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Get progress data for all family members
          * @summary Get Family Progress
          * @param {*} [options] Override http request option.
@@ -1138,12 +1369,104 @@ export const FamiliesApiFactory = function (configuration?: Configuration, baseP
 };
 
 /**
+ * FamiliesApi - interface
+ * @export
+ * @interface FamiliesApi
+ */
+export interface FamiliesApiInterface {
+    /**
+     * Get all children in the authenticated user\'s family
+     * @summary Get Family Children
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FamiliesApiInterface
+     */
+    apiFamiliesChildrenGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Get information about the user\'s family
+     * @summary Get Family Information
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FamiliesApiInterface
+     */
+    apiFamiliesGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Get all invitations for the family (parent only)
+     * @summary Get Family Invitations
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FamiliesApiInterface
+     */
+    apiFamiliesInvitationsGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Cancel/delete a pending invitation (parent only)
+     * @summary Delete Family Invitation
+     * @param {string} invitationId Invitation ID
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FamiliesApiInterface
+     */
+    apiFamiliesInvitationsInvitationIdDelete(invitationId: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Add a parent or child to the family. For parents, creates an invitation. For children, creates a pending account linked when they log in.
+     * @summary Add Family Member
+     * @param {ModelsAddFamilyMemberRequest} request Family member details
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FamiliesApiInterface
+     */
+    apiFamiliesMembersPost(request: ModelsAddFamilyMemberRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Remove a parent or child from the family (parent only, cannot remove created_by parent)
+     * @summary Remove Family Member
+     * @param {string} userId User ID
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FamiliesApiInterface
+     */
+    apiFamiliesMembersUserIdDelete(userId: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Get progress data for all family members
+     * @summary Get Family Progress
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FamiliesApiInterface
+     */
+    apiFamiliesProgressGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Get test results for all members of the authenticated user\'s family
+     * @summary Get Family Results
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FamiliesApiInterface
+     */
+    apiFamiliesResultsGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Get statistical data for the authenticated user\'s family
+     * @summary Get Family Statistics
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FamiliesApiInterface
+     */
+    apiFamiliesStatsGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+}
+
+/**
  * FamiliesApi - object-oriented interface
  * @export
  * @class FamiliesApi
  * @extends {BaseAPI}
  */
-export class FamiliesApi extends BaseAPI {
+export class FamiliesApi extends BaseAPI implements FamiliesApiInterface {
     /**
      * Get all children in the authenticated user\'s family
      * @summary Get Family Children
@@ -1164,6 +1487,53 @@ export class FamiliesApi extends BaseAPI {
      */
     public apiFamiliesGet(options?: RawAxiosRequestConfig) {
         return FamiliesApiFp(this.configuration).apiFamiliesGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get all invitations for the family (parent only)
+     * @summary Get Family Invitations
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FamiliesApi
+     */
+    public apiFamiliesInvitationsGet(options?: RawAxiosRequestConfig) {
+        return FamiliesApiFp(this.configuration).apiFamiliesInvitationsGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Cancel/delete a pending invitation (parent only)
+     * @summary Delete Family Invitation
+     * @param {string} invitationId Invitation ID
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FamiliesApi
+     */
+    public apiFamiliesInvitationsInvitationIdDelete(invitationId: string, options?: RawAxiosRequestConfig) {
+        return FamiliesApiFp(this.configuration).apiFamiliesInvitationsInvitationIdDelete(invitationId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Add a parent or child to the family. For parents, creates an invitation. For children, creates a pending account linked when they log in.
+     * @summary Add Family Member
+     * @param {ModelsAddFamilyMemberRequest} request Family member details
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FamiliesApi
+     */
+    public apiFamiliesMembersPost(request: ModelsAddFamilyMemberRequest, options?: RawAxiosRequestConfig) {
+        return FamiliesApiFp(this.configuration).apiFamiliesMembersPost(request, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Remove a parent or child from the family (parent only, cannot remove created_by parent)
+     * @summary Remove Family Member
+     * @param {string} userId User ID
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FamiliesApi
+     */
+    public apiFamiliesMembersUserIdDelete(userId: string, options?: RawAxiosRequestConfig) {
+        return FamiliesApiFp(this.configuration).apiFamiliesMembersUserIdDelete(userId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -1283,12 +1653,29 @@ export const HealthApiFactory = function (configuration?: Configuration, basePat
 };
 
 /**
+ * HealthApi - interface
+ * @export
+ * @interface HealthApi
+ */
+export interface HealthApiInterface {
+    /**
+     * Returns the health status of the API
+     * @summary Health Check
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof HealthApiInterface
+     */
+    healthGet(options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: any; }>;
+
+}
+
+/**
  * HealthApi - object-oriented interface
  * @export
  * @class HealthApi
  * @extends {BaseAPI}
  */
-export class HealthApi extends BaseAPI {
+export class HealthApi extends BaseAPI implements HealthApiInterface {
     /**
      * Returns the health status of the API
      * @summary Health Check
@@ -1298,6 +1685,209 @@ export class HealthApi extends BaseAPI {
      */
     public healthGet(options?: RawAxiosRequestConfig) {
         return HealthApiFp(this.configuration).healthGet(options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * InvitationsApi - axios parameter creator
+ * @export
+ */
+export const InvitationsApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Accept a pending family invitation and join the family
+         * @summary Accept Invitation
+         * @param {string} invitationId Invitation ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiInvitationsInvitationIdAcceptPost: async (invitationId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'invitationId' is not null or undefined
+            assertParamExists('apiInvitationsInvitationIdAcceptPost', 'invitationId', invitationId)
+            const localVarPath = `/api/invitations/{invitationId}/accept`
+                .replace(`{${"invitationId"}}`, encodeURIComponent(String(invitationId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get all pending invitations for the authenticated user\'s email
+         * @summary Get Pending Invitations
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiInvitationsPendingGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/invitations/pending`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * InvitationsApi - functional programming interface
+ * @export
+ */
+export const InvitationsApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = InvitationsApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Accept a pending family invitation and join the family
+         * @summary Accept Invitation
+         * @param {string} invitationId Invitation ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiInvitationsInvitationIdAcceptPost(invitationId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAPIResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiInvitationsInvitationIdAcceptPost(invitationId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['InvitationsApi.apiInvitationsInvitationIdAcceptPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Get all pending invitations for the authenticated user\'s email
+         * @summary Get Pending Invitations
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiInvitationsPendingGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAPIResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiInvitationsPendingGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['InvitationsApi.apiInvitationsPendingGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * InvitationsApi - factory interface
+ * @export
+ */
+export const InvitationsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = InvitationsApiFp(configuration)
+    return {
+        /**
+         * Accept a pending family invitation and join the family
+         * @summary Accept Invitation
+         * @param {string} invitationId Invitation ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiInvitationsInvitationIdAcceptPost(invitationId: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
+            return localVarFp.apiInvitationsInvitationIdAcceptPost(invitationId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Get all pending invitations for the authenticated user\'s email
+         * @summary Get Pending Invitations
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiInvitationsPendingGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
+            return localVarFp.apiInvitationsPendingGet(options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * InvitationsApi - interface
+ * @export
+ * @interface InvitationsApi
+ */
+export interface InvitationsApiInterface {
+    /**
+     * Accept a pending family invitation and join the family
+     * @summary Accept Invitation
+     * @param {string} invitationId Invitation ID
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof InvitationsApiInterface
+     */
+    apiInvitationsInvitationIdAcceptPost(invitationId: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Get all pending invitations for the authenticated user\'s email
+     * @summary Get Pending Invitations
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof InvitationsApiInterface
+     */
+    apiInvitationsPendingGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+}
+
+/**
+ * InvitationsApi - object-oriented interface
+ * @export
+ * @class InvitationsApi
+ * @extends {BaseAPI}
+ */
+export class InvitationsApi extends BaseAPI implements InvitationsApiInterface {
+    /**
+     * Accept a pending family invitation and join the family
+     * @summary Accept Invitation
+     * @param {string} invitationId Invitation ID
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof InvitationsApi
+     */
+    public apiInvitationsInvitationIdAcceptPost(invitationId: string, options?: RawAxiosRequestConfig) {
+        return InvitationsApiFp(this.configuration).apiInvitationsInvitationIdAcceptPost(invitationId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get all pending invitations for the authenticated user\'s email
+     * @summary Get Pending Invitations
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof InvitationsApi
+     */
+    public apiInvitationsPendingGet(options?: RawAxiosRequestConfig) {
+        return InvitationsApiFp(this.configuration).apiInvitationsPendingGet(options).then((request) => request(this.axios, this.basePath));
     }
 }
 
@@ -1565,12 +2155,58 @@ export const UsersApiFactory = function (configuration?: Configuration, basePath
 };
 
 /**
+ * UsersApi - interface
+ * @export
+ * @interface UsersApi
+ */
+export interface UsersApiInterface {
+    /**
+     * Create a new user account after OIDC authentication
+     * @summary Create User
+     * @param {ApiUsersPostRequest} request User creation request
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof UsersApiInterface
+     */
+    apiUsersPost(request: ApiUsersPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Get the current user\'s profile information
+     * @summary Get User Profile
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof UsersApiInterface
+     */
+    apiUsersProfileGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Get test results for the authenticated user
+     * @summary Get Test Results
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof UsersApiInterface
+     */
+    apiUsersResultsGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Save a test result for the authenticated user
+     * @summary Save Test Result
+     * @param {ModelsSaveResultRequest} request Test result data
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof UsersApiInterface
+     */
+    apiUsersResultsPost(request: ModelsSaveResultRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+}
+
+/**
  * UsersApi - object-oriented interface
  * @export
  * @class UsersApi
  * @extends {BaseAPI}
  */
-export class UsersApi extends BaseAPI {
+export class UsersApi extends BaseAPI implements UsersApiInterface {
     /**
      * Create a new user account after OIDC authentication
      * @summary Create User
@@ -2018,12 +2654,81 @@ export const WordsetsApiFactory = function (configuration?: Configuration, baseP
 };
 
 /**
+ * WordsetsApi - interface
+ * @export
+ * @interface WordsetsApi
+ */
+export interface WordsetsApiInterface {
+    /**
+     * Get word sets for the authenticated user\'s family
+     * @summary Get Word Sets
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WordsetsApiInterface
+     */
+    apiWordsetsGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Delete a word set by ID and all associated audio files from storage
+     * @summary Delete Word Set
+     * @param {string} id Word Set ID
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WordsetsApiInterface
+     */
+    apiWordsetsIdDelete(id: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Update an existing word set name, words, and configuration. Audio will be regenerated automatically for new/changed words.
+     * @summary Update Word Set
+     * @param {string} id Word Set ID
+     * @param {ModelsUpdateWordSetRequest} request Word set update request
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WordsetsApiInterface
+     */
+    apiWordsetsIdPut(id: string, request: ModelsUpdateWordSetRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Stream TTS audio for a specific word in a word set (generates on-demand, cached by browser)
+     * @summary Stream Audio for Word
+     * @param {string} id Word Set ID
+     * @param {string} word Word to generate audio for
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WordsetsApiInterface
+     */
+    apiWordsetsIdWordsWordAudioGet(id: string, word: string, options?: RawAxiosRequestConfig): AxiosPromise<File>;
+
+    /**
+     * Create a new word set for practice
+     * @summary Create Word Set
+     * @param {ModelsCreateWordSetRequest} request Word set creation request
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WordsetsApiInterface
+     */
+    apiWordsetsPost(request: ModelsCreateWordSetRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Get a list of available Text-to-Speech voices for a specific language
+     * @summary List available TTS voices
+     * @param {string} [language] Language code (e.g., \&#39;en\&#39;, \&#39;nb-NO\&#39;)
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WordsetsApiInterface
+     */
+    apiWordsetsVoicesGet(language?: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiWordsetsVoicesGet200Response>;
+
+}
+
+/**
  * WordsetsApi - object-oriented interface
  * @export
  * @class WordsetsApi
  * @extends {BaseAPI}
  */
-export class WordsetsApi extends BaseAPI {
+export class WordsetsApi extends BaseAPI implements WordsetsApiInterface {
     /**
      * Get word sets for the authenticated user\'s family
      * @summary Get Word Sets

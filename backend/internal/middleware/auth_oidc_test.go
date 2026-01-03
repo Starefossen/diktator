@@ -66,6 +66,20 @@ func (stubRepo) GetFamilyStats(familyID string) (*models.FamilyStats, error) { r
 func (stubRepo) GetUserProgress(userID string) (*models.FamilyProgress, error) {
 	return nil, nil
 }
+
+// Family invitation operations
+func (stubRepo) CreateFamilyInvitation(invitation *models.FamilyInvitation) error {
+	return nil
+}
+func (stubRepo) GetPendingInvitationsByEmail(email string) ([]models.FamilyInvitation, error) {
+	return nil, nil
+}
+func (stubRepo) GetFamilyInvitations(familyID string) ([]models.FamilyInvitation, error) {
+	return nil, nil
+}
+func (stubRepo) AcceptInvitation(invitationID, userID string) error { return nil }
+func (stubRepo) DeleteInvitation(invitationID string) error          { return nil }
+
 func (stubRepo) VerifyFamilyMembership(userID, familyID string) error { return nil }
 func (stubRepo) VerifyParentPermission(userID, familyID string) error { return nil }
 func (stubRepo) VerifyChildOwnership(parentID, childID string) error  { return nil }

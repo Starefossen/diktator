@@ -30,4 +30,14 @@ export const auth = {
   "auth.register.redirecting": "Omdirigerer...",
   "auth.register.signinPrompt": "Logg inn for å fortsette",
   "auth.register.signinButton": "Logg inn med OIDC",
+
+  // Invitation acceptance
+  "auth.register.invitation.title": "Du har blitt invitert!",
+  "auth.register.invitation.subtitle": "Du har ventende familieinvitasjoner",
+  "auth.register.invitation.accept": "Godta og Bli Med",
+  "auth.register.invitation.createNew": "Opprett Ny Familie I Stedet",
+  "auth.register.invitation.invitedBy": "Invitert av",
+  "auth.register.invitation.asRole": "som",
+  "auth.register.invitation.accepting": "Godtar...",
+  "auth.register.invitation.error": "Kunne ikke godta invitasjon. Prøv igjen.",
 };

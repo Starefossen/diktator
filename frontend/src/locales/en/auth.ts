@@ -30,4 +30,14 @@ export const auth = {
   "auth.register.redirecting": "Redirecting...",
   "auth.register.signinPrompt": "Sign in to continue",
   "auth.register.signinButton": "Sign in with OIDC",
+
+  // Invitation acceptance
+  "auth.register.invitation.title": "You've been invited!",
+  "auth.register.invitation.subtitle": "You have pending family invitations",
+  "auth.register.invitation.accept": "Accept and Join",
+  "auth.register.invitation.createNew": "Create New Family Instead",
+  "auth.register.invitation.invitedBy": "Invited by",
+  "auth.register.invitation.asRole": "as",
+  "auth.register.invitation.accepting": "Accepting...",
+  "auth.register.invitation.error": "Failed to accept invitation. Please try again.",
 };
