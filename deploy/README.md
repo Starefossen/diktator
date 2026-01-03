@@ -10,7 +10,6 @@ This directory contains homelab-specific deployment configuration for Diktator.
 │   ├── knative-service-backend.yaml
 │   ├── knative-service-frontend.yaml
 │   ├── postgres-cluster.yaml
-│   ├── migration-job.yaml
 │   └── networkpolicy.yaml
 ├── mise.toml                        # All tasks (dev + homelab)
 └── HOMELAB.md                       # Deployment documentation
@@ -23,12 +22,14 @@ All tasks are in **`mise.toml`** (in the submodule root):
 - **Development tasks** - For local development with Docker Compose
   - `dev`, `frontend:dev`, `backend:dev`
   - `test`, `lint`, `format`
-  - `db:start`, `db:migrate`, etc.
+  - `db:start`, `db:shell`, etc.
 
 - **Homelab deployment tasks** - Prefixed with `homelab:`
   - `homelab:build`, `homelab:deploy`, `homelab:full-deploy`
-  - `homelab:db-create`, `homelab:db-migrate`
+  - `homelab:db-create`
   - `homelab:status`, `homelab:logs-*`, `homelab:url-*`
+
+**Note:** Database migrations run automatically on backend startup.
 
 ## Environment Variables
 
