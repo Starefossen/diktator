@@ -493,6 +493,14 @@ func AssignWordSetToUser(c *gin.Context) {
 
 	err = sm.DB.AssignWordSetToUser(wordSetID, userID, assignedBy.(string))
 	if err != nil {
+		// Check for specific error types to return appropriate status codes
+		errMsg := err.Error()
+		if errMsg == "user not found" || errMsg == "only children can be assigned to wordsets" {
+			c.JSON(http.StatusBadRequest, models.APIResponse{
+				Error: errMsg,
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: fmt.Sprintf("Failed to assign word set: %v", err),
 		})
@@ -562,6 +570,12 @@ func UnassignWordSetFromUser(c *gin.Context) {
 
 	err = sm.DB.UnassignWordSetFromUser(wordSetID, userID)
 	if err != nil {
+		if err.Error() == "assignment not found" {
+			c.JSON(http.StatusNotFound, models.APIResponse{
+				Error: "Assignment not found",
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: fmt.Sprintf("Failed to unassign word set: %v", err),
 		})
@@ -1042,6 +1056,7 @@ func AddFamilyMember(c *gin.Context) {
 	// Handle parent invitation vs child creation based on role
 	if req.Role == "parent" {
 		// Create invitation for parent
+		expiresAt := time.Now().Add(7 * 24 * time.Hour) // 7 days expiration
 		invitation := &models.FamilyInvitation{
 			ID:        uuid.New().String(),
 			FamilyID:  familyID.(string),
@@ -1050,7 +1065,7 @@ func AddFamilyMember(c *gin.Context) {
 			InvitedBy: userID.(string),
 			Status:    "pending",
 			CreatedAt: time.Now(),
-			ExpiresAt: nil, // Non-expiring
+			ExpiresAt: &expiresAt,
 		}
 
 		if err := serviceManager.DB.CreateFamilyInvitation(invitation); err != nil {
@@ -1061,7 +1076,7 @@ func AddFamilyMember(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusCreated, models.APIResponse{
+		c.JSON(http.StatusAccepted, models.APIResponse{
 			Data:    invitation,
 			Message: "Parent invitation sent",
 		})
@@ -1127,6 +1142,13 @@ func AddFamilyMember(c *gin.Context) {
 
 	if err := serviceManager.DB.CreateChild(child); err != nil {
 		log.Printf("ERROR creating child account: %v (email=%s, family=%s, parent=%s)", err, req.Email, familyID, userID)
+		// Check for duplicate email constraint violation
+		if strings.Contains(err.Error(), "duplicate key") && strings.Contains(err.Error(), "users_email_key") {
+			c.JSON(http.StatusConflict, models.APIResponse{
+				Error: "A user with this email already exists",
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to add child to family: " + err.Error(),
 		})

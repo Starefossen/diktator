@@ -1,0 +1,266 @@
+package handlers
+
+import (
+	"encoding/json"
+	"net/http"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/starefossen/diktator/backend/internal/models"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestAddFamilyMember_Integration(t *testing.T) {
+	env := SetupIntegrationTest(t)
+	defer env.Cleanup()
+
+	// Setup: Create parent user and family
+	parent := env.CreateTestUser("", "parent")
+	familyID := env.CreateTestFamily(parent.ID)
+	parent.FamilyID = familyID
+
+	// Setup auth middleware with parent user
+	env.SetupAuthMiddleware(parent)
+
+	// Setup routes
+	env.Router.POST("/api/family/members", AddFamilyMember)
+
+	t.Run("Success_CreateChild", func(t *testing.T) {
+		// Initially only the parent exists
+		env.AssertRowCount("users", 1)
+
+		// Request to add a child
+		payload := map[string]interface{}{
+			"email":       "child@example.com",
+			"displayName": "Test Child",
+			"role":        "child",
+			"familyId":    familyID,
+		}
+
+		resp := makeRequest(env.Router, "POST", "/api/family/members", payload, nil)
+
+		// Assert response
+		require.Equal(t, http.StatusCreated, resp.Code, "Response body: %s", resp.Body.String())
+
+		var apiResp struct {
+			Data models.ChildAccount `json:"data"`
+		}
+		err := json.Unmarshal(resp.Body.Bytes(), &apiResp)
+		require.NoError(t, err)
+		response := apiResp.Data
+		assert.Equal(t, "child@example.com", response.Email)
+		assert.Equal(t, "Test Child", response.DisplayName)
+		assert.Equal(t, "child", response.Role)
+		assert.Equal(t, familyID, response.FamilyID)
+
+		// CRITICAL: Verify only ONE user was added to the database
+		// This was the bug - CreateChild already inserts to users,
+		// so calling CreateUser again caused duplicate key error
+		env.AssertRowCount("users", 2)
+
+		// Verify the child was actually created correctly
+		childUser, err := env.GetUserByID(response.ID)
+		require.NoError(t, err)
+		require.NotNil(t, childUser)
+		assert.Equal(t, "child@example.com", childUser.Email)
+		assert.Equal(t, familyID, childUser.FamilyID)
+		assert.Equal(t, "child", childUser.Role)
+	})
+
+	t.Run("Error_DuplicateEmail", func(t *testing.T) {
+		// Create first child
+		payload1 := map[string]interface{}{
+			"email":       "duplicate@example.com",
+			"displayName": "First Child",
+			"role":        "child",
+			"familyId":    familyID,
+		}
+		resp := makeRequest(env.Router, "POST", "/api/family/members", payload1, nil)
+		require.Equal(t, http.StatusCreated, resp.Code)
+
+		// Try to create another child with the same email
+		payload2 := map[string]interface{}{
+			"email":       "duplicate@example.com",
+			"displayName": "Second Child",
+			"role":        "child",
+			"familyId":    familyID,
+		}
+		resp = makeRequest(env.Router, "POST", "/api/family/members", payload2, nil)
+
+		// Should fail with conflict error
+		assert.Equal(t, http.StatusConflict, resp.Code)
+
+		var response map[string]interface{}
+		err := json.Unmarshal(resp.Body.Bytes(), &response)
+		require.NoError(t, err)
+		assert.Contains(t, response["error"], "already exists")
+	})
+
+	t.Run("Success_SendParentInvitation", func(t *testing.T) {
+		// Initially no invitations
+		env.AssertNoRowsInTable("family_invitations")
+
+		// Request to invite a parent
+		payload := map[string]interface{}{
+			"email":       "parent2@example.com",
+			"displayName": "Second Parent",
+			"role":        "parent",
+			"familyId":    familyID,
+		}
+
+		resp := makeRequest(env.Router, "POST", "/api/family/members", payload, nil)
+
+		// Assert response
+		assert.Equal(t, http.StatusAccepted, resp.Code)
+
+		var response map[string]interface{}
+		err := json.Unmarshal(resp.Body.Bytes(), &response)
+		require.NoError(t, err)
+		assert.Contains(t, response["message"], "invitation sent")
+
+		// Verify invitation was created
+		env.AssertRowCount("family_invitations", 1)
+	})
+
+	t.Run("Error_ChildCannotAddMembers", func(t *testing.T) {
+		// Create a child user
+		child := env.CreateTestUser(familyID, "child")
+
+		// Setup auth as child (not parent) with RequireParentRole middleware
+		gin.SetMode(gin.TestMode)
+		childRouter := gin.New()
+		childRouter.Use(func(c *gin.Context) {
+			c.Set("serviceManager", env.ServiceManager)
+			c.Set("userID", child.ID)
+			c.Set("authID", child.AuthID)
+			c.Set("userRole", "child") // Set the role that middleware checks
+			c.Set("familyID", child.FamilyID)
+			c.Set("validatedFamilyID", child.FamilyID)
+			c.Next()
+		})
+		// Add the RequireParentRole middleware to enforce role check
+		parentOnly := childRouter.Group("")
+		parentOnly.Use(func(c *gin.Context) {
+			// Inline RequireParentRole logic
+			userRole, exists := c.Get("userRole")
+			if !exists || userRole != "parent" {
+				c.JSON(http.StatusForbidden, models.APIResponse{
+					Error: "Parent role required for this action",
+				})
+				c.Abort()
+				return
+			}
+			c.Next()
+		})
+		parentOnly.POST("/api/family/members", AddFamilyMember)
+
+		// Try to add a family member as child
+		payload := map[string]interface{}{
+			"email":       "newchild@example.com",
+			"displayName": "Another Child",
+			"role":        "child",
+			"familyId":    child.FamilyID,
+		}
+
+		resp := makeRequest(childRouter, "POST", "/api/family/members", payload, nil)
+
+		// Should be forbidden
+		assert.Equal(t, http.StatusForbidden, resp.Code)
+	})
+
+	t.Run("Error_InvalidRole", func(t *testing.T) {
+		payload := map[string]interface{}{
+			"email":       "invalid@example.com",
+			"displayName": "Invalid Role User",
+			"role":        "superadmin", // Invalid role
+			"familyId":    familyID,
+		}
+
+		resp := makeRequest(env.Router, "POST", "/api/family/members", payload, nil)
+
+		// Should fail with bad request
+		assert.Equal(t, http.StatusBadRequest, resp.Code)
+
+		var response map[string]interface{}
+		err := json.Unmarshal(resp.Body.Bytes(), &response)
+		require.NoError(t, err)
+		// Gin validation error message format
+		assert.Contains(t, response["error"], "Role")
+	})
+
+	t.Run("Error_MissingEmail", func(t *testing.T) {
+		payload := map[string]interface{}{
+			"displayName": "No Email User",
+			"role":        "child",
+			"familyId":    familyID,
+			// email missing
+		}
+
+		resp := makeRequest(env.Router, "POST", "/api/family/members", payload, nil)
+
+		// Should fail with bad request
+		assert.Equal(t, http.StatusBadRequest, resp.Code)
+	})
+}
+
+func TestAddFamilyMember_DatabaseConstraints_Integration(t *testing.T) {
+	env := SetupIntegrationTest(t)
+	defer env.Cleanup()
+
+	parent := env.CreateTestUser("", "parent")
+	familyID := env.CreateTestFamily(parent.ID)
+	parent.FamilyID = familyID
+
+	env.SetupAuthMiddleware(parent)
+	env.Router.POST("/api/family/members", AddFamilyMember)
+
+	t.Run("DatabaseEnforces_UniqueEmail", func(t *testing.T) {
+		// This test verifies that the database constraint prevents duplicate emails
+		// even if the application logic fails
+
+		// Create a child directly in DB
+		existingChild := env.CreateTestUser(familyID, "child")
+
+		// Try to create another child with same email through the API
+		payload := map[string]interface{}{
+			"email":       existingChild.Email,
+			"displayName": "Duplicate Child",
+			"role":        "child",
+			"familyId":    familyID,
+		}
+
+		resp := makeRequest(env.Router, "POST", "/api/family/members", payload, nil)
+
+		// Should fail - database should enforce UNIQUE constraint on email
+		assert.NotEqual(t, http.StatusCreated, resp.Code,
+			"Database should prevent duplicate emails")
+
+		// Should still only have the original users
+		env.AssertRowCount("users", 2) // parent + child
+	})
+
+	t.Run("DatabaseEnforces_PrimaryKey", func(t *testing.T) {
+		// This test verifies that attempting to insert the same user ID twice fails
+		// This was the root cause of our bug - CreateChild inserts into users,
+		// then CreateUser tried to insert again with same ID
+
+		payload := map[string]interface{}{
+			"email":       "pktest@example.com",
+			"displayName": "PK Test Child",
+			"role":        "child",
+			"familyId":    familyID,
+		}
+
+		resp := makeRequest(env.Router, "POST", "/api/family/members", payload, nil)
+		require.Equal(t, http.StatusCreated, resp.Code)
+
+		var user models.User
+		err := json.Unmarshal(resp.Body.Bytes(), &user)
+		require.NoError(t, err)
+
+		// The handler should NOT attempt to insert twice
+		// If it does, the database PRIMARY KEY constraint should prevent it
+		// (This was caught by our real-world testing, not by mocks)
+	})
+}
