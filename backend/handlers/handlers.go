@@ -1133,36 +1133,13 @@ func AddFamilyMember(c *gin.Context) {
 		return
 	}
 
-	// Create a User record with pending status
-	// This user will be activated when they log in via OIDC
-	childUser := &models.User{
-		ID:           childAuthID,
-		AuthID:       childAuthID, // Will be updated to real Zitadel ID on first login
-		Email:        req.Email,
-		DisplayName:  req.DisplayName,
-		FamilyID:     familyID.(string),
-		Role:         "child",
-		ParentID:     &[]string{userID.(string)}[0], // Convert string to *string
-		IsActive:     false,                         // Inactive until they log in
-		CreatedAt:    time.Now(),
-		LastActiveAt: time.Now(),
-	}
-
-	if err := serviceManager.DB.CreateUser(childUser); err != nil {
-		log.Printf("ERROR creating child user record: %v (childID=%s)", err, childAuthID)
-		// If user creation fails, clean up child account
-		_ = serviceManager.DB.DeleteChild(childAuthID)
-		c.JSON(http.StatusInternalServerError, models.APIResponse{
-			Error: "Failed to create child user record: " + err.Error(),
-		})
-		return
-	}
+	// Note: CreateChild already creates the user record in the users table
+	// No need to call CreateUser separately
 
 	// Add child to family_members table
 	if err := serviceManager.DB.AddFamilyMember(familyID.(string), childAuthID, "child"); err != nil {
 		log.Printf("ERROR adding child to family_members: %v (childID=%s, familyID=%s)", err, childAuthID, familyID)
 		// Clean up on failure
-		_ = serviceManager.DB.DeleteUser(childAuthID)
 		_ = serviceManager.DB.DeleteChild(childAuthID)
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to add child to family: " + err.Error(),
