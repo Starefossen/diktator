@@ -12,7 +12,7 @@ region = "europe-north1"
 bucket_location = "EU"
 
 # Optional: Custom domain for your application
-domain = "diktator.gc.flaatten.org"
+domain = "www.diktator.fn.flaatten.org"
 
 # Optional: Billing configuration for budget alerts
 # billing_account_id = "ABCDEF-123456-ABCDEF"

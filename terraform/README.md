@@ -153,14 +153,14 @@ cd terraform && tofu show
 
 ## Configuration Variables
 
-| Variable             | Description                | Default                    | Required |
-| -------------------- | -------------------------- | -------------------------- | -------- |
-| `project_id`         | GCP project ID             | -                          | ✅        |
-| `region`             | GCP region for services    | `europe-north1`            | ❌        |
-| `domain`             | Custom domain for frontend | `diktator.gc.flaatten.org` | ❌        |
-| `bucket_location`    | Storage bucket location    | `EU`                       | ❌        |
-| `billing_account_id` | Billing account for alerts | `""`                       | ❌        |
-| `budget_amount`      | Monthly budget in USD      | `50`                       | ❌        |
+| Variable             | Description                | Default                        | Required |
+| -------------------- | -------------------------- | ------------------------------ | -------- |
+| `project_id`         | GCP project ID             | -                              | ✅        |
+| `region`             | GCP region for services    | `europe-north1`                | ❌        |
+| `domain`             | Custom domain for frontend | `www.diktator.fn.flaatten.org` | ❌        |
+| `bucket_location`    | Storage bucket location    | `EU`                           | ❌        |
+| `billing_account_id` | Billing account for alerts | `""`                           | ❌        |
+| `budget_amount`      | Monthly budget in USD      | `50`                           | ❌        |
 
 ## Important Notes
 

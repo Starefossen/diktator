@@ -18,7 +18,7 @@ variable "bucket_location" {
 variable "domain" {
   description = "The domain for the application"
   type        = string
-  default     = "diktator.gc.flaatten.org"
+  default     = "www.diktator.fn.flaatten.org"
 }
 
 variable "billing_account_id" {
