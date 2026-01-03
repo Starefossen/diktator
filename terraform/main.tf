@@ -6,9 +6,6 @@
 # - variables.tf: Input variables and local values
 # - apis.tf: Google Cloud API enablement
 # - iam.tf: Service accounts and IAM permissions
-# - storage.tf: Cloud Storage buckets for frontend
-# - load_balancer.tf: Load balancer, SSL certificates, and CDN
-# - cloud_run.tf: Backend API service on Cloud Run
 
 # - billing.tf: Budget alerts and cost monitoring
 # - outputs.tf: Output values for other systems

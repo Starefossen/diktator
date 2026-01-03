@@ -20,14 +20,14 @@ Diktator is a web application designed to help children learn Norwegian vocabula
 - **Authentication**: OIDC (mock mode for development, configurable provider for production)
 - **Database**: PostgreSQL for user data, test results, and analytics
 - **Backend**: Go with Gin HTTP framework
-- **Deployment**: Google Cloud (Cloud Run + Cloud Storage)
-- **Development**: Docker Compose for local services
+- **Deployment**: Knative on HOMELAB-cluster
+- **Development**: Mise and Docker Compose for local services
 
 ## Quick Start
 
 ### 1. Prerequisites
 
-- Node.js 20+
+- Node.js 24+
 - Go 1.25+
 - Docker & Docker Compose
 - [mise](https://mise.jdx.dev/) (recommended for tool management)
@@ -150,8 +150,6 @@ mise run typecheck        # TypeScript check + Go build check
 
 - `mise run build` - Build all components for production
 - `mise run backend:docker-build` - Build backend Docker image locally
-- `mise run backend:deploy` - Deploy backend to Cloud Run
-- `mise run frontend:deploy` - Deploy frontend to Cloud Storage
 - `mise run clean` - Clean build artifacts
 
 ### Infrastructure (OpenTofu)
@@ -245,13 +243,7 @@ mise run tofu:apply
 
 ### Application Deployment
 
-```bash
-# Deploy backend to Cloud Run
-mise run backend:deploy
-
-# Deploy frontend to Cloud Storage
-mise run frontend:deploy
-```
+See `deploy/HOMELAB.md` for detailed deployment instructions to your HOMELAB-cluster.
 
 ### Required Secrets
 
@@ -259,9 +251,6 @@ Configure these secrets in your GitHub repository:
 
 - `GCP_SA_KEY`: Google Cloud Service Account JSON key
 - `GCP_PROJECT_ID`: Google Cloud Project ID
-- `GCP_FRONTEND_BUCKET`: Cloud Storage bucket name for frontend
-
-See [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md) for detailed environment variable documentation.
 
 ## Contributing
 
@@ -269,8 +258,6 @@ See [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md) for detailed environment variable
 2. Make your changes
 3. Test locally with `mise run test`
 4. Submit a pull request
-
-For AI assistance, see [GitHub Copilot Instructions](.github/copilot_instructions.md) for project-specific guidance.
 
 ## License
 

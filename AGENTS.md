@@ -23,7 +23,7 @@ Assume dev server is already running with `mise run dev`.
 - Backend: Go 1.25+, Gin HTTP framework
 - Database: PostgreSQL with pgx/v5 driver
 - Auth: OIDC (Zitadel), mock mode for development (`AUTH_MODE=mock`)
-- Infrastructure: Google Cloud (Cloud Run, Cloud Storage, Cloud SQL), Terraform
+- Infrastructure: Knative on HOMELAB-cluster (see deploy/HOMELAB.md)
 
 **File Structure:**
 ```

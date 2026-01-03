@@ -12,13 +12,10 @@ pnpm = "10"
 # Static configuration - same across all environments
 DIKTATOR_APP_NAME = "diktator"
 DIKTATOR_API_SERVICE_NAME = "diktator-api"
-DIKTATOR_DEFAULT_REGION = "europe-north1"
-DIKTATOR_BUCKET_LOCATION = "EU"
 
 # Development environment defaults
 GOOGLE_CLOUD_PROJECT = "diktator-dev"
 GOOGLE_CLOUD_QUOTA_PROJECT = "diktator-app"
-STORAGE_BUCKET = "diktator-dev.appspot.com"
 GIN_MODE = "debug"
 
 # PostgreSQL configuration
@@ -631,7 +628,6 @@ cat > backend/.env.development << 'EOF'
 # Backend Development Configuration
 GOOGLE_CLOUD_PROJECT=diktator-dev
 GOOGLE_CLOUD_QUOTA_PROJECT=diktator-app
-STORAGE_BUCKET=diktator-dev.appspot.com
 GIN_MODE=debug
 PORT=8080
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/diktator?sslmode=disable
@@ -662,7 +658,6 @@ source .mise.env
 cat > backend/.env.production << EOF
 GOOGLE_CLOUD_PROJECT=${DIKTATOR_PROJECT_ID}
 GOOGLE_CLOUD_QUOTA_PROJECT=${GOOGLE_CLOUD_QUOTA_PROJECT:-${DIKTATOR_PROJECT_ID}}
-STORAGE_BUCKET=${STORAGE_BUCKET:-${DIKTATOR_PROJECT_ID}.appspot.com}
 GIN_MODE=release
 PORT=8080
 DATABASE_URL=${DATABASE_URL}
@@ -694,28 +689,8 @@ fi
 
 cat > ../.mise.env << EOF
 DIKTATOR_PROJECT_ID=$(tofu output -raw project_id 2>/dev/null || echo "")
-DIKTATOR_REGION=$(tofu output -raw region 2>/dev/null || echo "${DIKTATOR_DEFAULT_REGION}")
-DIKTATOR_FRONTEND_BUCKET=$(tofu output -raw frontend_bucket_name 2>/dev/null || echo "")
-DIKTATOR_API_URL=$(tofu output -raw api_url 2>/dev/null || echo "")
-DATABASE_URL=$(tofu output -raw database_url 2>/dev/null || echo "")
 EOF
 echo "Configuration loaded to .mise.env"
-"""
-
-[tasks.config-check]
-description = "Check configuration"
-run = """
-echo "=== Static Config ==="
-echo "App: ${DIKTATOR_APP_NAME}"
-echo "Region: ${DIKTATOR_DEFAULT_REGION}"
-
-echo ""
-echo "=== Development Config ==="
-[ -f backend/.env.development ] && cat backend/.env.development || echo "❌ Not found"
-
-echo ""
-echo "=== Production Config ==="
-[ -f .mise.env ] && cat .mise.env || echo "❌ Not found (run 'mise run config-load')"
 """
 
 # ============================================================================
@@ -741,91 +716,6 @@ run = "cd terraform && tofu destroy"
 [tasks."tofu:fmt"]
 description = "Format terraform files"
 run = "cd terraform && tofu fmt"
-
-# ============================================================================
-# Deployment
-# ============================================================================
-
-[tasks."backend:deploy"]
-description = "Deploy backend to Cloud Run"
-run = """
-source .mise.env
-mise run config-prod
-
-cd backend
-docker buildx build --platform linux/amd64 -t gcr.io/${DIKTATOR_PROJECT_ID}/${DIKTATOR_API_SERVICE_NAME}:latest --load .
-docker push gcr.io/${DIKTATOR_PROJECT_ID}/${DIKTATOR_API_SERVICE_NAME}:latest
-
-gcloud run deploy ${DIKTATOR_API_SERVICE_NAME} \
-  --image gcr.io/${DIKTATOR_PROJECT_ID}/${DIKTATOR_API_SERVICE_NAME}:latest \
-  --region ${DIKTATOR_REGION} \
-  --platform managed \
-  --allow-unauthenticated
-"""
-
-[tasks."frontend:deploy"]
-description = "Deploy frontend to Cloud Storage"
-run = """
-source .mise.env
-mise run config-prod
-
-cd frontend
-rm -rf out
-cp .env.production .env.local
-pnpm run build
-
-gsutil -m cp -r out/* gs://${DIKTATOR_FRONTEND_BUCKET}/
-gsutil -m setmeta -h "Cache-Control:no-cache" gs://${DIKTATOR_FRONTEND_BUCKET}/*.html
-gsutil -m setmeta -h "Cache-Control:public, max-age=31536000" gs://${DIKTATOR_FRONTEND_BUCKET}/_next/static/**/*
-"""
-
-# ============================================================================
-# CI/CD
-# ============================================================================
-
-[tasks."ci:test"]
-description = "CI: Run all tests"
-run = [
-  "cd frontend && pnpm ci && pnpm run lint && pnpm run typecheck",
-  "cd backend && go mod tidy && go test ./... && go vet ./...",
-]
-
-[tasks."ci:build-backend"]
-description = "CI: Build backend image"
-run = """
-PROJECT_ID=${GOOGLE_CLOUD_PROJECT:-${DIKTATOR_PROJECT_ID}}
-COMMIT_SHA=${GITHUB_SHA:-latest}
-cd backend
-docker buildx build --platform linux/amd64 -t gcr.io/${PROJECT_ID}/${DIKTATOR_API_SERVICE_NAME}:${COMMIT_SHA} --load .
-docker push gcr.io/${PROJECT_ID}/${DIKTATOR_API_SERVICE_NAME}:${COMMIT_SHA}
-"""
-
-[tasks."ci:build-frontend"]
-description = "CI: Build frontend"
-run = """
-cd frontend
-pnpm ci
-cp .env.production .env.local 2>/dev/null || true
-pnpm run build
-"""
-
-# ============================================================================
-# Google Cloud
-# ============================================================================
-
-[tasks."gcloud:auth"]
-description = "Authenticate with Google Cloud"
-run = "gcloud auth login && gcloud auth application-default login"
-
-[tasks."gcloud:set-project"]
-description = "Set GCP project"
-run = """
-if [ -z "$1" ]; then
-  echo "Usage: mise run gcloud:set-project -- PROJECT_ID"
-  exit 1
-fi
-gcloud config set project "$1"
-"""
 
 # ============================================================================
 # Homelab Deployment (Knative)

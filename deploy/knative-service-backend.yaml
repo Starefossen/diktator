@@ -41,12 +41,6 @@ spec:
               value: "true"  # TODO: Remove when proper cert is in place
             - name: GIN_MODE
               value: "release"
-            - name: STORAGE_BUCKET
-              valueFrom:
-                configMapKeyRef:
-                  name: diktator-config
-                  key: storage-bucket
-                  optional: true
             # Google Cloud credentials for Text-to-Speech
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /var/secrets/google/key.json

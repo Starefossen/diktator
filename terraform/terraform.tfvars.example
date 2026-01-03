@@ -4,9 +4,6 @@
 # Required: Your Google Cloud Project ID
 project_id = "your-gcp-project-id"
 
-# Optional: GCP region for Cloud Run service (defaults to europe-north1)
-region = "europe-north1"
-
 # Optional: Billing configuration for budget alerts
 # billing_account_id = "ABCDEF-123456-ABCDEF"
 # budget_amount      = 50
