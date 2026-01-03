@@ -52,6 +52,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/starefossen/diktator/backend/handlers"
+	"github.com/starefossen/diktator/backend/internal/migrate"
 	"github.com/starefossen/diktator/backend/internal/middleware"
 	"github.com/starefossen/diktator/backend/internal/services"
 
@@ -68,6 +69,16 @@ func main() {
 	log.Printf("GIN_MODE: %s", os.Getenv("GIN_MODE"))
 	log.Printf("OIDC_ISSUER_URL: %s", os.Getenv("OIDC_ISSUER_URL"))
 	log.Printf("OIDC_AUDIENCE: %s", os.Getenv("OIDC_AUDIENCE"))
+
+	// Run database migrations before starting services
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		log.Fatal("DATABASE_URL environment variable is required")
+	}
+
+	if err := migrate.Run(databaseURL); err != nil {
+		log.Fatalf("Database migration failed: %v", err)
+	}
 
 	// Initialize services
 	log.Println("Initializing services...")

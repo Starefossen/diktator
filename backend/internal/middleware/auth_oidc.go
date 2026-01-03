@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/starefossen/diktator/backend/internal/models"
@@ -30,23 +29,22 @@ func OIDCAuthMiddleware(validator auth.SessionValidator, repo db.Repository) gin
 		user, err := repo.GetUserByAuthID(identity.ID)
 		if err != nil {
 			if err == db.ErrUserNotFound {
-				newUser := autoProvisionUser(identity)
-				if createErr := repo.CreateUser(newUser); createErr != nil {
-					log.Printf("[AUTH] Auto-provision failed authID=%s method=%s path=%s: %v", identity.ID, c.Request.Method, c.Request.URL.Path, createErr)
-					c.JSON(http.StatusInternalServerError, models.APIResponse{Error: "Failed to create user"})
-					c.Abort()
-					return
-				}
-				user = newUser
-				log.Printf("[AUTH] Auto-provisioned user authID=%s email=%s", user.AuthID, user.Email)
-			} else {
-				log.Printf("[AUTH] Failed to lookup user authID=%s method=%s path=%s: %v", identity.ID, c.Request.Method, c.Request.URL.Path, err)
-				c.JSON(http.StatusInternalServerError, models.APIResponse{
-					Error: "Failed to lookup user",
+				c.JSON(http.StatusNotFound, models.APIResponse{
+					Error: "User not found in system. Please complete registration.",
+					Data: map[string]any{
+						"needsRegistration": true,
+					},
 				})
 				c.Abort()
 				return
 			}
+
+			log.Printf("[AUTH] Failed to lookup user authID=%s method=%s path=%s: %v", identity.ID, c.Request.Method, c.Request.URL.Path, err)
+			c.JSON(http.StatusInternalServerError, models.APIResponse{
+				Error: "Failed to lookup user",
+			})
+			c.Abort()
+			return
 		}
 
 		// Check if user is active
@@ -67,27 +65,6 @@ func OIDCAuthMiddleware(validator auth.SessionValidator, repo db.Repository) gin
 		c.Set("identity", identity)
 
 		c.Next()
-	}
-}
-
-func autoProvisionUser(identity *auth.Identity) *models.User {
-	now := time.Now()
-	displayName := identity.Traits["name"]
-	if displayName == "" {
-		displayName = identity.Email
-	}
-	if displayName == "" {
-		displayName = "user-" + identity.ID
-	}
-
-	return &models.User{
-		AuthID:       identity.ID,
-		Email:        identity.Email,
-		DisplayName:  displayName,
-		Role:         "parent",
-		IsActive:     true,
-		CreatedAt:    now,
-		LastActiveAt: now,
 	}
 }
 

@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/starefossen/diktator/backend/internal/models"
 	"github.com/starefossen/diktator/backend/internal/services"
+	"github.com/starefossen/diktator/backend/internal/services/auth"
 )
 
 var serviceManager *services.Manager
@@ -1079,7 +1080,7 @@ func GetChildResults(c *gin.Context) {
 // @Tags			users
 // @Accept			json
 // @Produce		json
-// @Param			request	body		object{displayName=string,role=string,email=string}	true	"User creation request"
+// @Param			request	body		object{displayName=string,role=string,email=string,familyName=string}	true	"User creation request"
 // @Success		201		{object}	models.APIResponse						"User created successfully"
 // @Failure		400		{object}	models.APIResponse						"Invalid request data"
 // @Failure		401		{object}	models.APIResponse						"Auth identity not found in token"
@@ -1089,13 +1090,26 @@ func GetChildResults(c *gin.Context) {
 func CreateUser(c *gin.Context) {
 	var req struct {
 		DisplayName string `json:"displayName" binding:"required"`
-		Role        string `json:"role" binding:"required,oneof=parent child"`
+		Role        string `json:"role"`
 		Email       string `json:"email"` // Email can come from request or identity claims
+		FamilyName  string `json:"familyName"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, models.APIResponse{
 			Error: "Invalid request data: " + err.Error(),
+		})
+		return
+	}
+
+	// Trim and validate inputs
+	displayName := strings.TrimSpace(req.DisplayName)
+	email := strings.TrimSpace(req.Email)
+	familyName := strings.TrimSpace(req.FamilyName)
+
+	if displayName == "" {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Display name is required",
 		})
 		return
 	}
@@ -1118,13 +1132,19 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
+	// Only parents can self-register via this endpoint
+	if req.Role != "" && req.Role != "parent" {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Only parent registration is supported",
+		})
+		return
+	}
+
 	// Get email from request or from identity claims
-	email := req.Email
 	if email == "" {
-		// Try to get email from identity claims if available
 		if identity, exists := c.Get("identity"); exists {
-			if id, ok := identity.(interface{ Email() string }); ok {
-				email = id.Email()
+			if id, ok := identity.(*auth.Identity); ok {
+				email = strings.TrimSpace(id.Email)
 			}
 		}
 	}
@@ -1135,14 +1155,14 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	// Create user first (without family for parents, will be updated after)
+	// Create user first (without family, will be updated after family creation)
 	newUser := &models.User{
 		ID:           authID,
 		AuthID:       authID,
 		Email:        email,
-		DisplayName:  req.DisplayName,
-		FamilyID:     "", // Will be set after family creation for parents
-		Role:         req.Role,
+		DisplayName:  displayName,
+		FamilyID:     "",
+		Role:         "parent",
 		IsActive:     true,
 		CreatedAt:    time.Now(),
 		LastActiveAt: time.Now(),
@@ -1150,41 +1170,43 @@ func CreateUser(c *gin.Context) {
 
 	if err := serviceManager.DB.CreateUser(newUser); err != nil {
 		log.Printf("ERROR creating user: %v", err)
+		status := http.StatusInternalServerError
+		if strings.Contains(strings.ToLower(err.Error()), "duplicate") {
+			status = http.StatusConflict
+		}
+		c.JSON(status, models.APIResponse{Error: "Failed to create user"})
+		return
+	}
+
+	if familyName == "" {
+		familyName = displayName + "'s Family"
+	}
+
+	// Create family for parent users and update user with family ID
+	family := &models.Family{
+		ID:        "family-" + authID,
+		Name:      familyName,
+		CreatedBy: newUser.ID,
+		Members:   []string{newUser.ID},
+		CreatedAt: time.Now(),
+	}
+
+	if err := serviceManager.DB.CreateFamily(family); err != nil {
+		log.Printf("ERROR creating family: %v", err)
+		serviceManager.DB.DeleteUser(newUser.ID)
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
-			Error: "Failed to create user",
+			Error: "Failed to create family",
 		})
 		return
 	}
 
-	// Create family for parent users and update user with family ID
-	if req.Role == "parent" {
-		family := &models.Family{
-			ID:        "family-" + authID,
-			Name:      req.DisplayName + "'s Family",
-			CreatedBy: newUser.ID, // Now user exists
-			Members:   []string{newUser.ID},
-			CreatedAt: time.Now(),
-		}
-
-		if err := serviceManager.DB.CreateFamily(family); err != nil {
-			log.Printf("ERROR creating family: %v", err)
-			// Rollback user creation on failure
-			serviceManager.DB.DeleteUser(newUser.ID)
-			c.JSON(http.StatusInternalServerError, models.APIResponse{
-				Error: "Failed to create family",
-			})
-			return
-		}
-
-		// Update user with family ID
-		newUser.FamilyID = family.ID
-		if err := serviceManager.DB.UpdateUser(newUser); err != nil {
-			log.Printf("ERROR updating user with family ID: %v", err)
-			c.JSON(http.StatusInternalServerError, models.APIResponse{
-				Error: "Failed to update user with family",
-			})
-			return
-		}
+	newUser.FamilyID = family.ID
+	if err := serviceManager.DB.UpdateUser(newUser); err != nil {
+		log.Printf("ERROR updating user with family ID: %v", err)
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to update user with family",
+		})
+		return
 	}
 
 	// Return user data
