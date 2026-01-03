@@ -7,19 +7,7 @@ project_id = "your-gcp-project-id"
 # Optional: GCP region for Cloud Run service (defaults to europe-north1)
 region = "europe-north1"
 
-# Optional: Storage bucket location (defaults to EU)
-# Can be EU, US, ASIA, or specific regions like europe-north1
-bucket_location = "EU"
-
-# Optional: Custom domain for your application
-domain = "www.diktator.fn.flaatten.org"
-
 # Optional: Billing configuration for budget alerts
 # billing_account_id = "ABCDEF-123456-ABCDEF"
 # budget_amount      = 50
 # alert_email        = "admin@example.com"
-
-# Example with real values:
-# project_id = "diktator-prod-12345"
-# region     = "europe-west1"
-# domain     = "diktator.example.com"
