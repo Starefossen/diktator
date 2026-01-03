@@ -27,6 +27,8 @@ import {
   ModalActions,
   ModalButton,
 } from "@/components/modals/BaseModal";
+import { ChildAssignmentSelector } from "@/components/ChildAssignmentSelector";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface WordSetEditorProps {
   mode: "create" | "edit";
@@ -57,6 +59,7 @@ export default function WordSetEditor({
   error = "",
 }: WordSetEditorProps) {
   const { t, language } = useLanguage();
+  const { userData } = useAuth();
 
   // Form state
   const [name, setName] = useState(initialData?.name || "");
@@ -95,6 +98,11 @@ export default function WordSetEditor({
   const [_newTranslationLang, _setNewTranslationLang] =
     useState<Language>("en");
   const [newTranslationText, setNewTranslationText] = useState("");
+
+  // Child assignment state
+  const [assignedUserIds, setAssignedUserIds] = useState<string[]>(
+    initialData?.assignedUserIds || [],
+  );
 
   // Refs for focus management
   const newWordRef = useRef<HTMLInputElement>(null);
@@ -307,9 +315,9 @@ export default function WordSetEditor({
                     onChange={(e) =>
                       setDefaultMode(
                         e.target.value as
-                          | "standard"
-                          | "dictation"
-                          | "translation",
+                        | "standard"
+                        | "dictation"
+                        | "translation",
                       )
                     }
                     className="sr-only"
@@ -346,9 +354,9 @@ export default function WordSetEditor({
                     onChange={(e) =>
                       setDefaultMode(
                         e.target.value as
-                          | "standard"
-                          | "dictation"
-                          | "translation",
+                        | "standard"
+                        | "dictation"
+                        | "translation",
                       )
                     }
                     className="sr-only"
@@ -385,9 +393,9 @@ export default function WordSetEditor({
                     onChange={(e) =>
                       setDefaultMode(
                         e.target.value as
-                          | "standard"
-                          | "dictation"
-                          | "translation",
+                        | "standard"
+                        | "dictation"
+                        | "translation",
                       )
                     }
                     className="sr-only"
@@ -683,6 +691,17 @@ export default function WordSetEditor({
                 )}
               </div>
             </div>
+
+            {/* Child Assignment Section (parent only, edit mode only) */}
+            {userData?.role === "parent" && mode === "edit" && initialData?.id && (
+              <div className="pt-6 mt-6 border-t border-gray-200">
+                <ChildAssignmentSelector
+                  wordSetId={initialData.id}
+                  assignedUserIds={assignedUserIds}
+                  onAssignmentChange={setAssignedUserIds}
+                />
+              </div>
+            )}
           </form>
         </ModalContent>
 

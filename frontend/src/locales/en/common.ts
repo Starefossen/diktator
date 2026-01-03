@@ -2,6 +2,7 @@ export const common = {
   // Basic terms
   score: "Score",
   correct: "Correct!",
+  "common.error": "Error",
   "common.words": "words",
   "common.back": "Back",
   "common.of": "of",

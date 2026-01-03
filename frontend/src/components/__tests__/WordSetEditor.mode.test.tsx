@@ -4,6 +4,32 @@ import WordSetEditor from "../WordSetEditor";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { WordSet } from "@/types";
 
+// Mock useAuth hook
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({
+    userData: {
+      id: "test-user",
+      email: "test@example.com",
+      displayName: "Test User",
+      familyId: "test-family",
+      role: "parent",
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      lastActiveAt: new Date().toISOString(),
+    },
+    isAuthenticated: true,
+    loading: false,
+    needsRegistration: false,
+  }),
+}));
+
+// Mock generatedApiClient
+vi.mock("@/lib/api-generated", () => ({
+  generatedApiClient: {
+    getFamilyChildren: vi.fn().mockResolvedValue({ data: { data: [] } }),
+  },
+}));
+
 describe("WordSetEditor - Mode Selection", () => {
   const mockOnSave = vi.fn();
   const mockOnCancel = vi.fn();
