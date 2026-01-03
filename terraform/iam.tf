@@ -1,8 +1,9 @@
-# Service Account for Diktator Application (TTS-only)
+# Service Account for Text-to-Speech API access
+# Note: Application is self-hosted; this is only for TTS service integration
 resource "google_service_account" "app" {
   account_id   = "diktator-app"
-  display_name = "Diktator Application Service Account"
-  description  = "Service account for Diktator app runtime (TTS, Storage)"
+  display_name = "Diktator TTS Service Account"
+  description  = "Service account for Text-to-Speech API access (app is self-hosted)"
 
   depends_on = [google_project_service.required_apis]
 }

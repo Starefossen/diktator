@@ -1,22 +1,22 @@
 variable "project_id" {
-  description = "The GCP project ID"
+  description = "The GCP project ID for Text-to-Speech service"
   type        = string
 }
 
 variable "region" {
-  description = "The GCP region"
+  description = "The GCP region for Text-to-Speech service"
   type        = string
   default     = "europe-north1"
 }
 
 variable "billing_account_id" {
-  description = "The billing account ID for budget alerts (optional)"
+  description = "The billing account ID for TTS usage budget alerts (optional)"
   type        = string
   default     = ""
 }
 
 variable "budget_amount" {
-  description = "Monthly budget amount in USD for alerts"
+  description = "Monthly TTS API budget amount in USD for alerts"
   type        = number
   default     = 50
 }

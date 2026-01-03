@@ -14,8 +14,8 @@ DIKTATOR_APP_NAME = "diktator"
 DIKTATOR_API_SERVICE_NAME = "diktator-api"
 
 # Development environment defaults
-GOOGLE_CLOUD_PROJECT = "diktator-dev"
-GOOGLE_CLOUD_QUOTA_PROJECT = "diktator-app"
+TTS_PROJECT = "diktator-dev"
+TTS_QUOTA_PROJECT = "diktator-app"
 GIN_MODE = "debug"
 
 # PostgreSQL configuration
@@ -28,6 +28,123 @@ AUTH_MODE = "mock"
 # Frontend configuration
 NEXT_PUBLIC_API_URL = "http://localhost:8080"
 NEXT_PUBLIC_AUTH_MODE = "mock"
+NEXT_TELEMETRY_DISABLED = "1"
+NODE_ENV = "development"
+
+# Port configuration
+BACKEND_PORT = "8080"
+FRONTEND_PORT = "3000"
+
+# Docker Compose configuration
+DOCKER_COMPOSE_FILE = "docker-compose.dev.yml"
+
+# Wait times (in seconds)
+DB_STARTUP_WAIT = "3"
+BACKEND_STARTUP_WAIT = "3"
+BACKEND_STOP_WAIT = "1"
+DB_RESET_WAIT = "5"
+
+# Timeouts (kubectl wait)
+POD_READY_TIMEOUT = "600s"
+KNATIVE_READY_TIMEOUT = "300s"
+
+# Directory paths
+TMP_DIR = ".tmp"
+BACKEND_DIR = "backend"
+FRONTEND_DIR = "frontend"
+TERRAFORM_DIR = "terraform"
+DEPLOY_DIR = "deploy"
+
+# Build configuration
+TARGETARCH = "amd64"
+TTS_CACHE_SIZE_MB = "15"
+
+# Homelab deployment configuration
+REGISTRY_URL = "registry.intern.flaatten.org:5000"
+NAMESPACE = "diktator"
+BACKEND_SERVICE = "api"
+FRONTEND_SERVICE = "www"
+
+# Homelab OIDC configuration
+HOMELAB_API_URL = "https://api.diktator.fn.flaatten.org"
+HOMELAB_APP_URL = "https://www.diktator.fn.flaatten.org"
+HOMELAB_OIDC_ISSUER_URL = "https://zitadel.zitadel.fn.flaatten.org"
+HOMELAB_OIDC_CLIENT_ID = "353809168672555052"
+
+# ============================================================================
+# Private Helper Tasks
+# ============================================================================
+# These tasks are prefixed with _ to mark them as internal utilities.
+# They are not intended to be run directly by users.
+
+[tasks._validate-env]
+# Validates that required environment variables are set
+description = "[Internal] Validate required environment variables"
+run = """
+REQUIRED_VARS="TTS_PROJECT TTS_QUOTA_PROJECT DATABASE_URL DATABASE_TEST_URL"
+MISSING_VARS=""
+
+for VAR in $REQUIRED_VARS; do
+    if [ -z "${!VAR}" ]; then
+        MISSING_VARS="$MISSING_VARS $VAR"
+    fi
+done
+
+if [ -n "$MISSING_VARS" ]; then
+    echo "❌ Missing required environment variables:$MISSING_VARS"
+    exit 1
+fi
+"""
+
+[tasks._docker-compose]
+# Wrapper for docker compose commands using the configured file
+description = "[Internal] Run docker compose with configured file"
+run = "docker compose -f ${DOCKER_COMPOSE_FILE} $@"
+
+[tasks._ensure-postgres]
+# Ensures PostgreSQL is running, starts it if not
+description = "[Internal] Ensure PostgreSQL is running"
+run = """
+if ! docker compose -f ${DOCKER_COMPOSE_FILE} ps postgres 2>/dev/null | grep -q "running"; then
+    echo "🐘 Starting PostgreSQL..."
+    docker compose -f ${DOCKER_COMPOSE_FILE} up -d postgres
+    sleep ${DB_STARTUP_WAIT}
+fi
+"""
+
+[tasks._wait-postgres]
+# Waits for PostgreSQL to be ready to accept connections
+description = "[Internal] Wait for PostgreSQL to be ready"
+depends = ["_ensure-postgres"]
+run = """
+echo "⏳ Waiting for PostgreSQL to be ready..."
+sleep ${DB_STARTUP_WAIT}
+"""
+
+[tasks._ensure-config]
+# Ensures development configuration files exist
+description = "[Internal] Ensure development config files exist"
+run = """
+if [ ! -f ${BACKEND_DIR}/.env.development ]; then
+    echo "📝 Generating development config..."
+    mise run config:dev
+fi
+"""
+
+[tasks._load-dev-env]
+# Loads development environment variables into current shell context
+description = "[Internal] Load development environment variables"
+depends = ["_ensure-config"]
+dir = "backend"
+run = "set -a && source .env.development && set +a"
+
+[tasks._wait-backend]
+# Waits for backend to be ready to accept connections
+description = "[Internal] Wait for backend to be ready"
+run = """
+echo "⏳ Waiting for backend to be ready..."
+sleep ${BACKEND_STARTUP_WAIT}
+"""
 
 # ============================================================================
 # Development Tasks
@@ -35,39 +152,32 @@ NEXT_PUBLIC_AUTH_MODE = "mock"
 
 [tasks.install]
 description = "Install all dependencies"
-run = [
-  "cd frontend && pnpm install",
-  "cd backend && go mod tidy",
-  "go install github.com/swaggo/swag/cmd/swag@latest",
-]
+run = """
+echo "📦 Installing dependencies..."
+(cd ${FRONTEND_DIR} && pnpm install) &
+(cd ${BACKEND_DIR} && go mod tidy) &
+wait
+go install github.com/swaggo/swag/cmd/swag@latest
+echo "✅ All dependencies installed"
+"""
 
 [tasks.dev]
 description = "Start full development environment (PostgreSQL + frontend + backend)"
+depends = ["_ensure-config", "_ensure-postgres"]
 run = """
 echo "🚀 Starting full development environment..."
 
-# Ensure config exists
-if [ ! -f backend/.env.development ]; then
-    echo "📝 Generating development config..."
-    mise run config-dev
-fi
-
 # Ensure dependencies are installed
-if [ ! -d frontend/node_modules ] || [ ! -f backend/go.sum ]; then
+if [ ! -d ${FRONTEND_DIR}/node_modules ] || [ ! -f ${BACKEND_DIR}/go.sum ]; then
     echo "📦 Installing dependencies..."
     mise run install
 fi
 
-# Start PostgreSQL
-echo "🐘 Starting PostgreSQL..."
-docker compose -f docker-compose.dev.yml up -d
-sleep 3
-
 # Start backend with air (hot reload) in background
 echo "🔧 Starting backend with hot reload..."
-cd backend && set -a && source .env.development && set +a && air &
+cd ${BACKEND_DIR} && set -a && source .env.development && set +a && air &
 BACKEND_PID=$!
-sleep 3
+sleep ${BACKEND_STARTUP_WAIT}
 
 # Check if backend started successfully
 if ! kill -0 $BACKEND_PID 2>/dev/null; then
@@ -79,36 +189,32 @@ echo "✅ Backend started (PID: $BACKEND_PID)"
 
 # Start frontend
 echo "⚛️  Starting frontend..."
-cd frontend && cp .env.development .env.local && pnpm run dev
+cd ../${FRONTEND_DIR} && cp .env.development .env.local && pnpm run dev
 
 # Cleanup on exit
 cleanup() {
     echo ""
     echo "🛑 Stopping services..."
     kill $BACKEND_PID 2>/dev/null || true
-    docker compose -f docker-compose.dev.yml down
+    docker compose -f ${DOCKER_COMPOSE_FILE} down
 }
 trap cleanup EXIT INT TERM
 """
 
 [tasks."frontend:dev"]
 description = "Start frontend development server"
+depends = ["_ensure-config"]
+dir = "frontend"
 run = """
-if [ ! -f frontend/.env.development ]; then
-    mise run config-dev
-fi
-cd frontend
 cp .env.development .env.local
 pnpm run dev
 """
 
 [tasks."backend:dev"]
 description = "Start backend with hot reload (air)"
+depends = ["_ensure-config"]
+dir = "backend"
 run = """
-if [ ! -f backend/.env.development ]; then
-    mise run config-dev
-fi
-cd backend
 set -a && source .env.development && set +a && air
 """
 
@@ -118,41 +224,31 @@ set -a && source .env.development && set +a && air
 
 [tasks."backend:start"]
 description = "Start backend in background"
+depends = ["_ensure-config", "_ensure-postgres"]
 run = """
-mkdir -p .tmp
+mkdir -p ${TMP_DIR}
 
-if [ -f .tmp/backend.pid ] && kill -0 $(cat .tmp/backend.pid) 2>/dev/null; then
-    echo "⚠️  Backend already running (PID: $(cat .tmp/backend.pid))"
+if [ -f ${TMP_DIR}/backend.pid ] && kill -0 $(cat ${TMP_DIR}/backend.pid) 2>/dev/null; then
+    echo "⚠️  Backend already running (PID: $(cat ${TMP_DIR}/backend.pid))"
     exit 0
 fi
 
-if [ ! -f backend/.env.development ]; then
-    mise run config-dev
-fi
-
-# Ensure PostgreSQL is running
-if ! docker compose -f docker-compose.dev.yml ps postgres 2>/dev/null | grep -q "running"; then
-    echo "🐘 Starting PostgreSQL..."
-    docker compose -f docker-compose.dev.yml up -d postgres
-    sleep 3
-fi
-
 echo "🚀 Starting backend..."
-cd backend
+cd ${BACKEND_DIR}
 set -a && source .env.development && set +a
-nohup go run cmd/server/main.go > ../.tmp/backend.log 2>&1 &
-echo $! > ../.tmp/backend.pid
+nohup go run cmd/server/main.go > ../${TMP_DIR}/backend.log 2>&1 &
+echo $! > ../${TMP_DIR}/backend.pid
 cd ..
 
-sleep 3
-if kill -0 $(cat .tmp/backend.pid) 2>/dev/null; then
-    echo "✅ Backend started (PID: $(cat .tmp/backend.pid))"
-    echo "   Logs: .tmp/backend.log"
-    curl -s http://localhost:8080/health | head -c 100
+sleep ${BACKEND_STARTUP_WAIT}
+if kill -0 $(cat ${TMP_DIR}/backend.pid) 2>/dev/null; then
+    echo "✅ Backend started (PID: $(cat ${TMP_DIR}/backend.pid))"
+    echo "   Logs: ${TMP_DIR}/backend.log"
+    curl -s http://localhost:${BACKEND_PORT}/health | head -c 100
     echo ""
 else
     echo "❌ Backend failed to start"
-    tail -20 .tmp/backend.log
+    tail -20 ${TMP_DIR}/backend.log
     exit 1
 fi
 """
@@ -160,26 +256,26 @@ fi
 [tasks."backend:stop"]
 description = "Stop backend"
 run = """
-if [ -f .tmp/backend.pid ]; then
-    PID=$(cat .tmp/backend.pid)
+if [ -f ${TMP_DIR}/backend.pid ]; then
+    PID=$(cat ${TMP_DIR}/backend.pid)
     if kill -0 $PID 2>/dev/null; then
         echo "Stopping backend (PID: $PID)..."
         kill $PID
-        sleep 1
+        sleep ${BACKEND_STOP_WAIT}
         kill -0 $PID 2>/dev/null && kill -9 $PID
         echo "✅ Backend stopped"
     fi
-    rm -f .tmp/backend.pid
+    rm -f ${TMP_DIR}/backend.pid
 else
-    lsof -ti:8080 | xargs kill -9 2>/dev/null || true
+    lsof -ti:${BACKEND_PORT} | xargs kill -9 2>/dev/null || true
 fi
 """
 
 [tasks."backend:logs"]
 description = "View backend logs"
 run = """
-if [ -f .tmp/backend.log ]; then
-    tail -f .tmp/backend.log
+if [ -f ${TMP_DIR}/backend.log ]; then
+    tail -f ${TMP_DIR}/backend.log
 else
     echo "No log file found. Start backend with 'mise run backend:start'"
 fi
@@ -188,9 +284,9 @@ fi
 [tasks."backend:status"]
 description = "Check backend status"
 run = """
-if [ -f .tmp/backend.pid ] && kill -0 $(cat .tmp/backend.pid) 2>/dev/null; then
-    echo "✅ Backend running (PID: $(cat .tmp/backend.pid))"
-    curl -s http://localhost:8080/health 2>/dev/null || echo "❌ Not responding"
+if [ -f ${TMP_DIR}/backend.pid ] && kill -0 $(cat ${TMP_DIR}/backend.pid) 2>/dev/null; then
+    echo "✅ Backend running (PID: $(cat ${TMP_DIR}/backend.pid))"
+    curl -s http://localhost:${BACKEND_PORT}/health 2>/dev/null || echo "❌ Not responding"
 else
     echo "❌ Backend not running"
 fi
@@ -198,7 +294,7 @@ fi
 
 [tasks."backend:restart"]
 description = "Restart backend"
-run = "mise run backend:stop && sleep 1 && mise run backend:start"
+run = "mise run backend:stop && sleep ${BACKEND_STOP_WAIT} && mise run backend:start"
 
 # ============================================================================
 # Database Tasks
@@ -207,13 +303,13 @@ run = "mise run backend:stop && sleep 1 && mise run backend:start"
 [tasks."db:start"]
 description = "Start PostgreSQL"
 run = """
-docker compose -f docker-compose.dev.yml up -d
+docker compose -f ${DOCKER_COMPOSE_FILE} up -d
 echo "PostgreSQL started at localhost:5432"
 """
 
 [tasks."db:stop"]
 description = "Stop PostgreSQL"
-run = "docker compose -f docker-compose.dev.yml down"
+run = "docker compose -f ${DOCKER_COMPOSE_FILE} down"
 
 [tasks."db:reset"]
 description = "Reset database (destroy and recreate)"
@@ -222,8 +318,8 @@ echo "WARNING: This will delete all data!"
 read -p "Are you sure? (y/N): " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    docker compose -f docker-compose.dev.yml down -v
-    docker compose -f docker-compose.dev.yml up -d
+    docker compose -f ${DOCKER_COMPOSE_FILE} down -v
+    docker compose -f ${DOCKER_COMPOSE_FILE} up -d
     echo "✅ Database reset complete. Migrations will run on next backend start."
 fi
 """
@@ -234,20 +330,21 @@ fi
 description = "Reset test database (destroy and recreate)"
 run = """
 echo "Resetting test database..."
-docker compose -f docker-compose.dev.yml exec -T postgres psql -U postgres -c "DROP DATABASE IF EXISTS diktator_test;"
-docker compose -f docker-compose.dev.yml exec -T postgres psql -U postgres -c "CREATE DATABASE diktator_test;"
+docker compose -f ${DOCKER_COMPOSE_FILE} exec -T postgres psql -U postgres -c "DROP DATABASE IF EXISTS diktator_test;"
+docker compose -f ${DOCKER_COMPOSE_FILE} exec -T postgres psql -U postgres -c "CREATE DATABASE diktator_test;"
 echo "✅ Test database reset complete. Migrations will run on next test."
 """
 
 [tasks."db:shell"]
 description = "Open PostgreSQL shell"
-run = "docker compose -f docker-compose.dev.yml exec postgres psql -U postgres -d diktator"
+run = "docker compose -f ${DOCKER_COMPOSE_FILE} exec postgres psql -U postgres -d diktator"
 
 [tasks."db:seed"]
 description = "Seed database with test data"
+dir = "backend"
 run = """
 echo "🌱 Seeding database with test data..."
-(cd backend && go run cmd/seed/main.go)
+go run cmd/seed/main.go
 """
 
 [tasks."db:reset-seed"]
@@ -257,10 +354,10 @@ echo "🔄 Resetting database..."
 mise run db:reset
 
 echo "⏳ Waiting for database..."
-sleep 5
+sleep ${DB_RESET_WAIT}
 
 echo "🌱 Seeding test data..."
-(cd backend && go run cmd/seed/main.go)
+mise run db:seed
 
 echo "✅ Database reset and seeded!"
 """
@@ -271,65 +368,69 @@ echo "✅ Database reset and seeded!"
 
 [tasks.lint]
 description = "Run linters"
-run = ["cd frontend && pnpm run lint", "cd backend && go vet ./..."]
+run = """
+(cd ${FRONTEND_DIR} && pnpm run lint) &
+(cd ${BACKEND_DIR} && go vet ./...) &
+wait
+"""
 
 [tasks.format]
 description = "Format code"
-run = [
-  "cd frontend && pnpm run format",
-  "cd backend && go fmt ./...",
-  "mise run tofu:fmt",
-]
+run = """
+(cd ${FRONTEND_DIR} && pnpm run format) &
+(cd ${BACKEND_DIR} && go fmt ./...) &
+(cd ${TERRAFORM_DIR} && tofu fmt) &
+wait
+"""
 
 [tasks.typecheck]
 description = "Type check all code"
-run = [
-  "cd frontend && pnpm run typecheck",
-  "cd backend && go build -o /dev/null ./...",
-]
+run = """
+(cd ${FRONTEND_DIR} && pnpm run typecheck) &
+(cd ${BACKEND_DIR} && go build -o /dev/null ./...) &
+wait
+"""
 
 [tasks."frontend:knip"]
 description = "Find unused code in frontend"
-run = "cd frontend && pnpm run knip"
+dir = "frontend"
+run = "pnpm run knip"
 
 [tasks."frontend:knip-fix"]
 description = "Auto-fix unused code in frontend"
-run = "cd frontend && pnpm run knip:fix"
+dir = "frontend"
+run = "pnpm run knip:fix"
 
 [tasks."frontend:check"]
 description = "Run all frontend checks (typecheck, lint:fix, format, knip:fix, test) with auto-fixing"
-run = "cd frontend && pnpm run check"
+dir = "frontend"
+run = "pnpm run check"
 
 [tasks."frontend:build"]
 description = "Build frontend for production"
+dir = "frontend"
 run = """
-cd frontend
 cp .env.production .env.local 2>/dev/null || true
 NODE_ENV=production pnpm run build
 """
 
 [tasks."backend:check"]
 description = "Run all backend checks (fmt, vet, test) with auto-fixing"
+depends = ["_ensure-postgres"]
+dir = "backend"
 run = """
 echo "🔧 Running backend checks..."
 echo ""
 echo "📝 Formatting code..."
-(cd backend && go fmt ./...)
+go fmt ./...
 
 echo ""
 echo "🔍 Running go vet..."
-(cd backend && go vet ./...)
+go vet ./...
 
 echo ""
 echo "🧪 Running tests..."
-
-if ! docker compose -f docker-compose.dev.yml ps postgres 2>/dev/null | grep -q "running"; then
-    echo "🐘 Starting PostgreSQL..."
-    docker compose -f docker-compose.dev.yml up -d postgres
-    sleep 3
-fi
-
-(cd backend && DATABASE_URL="${DATABASE_TEST_URL}" go test ./...)
+DATABASE_URL="${DATABASE_TEST_URL}" go test ./...
 
 echo ""
 echo "✅ All backend checks passed!"
@@ -337,129 +438,127 @@ echo "✅ All backend checks passed!"
 
 [tasks.test]
 description = "Run all tests (backend + frontend unit tests)"
+depends = ["_ensure-postgres"]
 run = """
 echo "🧪 Running all tests..."
 
-# Ensure PostgreSQL is running
-if ! docker compose -f docker-compose.dev.yml ps postgres 2>/dev/null | grep -q "running"; then
-    echo "🐘 Starting PostgreSQL..."
-    docker compose -f docker-compose.dev.yml up -d postgres
-    sleep 3
-fi
-
 echo ""
 echo "📋 Running linters..."
-mise run lint
+mise run lint &
+LINT_PID=$!
 
 echo ""
 echo "🔍 Type checking..."
-mise run typecheck
+mise run typecheck &
+TYPE_PID=$!
+
+wait $LINT_PID $TYPE_PID
 
 echo ""
 echo "🔧 Backend tests..."
-(cd backend && DATABASE_URL="${DATABASE_TEST_URL}" go test ./...)
+(cd ${BACKEND_DIR} && DATABASE_URL="${DATABASE_TEST_URL}" go test ./...) &
+BACKEND_PID=$!
 
 echo ""
 echo "⚛️  Frontend unit tests..."
-(cd frontend && pnpm test)
+(cd ${FRONTEND_DIR} && pnpm test) &
+FRONTEND_PID=$!
+
+wait $BACKEND_PID $FRONTEND_PID
 
 echo ""
 echo "✅ All tests passed!"
 """
 
-[tasks.test-unit]
+[tasks."test:unit"]
 description = "Run unit tests only (skip integration tests)"
 run = """
 echo "🧪 Running unit tests..."
 
 echo ""
 echo "🔧 Backend unit tests..."
-(cd backend && go test -short ./...)
+(cd ${BACKEND_DIR} && go test -short ./...) &
 
 echo ""
 echo "⚛️  Frontend unit tests..."
-(cd frontend && pnpm test)
+(cd ${FRONTEND_DIR} && pnpm test) &
+
+wait
 
 echo "✅ Unit tests passed!"
 """
 
 [tasks."backend:test"]
 description = "Run backend tests"
+depends = ["_ensure-postgres"]
+dir = "backend"
 run = """
 echo "🔧 Running backend tests..."
-
-# Ensure PostgreSQL is running for integration tests
-if ! docker compose -f docker-compose.dev.yml ps postgres 2>/dev/null | grep -q "running"; then
-    echo "🐘 Starting PostgreSQL..."
-    docker compose -f docker-compose.dev.yml up -d postgres
-    sleep 3
-fi
-
-(cd backend && DATABASE_URL="${DATABASE_TEST_URL}" go test -v ./...)
+DATABASE_URL="${DATABASE_TEST_URL}" go test -v ./...
 """
 
 [tasks."backend:test-short"]
 description = "Run backend tests without integration tests"
-run = "(cd backend && go test -short -v ./...)"
+dir = "backend"
+run = "go test -short -v ./..."
 
 [tasks."backend:test-coverage"]
 description = "Run backend tests with coverage"
+depends = ["_ensure-postgres"]
+dir = "backend"
 run = """
 echo "🔧 Running backend tests with coverage..."
-
-if ! docker compose -f docker-compose.dev.yml ps postgres 2>/dev/null | grep -q "running"; then
-    echo "🐘 Starting PostgreSQL..."
-    docker compose -f docker-compose.dev.yml up -d postgres
-    sleep 3
-fi
-
-(cd backend && \
-    DATABASE_URL="${DATABASE_TEST_URL}" go test -coverprofile=coverage.out ./... && \
-    go tool cover -html=coverage.out -o coverage.html)
+DATABASE_URL="${DATABASE_TEST_URL}" go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out -o coverage.html
 echo "✅ Coverage report: backend/coverage.html"
 """
 
 [tasks."frontend:test"]
 description = "Run frontend unit tests"
-run = "(cd frontend && pnpm test)"
+dir = "frontend"
+run = "pnpm test"
 
 [tasks."frontend:test-watch"]
 description = "Run frontend tests in watch mode"
-run = "(cd frontend && pnpm test:watch)"
+dir = "frontend"
+run = "pnpm test:watch"
 
 [tasks."frontend:test-coverage"]
 description = "Run frontend tests with coverage"
-run = "(cd frontend && pnpm test:coverage)"
+dir = "frontend"
+run = "pnpm test:coverage"
 
 [tasks."frontend:test-e2e"]
 description = "Run frontend E2E tests with Playwright"
+dir = "frontend"
 run = """
 echo "🎭 Running E2E tests..."
 
 # Check if backend is running
-if ! curl -s http://localhost:8080/health > /dev/null 2>&1; then
+if ! curl -s http://localhost:${BACKEND_PORT}/health > /dev/null 2>&1; then
     echo "⚠️  Backend not running. Starting backend..."
     mise run backend:start
-    sleep 5
+    sleep ${BACKEND_STARTUP_WAIT}
 fi
 
-(cd frontend && pnpm test:e2e)
+pnpm test:e2e
 """
 
 [tasks."frontend:test-e2e-ui"]
 description = "Run E2E tests with Playwright UI"
+dir = "frontend"
 run = """
 # Check if backend is running
-if ! curl -s http://localhost:8080/health > /dev/null 2>&1; then
+if ! curl -s http://localhost:${BACKEND_PORT}/health > /dev/null 2>&1; then
     echo "⚠️  Backend not running. Starting backend..."
     mise run backend:start
-    sleep 5
+    sleep ${BACKEND_STARTUP_WAIT}
 fi
 
-(cd frontend && pnpm test:e2e:ui)
+pnpm test:e2e:ui
 """
 
-[tasks.test-all]
+[tasks."test:all"]
 description = "Run all tests including E2E"
 run = """
 echo "🧪 Running complete test suite..."
@@ -499,8 +598,10 @@ run = "mise run format"
 
 [tasks."backend:swagger-gen"]
 description = "Generate OpenAPI spec"
+dir = "backend"
+sources = ["**/*.go", "go.mod", "go.sum"]
+outputs = ["docs/swagger.json", "docs/swagger.yaml", "docs/docs.go"]
 run = """
-cd backend
 command -v swag &>/dev/null || go install github.com/swaggo/swag/cmd/swag@latest
 swag init -g cmd/server/main.go --output docs --parseInternal
 echo "✅ OpenAPI spec generated"
@@ -508,8 +609,10 @@ echo "✅ OpenAPI spec generated"
 
 [tasks."frontend:client-gen"]
 description = "Generate TypeScript client"
+dir = "frontend"
+sources = ["../backend/docs/swagger.json"]
+outputs = ["src/generated/**/*.ts"]
 run = """
-cd frontend
 npx @openapitools/openapi-generator-cli generate \
     -i ../backend/docs/swagger.json \
     -g typescript-axios \
@@ -524,35 +627,39 @@ echo "✅ TypeScript client generated"
 
 [tasks.build]
 description = "Build for production"
-run = [
-  "mise run backend:swagger-gen",
-  "mise run config-prod",
-  "cd frontend && cp .env.production .env.local && pnpm run build",
-  "cd backend && go build -o bin/server cmd/server/main.go",
-]
+run = """
+mise run backend:swagger-gen
+mise run config:prod
+(cd ${FRONTEND_DIR} && cp .env.production .env.local && pnpm run build) &
+(cd ${BACKEND_DIR} && go build -o bin/server cmd/server/main.go) &
+wait
+"""
 
 [tasks."backend:build-binary"]
 description = "Build backend binary for target architecture"
+dir = "backend"
+sources = ["**/*.go", "go.mod", "go.sum"]
+outputs = ["bin/server-linux-*"]
 run = """
-ARCH=${TARGETARCH:-amd64}
+ARCH=${TARGETARCH}
 echo "🔨 Building backend binary for linux-${ARCH}..."
-mkdir -p backend/bin
-cd backend
+mkdir -p bin
 CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build -ldflags="-w -s" -o bin/server-linux-${ARCH} ./cmd/server/main.go
 echo "✅ Binary built: backend/bin/server-linux-${ARCH}"
 """
 
 [tasks."backend:docker-build"]
 description = "Build backend Docker image (builds binary first)"
+dir = "backend"
+sources = ["**/*.go", "go.mod", "go.sum", "Dockerfile"]
 run = """
-ARCH=${TARGETARCH:-amd64}
+ARCH=${TARGETARCH}
 echo "📦 Building backend Docker image for ${ARCH}..."
 
 # Build binary outside Docker for performance
 mise run backend:build-binary
 
 # Build minimal Docker image with pre-built binary
-cd backend
 docker build --build-arg TARGETARCH=${ARCH} -t diktator-api:latest -t diktator-api:${ARCH} .
 echo "✅ Built: diktator-api:latest (linux-${ARCH})"
 """
@@ -560,11 +667,18 @@ echo "✅ Built: diktator-api:latest (linux-${ARCH})"
 [tasks."frontend:docker-build"]
 description = "Build frontend Docker image with nginx"
 depends = ["frontend:config-homelab"]
+dir = "frontend"
+sources = [
+  "src/**/*.{ts,tsx,js,jsx,json,css}",
+  "package.json",
+  "pnpm-lock.yaml",
+  "Dockerfile",
+  "nginx.conf",
+]
 run = """
 echo "📦 Building frontend Docker image..."
 
 # Build frontend first
-cd frontend
 cp .env.production .env.local 2>/dev/null || true
 NODE_ENV=production pnpm run build
 
@@ -575,14 +689,15 @@ echo "✅ Built: diktator-frontend:latest"
 
 [tasks.clean]
 description = "Clean build artifacts"
-run = [
-  "mise run backend:stop 2>/dev/null || true",
-  "rm -rf frontend/.next frontend/out frontend/src/generated frontend/dist",
-  "rm -rf backend/bin",
-  "rm -f frontend/.env.local backend/.env.* frontend/.env.*",
-  "rm -f .mise.env",
-  "rm -rf .tmp",
-]
+run = """
+mise run backend:stop 2>/dev/null || true
+rm -rf ${FRONTEND_DIR}/.next ${FRONTEND_DIR}/out ${FRONTEND_DIR}/src/generated ${FRONTEND_DIR}/dist
+rm -rf ${BACKEND_DIR}/bin
+rm -f ${FRONTEND_DIR}/.env.local ${BACKEND_DIR}/.env.* ${FRONTEND_DIR}/.env.*
+rm -f .mise.env
+rm -rf ${TMP_DIR}
+echo "✅ Build artifacts cleaned"
+"""
 
 # ============================================================================
 # Setup & Configuration
@@ -599,7 +714,7 @@ mise install
 
 echo ""
 echo "📝 Generating development config..."
-mise run config-dev
+mise run config:dev
 
 echo ""
 echo "📦 Installing dependencies..."
@@ -607,9 +722,9 @@ mise run install
 
 echo ""
 echo "🐘 Starting PostgreSQL..."
-docker compose -f docker-compose.dev.yml pull
-docker compose -f docker-compose.dev.yml up -d
-sleep 3
+docker compose -f ${DOCKER_COMPOSE_FILE} pull
+docker compose -f ${DOCKER_COMPOSE_FILE} up -d
+sleep ${DB_STARTUP_WAIT}
 
 echo ""
 echo "✅ Setup complete!"
@@ -621,43 +736,33 @@ echo "  Start frontend:     mise run frontend:dev"
 echo "  Run tests:          mise run test"
 """
 
-[tasks.config-dev]
+[tasks."config:dev"]
 description = "Generate development configuration"
+depends = ["_validate-env"]
 run = """
-cat > backend/.env.development << 'EOF'
-# Backend Development Configuration
-GOOGLE_CLOUD_PROJECT=diktator-dev
-GOOGLE_CLOUD_QUOTA_PROJECT=diktator-app
-GIN_MODE=debug
-PORT=8080
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/diktator?sslmode=disable
-DATABASE_TEST_URL=postgresql://postgres:postgres@localhost:5432/diktator_test?sslmode=disable
-AUTH_MODE=mock
-EOF
-
-cat > frontend/.env.development << 'EOF'
-# Frontend Development Configuration
-NEXT_PUBLIC_API_URL=http://localhost:8080
-NEXT_PUBLIC_AUTH_MODE=mock
-NEXT_TELEMETRY_DISABLED=1
-NODE_ENV=development
-EOF
-
+echo "📝 Generating development configuration..."
+envsubst < ${BACKEND_DIR}/.env.development.tmpl > ${BACKEND_DIR}/.env.development
+envsubst < ${FRONTEND_DIR}/.env.development.tmpl > ${FRONTEND_DIR}/.env.development
 echo "✅ Development config created"
 """
 
-[tasks.config-prod]
+[tasks."config:prod"]
 description = "Generate production configuration"
+depends = ["_validate-env"]
 run = """
 if [ ! -f .mise.env ]; then
-    echo "ERROR: .mise.env not found. Run 'mise run config-load' first."
+    echo "ERROR: .mise.env not found. Run 'mise run config:load' first."
     exit 1
 fi
 source .mise.env
 
-cat > backend/.env.production << EOF
-GOOGLE_CLOUD_PROJECT=${DIKTATOR_PROJECT_ID}
-GOOGLE_CLOUD_QUOTA_PROJECT=${GOOGLE_CLOUD_QUOTA_PROJECT:-${DIKTATOR_PROJECT_ID}}
+echo "📝 Generating production configuration..."
+
+# Note: Production config uses different variables than development
+# Some vars like OIDC URLs need to be set in .mise.env before running this
+cat > ${BACKEND_DIR}/.env.production << EOF
+TTS_PROJECT=${DIKTATOR_PROJECT_ID}
+TTS_QUOTA_PROJECT=${TTS_QUOTA_PROJECT:-${DIKTATOR_PROJECT_ID}}
 GIN_MODE=release
 PORT=8080
 DATABASE_URL=${DATABASE_URL}
@@ -666,7 +771,7 @@ OIDC_ISSUER_URL=${OIDC_ISSUER_URL:-https://auth.diktator.app}
 OIDC_AUDIENCE=${OIDC_AUDIENCE:-diktator}
 EOF
 
-cat > frontend/.env.production << EOF
+cat > ${FRONTEND_DIR}/.env.production << EOF
 NEXT_PUBLIC_API_URL=${DIKTATOR_API_URL:-https://${DIKTATOR_API_SERVICE_NAME}-${DIKTATOR_REGION:-${DIKTATOR_DEFAULT_REGION}}.run.app}
 NEXT_PUBLIC_AUTH_MODE=oidc
 NEXT_PUBLIC_OIDC_ISSUER_URL=${OIDC_ISSUER_URL:-https://auth.diktator.app}
@@ -678,10 +783,10 @@ EOF
 echo "✅ Production config created"
 """
 
-[tasks.config-load]
+[tasks."config:load"]
 description = "Load configuration from terraform"
+dir = "terraform"
 run = """
-cd terraform
 if [ ! -d .terraform ]; then
     echo "Terraform not initialized. Run 'mise run tofu:init'"
     exit 1
@@ -699,281 +804,268 @@ echo "Configuration loaded to .mise.env"
 
 [tasks."tofu:init"]
 description = "Initialize OpenTofu"
-run = "cd terraform && tofu init"
+dir = "terraform"
+run = "tofu init"
 
 [tasks."tofu:plan"]
 description = "Plan infrastructure changes"
-run = "cd terraform && tofu plan"
+dir = "terraform"
+run = "tofu plan"
 
 [tasks."tofu:apply"]
 description = "Apply infrastructure"
-run = "cd terraform && tofu apply"
+dir = "terraform"
+run = "tofu apply"
 
 [tasks."tofu:destroy"]
 description = "Destroy infrastructure"
-run = "cd terraform && tofu destroy"
+dir = "terraform"
+run = "tofu destroy"
 
 [tasks."tofu:fmt"]
 description = "Format terraform files"
-run = "cd terraform && tofu fmt"
+dir = "terraform"
+run = "tofu fmt"
 
 # ============================================================================
 # Homelab Deployment (Knative)
 # ============================================================================
 
-[tasks."homelab:build-backend"]
+[tasks."homelab:backend:build"]
 description = "Build backend binaries and Docker image for homelab"
+dir = "backend"
+sources = ["**/*.go", "go.mod", "go.sum", "Dockerfile"]
+outputs = [
+  "bin/server-linux-amd64",
+  "bin/server-linux-arm64",
+  "../.build-tag-backend",
+]
 run = """
-  echo "🔨 Building backend binaries..."
-  cd backend
+echo "🔨 Building backend binaries..."
 
-  # Build for linux/amd64
-  CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/server-linux-amd64 ./cmd/server
+# Build for linux/amd64
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/server-linux-amd64 ./cmd/server
 
-  # Build for linux/arm64
-  CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o bin/server-linux-arm64 ./cmd/server
+# Build for linux/arm64
+CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o bin/server-linux-arm64 ./cmd/server
 
-  echo "📦 Building and pushing Docker image..."
-  BUILD_TAG=$(date +%s)
-  REGISTRY_URL=${REGISTRY_URL:-registry.intern.flaatten.org:5000}
-  SERVICE_NAME=${BACKEND_SERVICE:-api}
+echo "📦 Building and pushing Docker image..."
+BUILD_TAG=$(date +%s)
 
-  # Build multi-arch image
-  docker buildx build \
-    --platform linux/amd64,linux/arm64 \
-    --build-arg TARGETARCH=amd64 \
-    -t ${REGISTRY_URL}/${SERVICE_NAME}:${BUILD_TAG} \
-    --push \
-    .
+# Build multi-arch image
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  --build-arg TARGETARCH=amd64 \
+  -t ${REGISTRY_URL}/${BACKEND_SERVICE}:${BUILD_TAG} \
+  --push \
+  .
 
-  # Save build tag for deployment
-  echo ${BUILD_TAG} > ../.build-tag-backend
-  echo "✅ Backend built: ${REGISTRY_URL}/${SERVICE_NAME}:${BUILD_TAG}"
-"""
-
-[tasks."homelab:install-frontend"]
-description = "Install frontend dependencies"
-run = """
-  cd frontend
-  echo "📦 Installing frontend dependencies..."
-  pnpm install
+# Save build tag for deployment
+echo ${BUILD_TAG} > ../.build-tag-backend
+echo "✅ Backend built: ${REGISTRY_URL}/${BACKEND_SERVICE}:${BUILD_TAG}"
 """
 
 [tasks."frontend:config-homelab"]
 description = "Generate frontend build configuration for homelab Knative deployment"
 run = """
-cat > frontend/.env.production << EOF
-NEXT_PUBLIC_API_URL=https://api.diktator.fn.flaatten.org
-NEXT_PUBLIC_APP_URL=https://www.diktator.fn.flaatten.org
+cat > ${FRONTEND_DIR}/.env.production << EOF
+NEXT_PUBLIC_API_URL=${HOMELAB_API_URL}
+NEXT_PUBLIC_APP_URL=${HOMELAB_APP_URL}
 NEXT_PUBLIC_AUTH_MODE=oidc
-NEXT_PUBLIC_OIDC_ISSUER_URL=https://zitadel.zitadel.fn.flaatten.org
-NEXT_PUBLIC_OIDC_CLIENT_ID=353809168672555052
-NEXT_PUBLIC_OIDC_REDIRECT_URI=https://www.diktator.fn.flaatten.org/auth/callback
-NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI=https://www.diktator.fn.flaatten.org
+NEXT_PUBLIC_OIDC_ISSUER_URL=${HOMELAB_OIDC_ISSUER_URL}
+NEXT_PUBLIC_OIDC_CLIENT_ID=${HOMELAB_OIDC_CLIENT_ID}
+NEXT_PUBLIC_OIDC_REDIRECT_URI=${HOMELAB_APP_URL}/auth/callback
+NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI=${HOMELAB_APP_URL}
 NEXT_TELEMETRY_DISABLED=1
 NODE_ENV=production
 EOF
-echo "✅ Homelab config: frontend/.env.production"
+echo "✅ Homelab config: ${FRONTEND_DIR}/.env.production"
 """
 
-[tasks."homelab:build-frontend"]
+[tasks."homelab:frontend:build"]
 description = "Build frontend and Docker image for homelab"
-depends = ["homelab:install-frontend", "frontend:config-homelab"]
+depends = ["frontend:config-homelab"]
+dir = "frontend"
+sources = [
+  "src/**/*.{ts,tsx,js,jsx,json,css}",
+  "package.json",
+  "pnpm-lock.yaml",
+  "Dockerfile",
+  "nginx.conf",
+]
+outputs = ["out/**/*", "../.build-tag-frontend"]
 run = """
-  cd frontend
-  echo "🔨 Building frontend static files..."
-  source .env.production
-  NODE_ENV=production pnpm run build
+echo "🔨 Building frontend static files..."
+pnpm install
+source .env.production
+NODE_ENV=production pnpm run build
 
-  echo "📦 Building and pushing Docker image..."
-  BUILD_TAG=$(date +%s)
-  REGISTRY_URL=${REGISTRY_URL:-registry.intern.flaatten.org:5000}
-  SERVICE_NAME=${FRONTEND_SERVICE:-www}
+echo "📦 Building and pushing Docker image..."
+BUILD_TAG=$(date +%s)
 
-  # Build multi-arch image
-  docker buildx build \
-    --platform linux/amd64,linux/arm64 \
-    -t ${REGISTRY_URL}/${SERVICE_NAME}:${BUILD_TAG} \
-    --push \
-    .
+# Build multi-arch image
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -t ${REGISTRY_URL}/${FRONTEND_SERVICE}:${BUILD_TAG} \
+  --push \
+  .
 
-  # Save build tag for deployment
-  echo ${BUILD_TAG} > ../.build-tag-frontend
-  echo "✅ Frontend built: ${REGISTRY_URL}/${SERVICE_NAME}:${BUILD_TAG}"
+# Save build tag for deployment
+echo ${BUILD_TAG} > ../.build-tag-frontend
+echo "✅ Frontend built: ${REGISTRY_URL}/${FRONTEND_SERVICE}:${BUILD_TAG}"
 """
 
 [tasks."homelab:build"]
 description = "Build both backend and frontend for homelab"
-depends = ["homelab:build-backend", "homelab:build-frontend"]
+depends = ["homelab:backend:build", "homelab:frontend:build"]
 
-[tasks."homelab:gcp-export-credentials"]
-description = "Export Google Cloud credentials from Terraform"
+[tasks."homelab:gcp:export-credentials"]
+description = "Export TTS credentials from Terraform"
+dir = "terraform"
 run = """
-  DEPLOY_DIR=${DEPLOY_DIR:-deploy}
+echo "📥 Exporting TTS service credentials..."
 
-  echo "📥 Exporting Google Cloud credentials..."
+if [ ! -d ".terraform" ]; then
+  echo "❌ Terraform not initialized. Run 'mise run tofu:init' first."
+  exit 1
+fi
 
-  if [ ! -d "terraform/.terraform" ]; then
-    echo "❌ Terraform not initialized. Run 'mise run tofu:init' first."
-    exit 1
-  fi
+if ! tofu output app_service_account_key >/dev/null 2>&1; then
+  echo "❌ No service account found. Run 'mise run tofu:apply' first."
+  exit 1
+fi
 
-  cd terraform
-  if ! tofu output app_service_account_key >/dev/null 2>&1; then
-    echo "❌ No service account found. Run 'mise run tofu:apply' first."
-    exit 1
-  fi
-
-  tofu output -raw app_service_account_key | base64 -d > ../${DEPLOY_DIR}/gcp-credentials.json
-  echo "✅ Credentials exported to ${DEPLOY_DIR}/gcp-credentials.json"
+tofu output -raw app_service_account_key | base64 -d > ../${DEPLOY_DIR}/gcp-credentials.json
+echo "✅ Credentials exported to ${DEPLOY_DIR}/gcp-credentials.json"
 """
 
-[tasks."homelab:gcp-create-secret"]
-description = "Create Kubernetes secret for Google Cloud credentials"
-depends = ["homelab:create-namespace", "homelab:gcp-export-credentials"]
+[tasks."homelab:gcp:create-secret"]
+description = "Create Kubernetes secret for TTS credentials"
+depends = ["homelab:namespace:create", "homelab:gcp:export-credentials"]
 run = """
-  NAMESPACE=${NAMESPACE:-diktator}
-  DEPLOY_DIR=${DEPLOY_DIR:-deploy}
+if [ ! -f "${DEPLOY_DIR}/gcp-credentials.json" ]; then
+  echo "❌ Credentials file not found. Run 'mise run homelab:gcp:export-credentials' first."
+  exit 1
+fi
 
-  if [ ! -f "${DEPLOY_DIR}/gcp-credentials.json" ]; then
-    echo "❌ Credentials file not found. Run 'mise run homelab:gcp-export-credentials' first."
-    exit 1
-  fi
+echo "🔐 Creating Kubernetes secret..."
 
-  echo "🔐 Creating Kubernetes secret..."
+# Delete existing secret if it exists
+kubectl delete secret gcp-credentials -n ${NAMESPACE} 2>/dev/null || true
 
-  # Delete existing secret if it exists
-  kubectl delete secret gcp-credentials -n ${NAMESPACE} 2>/dev/null || true
+# Create new secret
+kubectl create secret generic gcp-credentials \
+  --from-file=key.json=${DEPLOY_DIR}/gcp-credentials.json \
+  -n ${NAMESPACE}
 
-  # Create new secret
-  kubectl create secret generic gcp-credentials \
-    --from-file=key.json=${DEPLOY_DIR}/gcp-credentials.json \
-    -n ${NAMESPACE}
+# Delete credentials file from disk
+rm -f ${DEPLOY_DIR}/gcp-credentials.json
 
-  # Delete credentials file from disk
-  rm -f ${DEPLOY_DIR}/gcp-credentials.json
-
-  echo "✅ Secret 'gcp-credentials' created in namespace ${NAMESPACE}"
-  echo "🗑️  Credentials file removed from disk"
+echo "✅ Secret 'gcp-credentials' created in namespace ${NAMESPACE}"
+echo "🗑️  Credentials file removed from disk"
 """
 
-[tasks."homelab:create-namespace"]
+[tasks."homelab:namespace:create"]
 description = "Create namespace if it doesn't exist"
 run = """
-  NAMESPACE=${NAMESPACE:-diktator}
-  if ! kubectl get namespace ${NAMESPACE} >/dev/null 2>&1; then
-    kubectl create namespace ${NAMESPACE}
-    echo "✅ Created namespace: ${NAMESPACE}"
-  else
-    echo "✓ Namespace ${NAMESPACE} already exists"
-  fi
+if ! kubectl get namespace ${NAMESPACE} >/dev/null 2>&1; then
+  kubectl create namespace ${NAMESPACE}
+  echo "✅ Created namespace: ${NAMESPACE}"
+else
+  echo "✓ Namespace ${NAMESPACE} already exists"
+fi
 """
 
-[tasks."homelab:apply-network-policies"]
+[tasks."homelab:network:apply"]
 description = "Apply Cilium network policies"
-depends = ["homelab:create-namespace"]
+depends = ["homelab:namespace:create"]
 run = """
-  NAMESPACE=${NAMESPACE:-diktator}
-  DEPLOY_DIR=${DEPLOY_DIR:-deploy}
-
-  echo "🔒 Applying network policies..."
-  kubectl apply -f ${DEPLOY_DIR}/networkpolicy.yaml
-
-  echo "✅ Network policies applied"
+echo "🔒 Applying network policies..."
+kubectl apply -f ${DEPLOY_DIR}/networkpolicy.yaml
+echo "✅ Network policies applied"
 """
 
-[tasks."homelab:deploy-backend"]
+[tasks."homelab:backend:deploy"]
 description = "Deploy backend to Knative"
-depends = ["homelab:gcp-create-secret"]
+depends = ["homelab:gcp:create-secret"]
 run = """
-  if [ ! -f ".build-tag-backend" ]; then
-    echo "❌ No build tag found. Run 'mise run homelab:build-backend' first."
-    exit 1
-  fi
+if [ ! -f ".build-tag-backend" ]; then
+  echo "❌ No build tag found. Run 'mise run homelab:backend:build' first."
+  exit 1
+fi
 
-  BUILD_TAG=$(cat .build-tag-backend)
-  REGISTRY_URL=${REGISTRY_URL:-registry.intern.flaatten.org:5000}
-  SERVICE_NAME=${BACKEND_SERVICE:-api}
-  NAMESPACE=${NAMESPACE:-diktator}
-  DEPLOY_DIR=${DEPLOY_DIR:-deploy}
+BUILD_TAG=$(cat .build-tag-backend)
 
-  echo "🚀 Deploying backend: ${SERVICE_NAME}:${BUILD_TAG}"
+echo "🚀 Deploying backend: ${BACKEND_SERVICE}:${BUILD_TAG}"
 
-  # Update image tag in manifest
-  sed "s|BUILD_TAG|${BUILD_TAG}|" \
-    ${DEPLOY_DIR}/knative-service-backend.yaml | kubectl apply -f -
+# Update image tag in manifest
+sed "s|BUILD_TAG|${BUILD_TAG}|" \
+  ${DEPLOY_DIR}/knative-service-backend.yaml | kubectl apply -f -
 
-  echo "⏳ Waiting for backend to be ready..."
-  kubectl wait --for=condition=Ready \
-    --timeout=300s \
-    -n ${NAMESPACE} \
-    ksvc/${SERVICE_NAME}
+echo "⏳ Waiting for backend to be ready..."
+kubectl wait --for=condition=Ready \
+  --timeout=${KNATIVE_READY_TIMEOUT} \
+  -n ${NAMESPACE} \
+  ksvc/${BACKEND_SERVICE}
 
-  echo "✅ Backend deployed successfully"
+echo "✅ Backend deployed successfully"
 """
 
-[tasks."homelab:deploy-frontend"]
+[tasks."homelab:frontend:deploy"]
 description = "Deploy frontend to Knative"
 run = """
-  if [ ! -f ".build-tag-frontend" ]; then
-    echo "❌ No build tag found. Run 'mise run homelab:build-frontend' first."
-    exit 1
-  fi
+if [ ! -f ".build-tag-frontend" ]; then
+  echo "❌ No build tag found. Run 'mise run homelab:frontend:build' first."
+  exit 1
+fi
 
-  BUILD_TAG=$(cat .build-tag-frontend)
-  REGISTRY_URL=${REGISTRY_URL:-registry.intern.flaatten.org:5000}
-  SERVICE_NAME=${FRONTEND_SERVICE:-www}
-  NAMESPACE=${NAMESPACE:-diktator}
-  DEPLOY_DIR=${DEPLOY_DIR:-deploy}
+BUILD_TAG=$(cat .build-tag-frontend)
 
-  echo "🚀 Deploying frontend: ${SERVICE_NAME}:${BUILD_TAG}"
+echo "🚀 Deploying frontend: ${FRONTEND_SERVICE}:${BUILD_TAG}"
 
-  # Update image tag in manifest
-  sed "s|BUILD_TAG|${BUILD_TAG}|" \
-    ${DEPLOY_DIR}/knative-service-frontend.yaml | kubectl apply -f -
+# Update image tag in manifest
+sed "s|BUILD_TAG|${BUILD_TAG}|" \
+  ${DEPLOY_DIR}/knative-service-frontend.yaml | kubectl apply -f -
 
-  echo "⏳ Waiting for frontend to be ready..."
-  kubectl wait --for=condition=Ready \
-    --timeout=300s \
-    -n ${NAMESPACE} \
-    ksvc/${SERVICE_NAME}
+echo "⏳ Waiting for frontend to be ready..."
+kubectl wait --for=condition=Ready \
+  --timeout=${KNATIVE_READY_TIMEOUT} \
+  -n ${NAMESPACE} \
+  ksvc/${FRONTEND_SERVICE}
 
-  echo "✅ Frontend deployed successfully"
+echo "✅ Frontend deployed successfully"
 """
 
 [tasks."homelab:deploy"]
 description = "Deploy both backend and frontend to homelab"
 depends = [
-  "homelab:create-namespace",
-  "homelab:gcp-create-secret",
-  "homelab:apply-network-policies",
-  "homelab:deploy-backend",
-  "homelab:deploy-frontend",
+  "homelab:namespace:create",
+  "homelab:gcp:create-secret",
+  "homelab:network:apply",
+  "homelab:backend:deploy",
+  "homelab:frontend:deploy",
 ]
 
-[tasks."homelab:full-deploy"]
+[tasks."homelab:deploy:full"]
 description = "Build and deploy both services to homelab"
 depends = ["homelab:build", "homelab:deploy"]
 
-[tasks."homelab:db-create"]
+[tasks."homelab:db:create"]
 description = "Create PostgreSQL database"
-depends = ["homelab:create-namespace"]
+depends = ["homelab:namespace:create"]
 run = """
-  NAMESPACE=${NAMESPACE:-diktator}
-  DEPLOY_DIR=${DEPLOY_DIR:-deploy}
+echo "📊 Creating database..."
+kubectl apply -f ${DEPLOY_DIR}/postgres-cluster.yaml
 
-  echo "📊 Creating database..."
-  kubectl apply -f ${DEPLOY_DIR}/postgres-cluster.yaml
+echo "⏳ Waiting for database pod to be ready (this may take 2-5 minutes)..."
 
-  echo "⏳ Waiting for database pod to be ready (this may take 2-5 minutes)..."
-
-  # Wait for pods to be ready (more reliable than cluster condition)
-  if kubectl wait --for=condition=Ready \
-    --timeout=600s \
-    -n ${NAMESPACE} \
-    pod -l cnpg.io/cluster=diktator-db 2>/dev/null; then
-    echo "✅ Database pod is ready"
-  else
+# Wait for pods to be ready (more reliable than cluster condition)
+if kubectl wait --for=condition=Ready \
+  --timeout=${POD_READY_TIMEOUT} \
+  -n ${NAMESPACE} \
+  pod -l cnpg.io/cluster=diktator-db 2>/dev/null; then
+  echo "✅ Database pod is ready"
+else
     echo "⚠️  Pod readiness check failed. Verifying cluster status..."
 
     # Check if cluster resource exists and its conditions
@@ -1005,78 +1097,53 @@ run = """
 [tasks."homelab:status"]
 description = "Show status of all services"
 run = """
-  NAMESPACE=${NAMESPACE:-diktator}
-
-  echo "=== Knative Services ==="
-  kubectl get ksvc -n ${NAMESPACE}
-  echo ""
-  echo "=== PostgreSQL Cluster ==="
-  kubectl get cluster -n ${NAMESPACE}
-  echo ""
-  echo "=== Pods ==="
-  kubectl get pods -n ${NAMESPACE}
+echo "=== Knative Services ==="
+kubectl get ksvc -n ${NAMESPACE}
+echo ""
+echo "=== PostgreSQL Cluster ==="
+kubectl get cluster -n ${NAMESPACE}
+echo ""
+echo "=== Pods ==="
+kubectl get pods -n ${NAMESPACE}
 """
 
-[tasks."homelab:logs-backend"]
+[tasks."homelab:backend:logs"]
 description = "View backend logs"
-run = """
-  NAMESPACE=${NAMESPACE:-diktator}
-  SERVICE_NAME=${BACKEND_SERVICE:-api}
-  kubectl logs -n ${NAMESPACE} -l serving.knative.dev/service=${SERVICE_NAME} --tail=100 -f
-"""
+run = "kubectl logs -n ${NAMESPACE} -l serving.knative.dev/service=${BACKEND_SERVICE} --tail=100 -f"
 
-[tasks."homelab:logs-frontend"]
+[tasks."homelab:frontend:logs"]
 description = "View frontend logs"
-run = """
-  NAMESPACE=${NAMESPACE:-diktator}
-  SERVICE_NAME=${FRONTEND_SERVICE:-www}
-  kubectl logs -n ${NAMESPACE} -l serving.knative.dev/service=${SERVICE_NAME} --tail=100 -f
-"""
+run = "kubectl logs -n ${NAMESPACE} -l serving.knative.dev/service=${FRONTEND_SERVICE} --tail=100 -f"
 
-[tasks."homelab:url-backend"]
+[tasks."homelab:backend:url"]
 description = "Get backend URL"
-run = """
-  NAMESPACE=${NAMESPACE:-diktator}
-  SERVICE_NAME=${BACKEND_SERVICE:-api}
-  kn service describe ${SERVICE_NAME} -n ${NAMESPACE} -o url
-"""
+run = "kn service describe ${BACKEND_SERVICE} -n ${NAMESPACE} -o url"
 
-[tasks."homelab:url-frontend"]
+[tasks."homelab:frontend:url"]
 description = "Get frontend URL"
-run = """
-  NAMESPACE=${NAMESPACE:-diktator}
-  SERVICE_NAME=${FRONTEND_SERVICE:-www}
-  kn service describe ${SERVICE_NAME} -n ${NAMESPACE} -o url
-"""
+run = "kn service describe ${FRONTEND_SERVICE} -n ${NAMESPACE} -o url"
 
-[tasks."homelab:delete-backend"]
+[tasks."homelab:backend:delete"]
 description = "Delete backend service"
-run = """
-  DEPLOY_DIR=${DEPLOY_DIR:-deploy}
-  kubectl delete -f ${DEPLOY_DIR}/knative-service-backend.yaml
-"""
+run = "kubectl delete -f ${DEPLOY_DIR}/knative-service-backend.yaml"
 
-[tasks."homelab:delete-frontend"]
+[tasks."homelab:frontend:delete"]
 description = "Delete frontend service"
-run = """
-  DEPLOY_DIR=${DEPLOY_DIR:-deploy}
-  kubectl delete -f ${DEPLOY_DIR}/knative-service-frontend.yaml
-"""
+run = "kubectl delete -f ${DEPLOY_DIR}/knative-service-frontend.yaml"
 
 [tasks."homelab:delete"]
 description = "Delete all services"
 run = """
-  NAMESPACE=${NAMESPACE:-diktator}
-  kubectl delete ksvc -n ${NAMESPACE} --all
-  echo "✅ All services deleted"
-  echo "💡 To delete namespace: kubectl delete namespace ${NAMESPACE}"
+kubectl delete ksvc -n ${NAMESPACE} --all
+echo "✅ All services deleted"
+echo "💡 To delete namespace: kubectl delete namespace ${NAMESPACE}"
 """
 
 [tasks."homelab:clean"]
 description = "Clean build artifacts"
 run = """
-  rm -f .build-tag-backend .build-tag-frontend
-  rm -rf backend/bin
-  rm -rf frontend/out frontend/.next
-  echo "✅ Build artifacts cleaned"
+rm -f .build-tag-backend .build-tag-frontend
+rm -rf ${BACKEND_DIR}/bin
+rm -rf ${FRONTEND_DIR}/out ${FRONTEND_DIR}/.next
+echo "✅ Build artifacts cleaned"
 """

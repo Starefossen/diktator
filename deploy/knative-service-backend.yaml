@@ -41,12 +41,12 @@ spec:
               value: "true"  # TODO: Remove when proper cert is in place
             - name: GIN_MODE
               value: "release"
-            # Google Cloud credentials for Text-to-Speech
+            # Text-to-Speech credentials (only GCP dependency - app is self-hosted)
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /var/secrets/google/key.json
-            - name: GOOGLE_CLOUD_PROJECT
+            - name: TTS_PROJECT
               value: "diktator-app"
-            - name: GOOGLE_CLOUD_QUOTA_PROJECT
+            - name: TTS_QUOTA_PROJECT
               value: "diktator-app"
           volumeMounts:
             - name: gcp-credentials

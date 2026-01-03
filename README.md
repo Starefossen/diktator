@@ -115,8 +115,8 @@ mise run typecheck        # TypeScript check + Go build check
 
 **Run All Tests:**
 - `mise run test` - All tests (lint + typecheck + backend + frontend unit tests)
-- `mise run test-all` - Complete suite including E2E tests
-- `mise run check` - Alias for `test`
+- `mise run test:all` - Complete suite including E2E tests
+- `mise run check` - Run all checks (backend + frontend)
 
 **Backend Tests:**
 - `mise run backend:test` - All backend tests (requires PostgreSQL)
@@ -131,7 +131,7 @@ mise run typecheck        # TypeScript check + Go build check
 - `mise run frontend:test-e2e-ui` - E2E tests with Playwright UI
 
 **Quick Tests:**
-- `mise run test-unit` - Unit tests only (backend + frontend, skip integration)
+- `mise run test:unit` - Unit tests only (backend + frontend, skip integration)
 
 ### Quality Assurance
 
@@ -162,10 +162,9 @@ mise run typecheck        # TypeScript check + Go build check
 ### Configuration
 
 - `mise run setup` - Complete project setup
-- `mise run config-dev` - Generate development configuration
-- `mise run config-prod` - Generate production configuration
-- `mise run config-load` - Load configuration from terraform
-- `mise run config-check` - Check all configuration values
+- `mise run config:dev` - Generate development configuration
+- `mise run config:prod` - Generate production configuration
+- `mise run config:load` - Load configuration from terraform
 
 ## Configuration
 
@@ -247,10 +246,10 @@ See `deploy/HOMELAB.md` for detailed deployment instructions to your HOMELAB-clu
 
 ### Required Secrets
 
-Configure these secrets in your GitHub repository:
+Configure these secrets in your GitHub repository (for TTS service only):
 
-- `GCP_SA_KEY`: Google Cloud Service Account JSON key
-- `GCP_PROJECT_ID`: Google Cloud Project ID
+- `GCP_SA_KEY`: Google Cloud Text-to-Speech service account JSON key
+- `GCP_PROJECT_ID`: Google Cloud project ID (for TTS API billing)
 
 ## Contributing
 

@@ -27,22 +27,20 @@ echo "🗃️ Installing backend dependencies..."
 cd backend && go mod tidy && cd ..
 
 echo "⚙️ Setting up development configuration..."
-mise run config-dev
+mise run config:dev
 
 echo "🐘 Starting PostgreSQL..."
-mise run db-start
+mise run db:start
 
-echo "🗄️ Running database migrations..."
-sleep 3
-mise run db-migrate
+echo "🗄️ Database migrations will run automatically on first backend start..."
 
 echo "✅ Setup complete!"
 echo ""
 echo "🎯 Quick start commands:"
 echo "  Start full dev environment:  mise run dev"
-echo "  Start frontend only:         mise run frontend"
-echo "  Start backend only:          mise run backend"
-echo "  Start backend in background: mise run backend-start"
+echo "  Start frontend only:         mise run frontend:dev"
+echo "  Start backend only:          mise run backend:dev"
+echo "  Start backend in background: mise run backend:start"
 echo ""
 echo "🌐 Development URLs:"
 echo "  Frontend:         http://localhost:3000"

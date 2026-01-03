@@ -128,16 +128,16 @@ func NewService() (*Service, error) {
 
 	// Get quota project from environment
 	var clientOptions []option.ClientOption
-	if quotaProject := os.Getenv("GOOGLE_CLOUD_QUOTA_PROJECT"); quotaProject != "" {
+	if quotaProject := os.Getenv("TTS_QUOTA_PROJECT"); quotaProject != "" {
 		clientOptions = append(clientOptions, option.WithQuotaProject(quotaProject))
-		log.Printf("Using Google Cloud quota project: %s", quotaProject)
+		log.Printf("Using TTS quota project: %s", quotaProject)
 	}
 
 	client, err := texttospeech.NewClient(ctx, clientOptions...)
 	if err != nil {
 		// If credentials are missing, log warning and continue without TTS
 		if strings.Contains(err.Error(), "credentials") || strings.Contains(err.Error(), "ADC") {
-			log.Println("⚠️  TTS service disabled (no Google Cloud credentials found)")
+			log.Println("⚠️  TTS service disabled (no TTS credentials found)")
 			return &Service{
 				client: nil,
 				ctx:    ctx,

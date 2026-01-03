@@ -57,12 +57,15 @@ mise run homelab:full-deploy
 
 ### Google Cloud Text-to-Speech
 
-Required for audio pronunciation. Credentials are automatically provisioned and deployed by mise tasks.
+The application is **fully self-hosted on homelab infrastructure**.
+
+The only Google Cloud dependency is the **Text-to-Speech API** for audio pronunciation.
+Credentials are automatically provisioned and deployed by mise tasks.
 
 **Initial setup:**
 
 ```bash
-# 1. Provision service account in Google Cloud
+# 1. Provision TTS service account in Google Cloud
 cd terraform
 tofu apply
 cd ..
@@ -74,10 +77,10 @@ mise run homelab:full-deploy
 **Manual credential management (if needed):**
 
 ```bash
-# Export credentials from Terraform
+# Export TTS credentials from Terraform
 mise run homelab:gcp-export-credentials
 
-# Create/update Kubernetes secret
+# Create/update Kubernetes secret for TTS
 mise run homelab:gcp-create-secret
 ```
 
