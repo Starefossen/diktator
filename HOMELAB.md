@@ -24,8 +24,8 @@ mise run homelab:full-deploy
 
 ## URLs
 
-- **Frontend**: https://www.diktator.fn.flaatten.org
-- **API**: https://api.diktator.fn.flaatten.org
+- **Frontend**: <https://www.diktator.fn.flaatten.org>
+- **API**: <https://api.diktator.fn.flaatten.org>
 
 ## Configuration
 
@@ -46,12 +46,14 @@ mise run homelab:full-deploy
 ### Environment Variables
 
 **Backend** ([deploy/knative-service-backend.yaml](deploy/knative-service-backend.yaml)):
+
 - `DATABASE_URL`: From secret `diktator-db-app`
 - `AUTH_MODE`: `oidc`
 - `OIDC_ISSUER_URL`: `https://zitadel.zitadel.fn.flaatten.org`
 - `OIDC_AUDIENCE`: Zitadel client ID
 
 **Frontend** ([deploy/knative-service-frontend.yaml](deploy/knative-service-frontend.yaml)):
+
 - `NEXT_PUBLIC_API_URL`: `https://api.diktator.fn.flaatten.org`
 - `NEXT_PUBLIC_AUTH_MODE`: `oidc`
 
@@ -91,6 +93,7 @@ The backend deployment is already configured to use these credentials. See [depl
 ## Database
 
 PostgreSQL via CloudNativePG:
+
 - 1 instance, 5Gi storage
 - Credentials: secret `diktator-db-app`
 
@@ -124,17 +127,20 @@ kubectl delete ns diktator       # Everything
 ## Troubleshooting
 
 **Backend can't connect to database:**
+
 ```bash
 kubectl get cluster -n diktator diktator-db
 ```
 
 **Auth issues:**
+
 ```bash
 curl https://zitadel.zitadel.fn.flaatten.org/.well-known/openid-configuration
 mise run homelab:logs-backend | grep -i oidc
 ```
 
 **Network policy issues:**
+
 ```bash
 kubectl describe cnp -n diktator
 ```
@@ -144,6 +150,7 @@ kubectl describe cnp -n diktator
 For local development, see the [upstream README](README.md).
 
 Update submodule:
+
 ```bash
 cd apps/diktator
 git pull origin main
