@@ -20,9 +20,10 @@ import (
 
 // OIDCValidator validates JWT tokens against an OIDC provider
 type OIDCValidator struct {
-	issuer     string
-	audience   string
-	httpClient *http.Client
+	issuer          string
+	audience        string
+	httpClient      *http.Client
+	userinfoURL     string // Userinfo endpoint URL
 
 	// JWKS caching
 	jwks      *JWKS
@@ -127,6 +128,8 @@ func (o *OIDCValidator) discoverJWKS() error {
 	}
 
 	o.jwksURL = doc.JwksURI
+	o.userinfoURL = doc.UserinfoEndpoint
+	log.Printf("[OIDC] Discovered endpoints - JWKS: %s, Userinfo: %s", o.jwksURL, o.userinfoURL)
 	return nil
 }
 
@@ -198,16 +201,16 @@ func (o *OIDCValidator) getKey(kid string) (*JWK, error) {
 
 // ValidateSession validates a JWT token (implements SessionValidator interface)
 func (o *OIDCValidator) ValidateSession(ctx context.Context, tokenString string) (*Identity, error) {
-	return o.validateToken(tokenString)
+	return o.validateToken(ctx, tokenString)
 }
 
 // ValidateSessionFromCookie validates a JWT token from a cookie
 func (o *OIDCValidator) ValidateSessionFromCookie(ctx context.Context, cookieValue string) (*Identity, error) {
-	return o.validateToken(cookieValue)
+	return o.validateToken(ctx, cookieValue)
 }
 
 // validateToken parses and validates a JWT token
-func (o *OIDCValidator) validateToken(tokenString string) (*Identity, error) {
+func (o *OIDCValidator) validateToken(ctx context.Context, tokenString string) (*Identity, error) {
 	if tokenString == "" {
 		log.Printf("[OIDC] Token validation failed: empty token")
 		return nil, ErrInvalidSession
@@ -318,6 +321,19 @@ func (o *OIDCValidator) validateToken(tokenString string) (*Identity, error) {
 		}
 	}
 
+	// If email is missing from token, fetch from userinfo endpoint
+	if identity.Email == "" && o.userinfoURL != "" {
+		log.Printf("[OIDC] Email missing from ID token for subject %s, fetching from userinfo endpoint", identity.ID)
+		if err := o.enrichIdentityFromUserinfo(ctx, tokenString, identity); err != nil {
+			log.Printf("[OIDC] WARNING: Failed to fetch userinfo: %v. Subject: %s", err, identity.ID)
+		}
+	}
+
+	// Log warning if email is still missing after userinfo fetch
+	if identity.Email == "" {
+		log.Printf("[OIDC] WARNING: Email not found in token or userinfo. Subject: %s", identity.ID)
+	}
+
 	// Check email_verified claim
 	if emailVerified, ok := claims["email_verified"].(bool); ok {
 		identity.Verified = emailVerified
@@ -383,6 +399,61 @@ func base64URLDecode(s string) ([]byte, error) {
 	}
 
 	return base64.URLEncoding.DecodeString(s)
+}
+
+// enrichIdentityFromUserinfo fetches user information from the userinfo endpoint
+// and enriches the identity with missing claims like email
+func (o *OIDCValidator) enrichIdentityFromUserinfo(ctx context.Context, accessToken string, identity *Identity) error {
+	if o.userinfoURL == "" {
+		return fmt.Errorf("userinfo endpoint not configured")
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "GET", o.userinfoURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create userinfo request: %w", err)
+	}
+
+	// Use the access token (Bearer token) for userinfo request
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	resp, err := o.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to fetch userinfo: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("userinfo endpoint returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var userinfo map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&userinfo); err != nil {
+		return fmt.Errorf("failed to decode userinfo response: %w", err)
+	}
+
+	log.Printf("[OIDC] Userinfo response for subject %s: %v", identity.ID, userinfo)
+
+	// Extract email from userinfo
+	if email, ok := userinfo["email"].(string); ok && email != "" && identity.Email == "" {
+		identity.Email = email
+		identity.Traits["email"] = email
+		log.Printf("[OIDC] Enriched identity with email from userinfo: %s", email)
+	}
+
+	// Extract name if missing
+	if name, ok := userinfo["name"].(string); ok && name != "" {
+		if _, hasName := identity.Traits["name"]; !hasName {
+			identity.Traits["name"] = name
+		}
+	}
+
+	// Check email_verified from userinfo
+	if emailVerified, ok := userinfo["email_verified"].(bool); ok {
+		identity.Verified = emailVerified
+	}
+
+	return nil
 }
 
 // Ensure OIDCValidator implements SessionValidator
