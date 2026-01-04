@@ -12,7 +12,7 @@ type MockValidator struct {
 // DefaultMockIdentity returns a default identity for development
 func DefaultMockIdentity() *Identity {
 	return &Identity{
-		ID:    "mock-user-id-12345",
+		ID:    "mock-user-12345",
 		Email: "dev@localhost",
 		Traits: map[string]string{
 			"email":      "dev@localhost",
