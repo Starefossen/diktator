@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Full User Journey - Backend Integration", () => {
   test.beforeEach(async ({ page }) => {
-    // Set up mock authentication
+    // Set localStorage tokens for authentication
     await page.addInitScript(() => {
       localStorage.setItem(
         "oidc_access_token",
@@ -15,8 +15,15 @@ test.describe("Full User Journey - Backend Integration", () => {
   test("complete flow: login -> wordsets -> create wordset -> take test -> view results", async ({
     page,
   }) => {
-    // Step 1: Navigate to home
+    // Ensure we're authenticated before starting
     await page.goto("/");
+    await page.waitForLoadState("networkidle");
+
+    // If redirected to register, fail the test immediately with helpful message
+    if (page.url().includes("/register")) {
+      throw new Error("User not registered - beforeEach failed to create user");
+    }
+
     await expect(page).toHaveTitle(/Diktator/i);
 
     // Step 2: Navigate to wordsets page
@@ -146,7 +153,8 @@ test.describe("Family Management Integration", () => {
 });
 
 test.describe("Profile Management", () => {
-  test("should load user profile page", async ({ page }) => {
+  test.beforeEach(async ({ page }) => {
+    // Set localStorage tokens for authentication
     await page.addInitScript(() => {
       localStorage.setItem(
         "oidc_access_token",
@@ -154,6 +162,17 @@ test.describe("Profile Management", () => {
       );
       localStorage.setItem("oidc_token_expiry", String(Date.now() + 3600000));
     });
+  });
+
+  test("should load user profile page", async ({ page }) => {
+    // Ensure we're authenticated before starting
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+
+    // If redirected to register, fail the test immediately with helpful message
+    if (page.url().includes("/register")) {
+      throw new Error("User not registered - beforeEach failed to create user");
+    }
 
     await page.goto("/profile/");
     await page.waitForLoadState("networkidle");
@@ -163,14 +182,6 @@ test.describe("Profile Management", () => {
   });
 
   test("should display user information", async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem(
-        "oidc_access_token",
-        "mock-jwt-token-for-development",
-      );
-      localStorage.setItem("oidc_token_expiry", String(Date.now() + 3600000));
-    });
-
     await page.goto("/profile/");
     await page.waitForTimeout(1000);
 

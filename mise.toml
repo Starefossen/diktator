@@ -24,6 +24,9 @@ DATABASE_TEST_URL = "postgresql://postgres:postgres@localhost:5432/diktator_test
 
 # Authentication - mock mode for development
 AUTH_MODE = "mock"
+MOCK_USER_ID = "mock-user-12345"
+MOCK_USER_EMAIL = "dev@localhost"
+MOCK_USER_NAME = "Development User"
 
 # Frontend configuration
 NEXT_PUBLIC_API_URL = "http://localhost:8080"
@@ -189,7 +192,7 @@ echo "✅ Backend started (PID: $BACKEND_PID)"
 
 # Start frontend
 echo "⚛️  Starting frontend..."
-cd ../${FRONTEND_DIR} && cp .env.development .env.local && pnpm run dev
+cd ${FRONTEND_DIR} && cp .env.development .env.local && pnpm run dev
 
 # Cleanup on exit
 cleanup() {
@@ -437,7 +440,7 @@ echo "✅ All backend checks passed!"
 """
 
 [tasks.test]
-description = "Run all tests (backend + frontend unit tests)"
+description = "Run all tests (lint + typecheck + backend + frontend unit tests)"
 depends = ["_ensure-postgres"]
 run = """
 echo "🧪 Running all tests..."
@@ -471,7 +474,7 @@ echo "✅ All tests passed!"
 """
 
 [tasks."test:unit"]
-description = "Run unit tests only (skip integration tests)"
+description = "Run unit tests only (backend + frontend, skip integration)"
 run = """
 echo "🧪 Running unit tests..."
 
@@ -488,6 +491,70 @@ wait
 echo "✅ Unit tests passed!"
 """
 
+[tasks."test:integration"]
+description = "Run integration tests only (backend with real PostgreSQL)"
+depends = ["_ensure-postgres", "db:reset-test"]
+run = """
+echo "🧪 Running integration tests with real database..."
+(cd ${BACKEND_DIR} && TEST_DATABASE_URL="${DATABASE_TEST_URL}" INTEGRATION_TESTS=true go test -v -run Integration ./handlers)
+"""
+
+[tasks."test:e2e"]
+description = "Run end-to-end tests (Playwright - starts servers automatically)"
+depends = ["_ensure-postgres"]
+run = """
+echo "🎭 Running E2E tests..."
+echo "Note: Playwright will start the frontend server automatically"
+echo "      Backend will be started in background"
+echo ""
+
+# Create mock user in database if not exists (family and user must exist for tests)
+(cd ${BACKEND_DIR} && set -a && source .env.development && set +a && \
+psql "${DATABASE_URL}" <<'SQL'
+-- Insert user first without family_id
+INSERT INTO users (id, auth_id, email, display_name, family_id, role, is_active, created_at, last_active_at)
+VALUES ('mock-user-12345', 'mock-user-12345', 'dev@localhost', 'Development User', NULL, 'parent', true, NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
+
+-- Insert family with the user as creator
+INSERT INTO families (id, name, created_by, created_at, updated_at)
+VALUES ('family-mock-user-12345', 'Development Family', 'mock-user-12345', NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
+
+-- Update user with family_id
+UPDATE users SET family_id = 'family-mock-user-12345' WHERE id = 'mock-user-12345' AND family_id IS NULL;
+
+-- Insert family member relationship
+INSERT INTO family_members (family_id, user_id, joined_at)
+VALUES ('family-mock-user-12345', 'mock-user-12345', NOW())
+ON CONFLICT (family_id, user_id) DO NOTHING;
+SQL
+) > /dev/null 2>&1 && echo "✅ Mock user ready" || echo "⚠️  Database setup had issues"
+
+# Start backend in background for the test
+(cd ${BACKEND_DIR} && set -a && source .env.development && set +a && go run cmd/server/main.go) > /tmp/e2e-backend.log 2>&1 &
+BACKEND_PID=$!
+echo "⏳ Waiting for backend to start..."
+sleep 5
+
+# Check if backend started
+if ! curl -s http://localhost:${BACKEND_PORT}/health > /dev/null 2>&1; then
+    echo "❌ Backend failed to start"
+    kill $BACKEND_PID 2>/dev/null || true
+    exit 1
+fi
+
+echo "✅ Backend ready"
+
+# Run tests (Playwright will start frontend via webServer config)
+(cd ${FRONTEND_DIR} && HEADLESS=1 pnpm exec playwright test)
+
+# Cleanup
+TEST_EXIT=$?
+kill $BACKEND_PID 2>/dev/null || true
+exit $TEST_EXIT
+"""
+
 [tasks."backend:test"]
 description = "Run backend tests"
 depends = ["_ensure-postgres"]
@@ -501,6 +568,15 @@ DATABASE_URL="${DATABASE_TEST_URL}" go test -v ./...
 description = "Run backend tests without integration tests"
 dir = "backend"
 run = "go test -short -v ./..."
+
+[tasks."backend:test-integration"]
+description = "Run backend integration tests only (requires PostgreSQL)"
+depends = ["_ensure-postgres", "db:reset-test"]
+dir = "backend"
+run = """
+echo "🧪 Running integration tests with real database..."
+TEST_DATABASE_URL="${DATABASE_TEST_URL}" INTEGRATION_TESTS=true go test -v -run Integration ./handlers
+"""
 
 [tasks."backend:test-coverage"]
 description = "Run backend tests with coverage"
@@ -559,17 +635,25 @@ pnpm test:e2e:ui
 """
 
 [tasks."test:all"]
-description = "Run all tests including E2E"
+description = "Run complete test suite (unit + integration + E2E)"
+depends = ["_ensure-postgres", "db:reset-test"]
 run = """
 echo "🧪 Running complete test suite..."
 
-mise run test
 echo ""
-echo "🎭 Running E2E tests..."
-mise run frontend:test-e2e
+echo "=== Unit Tests ==="
+mise run test:unit
 
 echo ""
-echo "✅ All tests (unit + E2E) passed!"
+echo "=== Integration Tests ==="
+mise run test:integration
+
+echo ""
+echo "=== E2E Tests ==="
+mise run test:e2e
+
+echo ""
+echo "✅ All tests (unit + integration + E2E) passed!"
 """
 
 [tasks.check]

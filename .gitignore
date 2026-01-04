@@ -108,3 +108,8 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 terraform/.terraform.tfstate.lock.info
+frontend/playwright-report/index.html
+frontend/playwright-report/data/2acd6313dd95d250c7ca1e87ccead4bb9d7fa3a0.md
+frontend/test-results/.last-run.json
+frontend/test-results/integration-Full-User-Jour-ac12a----take-test---view-results-chromium/error-context.md
+frontend/test-results/integration-Profile-Management-should-load-user-profile-page-chromium/error-context.md
