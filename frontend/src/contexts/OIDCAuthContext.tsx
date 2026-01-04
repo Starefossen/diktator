@@ -106,11 +106,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
       );
       const userProfileResponse = await generatedApiClient.getUserProfile();
       const profileData = userProfileResponse.data?.data as
+<<<<<<< HEAD
         | (UserData & {
             needsRegistration?: boolean;
             hasPendingInvites?: boolean;
             pendingInvitations?: FamilyInvitation[];
           })
+||||||| parent of d8c2517 (feat: Implement family invitation system and improve user experience)
+        | (UserData & { needsRegistration?: boolean })
+=======
+        | (UserData & {
+          needsRegistration?: boolean;
+          hasPendingInvites?: boolean;
+          pendingInvitations?: FamilyInvitation[];
+        })
+>>>>>>> d8c2517 (feat: Implement family invitation system and improve user experience)
         | undefined;
 
       console.log("[OIDCAuthContext] loadUserData: profile response:", {

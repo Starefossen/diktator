@@ -19,7 +19,7 @@ Assume dev server is already running with `mise run dev`.
 ## Project Knowledge
 
 **Tech Stack:**
-- Frontend: Next.js 16, React 19, TypeScript, Tailwind CSS 4+
+- Frontend: Next.js 16, React 19, TypeScript, Tailwind CSS 4+ static export PWA
 - Backend: Go 1.25+, Gin HTTP framework
 - Database: PostgreSQL with pgx/v5 driver
 - Auth: OIDC (Zitadel), mock mode for development (`AUTH_MODE=mock`)

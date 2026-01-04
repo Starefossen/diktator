@@ -693,7 +693,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Accept a pending family invitation and join the family",
+                "description": "Accept a pending family invitation and join the family. For first-time users, this also links their OIDC identity to the family child account.",
                 "consumes": [
                     "application/json"
                 ],

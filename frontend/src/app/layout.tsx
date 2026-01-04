@@ -85,17 +85,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html suppressHydrationWarning>
-      <body className="min-h-screen bg-gray-50">
+    <html suppressHydrationWarning lang="no">
+      <body className="min-h-screen bg-gray-50" suppressHydrationWarning>
         <HydrationMarker />
-        <AuthProvider>
-          <LanguageProvider>
+        <LanguageProvider>
+          <AuthProvider>
             <PWAInstaller />
             <ClientSideRouter />
             <Navigation />
             <main className="pb-8">{children}</main>
-          </LanguageProvider>
-        </AuthProvider>
+          </AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

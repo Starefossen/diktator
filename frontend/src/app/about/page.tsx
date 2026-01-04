@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
   HeroCheckIcon,
@@ -10,6 +11,15 @@ import {
 
 export default function AboutPage() {
   const { t } = useLanguage();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null; // Avoid SSR/static generation
+  }
 
   return (
     <div className="min-h-screen py-12 bg-linear-to-br from-blue-50 via-white to-purple-50">

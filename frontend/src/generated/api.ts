@@ -1697,7 +1697,7 @@ export class HealthApi extends BaseAPI implements HealthApiInterface {
 export const InvitationsApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
         /**
-         * Accept a pending family invitation and join the family
+         * Accept a pending family invitation and join the family. For first-time users, this also links their OIDC identity to the family child account.
          * @summary Accept Invitation
          * @param {string} invitationId Invitation ID
          * @param {*} [options] Override http request option.
@@ -1777,7 +1777,7 @@ export const InvitationsApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = InvitationsApiAxiosParamCreator(configuration)
     return {
         /**
-         * Accept a pending family invitation and join the family
+         * Accept a pending family invitation and join the family. For first-time users, this also links their OIDC identity to the family child account.
          * @summary Accept Invitation
          * @param {string} invitationId Invitation ID
          * @param {*} [options] Override http request option.
@@ -1812,7 +1812,7 @@ export const InvitationsApiFactory = function (configuration?: Configuration, ba
     const localVarFp = InvitationsApiFp(configuration)
     return {
         /**
-         * Accept a pending family invitation and join the family
+         * Accept a pending family invitation and join the family. For first-time users, this also links their OIDC identity to the family child account.
          * @summary Accept Invitation
          * @param {string} invitationId Invitation ID
          * @param {*} [options] Override http request option.
@@ -1840,7 +1840,7 @@ export const InvitationsApiFactory = function (configuration?: Configuration, ba
  */
 export interface InvitationsApiInterface {
     /**
-     * Accept a pending family invitation and join the family
+     * Accept a pending family invitation and join the family. For first-time users, this also links their OIDC identity to the family child account.
      * @summary Accept Invitation
      * @param {string} invitationId Invitation ID
      * @param {*} [options] Override http request option.
@@ -1868,7 +1868,7 @@ export interface InvitationsApiInterface {
  */
 export class InvitationsApi extends BaseAPI implements InvitationsApiInterface {
     /**
-     * Accept a pending family invitation and join the family
+     * Accept a pending family invitation and join the family. For first-time users, this also links their OIDC identity to the family child account.
      * @summary Accept Invitation
      * @param {string} invitationId Invitation ID
      * @param {*} [options] Override http request option.
