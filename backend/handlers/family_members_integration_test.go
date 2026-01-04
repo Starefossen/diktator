@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -98,8 +99,10 @@ func TestAddFamilyMember_Integration(t *testing.T) {
 	})
 
 	t.Run("Success_SendParentInvitation", func(t *testing.T) {
-		// Initially no invitations
-		env.AssertNoRowsInTable("family_invitations")
+		// Get current invitation count (may have child invitations from previous tests)
+		var currentCount int
+		err := env.Pool.QueryRow(context.Background(), "SELECT COUNT(*) FROM family_invitations").Scan(&currentCount)
+		require.NoError(t, err)
 
 		// Request to invite a parent
 		payload := map[string]interface{}{
@@ -115,12 +118,12 @@ func TestAddFamilyMember_Integration(t *testing.T) {
 		assert.Equal(t, http.StatusAccepted, resp.Code)
 
 		var response map[string]interface{}
-		err := json.Unmarshal(resp.Body.Bytes(), &response)
+		err = json.Unmarshal(resp.Body.Bytes(), &response)
 		require.NoError(t, err)
 		assert.Contains(t, response["message"], "invitation sent")
 
-		// Verify invitation was created
-		env.AssertRowCount("family_invitations", 1)
+		// Verify one more invitation was created
+		env.AssertRowCount("family_invitations", currentCount+1)
 	})
 
 	t.Run("Error_ChildCannotAddMembers", func(t *testing.T) {

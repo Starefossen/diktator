@@ -149,7 +149,8 @@ func main() {
 			basicAuth.GET("/users/profile", handlers.GetUserProfile)
 			basicAuth.POST("/users", handlers.CreateUser)
 
-			// Invitation acceptance (for first-time users accepting family invites)
+			// Invitation management (for first-time users checking/accepting family invites)
+			basicAuth.GET("/invitations/pending", handlers.GetPendingInvitations)
 			basicAuth.POST("/invitations/:invitationId/accept", handlers.AcceptInvitation)
 		}
 
@@ -182,12 +183,6 @@ func main() {
 			{
 				users.POST("/results", handlers.SaveResult)
 				users.GET("/results", handlers.GetResults)
-			}
-
-			// Invitation endpoints (available to authenticated users with existing accounts)
-			invitations := protected.Group("/invitations")
-			{
-				invitations.GET("/pending", handlers.GetPendingInvitations)
 			}
 
 			// Family management - RESTRICTED: Parent access only for most endpoints

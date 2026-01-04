@@ -744,16 +744,32 @@ func GetPendingInvitations(c *gin.Context) {
 		return
 	}
 
-	// Get email from identity context
-	email, exists := c.Get("email")
+	// Get email from identity context (works with OIDCBasicAuthMiddleware)
+	identity, exists := c.Get("identity")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, models.APIResponse{
-			Error: "Email not found in authentication context",
+			Error: "Authentication required",
 		})
 		return
 	}
 
-	invitations, err := serviceManager.DB.GetPendingInvitationsByEmail(email.(string))
+	authIdentity, ok := identity.(*auth.Identity)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Invalid identity data",
+		})
+		return
+	}
+
+	email := authIdentity.Email
+	if email == "" {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Email not found in authentication token",
+		})
+		return
+	}
+
+	invitations, err := serviceManager.DB.GetPendingInvitationsByEmail(email)
 	if err != nil {
 		log.Printf("ERROR getting pending invitations: %v (email=%s)", err, email)
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
@@ -1250,6 +1266,29 @@ func AddFamilyMember(c *gin.Context) {
 		_ = serviceManager.DB.DeleteChild(childAuthID)
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to add child to family: " + err.Error(),
+		})
+		return
+	}
+
+	// Create invitation record so child can properly link their OIDC identity on first login
+	expiresAt := time.Now().Add(30 * 24 * time.Hour) // 30 days for child invitations
+	invitation := &models.FamilyInvitation{
+		ID:        uuid.New().String(),
+		FamilyID:  familyID.(string),
+		Email:     req.Email,
+		Role:      "child",
+		InvitedBy: userID.(string),
+		Status:    "pending",
+		CreatedAt: time.Now(),
+		ExpiresAt: &expiresAt,
+	}
+
+	if err := serviceManager.DB.CreateFamilyInvitation(invitation); err != nil {
+		log.Printf("ERROR creating child invitation: %v (email=%s, family=%s)", err, req.Email, familyID)
+		// Clean up on failure - DeleteChild should cascade delete family_members entry
+		_ = serviceManager.DB.DeleteChild(childAuthID)
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to create child invitation: " + err.Error(),
 		})
 		return
 	}

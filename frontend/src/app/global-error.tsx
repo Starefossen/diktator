@@ -15,8 +15,16 @@ export default function GlobalError({
   return (
     <html lang="no" suppressHydrationWarning>
       <body suppressHydrationWarning>
-        <div style={{ padding: "2rem", textAlign: "center", fontFamily: "system-ui" }}>
-          <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>Noe gikk galt</h1>
+        <div
+          style={{
+            padding: "2rem",
+            textAlign: "center",
+            fontFamily: "system-ui",
+          }}
+        >
+          <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>
+            Noe gikk galt
+          </h1>
           <p style={{ marginBottom: "2rem", color: "#666" }}>
             En uventet feil oppstod. Vennligst prøv igjen.
           </p>
@@ -39,4 +47,3 @@ export default function GlobalError({
     </html>
   );
 }
-
