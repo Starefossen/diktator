@@ -29,7 +29,7 @@ export const auth = {
   "auth.register.loading": "Laster...",
   "auth.register.redirecting": "Omdirigerer...",
   "auth.register.signinPrompt": "Logg inn for å fortsette",
-  "auth.register.signinButton": "Logg inn med OIDC",
+  "auth.register.signinButton": "Logg Inn",
 
   // Invitation acceptance
   "auth.register.invitation.title": "Du har blitt invitert!",
@@ -43,9 +43,9 @@ export const auth = {
 
   // Login page
   "auth.login.title": "Velkommen til Diktator",
-  "auth.login.subtitle": "Logg inn for å fortsette",
-  "auth.login.button": "Logg inn med OIDC",
-  "auth.login.footer": "Du vil bli omdirigert til din identitetsleverandør for å fullføre påloggingen",
+  "auth.login.subtitle": "Logg inn for å begynne å øve",
+  "auth.login.button": "Logg Inn",
+  "auth.login.footer": "Du vil bli bedt om å logge inn trygt",
 
   // Error messages
   "auth.error.loginFailed": "Kunne ikke starte pålogging. Vennligst prøv igjen.",

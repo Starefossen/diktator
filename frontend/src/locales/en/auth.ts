@@ -29,7 +29,7 @@ export const auth = {
   "auth.register.loading": "Loading...",
   "auth.register.redirecting": "Redirecting...",
   "auth.register.signinPrompt": "Sign in to continue",
-  "auth.register.signinButton": "Sign in with OIDC",
+  "auth.register.signinButton": "Sign In",
 
   // Invitation acceptance
   "auth.register.invitation.title": "You've been invited!",
@@ -43,9 +43,9 @@ export const auth = {
 
   // Login page
   "auth.login.title": "Welcome to Diktator",
-  "auth.login.subtitle": "Sign in to continue",
-  "auth.login.button": "Login with OIDC",
-  "auth.login.footer": "You will be redirected to your identity provider to complete the login",
+  "auth.login.subtitle": "Sign in to start practicing",
+  "auth.login.button": "Sign In",
+  "auth.login.footer": "You'll be asked to log in securely",
 
   // Error messages
   "auth.error.loginFailed": "Failed to initiate login. Please try again.",

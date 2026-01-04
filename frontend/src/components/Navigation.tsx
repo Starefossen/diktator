@@ -81,12 +81,17 @@ export function Navigation() {
 
             {/* Desktop Navigation */}
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              <Link href="/" className={getNavLinkClasses("/")}>
-                {t("nav.home")}
-              </Link>
-              <Link href="/about/" className={getNavLinkClasses("/about")}>
-                {t("nav.about")}
-              </Link>
+              {/* Show Home and About only when not logged in */}
+              {!user && (
+                <>
+                  <Link href="/" className={getNavLinkClasses("/")}>
+                    {t("nav.home")}
+                  </Link>
+                  <Link href="/about/" className={getNavLinkClasses("/about")}>
+                    {t("nav.about")}
+                  </Link>
+                </>
+              )}
 
               {/* Authenticated user navigation links */}
               {user && (
@@ -134,13 +139,12 @@ export function Navigation() {
             {/* API Status Indicator */}
             <div className="flex items-center pr-4 mr-4 border-r border-gray-200">
               <div
-                className={`w-3 h-3 rounded-full transition-colors ${
-                  status === "connected"
+                className={`w-3 h-3 rounded-full transition-colors ${status === "connected"
                     ? "bg-emerald-500"
                     : status === "error"
                       ? "bg-red-500"
                       : "bg-amber-500 animate-pulse"
-                }`}
+                  }`}
                 title={
                   status === "connected"
                     ? `API Connected: ${message}`
@@ -164,12 +168,16 @@ export function Navigation() {
                     <span className="absolute -inset-1.5" />
                     <span className="sr-only">Open user menu</span>
                     <div className="flex items-center space-x-2">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-linear-to-br from-blue-500 to-purple-600">
+                      <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-linear-to-br from-blue-500 to-purple-600">
                         <span className="text-sm font-medium text-white">
                           {(userData?.displayName || user.email)
                             ?.charAt(0)
                             .toUpperCase()}
                         </span>
+                        {/* Friendly indicator badge for children */}
+                        <div className="absolute -top-1 -right-1 flex items-center justify-center w-4 h-4 text-xs bg-green-500 rounded-full ring-2 ring-white">
+                          ✓
+                        </div>
                       </div>
                       <span className="hidden text-sm text-gray-700 md:block">
                         {userData?.displayName || user.email}
@@ -251,20 +259,25 @@ export function Navigation() {
       {/* Mobile menu */}
       <DisclosurePanel className="sm:hidden">
         <div className="pt-2 pb-3 space-y-1">
-          <DisclosureButton
-            as={Link}
-            href="/"
-            className={getNavLinkClasses("/", true)}
-          >
-            {t("nav.home")}
-          </DisclosureButton>
-          <DisclosureButton
-            as={Link}
-            href="/about/"
-            className={getNavLinkClasses("/about", true)}
-          >
-            {t("nav.about")}
-          </DisclosureButton>
+          {/* Show Home and About only when not logged in */}
+          {!user && (
+            <>
+              <DisclosureButton
+                as={Link}
+                href="/"
+                className={getNavLinkClasses("/", true)}
+              >
+                {t("nav.home")}
+              </DisclosureButton>
+              <DisclosureButton
+                as={Link}
+                href="/about/"
+                className={getNavLinkClasses("/about", true)}
+              >
+                {t("nav.about")}
+              </DisclosureButton>
+            </>
+          )}
 
           {/* Authenticated user navigation links */}
           {user && (
@@ -318,12 +331,16 @@ export function Navigation() {
           <div className="pt-4 pb-3 border-t border-gray-200">
             <div className="flex items-center px-4">
               <div className="shrink-0">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-600">
+                <div className="relative flex items-center justify-center w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-600">
                   <span className="text-sm font-medium text-white">
                     {(userData?.displayName || user.email)
                       ?.charAt(0)
                       .toUpperCase()}
                   </span>
+                  {/* Friendly indicator badge for children */}
+                  <div className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 text-xs bg-green-500 rounded-full ring-2 ring-white">
+                    ✓
+                  </div>
                 </div>
               </div>
               <div className="ml-3">
@@ -365,13 +382,12 @@ export function Navigation() {
               <div className="flex items-center space-x-2">
                 <span className="text-xs text-gray-500">API</span>
                 <div
-                  className={`w-2.5 h-2.5 rounded-full transition-colors ${
-                    status === "connected"
+                  className={`w-2.5 h-2.5 rounded-full transition-colors ${status === "connected"
                       ? "bg-emerald-500"
                       : status === "error"
                         ? "bg-red-500"
                         : "bg-amber-500 animate-pulse"
-                  }`}
+                    }`}
                   title={
                     status === "connected"
                       ? `API Connected: ${message}`

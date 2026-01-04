@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -13,7 +15,20 @@ import {
 
 export default function HomePage() {
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  // Redirect authenticated users to wordsets
+  useEffect(() => {
+    if (!loading && user) {
+      router.push("/wordsets/");
+    }
+  }, [user, loading, router]);
+
+  // Show loading or nothing while redirecting authenticated users
+  if (loading || user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">

@@ -20,9 +20,9 @@ export default function AuthForm() {
       const redirectParam = searchParams.get("redirect");
       const redirectTo =
         redirectParam &&
-        redirectParam.startsWith("/") &&
-        !redirectParam.startsWith("//") &&
-        !redirectParam.includes("..")
+          redirectParam.startsWith("/") &&
+          !redirectParam.startsWith("//") &&
+          !redirectParam.includes("..")
           ? redirectParam
           : "/wordsets/";
 
@@ -39,9 +39,9 @@ export default function AuthForm() {
       const redirectParam = searchParams.get("redirect");
       const redirectTo =
         redirectParam &&
-        redirectParam.startsWith("/") &&
-        !redirectParam.startsWith("//") &&
-        !redirectParam.includes("..")
+          redirectParam.startsWith("/") &&
+          !redirectParam.startsWith("//") &&
+          !redirectParam.includes("..")
           ? redirectParam
           : "/wordsets/";
 
