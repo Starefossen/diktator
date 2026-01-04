@@ -303,7 +303,12 @@ export async function getUserInfo(): Promise<OIDCUser | null> {
   if (idToken) {
     const claims = parseJwt(idToken);
     if (claims) {
-      console.log("[OIDC] ID token claims:", { sub: claims.sub, email: claims.email, name: claims.name, preferred_username: claims.preferred_username });
+      console.log("[OIDC] ID token claims:", {
+        sub: claims.sub,
+        email: claims.email,
+        name: claims.name,
+        preferred_username: claims.preferred_username,
+      });
       userFromToken = {
         id: claims.sub as string,
         email: (claims.email as string) || "",
@@ -323,21 +328,27 @@ export async function getUserInfo(): Promise<OIDCUser | null> {
       }
 
       // Email missing from token, will try userinfo endpoint below
-      console.log("[OIDC] Email missing from ID token, will fetch from userinfo endpoint");
+      console.log(
+        "[OIDC] Email missing from ID token, will fetch from userinfo endpoint",
+      );
     }
   }
 
   // Fetch from userinfo endpoint to get complete user info (especially email if missing from token)
   const accessToken = getAccessToken();
   if (!accessToken) {
-    console.log("[OIDC] No access token, returning user from token if available");
+    console.log(
+      "[OIDC] No access token, returning user from token if available",
+    );
     return userFromToken;
   }
 
   try {
     const discovery = await getDiscoveryDocument();
     if (!discovery?.userinfo_endpoint) {
-      console.log("[OIDC] No userinfo endpoint in discovery, returning user from token");
+      console.log(
+        "[OIDC] No userinfo endpoint in discovery, returning user from token",
+      );
       return userFromToken;
     }
 
@@ -349,24 +360,43 @@ export async function getUserInfo(): Promise<OIDCUser | null> {
     });
 
     if (!response.ok) {
-      console.log("[OIDC] Userinfo endpoint returned non-OK status:", response.status);
+      console.log(
+        "[OIDC] Userinfo endpoint returned non-OK status:",
+        response.status,
+      );
       return userFromToken;
     }
 
     const userInfo = await response.json();
-    console.log("[OIDC] Userinfo response:", { sub: userInfo.sub, email: userInfo.email, name: userInfo.name, preferred_username: userInfo.preferred_username });
+    console.log("[OIDC] Userinfo response:", {
+      sub: userInfo.sub,
+      email: userInfo.email,
+      name: userInfo.name,
+      preferred_username: userInfo.preferred_username,
+    });
 
     // Merge with token data, userinfo takes precedence
     const mergedUser: OIDCUser = {
-      id: userInfo.sub || (userFromToken?.id || ""),
-      email: userInfo.email || (userFromToken?.email || ""),
-      name: userInfo.name || userInfo.preferred_username || (userFromToken?.name || ""),
-      emailVerified: userInfo.email_verified !== undefined ? userInfo.email_verified : (userFromToken?.emailVerified || false),
-      picture: userInfo.picture || (userFromToken?.picture),
+      id: userInfo.sub || userFromToken?.id || "",
+      email: userInfo.email || userFromToken?.email || "",
+      name:
+        userInfo.name ||
+        userInfo.preferred_username ||
+        userFromToken?.name ||
+        "",
+      emailVerified:
+        userInfo.email_verified !== undefined
+          ? userInfo.email_verified
+          : userFromToken?.emailVerified || false,
+      picture: userInfo.picture || userFromToken?.picture,
       ...userInfo,
     };
 
-    console.log("[OIDC] Returning merged user:", { id: mergedUser.id, email: mergedUser.email, name: mergedUser.name });
+    console.log("[OIDC] Returning merged user:", {
+      id: mergedUser.id,
+      email: mergedUser.email,
+      name: mergedUser.name,
+    });
     return mergedUser;
   } catch (error) {
     console.error("[OIDC] Failed to fetch user info from endpoint:", error);

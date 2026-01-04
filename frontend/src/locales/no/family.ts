@@ -21,7 +21,8 @@ export const family = {
   "family.member.create.inviteSuccess": "Invitasjon til forelder sendt!",
   "family.member.create.childSuccess": "Barn lagt til i familien!",
   "family.member.create.error": "Kunne ikke legge til medlem. Prøv igjen.",
-  "family.member.remove.confirm": "Er du sikker på at du vil fjerne dette medlemmet fra familien?",
+  "family.member.remove.confirm":
+    "Er du sikker på at du vil fjerne dette medlemmet fra familien?",
   "family.member.remove.success": "Medlem fjernet",
   "family.member.remove.error": "Kunne ikke fjerne medlem",
   "family.member.remove.cannotRemoveCreator": "Kan ikke fjerne familieskaperen",

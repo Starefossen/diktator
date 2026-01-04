@@ -121,13 +121,13 @@ func SetupIntegrationTest(t *testing.T) *IntegrationTestEnv {
 // CreateTestUser creates a test user and returns it
 func (env *IntegrationTestEnv) CreateTestUser(familyID, role string) *models.User {
 	user := &models.User{
-		ID:           uuid.New().String(),
-		AuthID:       "oidc-" + uuid.New().String(),
-		Email:        fmt.Sprintf("test-%s@example.com", uuid.New().String()[:8]),
-		DisplayName:  fmt.Sprintf("Test %s", role),
-		FamilyID:     familyID,
-		Role:         role,
-		IsActive:     true,
+		ID:          uuid.New().String(),
+		AuthID:      "oidc-" + uuid.New().String(),
+		Email:       fmt.Sprintf("test-%s@example.com", uuid.New().String()[:8]),
+		DisplayName: fmt.Sprintf("Test %s", role),
+		FamilyID:    familyID,
+		Role:        role,
+		IsActive:    true,
 	}
 
 	err := env.DB.CreateUser(user)
@@ -176,7 +176,7 @@ func (env *IntegrationTestEnv) SetupAuthMiddleware(user *models.User) {
 	})
 }
 
-//makeRequest is a helper to make HTTP requests during tests
+// makeRequest is a helper to make HTTP requests during tests
 func makeRequest(router *gin.Engine, method, path string, body interface{}, headers map[string]string) *httptest.ResponseRecorder {
 	var bodyReader *bytes.Reader
 	if body != nil {

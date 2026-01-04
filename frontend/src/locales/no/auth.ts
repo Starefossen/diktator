@@ -19,7 +19,8 @@ export const auth = {
   "auth.role.parent": "Forelder/Lærer",
   "auth.logout": "Logg ut",
   "auth.register.title": "Fullfør registrering",
-  "auth.register.subtitle": "Vi kunne ikke finne kontoen din i Diktator. Opprett forelderprofilen din for å fortsette.",
+  "auth.register.subtitle":
+    "Vi kunne ikke finne kontoen din i Diktator. Opprett forelderprofilen din for å fortsette.",
   "auth.register.familyName": "Familienavn",
   "auth.register.familyName.placeholder": "Skriv inn familienavnet ditt",
   "auth.register.button": "Registrer",
@@ -30,6 +31,17 @@ export const auth = {
   "auth.register.redirecting": "Omdirigerer...",
   "auth.register.signinPrompt": "Logg inn for å fortsette",
   "auth.register.signinButton": "Logg Inn",
+
+  // Invitations
+  "auth.invitations.title": "Familieinvitasjoner",
+  "auth.invitations.subtitle":
+    "Du har blitt invitert til å bli med i en familie. Godta en invitasjon for å komme i gang.",
+  "auth.invitations.familyInvite": "Familieinvitasjon",
+  "auth.invitations.role": "Rolle",
+  "auth.invitations.accept": "Godta",
+  "auth.invitations.accepting": "Godtar...",
+  "auth.register.error.invitationFailed":
+    "Kunne ikke godta invitasjon. Prøv igjen.",
 
   // Invitation acceptance
   "auth.register.invitation.title": "Du har blitt invitert!",
@@ -48,6 +60,7 @@ export const auth = {
   "auth.login.footer": "Du vil bli bedt om å logge inn trygt",
 
   // Error messages
-  "auth.error.loginFailed": "Kunne ikke starte pålogging. Vennligst prøv igjen.",
+  "auth.error.loginFailed":
+    "Kunne ikke starte pålogging. Vennligst prøv igjen.",
   "auth.error.logoutFailed": "Kunne ikke logge ut. Vennligst prøv igjen.",
 };

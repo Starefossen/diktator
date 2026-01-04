@@ -16,9 +16,11 @@ type Repository interface {
 	// User operations
 	GetUser(userID string) (*models.User, error)
 	GetUserByAuthID(authID string) (*models.User, error)
+	GetUserByEmail(email string) (*models.User, error)
 	CreateUser(user *models.User) error
 	UpdateUser(user *models.User) error
 	DeleteUser(userID string) error
+	LinkUserToAuthID(userID, authID string) error
 
 	// Family operations
 	GetFamily(familyID string) (*models.Family, error)

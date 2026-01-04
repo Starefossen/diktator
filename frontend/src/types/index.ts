@@ -1,35 +1,5 @@
 // src/types/index.ts - Shared type definitions
 
-// Family Type
-export interface Family {
-  id: string;
-  name: string;
-  createdBy: string;
-  members: FamilyMember[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface FamilyMember {
-  id: string;
-  email: string;
-  displayName: string;
-  role: "parent" | "child";
-  joinedAt: string;
-}
-
-// Family Invitation Type
-export interface FamilyInvitation {
-  id: string;
-  familyId: string;
-  email: string;
-  role: "parent" | "child";
-  invitedBy: string;
-  status: "pending" | "accepted" | "declined" | "expired";
-  createdAt: string;
-  expiresAt?: string | null;
-}
-
 // Child Account Type
 export interface ChildAccount {
   id: string;
@@ -70,13 +40,6 @@ export interface FamilyStats {
 export interface CreateChildAccountRequest {
   email: string;
   displayName: string;
-  familyId?: string; // Optional - can be set by backend from authenticated user
-}
-
-export interface AddFamilyMemberRequest {
-  email: string;
-  displayName: string;
-  role: "parent" | "child";
   familyId?: string; // Optional - can be set by backend from authenticated user
 }
 

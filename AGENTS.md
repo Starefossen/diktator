@@ -162,7 +162,7 @@ Family-scoped data model (see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)):
 ## Boundaries
 
 ✅ **Always do:**
-- Run tests before completing changes: `cd backend && go test ./...` AND `cd frontend && pnpm test`
+- Run tests before completing changes: `mise run check` AND `mise run test`
 - Update both i18n files (`en.json` AND `no.json`) together
 - Keep types synchronized between backend models and frontend types
 - Use App Router patterns (not Pages Router)

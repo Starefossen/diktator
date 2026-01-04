@@ -315,9 +315,9 @@ export default function WordSetEditor({
                     onChange={(e) =>
                       setDefaultMode(
                         e.target.value as
-                        | "standard"
-                        | "dictation"
-                        | "translation",
+                          | "standard"
+                          | "dictation"
+                          | "translation",
                       )
                     }
                     className="sr-only"
@@ -354,9 +354,9 @@ export default function WordSetEditor({
                     onChange={(e) =>
                       setDefaultMode(
                         e.target.value as
-                        | "standard"
-                        | "dictation"
-                        | "translation",
+                          | "standard"
+                          | "dictation"
+                          | "translation",
                       )
                     }
                     className="sr-only"
@@ -393,9 +393,9 @@ export default function WordSetEditor({
                     onChange={(e) =>
                       setDefaultMode(
                         e.target.value as
-                        | "standard"
-                        | "dictation"
-                        | "translation",
+                          | "standard"
+                          | "dictation"
+                          | "translation",
                       )
                     }
                     className="sr-only"
@@ -693,15 +693,17 @@ export default function WordSetEditor({
             </div>
 
             {/* Child Assignment Section (parent only, edit mode only) */}
-            {userData?.role === "parent" && mode === "edit" && initialData?.id && (
-              <div className="pt-6 mt-6 border-t border-gray-200">
-                <ChildAssignmentSelector
-                  wordSetId={initialData.id}
-                  assignedUserIds={assignedUserIds}
-                  onAssignmentChange={setAssignedUserIds}
-                />
-              </div>
-            )}
+            {userData?.role === "parent" &&
+              mode === "edit" &&
+              initialData?.id && (
+                <div className="pt-6 mt-6 border-t border-gray-200">
+                  <ChildAssignmentSelector
+                    wordSetId={initialData.id}
+                    assignedUserIds={assignedUserIds}
+                    onAssignmentChange={setAssignedUserIds}
+                  />
+                </div>
+              )}
           </form>
         </ModalContent>
 

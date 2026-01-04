@@ -38,18 +38,16 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   console.log(`Activating service worker version ${CACHE_VERSION}`);
   event.waitUntil(
-    caches
-      .keys()
-      .then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cacheName) => {
-            if (cacheName !== CACHE_NAME && cacheName.startsWith("diktator-")) {
-              console.log("Deleting old cache:", cacheName);
-              return caches.delete(cacheName);
-            }
-          }),
-        );
-      }),
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME && cacheName.startsWith("diktator-")) {
+            console.log("Deleting old cache:", cacheName);
+            return caches.delete(cacheName);
+          }
+        }),
+      );
+    }),
   );
   // Don't claim clients immediately - wait for user to reload
   // This prevents losing in-memory data from unexpected reloads

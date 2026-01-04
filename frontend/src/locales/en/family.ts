@@ -21,10 +21,12 @@ export const family = {
   "family.member.create.inviteSuccess": "Parent invitation sent successfully!",
   "family.member.create.childSuccess": "Child added to family successfully!",
   "family.member.create.error": "Failed to add member. Please try again.",
-  "family.member.remove.confirm": "Are you sure you want to remove this member from the family?",
+  "family.member.remove.confirm":
+    "Are you sure you want to remove this member from the family?",
   "family.member.remove.success": "Member removed successfully",
   "family.member.remove.error": "Failed to remove member",
-  "family.member.remove.cannotRemoveCreator": "Cannot remove the family creator",
+  "family.member.remove.cannotRemoveCreator":
+    "Cannot remove the family creator",
 
   // Parents Section
   "family.parents.title": "Parents",

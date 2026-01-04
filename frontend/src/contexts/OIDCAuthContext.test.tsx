@@ -3,6 +3,7 @@ import React from "react";
 import { describe, expect, it, vi, beforeEach, type Mock } from "vitest";
 import { generatedApiClient } from "@/lib/api-generated";
 import { AuthProvider, useAuth } from "./OIDCAuthContext";
+import { LanguageProvider } from "./LanguageContext";
 
 const pushMock = vi.fn();
 
@@ -53,13 +54,17 @@ describe("OIDCAuthContext", () => {
   it("sets needsRegistration when backend signals registration required", async () => {
     const TestComponent = () => {
       const { needsRegistration } = useAuth();
-      return <div>{needsRegistration ? "needs-registration" : "registered"}</div>;
+      return (
+        <div>{needsRegistration ? "needs-registration" : "registered"}</div>
+      );
     };
 
     const { getByText } = render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>,
+      <LanguageProvider>
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      </LanguageProvider>,
     );
 
     await waitFor(() => {
@@ -74,13 +79,17 @@ describe("OIDCAuthContext", () => {
 
     const TestComponent = () => {
       const { needsRegistration } = useAuth();
-      return <div>{needsRegistration ? "needs-registration" : "registered"}</div>;
+      return (
+        <div>{needsRegistration ? "needs-registration" : "registered"}</div>
+      );
     };
 
     const { getByText } = render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>,
+      <LanguageProvider>
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      </LanguageProvider>,
     );
 
     await waitFor(() => {

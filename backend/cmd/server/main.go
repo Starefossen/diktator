@@ -52,8 +52,8 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/starefossen/diktator/backend/handlers"
-	"github.com/starefossen/diktator/backend/internal/migrate"
 	"github.com/starefossen/diktator/backend/internal/middleware"
+	"github.com/starefossen/diktator/backend/internal/migrate"
 	"github.com/starefossen/diktator/backend/internal/services"
 
 	_ "github.com/starefossen/diktator/backend/docs" // Import generated docs
@@ -141,12 +141,16 @@ func main() {
 	// API routes
 	api := r.Group("/api")
 	{
-		// Public routes - use BasicAuthMiddleware for OIDC token validation
-		public := api.Group("")
-		public.Use(middleware.OIDCBasicAuthMiddleware(serviceManager.AuthValidator))
+		// Basic auth routes - only require valid OIDC token, not database user
+		basicAuth := api.Group("")
+		basicAuth.Use(middleware.OIDCBasicAuthMiddleware(serviceManager.AuthValidator))
 		{
-			public.POST("/users", handlers.CreateUser)
-			public.GET("/users/profile", handlers.GetUserProfile)
+			// User registration and profile (for first-time users)
+			basicAuth.GET("/users/profile", handlers.GetUserProfile)
+			basicAuth.POST("/users", handlers.CreateUser)
+
+			// Invitation acceptance (for first-time users accepting family invites)
+			basicAuth.POST("/invitations/:invitationId/accept", handlers.AcceptInvitation)
 		}
 
 		// Protected routes - require authentication
@@ -180,11 +184,10 @@ func main() {
 				users.GET("/results", handlers.GetResults)
 			}
 
-			// Invitation endpoints (available to any authenticated user)
+			// Invitation endpoints (available to authenticated users with existing accounts)
 			invitations := protected.Group("/invitations")
 			{
 				invitations.GET("/pending", handlers.GetPendingInvitations)
-				invitations.POST("/:invitationId/accept", handlers.AcceptInvitation)
 			}
 
 			// Family management - RESTRICTED: Parent access only for most endpoints

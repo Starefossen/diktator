@@ -131,6 +131,52 @@ func (db *Postgres) GetUserByAuthID(authID string) (*models.User, error) {
 	return &user, nil
 }
 
+func (db *Postgres) GetUserByEmail(email string) (*models.User, error) {
+	ctx := context.Background()
+	var user models.User
+
+	query := `
+		SELECT id, auth_id, email, display_name, family_id, role,
+		       parent_id, is_active, created_at, last_active_at
+		FROM users
+		WHERE LOWER(email) = LOWER($1)`
+
+	err := db.pool.QueryRow(ctx, query, email).Scan(
+		&user.ID, &user.AuthID, &user.Email, &user.DisplayName, &user.FamilyID,
+		&user.Role, &user.ParentID, &user.IsActive,
+		&user.CreatedAt, &user.LastActiveAt,
+	)
+
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return nil, ErrUserNotFound
+		}
+		return nil, fmt.Errorf("failed to get user by email: %w", err)
+	}
+
+	return &user, nil
+}
+
+func (db *Postgres) LinkUserToAuthID(userID, authID string) error {
+	ctx := context.Background()
+
+	query := `
+		UPDATE users
+		SET auth_id = $2, is_active = true, last_active_at = NOW()
+		WHERE id = $1`
+
+	result, err := db.pool.Exec(ctx, query, userID, authID)
+	if err != nil {
+		return fmt.Errorf("failed to link user to auth ID: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return ErrUserNotFound
+	}
+
+	return nil
+}
+
 func (db *Postgres) CreateUser(user *models.User) error {
 	ctx := context.Background()
 

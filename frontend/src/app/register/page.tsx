@@ -8,8 +8,15 @@ import { useAuth } from "@/contexts/OIDCAuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function RegisterPage() {
-  const { user, refreshUserData, loading, needsRegistration, signIn } =
-    useAuth();
+  const {
+    user,
+    refreshUserData,
+    loading,
+    needsRegistration,
+    hasPendingInvites,
+    pendingInvitations,
+    signIn,
+  } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
@@ -18,6 +25,7 @@ export default function RegisterPage() {
   const [familyName, setFamilyName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [acceptingInvite, setAcceptingInvite] = useState(false);
 
   // Log auth state on mount and changes
   useEffect(() => {
@@ -43,10 +51,28 @@ export default function RegisterPage() {
 
   // Only redirect away if registration is complete (needsRegistration is false)
   // AND we're not in a loading state AND user exists with valid email
+  // AND there are no pending invites
   useEffect(() => {
-    console.log("[RegisterPage] Redirect check: loading=", loading, "user=", user?.email, "needsRegistration=", needsRegistration);
-    if (!loading && user && user.email && !needsRegistration) {
-      console.log("[RegisterPage] All conditions met for redirect! Redirecting away...");
+    console.log(
+      "[RegisterPage] Redirect check: loading=",
+      loading,
+      "user=",
+      user?.email,
+      "needsRegistration=",
+      needsRegistration,
+      "hasPendingInvites=",
+      hasPendingInvites,
+    );
+    if (
+      !loading &&
+      user &&
+      user.email &&
+      !needsRegistration &&
+      !hasPendingInvites
+    ) {
+      console.log(
+        "[RegisterPage] All conditions met for redirect! Redirecting away...",
+      );
       const redirect =
         sessionStorage.getItem("post_registration_redirect") || "/wordsets/";
       console.log("[RegisterPage] Redirecting to:", redirect);
@@ -58,9 +84,10 @@ export default function RegisterPage() {
         hasUser: !!user,
         userHasEmail: !!user?.email,
         needsRegistration,
+        hasPendingInvites,
       });
     }
-  }, [loading, needsRegistration, router, user]);
+  }, [loading, needsRegistration, hasPendingInvites, router, user]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -106,13 +133,45 @@ export default function RegisterPage() {
       const redirect =
         sessionStorage.getItem("post_registration_redirect") || "/wordsets/";
       sessionStorage.removeItem("post_registration_redirect");
-      console.log("[RegisterPage] handleSubmit: Registration complete, redirecting to:", redirect);
+      console.log(
+        "[RegisterPage] handleSubmit: Registration complete, redirecting to:",
+        redirect,
+      );
       router.push(redirect);
     } catch (err) {
       console.error("[RegisterPage] Registration failed", err);
       setError(t("auth.register.error.failed"));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleAcceptInvitation = async (invitationId: string) => {
+    console.log(
+      "[RegisterPage] handleAcceptInvitation: Starting",
+      invitationId,
+    );
+    setAcceptingInvite(true);
+    setError(null);
+
+    try {
+      await generatedApiClient.acceptInvitation(invitationId);
+      console.log("[RegisterPage] handleAcceptInvitation: Invitation accepted");
+      await refreshUserData();
+
+      const redirect =
+        sessionStorage.getItem("post_registration_redirect") || "/wordsets/";
+      sessionStorage.removeItem("post_registration_redirect");
+      console.log(
+        "[RegisterPage] handleAcceptInvitation: Redirecting to:",
+        redirect,
+      );
+      router.push(redirect);
+    } catch (err) {
+      console.error("[RegisterPage] Invitation acceptance failed", err);
+      setError(t("auth.register.error.invitationFailed"));
+    } finally {
+      setAcceptingInvite(false);
     }
   };
 
@@ -133,7 +192,9 @@ export default function RegisterPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md w-full bg-white p-6 rounded-lg shadow">
-          <h1 className="text-xl font-semibold mb-4">{t("auth.register.signinPrompt")}</h1>
+          <h1 className="text-xl font-semibold mb-4">
+            {t("auth.register.signinPrompt")}
+          </h1>
           <button
             onClick={signIn}
             className="w-full px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
@@ -147,7 +208,7 @@ export default function RegisterPage() {
 
   // If user is authenticated but doesn't need registration, they shouldn't be here
   // (the useEffect above will redirect them, but show loading in the meantime)
-  if (!needsRegistration) {
+  if (!needsRegistration && !hasPendingInvites) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -158,11 +219,60 @@ export default function RegisterPage() {
     );
   }
 
+  // User has pending family invitations - show invitation acceptance UI
+  if (hasPendingInvites && pendingInvitations.length > 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full bg-white p-6 rounded-lg shadow">
+          <h1 className="text-xl font-semibold mb-2">
+            {t("auth.invitations.title")}
+          </h1>
+          <p className="text-sm text-gray-600 mb-4">
+            {t("auth.invitations.subtitle")}
+          </p>
+          {error ? (
+            <p className="text-sm text-red-600 mb-4" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <div className="space-y-3">
+            {pendingInvitations.map((invitation) => (
+              <div
+                key={invitation.id}
+                className="border rounded-lg p-4 flex items-center justify-between"
+              >
+                <div>
+                  <p className="font-medium">
+                    {t("auth.invitations.familyInvite")}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {t("auth.invitations.role")}: {invitation.role}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleAcceptInvitation(invitation.id)}
+                  disabled={acceptingInvite}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {acceptingInvite
+                    ? t("auth.invitations.accepting")
+                    : t("auth.invitations.accept")}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // User is authenticated and needs registration - show the form
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full bg-white p-6 rounded-lg shadow">
-        <h1 className="text-xl font-semibold mb-2">{t("auth.register.title")}</h1>
+        <h1 className="text-xl font-semibold mb-2">
+          {t("auth.register.title")}
+        </h1>
         <p className="text-sm text-gray-600 mb-4">
           {t("auth.register.subtitle")}
         </p>
@@ -216,7 +326,9 @@ export default function RegisterPage() {
             disabled={submitting}
             className="w-full px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
           >
-            {submitting ? t("auth.register.button.submitting") : t("auth.register.button")}
+            {submitting
+              ? t("auth.register.button.submitting")
+              : t("auth.register.button")}
           </button>
         </form>
       </div>

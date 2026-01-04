@@ -30,9 +30,11 @@ type stubRepo struct{}
 func (stubRepo) Close() error                                        { return nil }
 func (stubRepo) GetUser(userID string) (*models.User, error)         { return nil, db.ErrUserNotFound }
 func (stubRepo) GetUserByAuthID(authID string) (*models.User, error) { return nil, db.ErrUserNotFound }
+func (stubRepo) GetUserByEmail(email string) (*models.User, error)   { return nil, db.ErrUserNotFound }
 func (stubRepo) CreateUser(user *models.User) error                  { return nil }
 func (stubRepo) UpdateUser(user *models.User) error                  { return nil }
 func (stubRepo) DeleteUser(userID string) error                      { return nil }
+func (stubRepo) LinkUserToAuthID(userID, authID string) error        { return nil }
 func (stubRepo) GetFamily(familyID string) (*models.Family, error)   { return nil, db.ErrFamilyNotFound }
 func (stubRepo) CreateFamily(family *models.Family) error            { return nil }
 func (stubRepo) UpdateFamily(family *models.Family) error            { return nil }
@@ -78,7 +80,7 @@ func (stubRepo) GetFamilyInvitations(familyID string) ([]models.FamilyInvitation
 	return nil, nil
 }
 func (stubRepo) AcceptInvitation(invitationID, userID string) error { return nil }
-func (stubRepo) DeleteInvitation(invitationID string) error          { return nil }
+func (stubRepo) DeleteInvitation(invitationID string) error         { return nil }
 
 func (stubRepo) VerifyFamilyMembership(userID, familyID string) error { return nil }
 func (stubRepo) VerifyParentPermission(userID, familyID string) error { return nil }

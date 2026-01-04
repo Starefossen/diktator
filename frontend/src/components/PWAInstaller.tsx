@@ -18,7 +18,6 @@ export function PWAInstaller() {
     useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
-  const [updateVersion, setUpdateVersion] = useState<string>("");
 
   useEffect(() => {
     // Feature flag for service worker (can be disabled remotely if needed)
@@ -47,9 +46,12 @@ export function PWAInstaller() {
       // Register service worker immediately, not waiting for load event
       const registerServiceWorker = async () => {
         try {
-          const registration = await navigator.serviceWorker.register("/sw.js", {
-            updateViaCache: "none", // Always check for updates
-          });
+          const registration = await navigator.serviceWorker.register(
+            "/sw.js",
+            {
+              updateViaCache: "none", // Always check for updates
+            },
+          );
           console.log("✓ Service worker registered successfully");
 
           // Helper to show update prompt
@@ -267,7 +269,6 @@ export function PWAInstaller() {
             <div className="install-prompt-title">{t("pwa.update.title")}</div>
             <div className="install-prompt-description">
               {t("pwa.update.description")}
-              {updateVersion && ` (Version ${updateVersion})`}
             </div>
           </div>
         </div>

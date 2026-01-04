@@ -33,6 +33,17 @@ export interface UserData {
   lastActiveAt: string;
 }
 
+export interface FamilyInvitation {
+  id: string;
+  familyId: string;
+  email: string;
+  role: "parent" | "child";
+  invitedBy: string;
+  status: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
 export interface User {
   uid: string;
   id: string;
@@ -48,6 +59,8 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   needsRegistration: boolean;
+  hasPendingInvites: boolean;
+  pendingInvitations: FamilyInvitation[];
   signIn: () => Promise<void>;
   logOut: () => Promise<void>;
   clearError: () => void;
@@ -80,26 +93,58 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [needsRegistration, setNeedsRegistration] = useState(false);
+  const [hasPendingInvites, setHasPendingInvites] = useState(false);
+  const [pendingInvitations, setPendingInvitations] = useState<
+    FamilyInvitation[]
+  >([]);
 
   const loadUserData = useCallback(async (currentUser: User) => {
     try {
-      console.log("[OIDCAuthContext] loadUserData: fetching profile for user:", currentUser.email);
+      console.log(
+        "[OIDCAuthContext] loadUserData: fetching profile for user:",
+        currentUser.email,
+      );
       const userProfileResponse = await generatedApiClient.getUserProfile();
       const profileData = userProfileResponse.data?.data as
-        | (UserData & { needsRegistration?: boolean })
+        | (UserData & {
+            needsRegistration?: boolean;
+            hasPendingInvites?: boolean;
+            pendingInvitations?: FamilyInvitation[];
+          })
         | undefined;
 
-      console.log("[OIDCAuthContext] loadUserData: profile response:", { profileData, needsRegistration: profileData?.needsRegistration });
+      console.log("[OIDCAuthContext] loadUserData: profile response:", {
+        profileData,
+        needsRegistration: profileData?.needsRegistration,
+      });
+
+      // Check for pending invitations
+      if (profileData?.hasPendingInvites && profileData?.pendingInvitations) {
+        console.log(
+          "[OIDCAuthContext] loadUserData: User has pending invitations",
+        );
+        setHasPendingInvites(true);
+        setPendingInvitations(
+          profileData.pendingInvitations as FamilyInvitation[],
+        );
+        setNeedsRegistration(false);
+        setUserData(null);
+        return;
+      }
 
       if (profileData?.needsRegistration) {
-        console.log("[OIDCAuthContext] loadUserData: Setting needsRegistration=true");
+        console.log(
+          "[OIDCAuthContext] loadUserData: Setting needsRegistration=true",
+        );
         setNeedsRegistration(true);
         // Don't redirect here - let pages handle it based on needsRegistration flag
         return;
       }
 
       if (profileData) {
-        console.log("[OIDCAuthContext] loadUserData: Profile loaded, setting needsRegistration=false");
+        console.log(
+          "[OIDCAuthContext] loadUserData: Profile loaded, setting needsRegistration=false",
+        );
         setUserData(profileData as UserData);
         setNeedsRegistration(false);
       }
@@ -122,23 +167,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.log("[OIDCAuthContext] loadUserData: Full error response:", {
           status: apiError.response?.status,
           data: apiError.response?.data,
-          dataKeys: apiError.response?.data ? Object.keys(apiError.response.data) : [],
+          dataKeys: apiError.response?.data
+            ? Object.keys(apiError.response.data)
+            : [],
         });
 
         if (apiError.response?.status === 404) {
-          console.log("[OIDCAuthContext] loadUserData: Got 404, checking needsRegistration in response data");
+          console.log(
+            "[OIDCAuthContext] loadUserData: Got 404, checking needsRegistration in response data",
+          );
           // Try multiple possible locations for needsRegistration flag
           const needsReg =
             apiError.response?.data?.needsRegistration ||
             apiError.response?.data?.Data?.needsRegistration ||
             apiError.response?.data?.data?.needsRegistration;
 
-          console.log("[OIDCAuthContext] loadUserData: needsRegistration from 404 response:", needsReg);
+          console.log(
+            "[OIDCAuthContext] loadUserData: needsRegistration from 404 response:",
+            needsReg,
+          );
 
           // If we got a 404, user doesn't exist yet - they need registration
           // This is the fallback when the flag isn't explicitly returned
           if (needsReg === true || needsReg === undefined) {
-            console.log("[OIDCAuthContext] loadUserData: 404 indicates user needs registration");
+            console.log(
+              "[OIDCAuthContext] loadUserData: 404 indicates user needs registration",
+            );
             setNeedsRegistration(true);
             setUserData(null);
             // Don't redirect here - let pages handle it based on needsRegistration flag
@@ -161,10 +215,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUser(null);
         setUserData(null);
         setNeedsRegistration(false);
+        setHasPendingInvites(false);
+        setPendingInvitations([]);
         return;
       }
 
-      console.log("[OIDCAuthContext] checkAuth: Authenticated, fetching user info");
+      console.log(
+        "[OIDCAuthContext] checkAuth: Authenticated, fetching user info",
+      );
       const oidcUser = await getUserInfo();
       const currentUser = toUser(oidcUser);
       console.log("[OIDCAuthContext] checkAuth: Got user:", currentUser?.email);
@@ -214,6 +272,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(null);
       setUserData(null);
       setNeedsRegistration(false);
+      setHasPendingInvites(false);
+      setPendingInvitations([]);
     } catch (err) {
       console.error("Logout error:", err);
       setError(t("auth.error.logoutFailed"));
@@ -263,6 +323,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     loading,
     error,
     needsRegistration,
+    hasPendingInvites,
+    pendingInvitations,
     signIn,
     logOut,
     clearError,

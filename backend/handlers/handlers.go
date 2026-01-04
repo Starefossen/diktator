@@ -768,7 +768,7 @@ func GetPendingInvitations(c *gin.Context) {
 }
 
 // @Summary		Accept Invitation
-// @Description	Accept a pending family invitation and join the family
+// @Description	Accept a pending family invitation and join the family. For first-time users, this also links their OIDC identity to the family child account.
 // @Tags			invitations
 // @Accept			json
 // @Produce		json
@@ -796,14 +796,99 @@ func AcceptInvitation(c *gin.Context) {
 		return
 	}
 
-	userID, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, models.APIResponse{
-			Error: "User authentication required",
+	// Try to get existing userID (for users who already have an account)
+	userID, userExists := c.Get("userID")
+
+	// If user doesn't exist yet, this is a first-time login accepting an invitation
+	// We need to link their OIDC identity to the existing child account
+	if !userExists {
+		authIdentityID, authExists := c.Get("authIdentityID")
+		if !authExists {
+			c.JSON(http.StatusUnauthorized, models.APIResponse{
+				Error: "Authentication required",
+			})
+			return
+		}
+
+		identity, identityExists := c.Get("identity")
+		if !identityExists {
+			c.JSON(http.StatusUnauthorized, models.APIResponse{
+				Error: "Identity information required",
+			})
+			return
+		}
+
+		authIdentity, ok := identity.(*auth.Identity)
+		if !ok {
+			c.JSON(http.StatusInternalServerError, models.APIResponse{
+				Error: "Invalid identity data",
+			})
+			return
+		}
+
+		// Get the invitation to find the existing child account
+		invitations, err := serviceManager.DB.GetPendingInvitationsByEmail(authIdentity.Email)
+		if err != nil || len(invitations) == 0 {
+			c.JSON(http.StatusNotFound, models.APIResponse{
+				Error: "No pending invitations found for your email",
+			})
+			return
+		}
+
+		// Find the specific invitation
+		var targetInvitation *models.FamilyInvitation
+		for i := range invitations {
+			if invitations[i].ID == invitationID {
+				targetInvitation = &invitations[i]
+				break
+			}
+		}
+
+		if targetInvitation == nil {
+			c.JSON(http.StatusNotFound, models.APIResponse{
+				Error: "Invitation not found",
+			})
+			return
+		}
+
+		// Find the existing child account by email
+		existingUser, err := serviceManager.DB.GetUserByEmail(authIdentity.Email)
+		if err != nil {
+			c.JSON(http.StatusNotFound, models.APIResponse{
+				Error: "Child account not found. Please contact your parent.",
+			})
+			return
+		}
+
+		// Link the OIDC auth ID to the existing child account
+		if err := serviceManager.DB.LinkUserToAuthID(existingUser.ID, authIdentityID.(string)); err != nil {
+			log.Printf("ERROR linking user to auth ID: %v (userID=%s, authID=%s)", err, existingUser.ID, authIdentityID)
+			c.JSON(http.StatusInternalServerError, models.APIResponse{
+				Error: "Failed to link account: " + err.Error(),
+			})
+			return
+		}
+
+		// Now accept the invitation with the existing user ID
+		if err := serviceManager.DB.AcceptInvitation(invitationID, existingUser.ID); err != nil {
+			log.Printf("ERROR accepting invitation: %v (id=%s, user=%s)", err, invitationID, existingUser.ID)
+			c.JSON(http.StatusInternalServerError, models.APIResponse{
+				Error: "Failed to accept invitation: " + err.Error(),
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, models.APIResponse{
+			Message: "Invitation accepted successfully. Your account has been activated.",
+			Data: map[string]interface{}{
+				"userId":   existingUser.ID,
+				"familyId": existingUser.FamilyID,
+			},
 		})
 		return
 	}
 
+	// User already exists - regular invitation acceptance flow
 	err := serviceManager.DB.AcceptInvitation(invitationID, userID.(string))
 	if err != nil {
 		log.Printf("ERROR accepting invitation: %v (id=%s, user=%s)", err, invitationID, userID)
@@ -1697,6 +1782,33 @@ func GetUserProfile(c *gin.Context) {
 					},
 				})
 				return
+			}
+		}
+
+		// User doesn't exist by auth_id, check for pending invitations by email
+		if serviceManager != nil {
+			// Get email from identity context
+			identity, exists := c.Get("identity")
+			if exists {
+				if authIdentity, ok := identity.(*auth.Identity); ok {
+					email := authIdentity.Email
+					if email != "" {
+						// Check for pending invitations
+						invitations, err := serviceManager.DB.GetPendingInvitationsByEmail(email)
+						if err == nil && len(invitations) > 0 {
+							// User has pending invitations
+							c.JSON(http.StatusOK, models.APIResponse{
+								Data: map[string]interface{}{
+									"authId":             authIdentityID,
+									"email":              email,
+									"hasPendingInvites":  true,
+									"pendingInvitations": invitations,
+								},
+							})
+							return
+						}
+					}
+				}
 			}
 		}
 

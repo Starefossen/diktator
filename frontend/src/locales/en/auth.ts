@@ -19,7 +19,8 @@ export const auth = {
   "auth.role.parent": "Parent/Teacher",
   "auth.logout": "Sign Out",
   "auth.register.title": "Complete registration",
-  "auth.register.subtitle": "We could not find your account in Diktator. Create your parent profile to continue.",
+  "auth.register.subtitle":
+    "We could not find your account in Diktator. Create your parent profile to continue.",
   "auth.register.familyName": "Family name",
   "auth.register.familyName.placeholder": "Enter your family name",
   "auth.register.button": "Register",
@@ -31,6 +32,17 @@ export const auth = {
   "auth.register.signinPrompt": "Sign in to continue",
   "auth.register.signinButton": "Sign In",
 
+  // Invitations
+  "auth.invitations.title": "Family Invitations",
+  "auth.invitations.subtitle":
+    "You have been invited to join a family. Accept an invitation to get started.",
+  "auth.invitations.familyInvite": "Family Invitation",
+  "auth.invitations.role": "Role",
+  "auth.invitations.accept": "Accept",
+  "auth.invitations.accepting": "Accepting...",
+  "auth.register.error.invitationFailed":
+    "Failed to accept invitation. Please try again.",
+
   // Invitation acceptance
   "auth.register.invitation.title": "You've been invited!",
   "auth.register.invitation.subtitle": "You have pending family invitations",
@@ -39,7 +51,8 @@ export const auth = {
   "auth.register.invitation.invitedBy": "Invited by",
   "auth.register.invitation.asRole": "as",
   "auth.register.invitation.accepting": "Accepting...",
-  "auth.register.invitation.error": "Failed to accept invitation. Please try again.",
+  "auth.register.invitation.error":
+    "Failed to accept invitation. Please try again.",
 
   // Login page
   "auth.login.title": "Welcome to Diktator",

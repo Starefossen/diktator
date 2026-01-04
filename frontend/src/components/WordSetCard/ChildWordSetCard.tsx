@@ -74,9 +74,9 @@ export function ChildWordSetCard({
   const needsPracticeWords =
     latestResult && latestResult.score < 90
       ? wordSet.words.slice(
-        0,
-        Math.ceil((wordSet.words.length * (100 - latestResult.score)) / 100),
-      )
+          0,
+          Math.ceil((wordSet.words.length * (100 - latestResult.score)) / 100),
+        )
       : [];
 
   // Sort words to show practice words first, then regular words (stable sort)
@@ -177,12 +177,13 @@ export function ChildWordSetCard({
               onClick={() =>
                 hasAudio ? onWordClick(wordItem.word, wordSet) : undefined
               }
-              className={`inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${needsPractice
+              className={`inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
+                needsPractice
                   ? "text-orange-800 bg-orange-100 border border-orange-300 cursor-pointer hover:bg-orange-200 animate-pulse"
                   : hasAudio
                     ? "text-blue-800 bg-blue-100 border border-blue-200 cursor-pointer hover:bg-blue-200 hover:border-blue-300"
                     : "text-gray-600 bg-gray-100 border border-gray-200"
-                } ${isPlaying ? "ring-4 ring-blue-400 ring-opacity-50" : ""}`}
+              } ${isPlaying ? "ring-4 ring-blue-400 ring-opacity-50" : ""}`}
             >
               {hasAudio && (
                 <HeroVolumeIcon className="shrink-0 w-3 h-3 mr-1.5" />

@@ -117,8 +117,12 @@ export default function FamilyPage() {
       console.error("Failed to create child account:", error);
       // Extract error message from API response
       const apiError =
-        (error as { response?: { data?: { error?: string } }; message?: string })
-          ?.response?.data?.error ||
+        (
+          error as {
+            response?: { data?: { error?: string } };
+            message?: string;
+          }
+        )?.response?.data?.error ||
         (error as { message?: string })?.message ||
         t("family.child.create.error");
       setErrorMessage(apiError);
@@ -143,8 +147,12 @@ export default function FamilyPage() {
     } catch (error: unknown) {
       console.error("Failed to delete child account:", error);
       const apiError =
-        (error as { response?: { data?: { error?: string } }; message?: string })
-          ?.response?.data?.error ||
+        (
+          error as {
+            response?: { data?: { error?: string } };
+            message?: string;
+          }
+        )?.response?.data?.error ||
         (error as { message?: string })?.message ||
         t("family.child.delete.error");
       setErrorMessage(apiError);
@@ -428,10 +436,11 @@ export default function FamilyPage() {
                           </p>
                         </div>
                         <span
-                          className={`px-2 py-1 text-xs rounded-full ${child.isActive
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                            }`}
+                          className={`px-2 py-1 text-xs rounded-full ${
+                            child.isActive
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
                         >
                           {child.isActive
                             ? t("family.child.active")
