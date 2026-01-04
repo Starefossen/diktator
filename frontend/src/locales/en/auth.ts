@@ -40,4 +40,14 @@ export const auth = {
   "auth.register.invitation.asRole": "as",
   "auth.register.invitation.accepting": "Accepting...",
   "auth.register.invitation.error": "Failed to accept invitation. Please try again.",
+
+  // Login page
+  "auth.login.title": "Welcome to Diktator",
+  "auth.login.subtitle": "Sign in to continue",
+  "auth.login.button": "Login with OIDC",
+  "auth.login.footer": "You will be redirected to your identity provider to complete the login",
+
+  // Error messages
+  "auth.error.loginFailed": "Failed to initiate login. Please try again.",
+  "auth.error.logoutFailed": "Failed to log out. Please try again.",
 };

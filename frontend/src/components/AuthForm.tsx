@@ -5,10 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { isMockMode } from "@/lib/oidc";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function AuthForm() {
   const { signIn, error, clearError } = useAuth();
   const { user, needsRegistration, loading } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -85,9 +87,9 @@ export default function AuthForm() {
             </div>
           </div>
           <h2 className="text-3xl font-bold text-gray-900">
-            Welcome to Diktator
+            {t("auth.login.title")}
           </h2>
-          <p className="mt-2 text-gray-600">Sign in to continue</p>
+          <p className="mt-2 text-gray-600">{t("auth.login.subtitle")}</p>
         </div>
 
         <div className="p-8 mt-8 space-y-6 bg-white shadow-lg rounded-xl">
@@ -137,14 +139,13 @@ export default function AuthForm() {
                     clipRule="evenodd"
                   />
                 </svg>
-                <span>Login with OIDC</span>
+                <span>{t("auth.login.button")}</span>
               </>
             )}
           </button>
 
           <p className="text-xs text-center text-gray-500">
-            You will be redirected to your identity provider to complete the
-            login
+            {t("auth.login.footer")}
           </p>
         </div>
       </div>

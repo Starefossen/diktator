@@ -18,6 +18,7 @@ import {
   isMockMode,
 } from "@/lib/oidc";
 import { generatedApiClient } from "@/lib/api-generated";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export interface UserData {
   id: string;
@@ -73,6 +74,7 @@ function toUser(oidcUser: OIDCUser | null): User | null {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
+  const { t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -200,10 +202,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     } catch (err) {
       console.error("Sign in error:", err);
-      setError("Failed to initiate login. Please try again.");
+      setError(t("auth.error.loginFailed"));
       throw err;
     }
-  }, [checkAuth]);
+  }, [checkAuth, t]);
 
   const logOut = useCallback(async () => {
     try {
@@ -214,10 +216,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setNeedsRegistration(false);
     } catch (err) {
       console.error("Logout error:", err);
-      setError("Failed to log out. Please try again.");
+      setError(t("auth.error.logoutFailed"));
       throw err;
     }
-  }, []);
+  }, [t]);
 
   const clearError = useCallback(() => {
     setError(null);

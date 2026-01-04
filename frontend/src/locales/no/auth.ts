@@ -40,4 +40,14 @@ export const auth = {
   "auth.register.invitation.asRole": "som",
   "auth.register.invitation.accepting": "Godtar...",
   "auth.register.invitation.error": "Kunne ikke godta invitasjon. Prøv igjen.",
+
+  // Login page
+  "auth.login.title": "Velkommen til Diktator",
+  "auth.login.subtitle": "Logg inn for å fortsette",
+  "auth.login.button": "Logg inn med OIDC",
+  "auth.login.footer": "Du vil bli omdirigert til din identitetsleverandør for å fullføre påloggingen",
+
+  // Error messages
+  "auth.error.loginFailed": "Kunne ikke starte pålogging. Vennligst prøv igjen.",
+  "auth.error.logoutFailed": "Kunne ikke logge ut. Vennligst prøv igjen.",
 };
