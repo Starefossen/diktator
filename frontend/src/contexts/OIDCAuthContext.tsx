@@ -107,10 +107,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const userProfileResponse = await generatedApiClient.getUserProfile();
       const profileData = userProfileResponse.data?.data as
         | (UserData & {
-            needsRegistration?: boolean;
-            hasPendingInvites?: boolean;
-            pendingInvitations?: FamilyInvitation[];
-          })
+          needsRegistration?: boolean;
+          hasPendingInvites?: boolean;
+          pendingInvitations?: FamilyInvitation[];
+        })
         | undefined;
 
       console.log("[OIDCAuthContext] loadUserData: profile response:", {
@@ -174,30 +174,41 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         if (apiError.response?.status === 404) {
           console.log(
-            "[OIDCAuthContext] loadUserData: Got 404, checking needsRegistration in response data",
-          );
-          // Try multiple possible locations for needsRegistration flag
-          const needsReg =
-            apiError.response?.data?.needsRegistration ||
-            apiError.response?.data?.Data?.needsRegistration ||
-            apiError.response?.data?.data?.needsRegistration;
-
-          console.log(
-            "[OIDCAuthContext] loadUserData: needsRegistration from 404 response:",
-            needsReg,
+            "[OIDCAuthContext] loadUserData: Got 404, checking for pending invitations",
           );
 
-          // If we got a 404, user doesn't exist yet - they need registration
-          // This is the fallback when the flag isn't explicitly returned
-          if (needsReg === true || needsReg === undefined) {
+          // Check if user has pending invitations (child account created by parent)
+          try {
+            const invitationsResponse = await generatedApiClient.getPendingInvitations();
+            const invitations = invitationsResponse.data?.data as FamilyInvitation[] | undefined;
+
+            if (invitations && invitations.length > 0) {
+              console.log(
+                "[OIDCAuthContext] loadUserData: Found pending invitations:",
+                invitations.length,
+              );
+              setHasPendingInvites(true);
+              setPendingInvitations(invitations);
+              setNeedsRegistration(false);
+              setUserData(null);
+              return;
+            }
+          } catch (invErr) {
             console.log(
-              "[OIDCAuthContext] loadUserData: 404 indicates user needs registration",
+              "[OIDCAuthContext] loadUserData: No pending invitations found or error checking:",
+              invErr,
             );
-            setNeedsRegistration(true);
-            setUserData(null);
-            // Don't redirect here - let pages handle it based on needsRegistration flag
-            return;
           }
+
+          // No pending invitations, user truly needs registration
+          console.log(
+            "[OIDCAuthContext] loadUserData: No pending invitations, user needs registration",
+          );
+          setNeedsRegistration(true);
+          setUserData(null);
+          setHasPendingInvites(false);
+          setPendingInvitations([]);
+          return;
         }
       }
       console.log("[OIDCAuthContext] loadUserData: Setting userdata=null");
