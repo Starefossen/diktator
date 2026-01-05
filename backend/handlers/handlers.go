@@ -763,8 +763,11 @@ func GetPendingInvitations(c *gin.Context) {
 
 	email := authIdentity.Email
 	if email == "" {
-		c.JSON(http.StatusBadRequest, models.APIResponse{
-			Error: "Email not found in authentication token",
+		// Email not in token - return empty array instead of error
+		// This allows the flow to continue to registration
+		log.Printf("[GetPendingInvitations] Email not in token for auth_id=%s, returning empty invitations list", authIdentity.ID)
+		c.JSON(http.StatusOK, models.APIResponse{
+			Data: []models.FamilyInvitation{},
 		})
 		return
 	}

@@ -33,9 +33,11 @@ export default function RegisterPage() {
       loading,
       user: user?.email,
       needsRegistration,
+      hasPendingInvites,
+      pendingInvitationsCount: pendingInvitations.length,
       pathname,
     });
-  }, [loading, user, needsRegistration, pathname]);
+  }, [loading, user, needsRegistration, hasPendingInvites, pendingInvitations, pathname]);
 
   useEffect(() => {
     if (user) {
@@ -243,7 +245,7 @@ export default function RegisterPage() {
               >
                 <div>
                   <p className="font-medium">
-                    {t("auth.invitations.familyInvite")}
+                    {invitation.familyName}
                   </p>
                   <p className="text-sm text-gray-600">
                     {t("auth.invitations.role")}: {invitation.role}

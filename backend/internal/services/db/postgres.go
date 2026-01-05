@@ -1295,9 +1295,11 @@ func (db *Postgres) CreateFamilyInvitation(invitation *models.FamilyInvitation) 
 	ctx := context.Background()
 	query := `
 		INSERT INTO family_invitations (id, family_id, email, role, invited_by, status, created_at, expires_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		ON CONFLICT (family_id, LOWER(email)) WHERE status = 'pending'
+		DO NOTHING`
 
-	_, err := db.pool.Exec(ctx, query,
+	result, err := db.pool.Exec(ctx, query,
 		invitation.ID,
 		invitation.FamilyID,
 		invitation.Email,
@@ -1311,14 +1313,20 @@ func (db *Postgres) CreateFamilyInvitation(invitation *models.FamilyInvitation) 
 		return fmt.Errorf("failed to create family invitation: %w", err)
 	}
 
+	// If no rows were affected, it means a duplicate was attempted
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("invitation already exists for this email and family")
+	}
+
 	return nil
 }
 
 func (db *Postgres) GetPendingInvitationsByEmail(email string) ([]models.FamilyInvitation, error) {
 	ctx := context.Background()
 	query := `
-		SELECT i.id, i.family_id, i.email, i.role, i.invited_by, i.status, i.created_at, i.expires_at
+		SELECT i.id, i.family_id, f.name as family_name, i.email, i.role, i.invited_by, i.status, i.created_at, i.expires_at
 		FROM family_invitations i
+		JOIN families f ON i.family_id = f.id
 		WHERE LOWER(i.email) = LOWER($1) AND i.status = 'pending'
 		ORDER BY i.created_at DESC`
 
@@ -1334,6 +1342,7 @@ func (db *Postgres) GetPendingInvitationsByEmail(email string) ([]models.FamilyI
 		err := rows.Scan(
 			&inv.ID,
 			&inv.FamilyID,
+			&inv.FamilyName,
 			&inv.Email,
 			&inv.Role,
 			&inv.InvitedBy,

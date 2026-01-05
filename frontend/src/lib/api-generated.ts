@@ -3,7 +3,7 @@
  * This wraps the generated OpenAPI client with OIDC authentication
  */
 
-import { getIdToken, isMockMode, mockToken } from "@/lib/oidc";
+import { getIdToken, getAccessToken, isMockMode, mockToken } from "@/lib/oidc";
 import {
   Configuration,
   ChildrenApi,

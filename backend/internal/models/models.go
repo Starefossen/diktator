@@ -161,14 +161,15 @@ type ChildAccount struct {
 
 // FamilyInvitation represents an invitation to join a family
 type FamilyInvitation struct {
-	ID        string     `json:"id" db:"id"`
-	FamilyID  string     `json:"familyId" db:"family_id"`
-	Email     string     `json:"email" db:"email"`
-	Role      string     `json:"role" db:"role"` // "child" or "parent"
-	InvitedBy string     `json:"invitedBy" db:"invited_by"`
-	Status    string     `json:"status" db:"status"` // "pending", "accepted", "declined", "expired"
-	CreatedAt time.Time  `json:"createdAt" db:"created_at"`
-	ExpiresAt *time.Time `json:"expiresAt,omitempty" db:"expires_at"` // NULL for non-expiring invitations
+	ID         string     `json:"id" db:"id"`
+	FamilyID   string     `json:"familyId" db:"family_id"`
+	FamilyName string     `json:"familyName" db:"family_name"` // Name of the family being invited to
+	Email      string     `json:"email" db:"email"`
+	Role       string     `json:"role" db:"role"` // "child" or "parent"
+	InvitedBy  string     `json:"invitedBy" db:"invited_by"`
+	Status     string     `json:"status" db:"status"` // "pending", "accepted", "declined", "expired"
+	CreatedAt  time.Time  `json:"createdAt" db:"created_at"`
+	ExpiresAt  *time.Time `json:"expiresAt,omitempty" db:"expires_at"` // NULL for non-expiring invitations
 }
 
 // FamilyProgress represents progress tracking for family members

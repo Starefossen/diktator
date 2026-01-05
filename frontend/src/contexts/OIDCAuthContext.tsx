@@ -36,6 +36,7 @@ export interface UserData {
 export interface FamilyInvitation {
   id: string;
   familyId: string;
+  familyName: string; // Name of the family being invited to
   email: string;
   role: "parent" | "child";
   invitedBy: string;
@@ -122,6 +123,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (profileData?.hasPendingInvites && profileData?.pendingInvitations) {
         console.log(
           "[OIDCAuthContext] loadUserData: User has pending invitations",
+          {
+            count: (profileData.pendingInvitations as FamilyInvitation[])
+              .length,
+            invitations: profileData.pendingInvitations,
+          },
         );
         setHasPendingInvites(true);
         setPendingInvitations(
