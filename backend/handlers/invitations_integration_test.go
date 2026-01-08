@@ -160,8 +160,9 @@ func TestGetPendingInvitations_Integration(t *testing.T) {
 		assert.Equal(t, http.StatusUnauthorized, resp.Code)
 	})
 
-	t.Run("Error_NoEmailInIdentity", func(t *testing.T) {
+	t.Run("Success_NoEmailInIdentityReturnsEmptyArray", func(t *testing.T) {
 		// Setup router with identity but no email
+		// This now returns empty array to allow registration flow to continue
 		gin.SetMode(gin.TestMode)
 		router := gin.New()
 		router.Use(func(c *gin.Context) {
@@ -175,7 +176,15 @@ func TestGetPendingInvitations_Integration(t *testing.T) {
 		router.GET("/api/invitations/pending", GetPendingInvitations)
 
 		resp := makeRequest(router, "GET", "/api/invitations/pending", nil, nil)
-		assert.Equal(t, http.StatusBadRequest, resp.Code)
+		assert.Equal(t, http.StatusOK, resp.Code)
+
+		// Verify empty array is returned
+		var apiResp struct {
+			Data []models.FamilyInvitation `json:"data"`
+		}
+		err := json.Unmarshal(resp.Body.Bytes(), &apiResp)
+		require.NoError(t, err)
+		assert.Empty(t, apiResp.Data, "Should return empty array when no email")
 	})
 }
 

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"testing"
 
@@ -42,7 +41,6 @@ func TestChildInvitationFlow_Integration(t *testing.T) {
 		require.Equal(t, http.StatusCreated, resp.Code, "Response body: %s", resp.Body.String())
 
 		// CRITICAL TEST: Verify that an invitation was created for the child
-		// This is what was missing in the original implementation
 		env.AssertRowCount("family_invitations", 1)
 
 		// Verify the invitation details
@@ -60,20 +58,8 @@ func TestChildInvitationFlow_Integration(t *testing.T) {
 		assert.Equal(t, parent.ID, invitation.InvitedBy)
 		assert.Equal(t, "pending", invitation.Status)
 
-		// Verify the pending user was also created
-		var user models.User
-		userQuery := `SELECT id, email, display_name, family_id, role, is_active
-					  FROM users WHERE email = $1`
-		err = env.Pool.QueryRow(ctx, userQuery, "child@example.com").Scan(
-			&user.ID, &user.Email, &user.DisplayName,
-			&user.FamilyID, &user.Role, &user.IsActive,
-		)
-		require.NoError(t, err, "Should find pending user")
-		assert.Equal(t, "child@example.com", user.Email)
-		assert.Equal(t, "child", user.Role)
-		assert.Equal(t, familyID, user.FamilyID)
-		assert.False(t, user.IsActive, "Pending user should be inactive")
-		assert.Contains(t, user.ID, "pending-", "User ID should have pending prefix")
+		// NOTE: User accounts are now created only when the child accepts the invitation
+		// (this is better than the old flow where pending users were created immediately)
 	})
 
 	t.Run("ChildFirstLogin_FindsInvitation", func(t *testing.T) {
@@ -140,8 +126,8 @@ func TestChildInvitationFlow_Integration(t *testing.T) {
 		}
 	})
 
-	t.Run("InvitationCleanup_OnChildDeletion", func(t *testing.T) {
-		// Create a child
+	t.Run("InvitationDeletion_CancelsInvitation", func(t *testing.T) {
+		// Create an invitation
 		childEmail := "cleanup@example.com"
 		payload := map[string]interface{}{
 			"email":       childEmail,
@@ -153,25 +139,20 @@ func TestChildInvitationFlow_Integration(t *testing.T) {
 		resp := makeRequest(env.Router, "POST", "/api/family/members", payload, nil)
 		require.Equal(t, http.StatusCreated, resp.Code)
 
-		var apiResp struct {
-			Data models.ChildAccount `json:"data"`
-		}
-		err := json.Unmarshal(resp.Body.Bytes(), &apiResp)
-		require.NoError(t, err)
-		childID := apiResp.Data.ID
-
-		// Verify invitation exists
+		// Verify invitation was created
 		invitations, err := env.DB.GetPendingInvitationsByEmail(childEmail)
 		require.NoError(t, err)
 		require.Len(t, invitations, 1)
+		invitationID := invitations[0].ID
 
-		// Delete the child account
-		err = env.DB.DeleteChild(childID)
+		// Delete the invitation
+		err = env.DB.DeleteInvitation(invitationID)
 		require.NoError(t, err)
 
-		// NOTE: Currently invitations are NOT automatically deleted when child is deleted
-		// This is acceptable - the invitation becomes orphaned but won't cause issues
-		// A future improvement could add CASCADE delete or cleanup logic
+		// Verify invitation was deleted
+		invitations, err = env.DB.GetPendingInvitationsByEmail(childEmail)
+		require.NoError(t, err)
+		assert.Len(t, invitations, 0, "Invitation should be deleted")
 	})
 }
 

@@ -20,10 +20,10 @@ import (
 
 // OIDCValidator validates JWT tokens against an OIDC provider
 type OIDCValidator struct {
-	issuer          string
-	audience        string
-	httpClient      *http.Client
-	userinfoURL     string // Userinfo endpoint URL
+	issuer      string
+	audience    string
+	httpClient  *http.Client
+	userinfoURL string // Userinfo endpoint URL
 
 	// JWKS caching
 	jwks      *JWKS
