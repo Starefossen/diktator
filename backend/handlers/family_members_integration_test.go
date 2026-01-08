@@ -45,28 +45,31 @@ func TestAddFamilyMember_Integration(t *testing.T) {
 		require.Equal(t, http.StatusCreated, resp.Code, "Response body: %s", resp.Body.String())
 
 		var apiResp struct {
-			Data models.ChildAccount `json:"data"`
+			Message string                 `json:"message"`
+			Data    map[string]interface{} `json:"data"`
 		}
 		err := json.Unmarshal(resp.Body.Bytes(), &apiResp)
 		require.NoError(t, err)
-		response := apiResp.Data
-		assert.Equal(t, "child@example.com", response.Email)
-		assert.Equal(t, "Test Child", response.DisplayName)
-		assert.Equal(t, "child", response.Role)
-		assert.Equal(t, familyID, response.FamilyID)
+		assert.Contains(t, apiResp.Message, "Invitation sent")
+		assert.Equal(t, "child@example.com", apiResp.Data["email"])
+		assert.Equal(t, familyID, apiResp.Data["familyId"])
 
-		// CRITICAL: Verify only ONE user was added to the database
-		// This was the bug - CreateChild already inserts to users,
-		// so calling CreateUser again caused duplicate key error
-		env.AssertRowCount("users", 2)
+		// Verify invitation was created
+		invitation := apiResp.Data["invitation"].(map[string]interface{})
+		assert.Equal(t, "child@example.com", invitation["email"])
+		assert.Equal(t, "pending", invitation["status"])
+		assert.Equal(t, "child", invitation["role"])
 
-		// Verify the child was actually created correctly
-		childUser, err := env.GetUserByID(response.ID)
+		// Verify NO new user was added yet (user is created when they accept the invitation)
+		env.AssertRowCount("users", 1)
+
+		// Verify the invitation exists in the database
+		invitations, err := env.DB.GetPendingInvitationsByEmail("child@example.com")
 		require.NoError(t, err)
-		require.NotNil(t, childUser)
-		assert.Equal(t, "child@example.com", childUser.Email)
-		assert.Equal(t, familyID, childUser.FamilyID)
-		assert.Equal(t, "child", childUser.Role)
+		require.Len(t, invitations, 1)
+		assert.Equal(t, "child@example.com", invitations[0].Email)
+		assert.Equal(t, familyID, invitations[0].FamilyID)
+		assert.Equal(t, "child", invitations[0].Role)
 	})
 
 	t.Run("Error_DuplicateEmail", func(t *testing.T) {

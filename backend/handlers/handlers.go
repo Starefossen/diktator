@@ -12,6 +12,7 @@ import (
 	"github.com/starefossen/diktator/backend/internal/models"
 	"github.com/starefossen/diktator/backend/internal/services"
 	"github.com/starefossen/diktator/backend/internal/services/auth"
+	"github.com/starefossen/diktator/backend/internal/services/db"
 )
 
 var serviceManager *services.Manager
@@ -870,27 +871,68 @@ func AcceptInvitation(c *gin.Context) {
 			return
 		}
 
-		// Find the existing child account by email
+		// Check if user already exists (in case they were created before the code fix)
 		existingUser, err := serviceManager.DB.GetUserByEmail(authIdentity.Email)
-		if err != nil {
-			c.JSON(http.StatusNotFound, models.APIResponse{
-				Error: "Child account not found. Please contact your parent.",
-			})
-			return
-		}
-
-		// Link the OIDC auth ID to the existing child account
-		if err := serviceManager.DB.LinkUserToAuthID(existingUser.ID, authIdentityID.(string)); err != nil {
-			log.Printf("ERROR linking user to auth ID: %v (userID=%s, authID=%s)", err, existingUser.ID, authIdentityID)
+		if err != nil && err != db.ErrUserNotFound {
 			c.JSON(http.StatusInternalServerError, models.APIResponse{
-				Error: "Failed to link account: " + err.Error(),
+				Error: "Failed to check user: " + err.Error(),
 			})
 			return
 		}
 
-		// Now accept the invitation with the existing user ID
-		if err := serviceManager.DB.AcceptInvitation(invitationID, existingUser.ID); err != nil {
-			log.Printf("ERROR accepting invitation: %v (id=%s, user=%s)", err, invitationID, existingUser.ID)
+		var newUserID string
+
+		if existingUser != nil {
+			// User already exists (legacy flow) - just link the auth ID
+			if err := serviceManager.DB.LinkUserToAuthID(existingUser.ID, authIdentityID.(string)); err != nil {
+				log.Printf("ERROR linking user to auth ID: %v (userID=%s, authID=%s)", err, existingUser.ID, authIdentityID)
+				c.JSON(http.StatusInternalServerError, models.APIResponse{
+					Error: "Failed to link account: " + err.Error(),
+				})
+				return
+			}
+			newUserID = existingUser.ID
+		} else {
+			// Create new user with their auth ID as the user ID
+			newUserID = authIdentityID.(string)
+
+			// Use email prefix as display name (user can update later)
+			displayName := strings.Split(authIdentity.Email, "@")[0]
+
+			newUser := &models.User{
+				ID:           newUserID,
+				AuthID:       newUserID,
+				Email:        authIdentity.Email,
+				DisplayName:  displayName,
+				FamilyID:     targetInvitation.FamilyID,
+				Role:         targetInvitation.Role,
+				IsActive:     true,
+				CreatedAt:    time.Now(),
+				LastActiveAt: time.Now(),
+			}
+
+			// For child accounts, set the parent ID
+			if targetInvitation.Role == "child" {
+				parentID := targetInvitation.InvitedBy
+				newUser.ParentID = &parentID
+			}
+
+			if err := serviceManager.DB.CreateUser(newUser); err != nil {
+				log.Printf("ERROR creating user: %v (authID=%s, email=%s)", err, newUserID, authIdentity.Email)
+				c.JSON(http.StatusInternalServerError, models.APIResponse{
+					Error: "Failed to create account: " + err.Error(),
+				})
+				return
+			}
+		}
+
+		// Now accept the invitation
+		if err := serviceManager.DB.AcceptInvitation(invitationID, newUserID); err != nil {
+			log.Printf("ERROR accepting invitation: %v (id=%s, user=%s)", err, invitationID, newUserID)
+			// Clean up the user if we just created them
+			if existingUser == nil {
+				_ = serviceManager.DB.DeleteUser(newUserID)
+			}
 			c.JSON(http.StatusInternalServerError, models.APIResponse{
 				Error: "Failed to accept invitation: " + err.Error(),
 			})
@@ -900,8 +942,8 @@ func AcceptInvitation(c *gin.Context) {
 		c.JSON(http.StatusOK, models.APIResponse{
 			Message: "Invitation accepted successfully. Your account has been activated.",
 			Data: map[string]interface{}{
-				"userId":   existingUser.ID,
-				"familyId": existingUser.FamilyID,
+				"userId":   newUserID,
+				"familyId": targetInvitation.FamilyID,
 			},
 		})
 		return
@@ -1227,53 +1269,16 @@ func AddFamilyMember(c *gin.Context) {
 	// RECOMMENDED: Use Option 1 (Admin API) for immediate account creation
 	// or Option 2 (Invitation) for better UX and security.
 
-	// Generate a temporary/placeholder ID for the child
-	// This will be replaced with the actual Zitadel user ID when they log in
-	childAuthID := "pending-" + uuid.New().String()
-
-	// Create child record in our database
-	child := &models.ChildAccount{
-		ID:           childAuthID,
-		Email:        req.Email,
-		DisplayName:  req.DisplayName,
-		FamilyID:     familyID.(string),
-		ParentID:     userID.(string),
-		Role:         "child",
-		IsActive:     false, // Set to false until they log in via OIDC
-		CreatedAt:    time.Now(),
-		LastActiveAt: time.Now(),
-	}
-
-	if err := serviceManager.DB.CreateChild(child); err != nil {
-		log.Printf("ERROR creating child account: %v (email=%s, family=%s, parent=%s)", err, req.Email, familyID, userID)
-		// Check for duplicate email constraint violation
-		if strings.Contains(err.Error(), "duplicate key") && strings.Contains(err.Error(), "users_email_key") {
-			c.JSON(http.StatusConflict, models.APIResponse{
-				Error: "A user with this email already exists",
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.APIResponse{
-			Error: "Failed to add child to family: " + err.Error(),
+	// Check if user already exists with this email
+	existingUser, err := serviceManager.DB.GetUserByEmail(req.Email)
+	if err == nil && existingUser != nil {
+		c.JSON(http.StatusConflict, models.APIResponse{
+			Error: "A user with this email already exists",
 		})
 		return
 	}
 
-	// Note: CreateChild already creates the user record in the users table
-	// No need to call CreateUser separately
-
-	// Add child to family_members table
-	if err := serviceManager.DB.AddFamilyMember(familyID.(string), childAuthID, "child"); err != nil {
-		log.Printf("ERROR adding child to family_members: %v (childID=%s, familyID=%s)", err, childAuthID, familyID)
-		// Clean up on failure
-		_ = serviceManager.DB.DeleteChild(childAuthID)
-		c.JSON(http.StatusInternalServerError, models.APIResponse{
-			Error: "Failed to add child to family: " + err.Error(),
-		})
-		return
-	}
-
-	// Create invitation record so child can properly link their OIDC identity on first login
+	// Create invitation record - child user will be created when they accept the invitation
 	expiresAt := time.Now().Add(30 * 24 * time.Hour) // 30 days for child invitations
 	invitation := &models.FamilyInvitation{
 		ID:        uuid.New().String(),
@@ -1288,8 +1293,13 @@ func AddFamilyMember(c *gin.Context) {
 
 	if err := serviceManager.DB.CreateFamilyInvitation(invitation); err != nil {
 		log.Printf("ERROR creating child invitation: %v (email=%s, family=%s)", err, req.Email, familyID)
-		// Clean up on failure - DeleteChild should cascade delete family_members entry
-		_ = serviceManager.DB.DeleteChild(childAuthID)
+		// Check if error is due to duplicate invitation
+		if strings.Contains(err.Error(), "invitation already exists") {
+			c.JSON(http.StatusConflict, models.APIResponse{
+				Error: "An invitation for this email already exists",
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to create child invitation: " + err.Error(),
 		})
@@ -1297,7 +1307,12 @@ func AddFamilyMember(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, models.APIResponse{
-		Data: child,
+		Message: "Invitation sent to " + req.Email,
+		Data: map[string]interface{}{
+			"email":      req.Email,
+			"familyId":   familyID,
+			"invitation": invitation,
+		},
 	})
 }
 
