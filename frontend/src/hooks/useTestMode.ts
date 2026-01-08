@@ -95,17 +95,28 @@ export function useTestMode(): UseTestModeReturn {
     const needsUserInteraction =
       requiresUserInteractionForAudio() && autoDelay > 0;
 
+    // Safety timeout to reset audio state in case callbacks don't fire
+    const safetyTimeout = setTimeout(() => {
+      if (isPlayingAudioRef.current) {
+        console.warn("Audio playback timeout - resetting state");
+        isPlayingAudioRef.current = false;
+        setIsAudioPlaying(false);
+      }
+    }, 10000); // 10 second timeout
+
     playWordAudioHelper(word, currentWordSet, {
       onStart: () => {
         isPlayingAudioRef.current = true;
         setIsAudioPlaying(true);
       },
       onEnd: () => {
+        clearTimeout(safetyTimeout);
         isPlayingAudioRef.current = false;
         setIsAudioPlaying(false);
       },
       onError: (error: Error) => {
         console.error("Audio playback error:", error);
+        clearTimeout(safetyTimeout);
         isPlayingAudioRef.current = false;
         setIsAudioPlaying(false);
       },
@@ -325,6 +336,9 @@ export function useTestMode(): UseTestModeReturn {
           setCurrentTries(0);
           setCurrentWordAnswers([]);
           setCurrentWordAudioPlays(0);
+          // Reset audio state for next word to prevent stuck spinner
+          isPlayingAudioRef.current = false;
+          setIsAudioPlaying(false);
         } else {
           completeTest(newAnswersList);
         }

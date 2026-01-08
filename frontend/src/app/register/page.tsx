@@ -37,7 +37,14 @@ export default function RegisterPage() {
       pendingInvitationsCount: pendingInvitations.length,
       pathname,
     });
-  }, [loading, user, needsRegistration, hasPendingInvites, pendingInvitations, pathname]);
+  }, [
+    loading,
+    user,
+    needsRegistration,
+    hasPendingInvites,
+    pendingInvitations,
+    pathname,
+  ]);
 
   useEffect(() => {
     if (user) {
@@ -244,9 +251,7 @@ export default function RegisterPage() {
                 className="border rounded-lg p-4 flex items-center justify-between"
               >
                 <div>
-                  <p className="font-medium">
-                    {invitation.familyName}
-                  </p>
+                  <p className="font-medium">{invitation.familyName}</p>
                   <p className="text-sm text-gray-600">
                     {t("auth.invitations.role")}: {invitation.role}
                   </p>

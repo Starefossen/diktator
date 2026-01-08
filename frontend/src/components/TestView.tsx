@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import { WordSet, TestAnswer, getEffectiveTestConfig } from "@/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { requiresUserInteractionForAudio } from "@/lib/audioPlayer";
@@ -42,6 +42,14 @@ export function TestView({
   const { t } = useLanguage();
   const testConfig = getEffectiveTestConfig(activeTest);
   const currentWord = activeTest.words[currentWordIndex];
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Focus input when feedback is hidden (ready for new input)
+  useEffect(() => {
+    if (!showFeedback && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [showFeedback]);
 
   // For translation mode, get direction from the hook
   const targetLanguage = activeTest.testConfiguration?.targetLanguage;
@@ -119,7 +127,13 @@ export function TestView({
                   <div className="absolute border-4 border-transparent rounded-full -inset-3 border-t-blue-500 border-r-blue-400 animate-spin"></div>
                 )}
                 <button
-                  onClick={onPlayCurrentWord}
+                  onClick={() => {
+                    onPlayCurrentWord();
+                    // Return focus to input after clicking audio
+                    setTimeout(() => {
+                      inputRef.current?.focus();
+                    }, 100);
+                  }}
                   className="relative p-4 text-4xl text-white transition-all duration-200 transform rounded-full shadow-lg sm:p-6 sm:text-6xl bg-linear-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 hover:shadow-xl hover:scale-105"
                 >
                   <HeroVolumeIcon className="w-12 h-12 text-white sm:w-16 sm:h-16" />
@@ -166,6 +180,7 @@ export function TestView({
                 </div>
               ) : (
                 <input
+                  ref={inputRef}
                   type="text"
                   value={userAnswer}
                   onChange={(e) => onUserAnswerChange(e.target.value)}
@@ -195,7 +210,13 @@ export function TestView({
               {/* Play Again Button - Hidden in dictation mode since it auto-plays */}
               {testMode !== "dictation" && (
                 <button
-                  onClick={onPlayCurrentWord}
+                  onClick={() => {
+                    onPlayCurrentWord();
+                    // Return focus to input after clicking audio
+                    setTimeout(() => {
+                      inputRef.current?.focus();
+                    }, 100);
+                  }}
                   className="flex items-center px-4 py-2 font-semibold text-white transition-colors bg-blue-500 rounded-lg sm:px-6 sm:py-3 hover:bg-blue-600"
                   disabled={showFeedback}
                 >

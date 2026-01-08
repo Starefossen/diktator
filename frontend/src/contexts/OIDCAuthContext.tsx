@@ -109,10 +109,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const userProfileResponse = await generatedApiClient.getUserProfile();
       const profileData = userProfileResponse.data?.data as
         | (UserData & {
-          needsRegistration?: boolean;
-          hasPendingInvites?: boolean;
-          pendingInvitations?: FamilyInvitation[];
-        })
+            needsRegistration?: boolean;
+            hasPendingInvites?: boolean;
+            pendingInvitations?: FamilyInvitation[];
+          })
         | undefined;
 
       console.log("[OIDCAuthContext] loadUserData: profile response:", {
@@ -186,8 +186,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
           // Check if user has pending invitations (child account created by parent)
           try {
-            const invitationsResponse = await generatedApiClient.getPendingInvitations();
-            const invitations = invitationsResponse.data?.data as FamilyInvitation[] | undefined;
+            const invitationsResponse =
+              await generatedApiClient.getPendingInvitations();
+            const invitations = invitationsResponse.data?.data as
+              | FamilyInvitation[]
+              | undefined;
 
             if (invitations && invitations.length > 0) {
               console.log(
