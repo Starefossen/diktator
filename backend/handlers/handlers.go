@@ -1824,6 +1824,15 @@ func GetUserProfile(c *gin.Context) {
 		if serviceManager != nil {
 			userData, err := serviceManager.DB.GetUserByAuthID(authID)
 			if err == nil && userData != nil {
+				// Get family name if user has a family
+				var familyName string
+				if userData.FamilyID != "" {
+					family, err := serviceManager.DB.GetFamily(userData.FamilyID)
+					if err == nil && family != nil {
+						familyName = family.Name
+					}
+				}
+
 				// User found, return profile
 				c.JSON(http.StatusOK, models.APIResponse{
 					Data: map[string]interface{}{
@@ -1831,6 +1840,7 @@ func GetUserProfile(c *gin.Context) {
 						"email":        userData.Email,
 						"displayName":  userData.DisplayName,
 						"familyId":     userData.FamilyID,
+						"familyName":   familyName,
 						"role":         userData.Role,
 						"parentId":     userData.ParentID,
 						"isActive":     userData.IsActive,
@@ -1888,12 +1898,25 @@ func GetUserProfile(c *gin.Context) {
 		return
 	}
 
+	// Get family name if user has a family
+	var familyName string
+	if userData.FamilyID != "" {
+		serviceManager := GetServiceManager(c)
+		if serviceManager != nil {
+			family, err := serviceManager.DB.GetFamily(userData.FamilyID)
+			if err == nil && family != nil {
+				familyName = family.Name
+			}
+		}
+	}
+
 	c.JSON(http.StatusOK, models.APIResponse{
 		Data: map[string]interface{}{
 			"id":           userData.ID,
 			"email":        userData.Email,
 			"displayName":  userData.DisplayName,
 			"familyId":     userData.FamilyID,
+			"familyName":   familyName,
 			"role":         userData.Role,
 			"parentId":     userData.ParentID,
 			"isActive":     userData.IsActive,

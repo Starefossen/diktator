@@ -139,13 +139,12 @@ export function Navigation() {
             {/* API Status Indicator */}
             <div className="flex items-center pr-4 mr-4 border-r border-gray-200">
               <div
-                className={`w-3 h-3 rounded-full transition-colors ${
-                  status === "connected"
+                className={`w-3 h-3 rounded-full transition-colors ${status === "connected"
                     ? "bg-emerald-500"
                     : status === "error"
                       ? "bg-red-500"
                       : "bg-amber-500 animate-pulse"
-                }`}
+                  }`}
                 title={
                   status === "connected"
                     ? `API Connected: ${message}`
@@ -180,9 +179,16 @@ export function Navigation() {
                           ✓
                         </div>
                       </div>
-                      <span className="hidden text-sm text-gray-700 md:block">
-                        {userData?.displayName || user.email}
-                      </span>
+                      <div className="hidden md:block">
+                        <div className="text-sm font-medium text-gray-700">
+                          {userData?.displayName || user.email}
+                        </div>
+                        {userData?.familyName && (
+                          <div className="text-xs text-gray-500">
+                            {userData.familyName}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </MenuButton>
                 </div>
@@ -351,6 +357,11 @@ export function Navigation() {
                 <div className="text-sm font-medium text-gray-500">
                   {user.email}
                 </div>
+                {userData?.familyName && (
+                  <div className="text-xs text-gray-400">
+                    {userData.familyName}
+                  </div>
+                )}
               </div>
             </div>
             <div className="mt-3 space-y-1">
@@ -383,13 +394,12 @@ export function Navigation() {
               <div className="flex items-center space-x-2">
                 <span className="text-xs text-gray-500">API</span>
                 <div
-                  className={`w-2.5 h-2.5 rounded-full transition-colors ${
-                    status === "connected"
+                  className={`w-2.5 h-2.5 rounded-full transition-colors ${status === "connected"
                       ? "bg-emerald-500"
                       : status === "error"
                         ? "bg-red-500"
                         : "bg-amber-500 animate-pulse"
-                  }`}
+                    }`}
                   title={
                     status === "connected"
                       ? `API Connected: ${message}`

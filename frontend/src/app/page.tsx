@@ -15,15 +15,19 @@ import {
 
 export default function HomePage() {
   const { t } = useLanguage();
-  const { user, loading } = useAuth();
+  const { user, loading, needsRegistration, hasPendingInvites } = useAuth();
   const router = useRouter();
 
-  // Redirect authenticated users to wordsets
+  // Redirect authenticated users based on their registration status
   useEffect(() => {
     if (!loading && user) {
-      router.push("/wordsets/");
+      if (needsRegistration || hasPendingInvites) {
+        router.push("/register/");
+      } else {
+        router.push("/wordsets/");
+      }
     }
-  }, [user, loading, router]);
+  }, [user, loading, needsRegistration, hasPendingInvites, router]);
 
   // Show loading or nothing while redirecting authenticated users
   if (loading || user) {

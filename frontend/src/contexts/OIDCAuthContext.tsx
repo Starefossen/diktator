@@ -25,6 +25,7 @@ export interface UserData {
   email: string;
   displayName: string;
   familyId: string;
+  familyName?: string;
   role: "parent" | "child";
   parentId?: string;
   children?: string[];
