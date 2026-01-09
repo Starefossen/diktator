@@ -252,6 +252,13 @@ export const no = {
   "test.nextMobile": "Neste",
   "test.finishMobile": "Ferdig",
   "test.backMobile": "Tilbake",
+  "test.attempts": "forsøk",
+  "test.scoreBreakdown": "Poengoversikt",
+  "test.firstAttempt": "1. forsøk",
+  "test.secondAttempt": "2. forsøk",
+  "test.thirdAttempt": "3+ forsøk",
+  "test.failed": "Feil",
+  "test.perfectScore": "Perfekt! Alle ord riktig på første forsøk!",
 
   // Results page
   "results.title": "Testresultater",

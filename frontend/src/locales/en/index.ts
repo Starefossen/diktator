@@ -254,6 +254,13 @@ export const en = {
   "test.nextMobile": "Next",
   "test.finishMobile": "Finish",
   "test.backMobile": "Back",
+  "test.attempts": "attempts",
+  "test.scoreBreakdown": "Score Breakdown",
+  "test.firstAttempt": "1st try",
+  "test.secondAttempt": "2nd try",
+  "test.thirdAttempt": "3+ tries",
+  "test.failed": "Failed",
+  "test.perfectScore": "Perfect! All words correct on first try!",
 
   // Results page
   "results.title": "Test Results",

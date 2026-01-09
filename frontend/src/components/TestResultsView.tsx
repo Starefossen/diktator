@@ -1,7 +1,9 @@
 import React from "react";
 import { WordSet, TestAnswer } from "@/types";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { ScoreIcon, HeroVolumeIcon } from "@/components/Icons";
+import { calculateScores } from "@/lib/scoreCalculator";
 
 interface TestResultsViewProps {
   activeTest: WordSet;
@@ -19,9 +21,12 @@ export function TestResultsView({
   onPlayAudio,
 }: TestResultsViewProps) {
   const { t } = useLanguage();
+  const { userData } = useAuth();
+  const isParent = userData?.role === "parent";
 
-  const correctAnswers = answers.filter((a) => a.isCorrect);
-  const score = Math.round((correctAnswers.length / answers.length) * 100);
+  const scoreBreakdown = calculateScores(answers);
+  // Use weighted score for display (100% only if all first attempt)
+  const score = scoreBreakdown.weightedScore;
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
@@ -43,91 +48,178 @@ export function TestResultsView({
           </div>
           <div className="p-4 text-center rounded-lg bg-blue-50">
             <div className="text-3xl font-bold text-blue-600">
-              {correctAnswers.length}/{answers.length}
+              {scoreBreakdown.totalWords - scoreBreakdown.failed}/
+              {scoreBreakdown.totalWords}
             </div>
             <div className="text-gray-600">{t("test.correct")}</div>
           </div>
         </div>
+
+        {/* Detailed breakdown for parents */}
+        {isParent && (
+          <div className="p-4 mb-8 border border-gray-200 rounded-lg bg-gray-50">
+            <h3 className="mb-3 text-sm font-semibold text-gray-700">
+              {t("test.scoreBreakdown")}
+            </h3>
+            <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
+              <div className="p-2 text-center bg-white rounded">
+                <div className="text-lg font-bold text-green-600">
+                  {scoreBreakdown.firstAttemptCorrect}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {t("test.firstAttempt")}
+                </div>
+              </div>
+              <div className="p-2 text-center bg-white rounded">
+                <div className="text-lg font-bold text-yellow-600">
+                  {scoreBreakdown.secondAttemptCorrect}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {t("test.secondAttempt")}
+                </div>
+              </div>
+              <div className="p-2 text-center bg-white rounded">
+                <div className="text-lg font-bold text-orange-600">
+                  {scoreBreakdown.thirdPlusAttemptCorrect}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {t("test.thirdAttempt")}
+                </div>
+              </div>
+              <div className="p-2 text-center bg-white rounded">
+                <div className="text-lg font-bold text-red-600">
+                  {scoreBreakdown.failed}
+                </div>
+                <div className="text-xs text-gray-500">{t("test.failed")}</div>
+              </div>
+            </div>
+            {scoreBreakdown.isPerfect && (
+              <div className="mt-3 text-sm text-center text-green-600">
+                ⭐ {t("test.perfectScore")}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="mb-8">
           <h3 className="mb-4 text-lg font-semibold text-gray-800">
             {t("test.reviewResults")}
           </h3>
           <div className="space-y-2">
-            {answers.map((answer, index) => (
-              <div
-                key={index}
-                className={`flex items-center justify-between p-3 rounded-lg ${
-                  answer.isCorrect ? "bg-green-50" : "bg-red-50"
-                }`}
-              >
-                <div className="flex items-center">
-                  <div
-                    className={`w-6 h-6 rounded-full mr-3 flex items-center justify-center ${
-                      answer.isCorrect ? "bg-green-500" : "bg-red-500"
-                    }`}
-                  >
-                    {answer.isCorrect ? (
-                      <svg
-                        className="w-4 h-4 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        className="w-4 h-4 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    )}
-                  </div>
-                  <div>
-                    <span
-                      className={`font-medium ${
-                        answer.isCorrect ? "text-green-800" : "text-red-800"
+            {answers.map((answer, index) => {
+              // Determine background color based on result and attempts
+              const isCorrectFirstTry =
+                answer.isCorrect && answer.attempts === 1;
+              const isCorrectMultipleTries =
+                answer.isCorrect && answer.attempts > 1;
+              const bgClass = isCorrectFirstTry
+                ? "bg-green-50"
+                : isCorrectMultipleTries
+                  ? "bg-yellow-50"
+                  : "bg-red-50";
+
+              return (
+                <div
+                  key={index}
+                  className={`flex items-center justify-between p-3 rounded-lg ${bgClass}`}
+                >
+                  <div className="flex items-center flex-1">
+                    <div
+                      className={`w-6 h-6 rounded-full mr-3 flex items-center justify-center shrink-0 ${
+                        isCorrectFirstTry
+                          ? "bg-green-500"
+                          : isCorrectMultipleTries
+                            ? "bg-yellow-500"
+                            : "bg-red-500"
                       }`}
                     >
-                      {answer.word}
-                    </span>
-                    {!answer.isCorrect && (
-                      <span className="ml-2 text-gray-600">
-                        {t("test.yourAnswer")} &quot;{answer.finalAnswer}&quot;
-                      </span>
-                    )}
+                      {answer.isCorrect ? (
+                        <svg
+                          className="w-4 h-4 text-white"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      ) : (
+                        <svg
+                          className="w-4 h-4 text-white"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`font-medium ${
+                            isCorrectFirstTry
+                              ? "text-green-800"
+                              : isCorrectMultipleTries
+                                ? "text-yellow-800"
+                                : "text-red-800"
+                          }`}
+                        >
+                          {answer.word}
+                        </span>
+                        {/* Show attempts badge for words that needed multiple tries */}
+                        {answer.attempts > 1 && (
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded-full ${
+                              answer.isCorrect
+                                ? "bg-yellow-200 text-yellow-800"
+                                : "bg-red-200 text-red-800"
+                            }`}
+                          >
+                            {answer.attempts} {t("test.attempts")}
+                          </span>
+                        )}
+                      </div>
+                      {!answer.isCorrect && (
+                        <span className="block text-sm text-gray-600 truncate">
+                          {t("test.yourAnswer")} &quot;{answer.finalAnswer}
+                          &quot;
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <button
-                  onClick={() => onPlayAudio(answer.word)}
-                  className={`px-3 py-1 transition-colors rounded ${
-                    answer.isCorrect
-                      ? "text-green-700 bg-green-100 hover:bg-green-200"
-                      : "text-red-700 bg-red-100 hover:bg-red-200"
-                  }`}
-                >
-                  <HeroVolumeIcon
-                    className={`w-4 h-4 ${
-                      answer.isCorrect ? "text-green-700" : "text-red-700"
+                  <button
+                    onClick={() => onPlayAudio(answer.word)}
+                    className={`px-3 py-1 transition-colors rounded ml-2 shrink-0 ${
+                      isCorrectFirstTry
+                        ? "text-green-700 bg-green-100 hover:bg-green-200"
+                        : isCorrectMultipleTries
+                          ? "text-yellow-700 bg-yellow-100 hover:bg-yellow-200"
+                          : "text-red-700 bg-red-100 hover:bg-red-200"
                     }`}
-                  />
-                </button>
-              </div>
-            ))}
+                  >
+                    <HeroVolumeIcon
+                      className={`w-4 h-4 ${
+                        isCorrectFirstTry
+                          ? "text-green-700"
+                          : isCorrectMultipleTries
+                            ? "text-yellow-700"
+                            : "text-red-700"
+                      }`}
+                    />
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
 

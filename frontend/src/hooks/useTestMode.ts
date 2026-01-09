@@ -19,6 +19,7 @@ import {
   ErrorType,
 } from "@/lib/spellingAnalysis";
 import { TIMING } from "@/lib/timingConfig";
+import { calculateScores } from "@/lib/scoreCalculator";
 
 export interface UseTestModeReturn {
   // State
@@ -232,16 +233,15 @@ export function useTestMode(): UseTestModeReturn {
     async (finalAnswers: TestAnswer[]) => {
       if (!activeTest || !startTime) return;
 
-      const correctAnswers = finalAnswers.filter((a) => a.isCorrect);
+      const scoreBreakdown = calculateScores(finalAnswers);
       const incorrectWords = finalAnswers
         .filter((a) => !a.isCorrect)
         .map((a) => a.word);
       const totalTimeSpent = Math.round(
         (new Date().getTime() - startTime.getTime()) / 1000,
       );
-      const score = Math.round(
-        (correctAnswers.length / finalAnswers.length) * 100,
-      );
+      // Use weighted score - 100% only if all words correct on first attempt
+      const score = scoreBreakdown.weightedScore;
 
       try {
         const wordsResults = finalAnswers.map((answer) => ({
@@ -259,7 +259,7 @@ export function useTestMode(): UseTestModeReturn {
           wordSetId: activeTest.id,
           score,
           totalWords: finalAnswers.length,
-          correctWords: correctAnswers.length,
+          correctWords: scoreBreakdown.totalWords - scoreBreakdown.failed,
           mode: testMode as SaveResultRequest["mode"],
           incorrectWords,
           words: wordsResults,
