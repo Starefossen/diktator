@@ -181,6 +181,7 @@ func main() {
 			// User-specific test results
 			users := protected.Group("/users")
 			{
+				users.PATCH("/me/name", handlers.UpdateUserDisplayName)
 				users.POST("/results", handlers.SaveResult)
 				users.GET("/results", handlers.GetResults)
 			}

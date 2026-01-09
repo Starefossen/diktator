@@ -3,7 +3,7 @@
  * This wraps the generated OpenAPI client with OIDC authentication
  */
 
-import { getIdToken, getAccessToken, isMockMode, mockToken } from "@/lib/oidc";
+import { getIdToken, isMockMode, mockToken } from "@/lib/oidc";
 import {
   Configuration,
   ChildrenApi,
@@ -16,7 +16,6 @@ import {
   ApiUsersPostRequest,
   ModelsCreateWordSetRequest,
   ModelsUpdateWordSetRequest,
-  ModelsChildAccount,
   ModelsAddFamilyMemberRequest,
 } from "@/generated";
 
@@ -77,6 +76,11 @@ export const generatedApiClient = {
   async getUserProfile() {
     const { usersApi } = await createApiInstances();
     return usersApi.apiUsersProfileGet();
+  },
+
+  async updateUserDisplayName(request: { displayName: string }) {
+    const { usersApi } = await createApiInstances();
+    return usersApi.apiUsersMeNamePatch(request);
   },
 
   async createUser(request: ApiUsersPostRequest) {
@@ -146,7 +150,11 @@ export const generatedApiClient = {
     const { childrenApi } = await createApiInstances();
     return childrenApi.apiFamiliesChildrenChildIdDelete(childId);
   },
-  async updateChildAccount(childId: string, request: ModelsChildAccount) {
+
+  async updateChildDisplayName(
+    childId: string,
+    request: { displayName: string },
+  ) {
     const { childrenApi } = await createApiInstances();
     return childrenApi.apiFamiliesChildrenChildIdPut(childId, request);
   },

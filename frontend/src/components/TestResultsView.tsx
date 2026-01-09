@@ -125,12 +125,13 @@ export function TestResultsView({
                 >
                   <div className="flex items-center flex-1">
                     <div
-                      className={`w-6 h-6 rounded-full mr-3 flex items-center justify-center shrink-0 ${isCorrectFirstTry
+                      className={`w-6 h-6 rounded-full mr-3 flex items-center justify-center shrink-0 ${
+                        isCorrectFirstTry
                           ? "bg-green-500"
                           : isCorrectMultipleTries
                             ? "bg-yellow-500"
                             : "bg-red-500"
-                        }`}
+                      }`}
                     >
                       {answer.isCorrect ? (
                         <svg
@@ -165,22 +166,24 @@ export function TestResultsView({
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <span
-                          className={`font-medium ${isCorrectFirstTry
+                          className={`font-medium ${
+                            isCorrectFirstTry
                               ? "text-green-800"
                               : isCorrectMultipleTries
                                 ? "text-yellow-800"
                                 : "text-red-800"
-                            }`}
+                          }`}
                         >
                           {answer.word}
                         </span>
                         {/* Show attempts badge for words that needed multiple tries */}
                         {answer.attempts > 1 && (
                           <span
-                            className={`text-xs px-2 py-0.5 rounded-full ${answer.isCorrect
+                            className={`text-xs px-2 py-0.5 rounded-full ${
+                              answer.isCorrect
                                 ? "bg-yellow-200 text-yellow-800"
                                 : "bg-red-200 text-red-800"
-                              }`}
+                            }`}
                           >
                             {answer.attempts} {t("test.attempts")}
                           </span>
@@ -196,20 +199,22 @@ export function TestResultsView({
                   </div>
                   <button
                     onClick={() => onPlayAudio(answer.word)}
-                    className={`px-3 py-1 transition-colors rounded ml-2 shrink-0 ${isCorrectFirstTry
+                    className={`px-3 py-1 transition-colors rounded ml-2 shrink-0 ${
+                      isCorrectFirstTry
                         ? "text-green-700 bg-green-100 hover:bg-green-200"
                         : isCorrectMultipleTries
                           ? "text-yellow-700 bg-yellow-100 hover:bg-yellow-200"
                           : "text-red-700 bg-red-100 hover:bg-red-200"
-                      }`}
+                    }`}
                   >
                     <HeroVolumeIcon
-                      className={`w-4 h-4 ${isCorrectFirstTry
+                      className={`w-4 h-4 ${
+                        isCorrectFirstTry
                           ? "text-green-700"
                           : isCorrectMultipleTries
                             ? "text-yellow-700"
                             : "text-red-700"
-                        }`}
+                      }`}
                     />
                   </button>
                 </div>

@@ -5,6 +5,23 @@ export const profile = {
   "profile.error.load": "Failed to load profile data",
   "profile.retry": "Try Again",
 
+  // Settings page
+  "profile.settings.title": "Settings",
+  "profile.settings.displayName": "Display Name",
+  "profile.settings.displayName.placeholder": "Enter your name",
+  "profile.settings.displayName.label": "Your name",
+  "profile.settings.displayName.help":
+    "This is how your name appears to other family members",
+  "profile.settings.save": "Save Changes",
+  "profile.settings.cancel": "Cancel",
+  "profile.settings.saving": "Saving...",
+  "profile.settings.success": "Display name updated successfully!",
+  "profile.settings.error": "Failed to update display name. Please try again.",
+  "profile.settings.validation.required": "Name is required",
+  "profile.settings.validation.tooShort": "Name must be at least 1 character",
+  "profile.settings.validation.tooLong":
+    "Name must be no more than 100 characters",
+
   // Profile description
   "profile.desc.parent": "Manage your profile and family settings",
   "profile.desc.child": "View your profile and recent progress",

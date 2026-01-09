@@ -95,6 +95,8 @@ func (stubRepo) UnassignWordSetFromUser(wordSetID, userID string) error { return
 func (stubRepo) GetWordSetAssignments(wordSetID string) ([]string, error) {
 	return nil, nil
 }
+func (stubRepo) UpdateUserDisplayName(userID, displayName string) error   { return nil }
+func (stubRepo) UpdateChildDisplayName(childID, displayName string) error { return nil }
 
 func TestOIDCAuthMiddlewareRequiresRegistration(t *testing.T) {
 	gin.SetMode(gin.TestMode)

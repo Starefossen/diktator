@@ -19,6 +19,7 @@ type Repository interface {
 	GetUserByEmail(email string) (*models.User, error)
 	CreateUser(user *models.User) error
 	UpdateUser(user *models.User) error
+	UpdateUserDisplayName(userID, displayName string) error
 	DeleteUser(userID string) error
 	LinkUserToAuthID(userID, authID string) error
 
@@ -34,6 +35,7 @@ type Repository interface {
 	GetFamilyChildren(familyID string) ([]models.ChildAccount, error)
 	CreateChild(child *models.ChildAccount) error
 	UpdateChild(child *models.ChildAccount) error
+	UpdateChildDisplayName(childID, displayName string) error
 	DeleteChild(childID string) error
 
 	// Word set operations

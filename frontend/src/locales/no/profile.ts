@@ -5,6 +5,22 @@ export const profile = {
   "profile.error.load": "Kunne ikke laste profildata",
   "profile.retry": "Prøv Igjen",
 
+  // Settings page
+  "profile.settings.title": "Innstillinger",
+  "profile.settings.displayName": "Visningsnavn",
+  "profile.settings.displayName.placeholder": "Skriv inn navnet ditt",
+  "profile.settings.displayName.label": "Ditt navn",
+  "profile.settings.displayName.help":
+    "Slik vises navnet ditt for andre familiemedlemmer",
+  "profile.settings.save": "Lagre Endringer",
+  "profile.settings.cancel": "Avbryt",
+  "profile.settings.saving": "Lagrer...",
+  "profile.settings.success": "Visningsnavn oppdatert!",
+  "profile.settings.error": "Kunne ikke oppdatere visningsnavn. Prøv igjen.",
+  "profile.settings.validation.required": "Navn er påkrevd",
+  "profile.settings.validation.tooShort": "Navn må være minst 1 tegn",
+  "profile.settings.validation.tooLong": "Navn kan ikke være mer enn 100 tegn",
+
   // Profile description
   "profile.desc.parent": "Administrer din profil og familieinnstillinger",
   "profile.desc.child": "Se din profil og nylige fremgang",

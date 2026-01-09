@@ -1453,17 +1453,17 @@ func RemoveFamilyMember(c *gin.Context) {
 }
 
 // @Summary		Update Child Account
-// @Description	Update an existing child account (parent only)
+// @Description	Update a child account's display name (parent only)
 // @Tags			children
 // @Accept			json
 // @Produce		json
-// @Param			childId	path		string				true	"Child ID"
-// @Param			request	body		models.ChildAccount	true	"Updated child account data"
-// @Success		200		{object}	models.APIResponse	"Child account updated successfully"
-// @Failure		400		{object}	models.APIResponse	"Invalid request data"
-// @Failure		401		{object}	models.APIResponse	"Parent access required"
-// @Failure		404		{object}	models.APIResponse	"Child not found"
-// @Failure		500		{object}	models.APIResponse	"Failed to update child account"
+// @Param			childId	path		string	true	"Child ID"
+// @Param			body	body		models.DisplayNameUpdateRequest	true	"Display name update request"
+// @Success		200	{object}	models.APIResponse	"Child account updated successfully"
+// @Failure		400	{object}	models.APIResponse	"Invalid request data"
+// @Failure		401	{object}	models.APIResponse	"Parent access required"
+// @Failure		403	{object}	models.APIResponse	"Not authorized to update this child"
+// @Failure		500	{object}	models.APIResponse	"Failed to update child account"
 // @Security		BearerAuth
 // @Router			/api/families/children/{childId} [put]
 func UpdateChildAccount(c *gin.Context) {
@@ -1476,25 +1476,48 @@ func UpdateChildAccount(c *gin.Context) {
 	}
 
 	childID := c.Param("childId")
-	var child models.ChildAccount
-	if err := c.ShouldBindJSON(&child); err != nil {
+	var req models.DisplayNameUpdateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, models.APIResponse{
 			Error: "Invalid request data",
 		})
 		return
 	}
 
-	child.ID = childID
+	// Trim whitespace
+	displayName := strings.TrimSpace(req.DisplayName)
 
-	if err := serviceManager.DB.UpdateChild(&child); err != nil {
+	// Validate length
+	if len(displayName) < 1 || len(displayName) > 100 {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Display name must be between 1 and 100 characters",
+		})
+		return
+	}
+
+	if err := serviceManager.DB.UpdateChildDisplayName(childID, displayName); err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to update child account",
 		})
 		return
 	}
 
+	// Get updated child data
+	child, err := serviceManager.DB.GetChild(childID)
+	if err != nil {
+		// Still return success even if we can't fetch updated data
+		c.JSON(http.StatusOK, models.APIResponse{
+			Message: "Child account updated successfully",
+			Data: map[string]interface{}{
+				"displayName": displayName,
+			},
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, models.APIResponse{
-		Data: child,
+		Message: "Child account updated successfully",
+		Data:    child,
 	})
 }
 
@@ -1922,6 +1945,69 @@ func GetUserProfile(c *gin.Context) {
 			"isActive":     userData.IsActive,
 			"createdAt":    userData.CreatedAt.Format(time.RFC3339),
 			"lastActiveAt": userData.LastActiveAt.Format(time.RFC3339),
+		},
+	})
+}
+
+// @Summary		Update User Display Name
+// @Description	Update the current user's display name
+// @Tags			users
+// @Accept			json
+// @Produce		json
+// @Param			body	body		models.DisplayNameUpdateRequest	true	"Display name update request"
+// @Success		200	{object}	models.APIResponse	"Display name updated successfully"
+// @Failure		400	{object}	models.APIResponse	"Invalid request data or display name validation failed"
+// @Failure		401	{object}	models.APIResponse	"User not authenticated"
+// @Failure		500	{object}	models.APIResponse	"Failed to update display name"
+// @Security		BearerAuth
+// @Router			/api/users/me/name [patch]
+func UpdateUserDisplayName(c *gin.Context) {
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "User not authenticated",
+		})
+		return
+	}
+
+	var req models.DisplayNameUpdateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Invalid request data",
+		})
+		return
+	}
+
+	// Trim whitespace
+	displayName := strings.TrimSpace(req.DisplayName)
+
+	// Validate length (already validated by binding, but double-check)
+	if len(displayName) < 1 || len(displayName) > 100 {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Display name must be between 1 and 100 characters",
+		})
+		return
+	}
+
+	if err := serviceManager.DB.UpdateUserDisplayName(userID.(string), displayName); err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to update display name",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Message: "Display name updated successfully",
+		Data: map[string]interface{}{
+			"displayName": displayName,
 		},
 	})
 }

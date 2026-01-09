@@ -13,6 +13,9 @@ export const family = {
   "family.back": "← Tilbake til Familie",
 
   // Member Management
+  "family.addMember.button": "Legg til Familiemedlem",
+  "family.addMember.title": "Legg til Familiemedlem",
+  "family.addMember.role": "Velg Rolle",
   "family.member.create.title": "Legg til Familiemedlem",
   "family.member.role": "Rolle",
   "family.member.role.parent": "Forelder",
@@ -39,6 +42,18 @@ export const family = {
   "family.invitation.cancel": "Avbryt Invitasjon",
   "family.invitation.cancelSuccess": "Invitasjon avbrutt",
   "family.invitation.cancelError": "Kunne ikke avbryte invitasjon",
+  "family.invitation.inviteParent": "Inviter Forelder",
+  "family.invitation.inviteParent.title": "Inviter En Annen Forelder",
+  "family.invitation.inviteParent.email": "Forelders E-post",
+  "family.invitation.inviteParent.email.placeholder":
+    "Skriv inn forelders e-postadresse",
+  "family.invitation.inviteParent.button": "Send Invitasjon",
+  "family.invitation.inviteParent.sending": "Sender...",
+  "family.invitation.inviteParent.success": "Invitasjon til forelder sendt!",
+  "family.invitation.inviteParent.error":
+    "Kunne ikke sende invitasjon. Prøv igjen.",
+  "family.invitation.inviteParent.help":
+    "Den inviterte forelderen vil få tilgang til å administrere denne familien",
 
   // Child Account Management
   "family.child.create.title": "Legg til barn i familie",
@@ -58,6 +73,13 @@ export const family = {
   "family.child.lastActive": "Sist aktiv",
   "family.child.active": "Aktiv",
   "family.child.inactive": "Inaktiv",
+  "family.child.editName": "Rediger Navn",
+  "family.child.editName.title": "Rediger Barnets Navn",
+  "family.child.editName.save": "Lagre",
+  "family.child.editName.cancel": "Avbryt",
+  "family.child.editName.saving": "Lagrer...",
+  "family.child.editName.success": "Barnets navn oppdatert!",
+  "family.child.editName.error": "Kunne ikke oppdatere navn. Prøv igjen.",
   "family.child.viewProgress": "Se fremgang",
   "family.child.delete.title": "Slett konto",
   "family.child.delete.confirm":

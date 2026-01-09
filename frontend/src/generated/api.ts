@@ -146,67 +146,6 @@ export type ModelsAddFamilyMemberRequestRoleEnum = typeof ModelsAddFamilyMemberR
 /**
  * 
  * @export
- * @interface ModelsChildAccount
- */
-export interface ModelsChildAccount {
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsChildAccount
-     */
-    'createdAt'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsChildAccount
-     */
-    'displayName'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsChildAccount
-     */
-    'email'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsChildAccount
-     */
-    'familyId'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsChildAccount
-     */
-    'id'?: string;
-    /**
-     * Parents can deactivate child accounts
-     * @type {boolean}
-     * @memberof ModelsChildAccount
-     */
-    'isActive'?: boolean;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelsChildAccount
-     */
-    'lastActiveAt'?: string;
-    /**
-     * The parent who created this child account
-     * @type {string}
-     * @memberof ModelsChildAccount
-     */
-    'parentId'?: string;
-    /**
-     * Always \"child\"
-     * @type {string}
-     * @memberof ModelsChildAccount
-     */
-    'role'?: string;
-}
-/**
- * 
- * @export
  * @interface ModelsCreateWordSetRequest
  */
 export interface ModelsCreateWordSetRequest {
@@ -234,6 +173,19 @@ export interface ModelsCreateWordSetRequest {
      * @memberof ModelsCreateWordSetRequest
      */
     'words': Array<ModelsWordInput>;
+}
+/**
+ * 
+ * @export
+ * @interface ModelsDisplayNameUpdateRequest
+ */
+export interface ModelsDisplayNameUpdateRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelsDisplayNameUpdateRequest
+     */
+    'displayName': string;
 }
 /**
  * 
@@ -535,18 +487,18 @@ export const ChildrenApiAxiosParamCreator = function (configuration?: Configurat
             };
         },
         /**
-         * Update an existing child account (parent only)
+         * Update a child account\'s display name (parent only)
          * @summary Update Child Account
          * @param {string} childId Child ID
-         * @param {ModelsChildAccount} request Updated child account data
+         * @param {ModelsDisplayNameUpdateRequest} body Display name update request
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiFamiliesChildrenChildIdPut: async (childId: string, request: ModelsChildAccount, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiFamiliesChildrenChildIdPut: async (childId: string, body: ModelsDisplayNameUpdateRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'childId' is not null or undefined
             assertParamExists('apiFamiliesChildrenChildIdPut', 'childId', childId)
-            // verify required parameter 'request' is not null or undefined
-            assertParamExists('apiFamiliesChildrenChildIdPut', 'request', request)
+            // verify required parameter 'body' is not null or undefined
+            assertParamExists('apiFamiliesChildrenChildIdPut', 'body', body)
             const localVarPath = `/api/families/children/{childId}`
                 .replace(`{${"childId"}}`, encodeURIComponent(String(childId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -570,7 +522,7 @@ export const ChildrenApiAxiosParamCreator = function (configuration?: Configurat
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(request, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -651,15 +603,15 @@ export const ChildrenApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Update an existing child account (parent only)
+         * Update a child account\'s display name (parent only)
          * @summary Update Child Account
          * @param {string} childId Child ID
-         * @param {ModelsChildAccount} request Updated child account data
+         * @param {ModelsDisplayNameUpdateRequest} body Display name update request
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiFamiliesChildrenChildIdPut(childId: string, request: ModelsChildAccount, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAPIResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiFamiliesChildrenChildIdPut(childId, request, options);
+        async apiFamiliesChildrenChildIdPut(childId: string, body: ModelsDisplayNameUpdateRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAPIResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiFamiliesChildrenChildIdPut(childId, body, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['ChildrenApi.apiFamiliesChildrenChildIdPut']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -708,15 +660,15 @@ export const ChildrenApiFactory = function (configuration?: Configuration, baseP
             return localVarFp.apiFamiliesChildrenChildIdProgressGet(childId, options).then((request) => request(axios, basePath));
         },
         /**
-         * Update an existing child account (parent only)
+         * Update a child account\'s display name (parent only)
          * @summary Update Child Account
          * @param {string} childId Child ID
-         * @param {ModelsChildAccount} request Updated child account data
+         * @param {ModelsDisplayNameUpdateRequest} body Display name update request
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiFamiliesChildrenChildIdPut(childId: string, request: ModelsChildAccount, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
-            return localVarFp.apiFamiliesChildrenChildIdPut(childId, request, options).then((request) => request(axios, basePath));
+        apiFamiliesChildrenChildIdPut(childId: string, body: ModelsDisplayNameUpdateRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
+            return localVarFp.apiFamiliesChildrenChildIdPut(childId, body, options).then((request) => request(axios, basePath));
         },
         /**
          * Get test results for a specific child
@@ -758,15 +710,15 @@ export interface ChildrenApiInterface {
     apiFamiliesChildrenChildIdProgressGet(childId: string, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
 
     /**
-     * Update an existing child account (parent only)
+     * Update a child account\'s display name (parent only)
      * @summary Update Child Account
      * @param {string} childId Child ID
-     * @param {ModelsChildAccount} request Updated child account data
+     * @param {ModelsDisplayNameUpdateRequest} body Display name update request
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ChildrenApiInterface
      */
-    apiFamiliesChildrenChildIdPut(childId: string, request: ModelsChildAccount, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+    apiFamiliesChildrenChildIdPut(childId: string, body: ModelsDisplayNameUpdateRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
 
     /**
      * Get test results for a specific child
@@ -812,16 +764,16 @@ export class ChildrenApi extends BaseAPI implements ChildrenApiInterface {
     }
 
     /**
-     * Update an existing child account (parent only)
+     * Update a child account\'s display name (parent only)
      * @summary Update Child Account
      * @param {string} childId Child ID
-     * @param {ModelsChildAccount} request Updated child account data
+     * @param {ModelsDisplayNameUpdateRequest} body Display name update request
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ChildrenApi
      */
-    public apiFamiliesChildrenChildIdPut(childId: string, request: ModelsChildAccount, options?: RawAxiosRequestConfig) {
-        return ChildrenApiFp(this.configuration).apiFamiliesChildrenChildIdPut(childId, request, options).then((request) => request(this.axios, this.basePath));
+    public apiFamiliesChildrenChildIdPut(childId: string, body: ModelsDisplayNameUpdateRequest, options?: RawAxiosRequestConfig) {
+        return ChildrenApiFp(this.configuration).apiFamiliesChildrenChildIdPut(childId, body, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -1906,6 +1858,45 @@ export class InvitationsApi extends BaseAPI implements InvitationsApiInterface {
 export const UsersApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
         /**
+         * Update the current user\'s display name
+         * @summary Update User Display Name
+         * @param {ModelsDisplayNameUpdateRequest} body Display name update request
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiUsersMeNamePatch: async (body: ModelsDisplayNameUpdateRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'body' is not null or undefined
+            assertParamExists('apiUsersMeNamePatch', 'body', body)
+            const localVarPath = `/api/users/me/name`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Create a new user account after OIDC authentication
          * @summary Create User
          * @param {ApiUsersPostRequest} request User creation request
@@ -2060,6 +2051,19 @@ export const UsersApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = UsersApiAxiosParamCreator(configuration)
     return {
         /**
+         * Update the current user\'s display name
+         * @summary Update User Display Name
+         * @param {ModelsDisplayNameUpdateRequest} body Display name update request
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiUsersMeNamePatch(body: ModelsDisplayNameUpdateRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAPIResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiUsersMeNamePatch(body, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['UsersApi.apiUsersMeNamePatch']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Create a new user account after OIDC authentication
          * @summary Create User
          * @param {ApiUsersPostRequest} request User creation request
@@ -2120,6 +2124,16 @@ export const UsersApiFactory = function (configuration?: Configuration, basePath
     const localVarFp = UsersApiFp(configuration)
     return {
         /**
+         * Update the current user\'s display name
+         * @summary Update User Display Name
+         * @param {ModelsDisplayNameUpdateRequest} body Display name update request
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiUsersMeNamePatch(body: ModelsDisplayNameUpdateRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
+            return localVarFp.apiUsersMeNamePatch(body, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Create a new user account after OIDC authentication
          * @summary Create User
          * @param {ApiUsersPostRequest} request User creation request
@@ -2167,6 +2181,16 @@ export const UsersApiFactory = function (configuration?: Configuration, basePath
  */
 export interface UsersApiInterface {
     /**
+     * Update the current user\'s display name
+     * @summary Update User Display Name
+     * @param {ModelsDisplayNameUpdateRequest} body Display name update request
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof UsersApiInterface
+     */
+    apiUsersMeNamePatch(body: ModelsDisplayNameUpdateRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
      * Create a new user account after OIDC authentication
      * @summary Create User
      * @param {ApiUsersPostRequest} request User creation request
@@ -2213,6 +2237,18 @@ export interface UsersApiInterface {
  * @extends {BaseAPI}
  */
 export class UsersApi extends BaseAPI implements UsersApiInterface {
+    /**
+     * Update the current user\'s display name
+     * @summary Update User Display Name
+     * @param {ModelsDisplayNameUpdateRequest} body Display name update request
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof UsersApi
+     */
+    public apiUsersMeNamePatch(body: ModelsDisplayNameUpdateRequest, options?: RawAxiosRequestConfig) {
+        return UsersApiFp(this.configuration).apiUsersMeNamePatch(body, options).then((request) => request(this.axios, this.basePath));
+    }
+
     /**
      * Create a new user account after OIDC authentication
      * @summary Create User

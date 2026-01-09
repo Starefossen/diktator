@@ -13,6 +13,9 @@ export const family = {
   "family.back": "← Back to Family",
 
   // Member Management
+  "family.addMember.button": "Add Family Member",
+  "family.addMember.title": "Add Family Member",
+  "family.addMember.role": "Select Role",
   "family.member.create.title": "Add Family Member",
   "family.member.role": "Role",
   "family.member.role.parent": "Parent",
@@ -40,6 +43,19 @@ export const family = {
   "family.invitation.cancel": "Cancel Invitation",
   "family.invitation.cancelSuccess": "Invitation cancelled",
   "family.invitation.cancelError": "Failed to cancel invitation",
+  "family.invitation.inviteParent": "Invite Parent",
+  "family.invitation.inviteParent.title": "Invite Another Parent",
+  "family.invitation.inviteParent.email": "Parent's Email",
+  "family.invitation.inviteParent.email.placeholder":
+    "Enter parent's email address",
+  "family.invitation.inviteParent.button": "Send Invitation",
+  "family.invitation.inviteParent.sending": "Sending...",
+  "family.invitation.inviteParent.success":
+    "Parent invitation sent successfully!",
+  "family.invitation.inviteParent.error":
+    "Failed to send invitation. Please try again.",
+  "family.invitation.inviteParent.help":
+    "The invited parent will receive access to manage this family",
 
   // Child Account Management
   "family.child.create.title": "Add Child to Family",
@@ -59,6 +75,13 @@ export const family = {
   "family.child.lastActive": "Last active",
   "family.child.active": "Active",
   "family.child.inactive": "Inactive",
+  "family.child.editName": "Edit Name",
+  "family.child.editName.title": "Edit Child's Name",
+  "family.child.editName.save": "Save",
+  "family.child.editName.cancel": "Cancel",
+  "family.child.editName.saving": "Saving...",
+  "family.child.editName.success": "Child's name updated successfully!",
+  "family.child.editName.error": "Failed to update name. Please try again.",
   "family.child.viewProgress": "View Progress",
   "family.child.delete.title": "Delete Account",
   "family.child.delete.confirm":

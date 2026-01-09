@@ -27,30 +27,6 @@ definitions:
     - familyId
     - role
     type: object
-  models.ChildAccount:
-    properties:
-      createdAt:
-        type: string
-      displayName:
-        type: string
-      email:
-        type: string
-      familyId:
-        type: string
-      id:
-        type: string
-      isActive:
-        description: Parents can deactivate child accounts
-        type: boolean
-      lastActiveAt:
-        type: string
-      parentId:
-        description: The parent who created this child account
-        type: string
-      role:
-        description: Always "child"
-        type: string
-    type: object
   models.CreateWordSetRequest:
     properties:
       language:
@@ -68,6 +44,15 @@ definitions:
     - language
     - name
     - words
+    type: object
+  models.DisplayNameUpdateRequest:
+    properties:
+      displayName:
+        maxLength: 100
+        minLength: 1
+        type: string
+    required:
+    - displayName
     type: object
   models.SaveResultRequest:
     properties:
@@ -283,19 +268,19 @@ paths:
     put:
       consumes:
       - application/json
-      description: Update an existing child account (parent only)
+      description: Update a child account's display name (parent only)
       parameters:
       - description: Child ID
         in: path
         name: childId
         required: true
         type: string
-      - description: Updated child account data
+      - description: Display name update request
         in: body
-        name: request
+        name: body
         required: true
         schema:
-          $ref: '#/definitions/models.ChildAccount'
+          $ref: '#/definitions/models.DisplayNameUpdateRequest'
       produces:
       - application/json
       responses:
@@ -311,8 +296,8 @@ paths:
           description: Parent access required
           schema:
             $ref: '#/definitions/models.APIResponse'
-        "404":
-          description: Child not found
+        "403":
+          description: Not authorized to update this child
           schema:
             $ref: '#/definitions/models.APIResponse'
         "500":
@@ -695,6 +680,42 @@ paths:
       security:
       - BearerAuth: []
       summary: Create User
+      tags:
+      - users
+  /api/users/me/name:
+    patch:
+      consumes:
+      - application/json
+      description: Update the current user's display name
+      parameters:
+      - description: Display name update request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.DisplayNameUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Display name updated successfully
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "400":
+          description: Invalid request data or display name validation failed
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "401":
+          description: User not authenticated
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to update display name
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update User Display Name
       tags:
       - users
   /api/users/profile:

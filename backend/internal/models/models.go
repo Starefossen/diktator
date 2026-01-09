@@ -186,6 +186,11 @@ type FamilyProgress struct {
 	RecentResults []TestResult `json:"recentResults"`
 }
 
+// DisplayNameUpdateRequest represents a request to update a user's display name
+type DisplayNameUpdateRequest struct {
+	DisplayName string `json:"displayName" binding:"required,min=1,max=100"`
+}
+
 // FamilyStats represents aggregated statistics for a family
 type FamilyStats struct {
 	TotalMembers        int       `json:"totalMembers"`

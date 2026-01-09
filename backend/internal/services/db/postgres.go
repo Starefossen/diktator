@@ -207,6 +207,26 @@ func (db *Postgres) CreateUser(user *models.User) error {
 	return nil
 }
 
+func (db *Postgres) UpdateUserDisplayName(userID, displayName string) error {
+	ctx := context.Background()
+
+	query := `
+		UPDATE users SET
+			display_name = $2
+		WHERE id = $1`
+
+	result, err := db.pool.Exec(ctx, query, userID, displayName)
+	if err != nil {
+		return fmt.Errorf("failed to update user display name: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return ErrUserNotFound
+	}
+
+	return nil
+}
+
 func (db *Postgres) UpdateUser(user *models.User) error {
 	ctx := context.Background()
 
@@ -467,6 +487,26 @@ func (db *Postgres) CreateChild(child *models.ChildAccount) error {
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create child: %w", err)
+	}
+
+	return nil
+}
+
+func (db *Postgres) UpdateChildDisplayName(childID, displayName string) error {
+	ctx := context.Background()
+
+	query := `
+		UPDATE users SET
+			display_name = $2
+		WHERE id = $1 AND role = 'child'`
+
+	result, err := db.pool.Exec(ctx, query, childID, displayName)
+	if err != nil {
+		return fmt.Errorf("failed to update child display name: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return ErrChildNotFound
 	}
 
 	return nil

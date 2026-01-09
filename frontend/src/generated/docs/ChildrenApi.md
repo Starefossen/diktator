@@ -118,9 +118,9 @@ const { status, data } = await apiInstance.apiFamiliesChildrenChildIdProgressGet
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiFamiliesChildrenChildIdPut**
-> ModelsAPIResponse apiFamiliesChildrenChildIdPut(request)
+> ModelsAPIResponse apiFamiliesChildrenChildIdPut(body)
 
-Update an existing child account (parent only)
+Update a child account\'s display name (parent only)
 
 ### Example
 
@@ -128,18 +128,18 @@ Update an existing child account (parent only)
 import {
     ChildrenApi,
     Configuration,
-    ModelsChildAccount
+    ModelsDisplayNameUpdateRequest
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new ChildrenApi(configuration);
 
 let childId: string; //Child ID (default to undefined)
-let request: ModelsChildAccount; //Updated child account data
+let body: ModelsDisplayNameUpdateRequest; //Display name update request
 
 const { status, data } = await apiInstance.apiFamiliesChildrenChildIdPut(
     childId,
-    request
+    body
 );
 ```
 
@@ -147,7 +147,7 @@ const { status, data } = await apiInstance.apiFamiliesChildrenChildIdPut(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **request** | **ModelsChildAccount**| Updated child account data | |
+| **body** | **ModelsDisplayNameUpdateRequest**| Display name update request | |
 | **childId** | [**string**] | Child ID | defaults to undefined|
 
 
@@ -171,7 +171,7 @@ const { status, data } = await apiInstance.apiFamiliesChildrenChildIdPut(
 |**200** | Child account updated successfully |  -  |
 |**400** | Invalid request data |  -  |
 |**401** | Parent access required |  -  |
-|**404** | Child not found |  -  |
+|**403** | Not authorized to update this child |  -  |
 |**500** | Failed to update child account |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)

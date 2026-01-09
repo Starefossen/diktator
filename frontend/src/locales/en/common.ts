@@ -16,6 +16,7 @@ export const common = {
   "nav.practice": "Practice",
   "nav.about": "About",
   "nav.profile": "Profile",
+  "nav.settings": "Settings",
   "nav.wordsets": "Word Sets",
   "nav.family": "Family",
   "nav.results": "Results",

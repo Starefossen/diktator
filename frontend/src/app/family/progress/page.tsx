@@ -42,8 +42,12 @@ function FamilyProgressPageContent() {
           generatedApiClient.getWordSets(),
         ]);
 
-      if (progressResponse.data?.data)
-        setFamilyMembers(progressResponse.data.data as FamilyProgress[]);
+      if (progressResponse.data?.data) {
+        // Filter to only include children
+        const allMembers = progressResponse.data.data as FamilyProgress[];
+        const children = allMembers.filter((member) => member.role === "child");
+        setFamilyMembers(children);
+      }
       if (resultsResponse.data?.data)
         setResults(resultsResponse.data.data as TestResult[]);
       if (wordSetsResponse.data?.data)
@@ -209,7 +213,11 @@ function FamilyProgressPageContent() {
                         <h3 className="font-semibold text-gray-800">
                           {member.userName}
                         </h3>
-                        <p className="text-sm text-gray-600">{member.role}</p>
+                        <p className="text-sm text-gray-600">
+                          {member.role === "parent"
+                            ? t("family.member.role.parent")
+                            : t("family.member.role.child")}
+                        </p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
@@ -242,8 +250,8 @@ function FamilyProgressPageContent() {
                         <p className="font-bold">
                           {member.totalWords > 0
                             ? Math.round(
-                                (member.correctWords / member.totalWords) * 100,
-                              )
+                              (member.correctWords / member.totalWords) * 100,
+                            )
                             : 0}
                           %
                         </p>

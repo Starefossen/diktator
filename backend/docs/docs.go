@@ -111,7 +111,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update an existing child account (parent only)",
+                "description": "Update a child account's display name (parent only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -131,12 +131,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Updated child account data",
-                        "name": "request",
+                        "description": "Display name update request",
+                        "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.ChildAccount"
+                            "$ref": "#/definitions/models.DisplayNameUpdateRequest"
                         }
                     }
                 ],
@@ -159,8 +159,8 @@ const docTemplate = `{
                             "$ref": "#/definitions/models.APIResponse"
                         }
                     },
-                    "404": {
-                        "description": "Child not found",
+                    "403": {
+                        "description": "Not authorized to update this child",
                         "schema": {
                             "$ref": "#/definitions/models.APIResponse"
                         }
@@ -805,6 +805,63 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/me/name": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update the current user's display name",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Update User Display Name",
+                "parameters": [
+                    {
+                        "description": "Display name update request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.DisplayNameUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Display name updated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request data or display name validation failed",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "User not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to update display name",
                         "schema": {
                             "$ref": "#/definitions/models.APIResponse"
                         }
@@ -1470,41 +1527,6 @@ const docTemplate = `{
                 }
             }
         },
-        "models.ChildAccount": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "displayName": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "familyId": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "isActive": {
-                    "description": "Parents can deactivate child accounts",
-                    "type": "boolean"
-                },
-                "lastActiveAt": {
-                    "type": "string"
-                },
-                "parentId": {
-                    "description": "The parent who created this child account",
-                    "type": "string"
-                },
-                "role": {
-                    "description": "Always \"child\"",
-                    "type": "string"
-                }
-            }
-        },
         "models.CreateWordSetRequest": {
             "type": "object",
             "required": [
@@ -1528,6 +1550,19 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/models.WordInput"
                     }
+                }
+            }
+        },
+        "models.DisplayNameUpdateRequest": {
+            "type": "object",
+            "required": [
+                "displayName"
+            ],
+            "properties": {
+                "displayName": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
                 }
             }
         },

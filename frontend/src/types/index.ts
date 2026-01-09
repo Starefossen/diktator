@@ -1,5 +1,18 @@
 // src/types/index.ts - Shared type definitions
 
+// Family Invitation Type
+export interface FamilyInvitation {
+  id: string;
+  familyId: string;
+  familyName: string;
+  email: string;
+  role: "parent" | "child";
+  invitedBy: string;
+  status: "pending" | "accepted" | "declined" | "expired";
+  createdAt: string;
+  expiresAt?: string | null;
+}
+
 // Child Account Type
 export interface ChildAccount {
   id: string;
@@ -35,12 +48,6 @@ export interface FamilyStats {
   averageFamilyScore: number;
   mostActiveChild?: string;
   lastActivity: string;
-}
-
-export interface CreateChildAccountRequest {
-  email: string;
-  displayName: string;
-  familyId?: string; // Optional - can be set by backend from authenticated user
 }
 
 // WordSet Types

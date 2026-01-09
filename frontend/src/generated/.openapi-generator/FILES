@@ -12,8 +12,8 @@ docs/HealthApi.md
 docs/InvitationsApi.md
 docs/ModelsAPIResponse.md
 docs/ModelsAddFamilyMemberRequest.md
-docs/ModelsChildAccount.md
 docs/ModelsCreateWordSetRequest.md
+docs/ModelsDisplayNameUpdateRequest.md
 docs/ModelsSaveResultRequest.md
 docs/ModelsTranslation.md
 docs/ModelsUpdateWordSetRequest.md
