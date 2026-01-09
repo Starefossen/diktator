@@ -328,7 +328,7 @@ describe("spellingAnalysis", () => {
       // Should have missingLetter if no other pattern matches
       expect(
         result.errorTypes.includes("missingLetter") ||
-        result.errorTypes.length > 0,
+          result.errorTypes.length > 0,
       ).toBe(true);
     });
 
@@ -337,7 +337,7 @@ describe("spellingAnalysis", () => {
       // Should have extraLetter if no other pattern matches
       expect(
         result.errorTypes.includes("extraLetter") ||
-        result.errorTypes.length > 0,
+          result.errorTypes.length > 0,
       ).toBe(true);
     });
   });

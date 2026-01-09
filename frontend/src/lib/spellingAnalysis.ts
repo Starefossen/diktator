@@ -336,7 +336,7 @@ function detectDoubleConsonantError(
       if (
         expWithSingle === user ||
         levenshteinDistance(expWithSingle, user) <
-        levenshteinDistance(exp, user)
+          levenshteinDistance(exp, user)
       ) {
         return true;
       }
