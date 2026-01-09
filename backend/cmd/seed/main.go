@@ -383,7 +383,7 @@ func main() {
 
 	// Create the mock dev user with test data
 	log.Println("🔧 Creating mock development user with test data...")
-	mockUserID := "mock-user-id-12345"
+	mockUserID := "mock-user-12345"
 	mockFamilyID := "family-mock"
 
 	mockUser := &models.User{
@@ -398,247 +398,246 @@ func main() {
 		LastActiveAt: time.Now(),
 	}
 
-	// Try to create user and family
-	userExists := false
+	// Create user (without family_id yet)
 	if err := serviceManager.DB.CreateUser(mockUser); err != nil {
-		log.Println("  ✓ Mock development user already exists")
-		userExists = true
+		log.Printf("  Warning: Failed to create mock development user: %v", err)
+		log.Println("  Skipping mock user setup...")
 	} else {
 		log.Println("  ✓ Created mock development user")
-	}
 
-	// Create mock family
-	mockFamily := &models.Family{
-		ID:        mockFamilyID,
-		Name:      "Development Family",
-		CreatedBy: mockUserID,
-		Members:   []string{mockUserID},
-		CreatedAt: mockUser.CreatedAt,
-		UpdatedAt: mockUser.CreatedAt,
-	}
-	if err := serviceManager.DB.CreateFamily(mockFamily); err != nil {
-		log.Printf("  Note: Mock family might already exist")
-	} else {
-		log.Println("  ✓ Created mock family")
-	}
-
-	// Update user with family ID
-	mockUser.FamilyID = mockFamilyID
-	if err := serviceManager.DB.UpdateUser(mockUser); err != nil && !userExists {
-		log.Printf("  Warning: Failed to update mock user with family ID: %v", err)
-	}
-
-	// Create mock children
-	mockChildren := []struct {
-		name string
-		age  int
-	}{
-		{"Alex Dev", 9},
-		{"Sam Dev", 11},
-	}
-
-	for j, childData := range mockChildren {
-		childID := fmt.Sprintf("mock-child-%d", j+1)
-
-		child := &models.User{
-			ID:           childID,
-			AuthID:       childID,
-			Email:        fmt.Sprintf("child%d@dev.localhost", j+1),
-			DisplayName:  childData.name,
-			FamilyID:     mockFamilyID,
-			Role:         "child",
-			ParentID:     &mockUserID,
-			IsActive:     true,
-			CreatedAt:    mockUser.CreatedAt.Add(time.Duration(j+1) * 24 * time.Hour),
-			LastActiveAt: time.Now(),
+		// Create mock family
+		mockFamily := &models.Family{
+			ID:        mockFamilyID,
+			Name:      "Development Family",
+			CreatedBy: mockUserID,
+			Members:   []string{mockUserID},
+			CreatedAt: mockUser.CreatedAt,
+			UpdatedAt: mockUser.CreatedAt,
+		}
+		if err := serviceManager.DB.CreateFamily(mockFamily); err != nil {
+			log.Printf("  Warning: Failed to create mock family: %v", err)
+		} else {
+			log.Println("  ✓ Created mock family")
 		}
 
-		if err := serviceManager.DB.CreateUser(child); err != nil {
-			log.Printf("    Warning: Failed to create mock child %s: %v", child.DisplayName, err)
-			continue
+		// Update user with family ID
+		mockUser.FamilyID = mockFamilyID
+		if err := serviceManager.DB.UpdateUser(mockUser); err != nil {
+			log.Printf("  Warning: Failed to update mock user with family ID: %v", err)
 		}
 
-		// Add child to family_members table
-		if err := serviceManager.DB.AddFamilyMember(mockFamilyID, childID, "child"); err != nil {
-			log.Printf("    Warning: Failed to add mock child to family_members: %v", err)
+		// Create mock children
+		mockChildren := []struct {
+			name string
+			age  int
+		}{
+			{"Alex Dev", 9},
+			{"Sam Dev", 11},
 		}
 
-		log.Printf("    ✓ Created mock child: %s", child.DisplayName)
-	}
+		for j, childData := range mockChildren {
+			childID := fmt.Sprintf("mock-child-%d", j+1)
 
-	// Create word sets for mock family
-	log.Printf("  📚 Creating word sets for development family...")
-	wordSetCount := 0
-
-	// Define modes for different wordsets (same as main families)
-	wordSetModes := map[string]struct {
-		mode                 string
-		targetLanguage       string
-		translationDirection string
-		includeTranslations  bool
-	}{
-		"Animals": {"translation", "en", "toTarget", true}, // Translation mode: Norwegian → English
-		"Colors":  {"dictation", "", "", false},            // Dictation mode
-		"Family":  {"standard", "", "", false},             // Standard mode
-		"Food":    {"translation", "en", "toSource", true}, // Translation mode: English → Norwegian
-		"School":  {"dictation", "", "", false},            // Dictation mode
-	}
-
-	for category, words := range norwegianWords {
-		// Only create 2 word sets for the mock user (Animals and Colors) to keep it simple
-		if category != "Animals" && category != "Colors" {
-			continue
-		}
-
-		wordSetID := fmt.Sprintf("wordset-mock-%s", category)
-
-		// Get mode configuration for this category
-		modeConfig, exists := wordSetModes[category]
-		if !exists {
-			modeConfig = struct {
-				mode                 string
-				targetLanguage       string
-				translationDirection string
-				includeTranslations  bool
-			}{"standard", "", "", false}
-		}
-
-		// Build words array for the word set
-		wordsArray := make([]struct {
-			Word         string               `json:"word"`
-			Audio        models.WordAudio     `json:"audio,omitempty"`
-			Definition   string               `json:"definition,omitempty"`
-			Translations []models.Translation `json:"translations,omitempty"`
-		}, len(words))
-
-		for pos, wordData := range words {
-			var translations []models.Translation
-
-			// Add English translation for translation mode wordsets
-			if modeConfig.includeTranslations && modeConfig.targetLanguage != "" && wordData.translation != "" {
-				translations = []models.Translation{
-					{
-						Language: modeConfig.targetLanguage,
-						Text:     wordData.translation,
-					},
-				}
+			child := &models.User{
+				ID:           childID,
+				AuthID:       childID,
+				Email:        fmt.Sprintf("child%d@dev.localhost", j+1),
+				DisplayName:  childData.name,
+				FamilyID:     mockFamilyID,
+				Role:         "child",
+				ParentID:     &mockUserID,
+				IsActive:     true,
+				CreatedAt:    mockUser.CreatedAt.Add(time.Duration(j+1) * 24 * time.Hour),
+				LastActiveAt: time.Now(),
 			}
 
-			wordsArray[pos] = struct {
+			if err := serviceManager.DB.CreateUser(child); err != nil {
+				log.Printf("    Warning: Failed to create mock child %s: %v", child.DisplayName, err)
+				continue
+			}
+
+			// Add child to family_members table
+			if err := serviceManager.DB.AddFamilyMember(mockFamilyID, childID, "child"); err != nil {
+				log.Printf("    Warning: Failed to add mock child to family_members: %v", err)
+			}
+
+			log.Printf("    ✓ Created mock child: %s", child.DisplayName)
+		}
+
+		// Create word sets for mock family
+		log.Printf("  📚 Creating word sets for development family...")
+		wordSetCount := 0
+
+		// Define modes for different wordsets (same as main families)
+		wordSetModes := map[string]struct {
+			mode                 string
+			targetLanguage       string
+			translationDirection string
+			includeTranslations  bool
+		}{
+			"Animals": {"translation", "en", "toTarget", true}, // Translation mode: Norwegian → English
+			"Colors":  {"dictation", "", "", false},            // Dictation mode
+			"Family":  {"standard", "", "", false},             // Standard mode
+			"Food":    {"translation", "en", "toSource", true}, // Translation mode: English → Norwegian
+			"School":  {"dictation", "", "", false},            // Dictation mode
+		}
+
+		for category, words := range norwegianWords {
+			// Only create 2 word sets for the mock user (Animals and Colors) to keep it simple
+			if category != "Animals" && category != "Colors" {
+				continue
+			}
+
+			wordSetID := fmt.Sprintf("wordset-mock-%s", category)
+
+			// Get mode configuration for this category
+			modeConfig, exists := wordSetModes[category]
+			if !exists {
+				modeConfig = struct {
+					mode                 string
+					targetLanguage       string
+					translationDirection string
+					includeTranslations  bool
+				}{"standard", "", "", false}
+			}
+
+			// Build words array for the word set
+			wordsArray := make([]struct {
 				Word         string               `json:"word"`
 				Audio        models.WordAudio     `json:"audio,omitempty"`
 				Definition   string               `json:"definition,omitempty"`
 				Translations []models.Translation `json:"translations,omitempty"`
-			}{
-				Word:         wordData.word,
-				Definition:   wordData.definition,
-				Translations: translations,
-			}
-		}
+			}, len(words))
 
-		// Create test configuration
-		testConfig := map[string]interface{}{
-			"defaultMode": modeConfig.mode,
-			"maxAttempts": 3,
-		}
+			for pos, wordData := range words {
+				var translations []models.Translation
 
-		// Add mode-specific settings
-		if modeConfig.mode == "dictation" {
-			testConfig["autoPlayAudio"] = true
-		} else if modeConfig.mode == "translation" && modeConfig.targetLanguage != "" {
-			testConfig["targetLanguage"] = modeConfig.targetLanguage
-			if modeConfig.translationDirection != "" {
-				testConfig["translationDirection"] = modeConfig.translationDirection
-			}
-		}
-
-		wordSet := &models.WordSet{
-			ID:                wordSetID,
-			Name:              fmt.Sprintf("Norwegian %s", category),
-			Words:             wordsArray,
-			FamilyID:          mockFamilyID,
-			CreatedBy:         mockUserID,
-			Language:          "no",
-			TestConfiguration: &testConfig,
-			CreatedAt:         mockUser.CreatedAt.Add(time.Duration(wordSetCount+1) * 7 * 24 * time.Hour),
-			UpdatedAt:         mockUser.CreatedAt.Add(time.Duration(wordSetCount+1) * 7 * 24 * time.Hour),
-		}
-
-		if err := serviceManager.DB.CreateWordSet(wordSet); err != nil {
-			log.Printf("    Warning: Failed to create word set %s: %v", wordSet.Name, err)
-			continue
-		}
-
-		log.Printf("    ✓ Created word set: %s (%d words, mode: %s)", wordSet.Name, len(words), modeConfig.mode)
-		wordSetCount++
-
-		// Create test results for mock children showing progress
-		for j := range mockChildren {
-			childID := fmt.Sprintf("mock-child-%d", j+1)
-
-			// Create 2-3 test results for each child
-			numTests := 2 + rand.Intn(2)
-			for testNum := 0; testNum < numTests; testNum++ {
-				// Simulate improvement: 65-90%
-				baseScore := 65.0 + float64(testNum)*10.0 + float64(rand.Intn(5))
-				if baseScore > 90.0 {
-					baseScore = 90.0
+				// Add English translation for translation mode wordsets
+				if modeConfig.includeTranslations && modeConfig.targetLanguage != "" && wordData.translation != "" {
+					translations = []models.Translation{
+						{
+							Language: modeConfig.targetLanguage,
+							Text:     wordData.translation,
+						},
+					}
 				}
 
-				correctWords := int(float64(len(words)) * baseScore / 100.0)
+				wordsArray[pos] = struct {
+					Word         string               `json:"word"`
+					Audio        models.WordAudio     `json:"audio,omitempty"`
+					Definition   string               `json:"definition,omitempty"`
+					Translations []models.Translation `json:"translations,omitempty"`
+				}{
+					Word:         wordData.word,
+					Definition:   wordData.definition,
+					Translations: translations,
+				}
+			}
 
-				// Create word results
-				wordResults := make([]models.WordTestResult, len(words))
-				for wi, word := range words {
-					isCorrect := wi < correctWords
-					attempts := 1
-					userAnswers := []string{word.word}
-					finalAnswer := word.word
+			// Create test configuration
+			testConfig := map[string]interface{}{
+				"defaultMode": modeConfig.mode,
+				"maxAttempts": 3,
+			}
 
-					if !isCorrect {
-						attempts = 1 + rand.Intn(2)
-						runes := []rune(word.word)
-						if len(runes) > 0 {
-							wrongIdx := rand.Intn(len(runes))
-							runes[wrongIdx] = 'x'
-							finalAnswer = string(runes)
-							userAnswers = []string{finalAnswer}
+			// Add mode-specific settings
+			if modeConfig.mode == "dictation" {
+				testConfig["autoPlayAudio"] = true
+			} else if modeConfig.mode == "translation" && modeConfig.targetLanguage != "" {
+				testConfig["targetLanguage"] = modeConfig.targetLanguage
+				if modeConfig.translationDirection != "" {
+					testConfig["translationDirection"] = modeConfig.translationDirection
+				}
+			}
+
+			wordSet := &models.WordSet{
+				ID:                wordSetID,
+				Name:              fmt.Sprintf("Norwegian %s", category),
+				Words:             wordsArray,
+				FamilyID:          mockFamilyID,
+				CreatedBy:         mockUserID,
+				Language:          "no",
+				TestConfiguration: &testConfig,
+				CreatedAt:         mockUser.CreatedAt.Add(time.Duration(wordSetCount+1) * 7 * 24 * time.Hour),
+				UpdatedAt:         mockUser.CreatedAt.Add(time.Duration(wordSetCount+1) * 7 * 24 * time.Hour),
+			}
+
+			if err := serviceManager.DB.CreateWordSet(wordSet); err != nil {
+				log.Printf("    Warning: Failed to create word set %s: %v", wordSet.Name, err)
+				continue
+			}
+
+			log.Printf("    ✓ Created word set: %s (%d words, mode: %s)", wordSet.Name, len(words), modeConfig.mode)
+			wordSetCount++
+
+			// Create test results for mock children showing progress
+			for j := range mockChildren {
+				childID := fmt.Sprintf("mock-child-%d", j+1)
+
+				// Create 2-3 test results for each child
+				numTests := 2 + rand.Intn(2)
+				for testNum := 0; testNum < numTests; testNum++ {
+					// Simulate improvement: 65-90%
+					baseScore := 65.0 + float64(testNum)*10.0 + float64(rand.Intn(5))
+					if baseScore > 90.0 {
+						baseScore = 90.0
+					}
+
+					correctWords := int(float64(len(words)) * baseScore / 100.0)
+
+					// Create word results
+					wordResults := make([]models.WordTestResult, len(words))
+					for wi, word := range words {
+						isCorrect := wi < correctWords
+						attempts := 1
+						userAnswers := []string{word.word}
+						finalAnswer := word.word
+
+						if !isCorrect {
+							attempts = 1 + rand.Intn(2)
+							runes := []rune(word.word)
+							if len(runes) > 0 {
+								wrongIdx := rand.Intn(len(runes))
+								runes[wrongIdx] = 'x'
+								finalAnswer = string(runes)
+								userAnswers = []string{finalAnswer}
+							}
+						}
+
+						wordResults[wi] = models.WordTestResult{
+							Word:           word.word,
+							UserAnswers:    userAnswers,
+							Attempts:       attempts,
+							Correct:        isCorrect,
+							TimeSpent:      5 + rand.Intn(15),
+							FinalAnswer:    finalAnswer,
+							HintsUsed:      0,
+							AudioPlayCount: 1 + rand.Intn(3),
 						}
 					}
 
-					wordResults[wi] = models.WordTestResult{
-						Word:           word.word,
-						UserAnswers:    userAnswers,
-						Attempts:       attempts,
-						Correct:        isCorrect,
-						TimeSpent:      5 + rand.Intn(15),
-						FinalAnswer:    finalAnswer,
-						HintsUsed:      0,
-						AudioPlayCount: 1 + rand.Intn(3),
+					totalTimeSpent := 0
+					for _, wr := range wordResults {
+						totalTimeSpent += wr.TimeSpent
 					}
-				}
 
-				totalTimeSpent := 0
-				for _, wr := range wordResults {
-					totalTimeSpent += wr.TimeSpent
-				}
+					testResult := &models.TestResult{
+						ID:           fmt.Sprintf("result-mock-%d-%d-%d", j+1, wordSetCount, testNum),
+						WordSetID:    wordSetID,
+						UserID:       childID,
+						Mode:         modeConfig.mode,
+						Score:        baseScore,
+						TotalWords:   len(words),
+						CorrectWords: correctWords,
+						Words:        wordResults,
+						TimeSpent:    totalTimeSpent,
+						CompletedAt:  time.Now().Add(-time.Duration(numTests-testNum) * 5 * 24 * time.Hour),
+						CreatedAt:    time.Now().Add(-time.Duration(numTests-testNum) * 5 * 24 * time.Hour),
+					}
 
-				testResult := &models.TestResult{
-					ID:           fmt.Sprintf("result-mock-%d-%d-%d", j+1, wordSetCount, testNum),
-					WordSetID:    wordSetID,
-					UserID:       childID,
-					Mode:         modeConfig.mode,
-					Score:        baseScore,
-					TotalWords:   len(words),
-					CorrectWords: correctWords,
-					Words:        wordResults,
-					TimeSpent:    totalTimeSpent,
-					CompletedAt:  time.Now().Add(-time.Duration(numTests-testNum) * 5 * 24 * time.Hour),
-					CreatedAt:    time.Now().Add(-time.Duration(numTests-testNum) * 5 * 24 * time.Hour),
-				}
-
-				if err := serviceManager.DB.SaveTestResult(testResult); err != nil {
-					log.Printf("      Warning: Failed to create test result for mock child: %v", err)
+					if err := serviceManager.DB.SaveTestResult(testResult); err != nil {
+						log.Printf("      Warning: Failed to create test result for mock child: %v", err)
+					}
 				}
 			}
 		}
@@ -655,7 +654,7 @@ func main() {
 	log.Println("")
 	log.Println("🔧 Development User:")
 	log.Println("  - Email: dev@localhost")
-	log.Println("  - Auth ID: mock-user-id-12345")
+	log.Println("  - Auth ID: mock-user-12345")
 	log.Println("  - Family: Development Family")
 	log.Println("  - Children: 2 (Alex Dev, Sam Dev)")
 	log.Println("  - Word Sets: 2 (Animals, Colors)")
