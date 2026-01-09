@@ -272,6 +272,11 @@ export const playWordAudio = async (
       };
 
       utterance.onerror = (event) => {
+        // "canceled" is not a real error - it happens when we call speechSynthesis.cancel()
+        // before starting a new utterance, which is expected behavior
+        if (event.error === "canceled") {
+          return;
+        }
         const error = new Error(`Speech synthesis error: ${event.error}`);
         onError?.(error);
         onEnd?.();
