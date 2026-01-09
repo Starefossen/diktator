@@ -1,27 +1,22 @@
 # Diktator
 
-![Diktator Logo](./docs/diktator-banner.png)
+![App Preview](./docs/diktator-preview.png)
 
-Diktator is a web application designed to help children learn Norwegian vocabulary through gamified tests and practice modes. It features a modern frontend built with Next.js and TypeScript, a backend API in Go, and uses OIDC for authentication with PostgreSQL for data storage.
+Diktator is a Norwegian vocabulary learning app for children featuring gamified spelling tests, practice modes, and real-time feedback. Built with Next.js, TypeScript, Go, and PostgreSQL.
 
 ## Features
 
-- 🌍 **Multilingual Support**: English and Norwegian (🇬🇧/🇳🇴)
-- 🔐 **OIDC Authentication**: Flexible identity provider support with mock mode for development
-- 🆕 **Parent Registration Flow**: OIDC users are redirected to /register on first login to create a parent profile and family; children are added from within the app
-- 🎮 **Gamification**: Score tracking, progress monitoring, and statistics
-- 🎯 **Practice Modes**: Hover-to-reveal word practice with speech synthesis
-- 📊 **Analytics**: Detailed test results and performance tracking
-- 👥 **User Profiles**: Personal statistics and progress history
+- 🌍 **Multilingual**: English and Norwegian (🇬🇧/🇳🇴)
+- 🔐 **OIDC Authentication**: Flexible provider support with mock mode for development
+- 👨‍👩‍👧‍👦 **Family Management**: Parent registration flow, child invitations, family-scoped data
+- ✍️ **Spelling Analysis**: Norwegian Bokmål-aware feedback with visual error highlighting
+- 🎯 **Test Modes**: Standard, Dictation, Translation with real-time validation
+- 🎤 **Text-to-Speech**: On-demand audio generation for all words
+- 📊 **Progress Tracking**: Detailed test results and performance analytics
 
 ## Architecture
 
-- **Frontend**: Next.js 16 with TypeScript, Tailwind CSS
-- **Authentication**: OIDC (mock mode for development, configurable provider for production)
-- **Database**: PostgreSQL for user data, test results, and analytics
-- **Backend**: Go with Gin HTTP framework
-- **Deployment**: Knative on HOMELAB-cluster
-- **Development**: Mise and Docker Compose for local services
+**Frontend**: Next.js 16 + TypeScript + Tailwind CSS | **Backend**: Go + Gin | **Database**: PostgreSQL | **Auth**: OIDC (mock/production) | **Deployment**: Knative | **Dev Tools**: Mise + Docker Compose
 
 ## Quick Start
 
@@ -73,19 +68,12 @@ mise run typecheck        # TypeScript check + Go build check
 
 ### 5. Access the Application
 
-- 🌐 **Frontend**: http://localhost:3000
-- 🔧 **Backend API**: http://localhost:8080
-- 📖 **API Docs**: http://localhost:8080/docs
-- 🗄️ **PostgreSQL**: localhost:5432
-
-## Development URLs
-
-| Service      | URL                        | Purpose                      |
-| ------------ | -------------------------- | ---------------------------- |
-| Frontend App | http://localhost:3000      | Main application             |
-| Backend API  | http://localhost:8080      | Go API server                |
-| API Docs     | http://localhost:8080/docs | Swagger documentation        |
-| PostgreSQL   | localhost:5432             | Database (postgres/postgres) |
+| Service     | URL                          | Credentials       |
+| ----------- | ---------------------------- | ----------------- |
+| Frontend    | <http://localhost:3000>      | (mock auth)       |
+| Backend API | <http://localhost:8080>      | -                 |
+| API Docs    | <http://localhost:8080/docs> | Swagger UI        |
+| PostgreSQL  | localhost:5432               | postgres/postgres |
 
 ## Available Tasks
 
@@ -113,76 +101,27 @@ mise run typecheck        # TypeScript check + Go build check
 
 ### Testing
 
-**Run All Tests:**
-- `mise run test` - All tests (lint + typecheck + backend + frontend unit tests)
+- `mise run test` - All tests (lint + typecheck + unit tests)
 - `mise run test:all` - Complete suite including E2E tests
-- `mise run check` - Run all checks (backend + frontend)
-
-**Backend Tests:**
-- `mise run backend:test` - All backend tests (requires PostgreSQL)
-- `mise run backend:test-short` - Unit tests only (skip integration)
-- `mise run backend:test-coverage` - Backend tests with coverage report
-
-**Frontend Tests:**
+- `mise run backend:test` - Backend tests (requires PostgreSQL)
 - `mise run frontend:test` - Frontend unit tests (Vitest)
-- `mise run frontend:test-watch` - Frontend tests in watch mode
-- `mise run frontend:test-coverage` - Frontend tests with coverage
-- `mise run frontend:test-e2e` - E2E tests with Playwright (requires running backend)
-- `mise run frontend:test-e2e-ui` - E2E tests with Playwright UI
-
-**Quick Tests:**
-- `mise run test:unit` - Unit tests only (backend + frontend, skip integration)
+- `mise run frontend:test-e2e` - E2E tests with Playwright
 
 ### Quality Assurance
 
 - `mise run lint` - Lint all code (ESLint + go vet)
 - `mise run format` - Format all code (prettier + go fmt + tofu fmt)
 - `mise run typecheck` - Type checking (TypeScript + Go build check)
-- `mise run frontend:knip` - Find unused code in frontend
-- `mise run frontend:knip-fix` - Auto-fix unused code in frontend
 
 ### API Documentation
 
 - `mise run backend:swagger-gen` - Generate OpenAPI spec from Go code
 - `mise run frontend:client-gen` - Generate TypeScript client from OpenAPI
 
-### Build & Deployment
-
-- `mise run build` - Build all components for production
-- `mise run backend:docker-build` - Build backend Docker image locally
-- `mise run clean` - Clean build artifacts
-
-### Infrastructure (OpenTofu)
-
-- `mise run tofu:init` - Initialize OpenTofu
-- `mise run tofu:plan` - Plan infrastructure changes
-- `mise run tofu:apply` - Apply infrastructure changes
-- `mise run tofu:fmt` - Format Terraform/OpenTofu files
-
-### Configuration
-
-- `mise run setup` - Complete project setup
-- `mise run config:dev` - Generate development configuration
-- `mise run config:prod` - Generate production configuration
-- `mise run config:load` - Load configuration from terraform
-
 ## Configuration
 
-### Development Mode
-
-In development, the app runs with:
-- **AUTH_MODE=mock**: Authentication is mocked, no real OIDC provider needed
-- **PostgreSQL**: Running in Docker on localhost:5432
-- **Storage**: Mock storage or local GCS credentials
-
-### Production Mode
-
-For production, configure:
-
-- **AUTH_MODE=oidc**: Real OIDC provider (Zitadel, Keycloak, Auth0, etc.)
-- **DATABASE_URL**: Production PostgreSQL connection string
-- **OIDC_ISSUER_URL**: Your OIDC provider URL
-- **OIDC_AUDIENCE**: Expected token audience
+**Development**: `AUTH_MODE=mock` (no OIDC needed), PostgreSQL in Docker
+**Production**: `AUTH_MODE=oidc`, configure `OIDC_ISSUER_URL`, `OIDC_AUDIENCE`, `DATABASE_URL`
 
 ## Project Structure
 
@@ -212,44 +151,17 @@ For production, configure:
 └── .github/workflows/     # CI/CD pipelines
 ```
 
-## Authentication Flow
+## Authentication
 
-### Development (Mock Mode)
-
-1. Set `AUTH_MODE=mock` in backend
-2. Set `NEXT_PUBLIC_AUTH_MODE=mock` in frontend
-3. Any login credentials work, creating a mock user session
-
-### Production (OIDC)
-
-1. Configure OIDC provider (Zitadel, Keycloak, Auth0, etc.)
-2. Set `AUTH_MODE=oidc` with `OIDC_ISSUER_URL` and `OIDC_AUDIENCE`
-3. Frontend redirects to OIDC provider for login
-4. Backend validates JWT tokens from provider
+**Mock Mode** (dev): Any credentials work → mock session
+**OIDC Mode** (prod): Frontend redirects to provider → backend validates JWT
 
 ## Deployment
 
-### Infrastructure Setup
+See [deploy/HOMELAB.md](deploy/HOMELAB.md) for Knative deployment instructions.
 
-The infrastructure uses OpenTofu (open-source Terraform):
-
-```bash
-# Setup using your current gcloud project
-mise run tofu:init
-mise run tofu:plan
-mise run tofu:apply
-```
-
-### Application Deployment
-
-See `deploy/HOMELAB.md` for detailed deployment instructions to your HOMELAB-cluster.
-
-### Required Secrets
-
-Configure these secrets in your GitHub repository (for TTS service only):
-
-- `GCP_SA_KEY`: Google Cloud Text-to-Speech service account JSON key
-- `GCP_PROJECT_ID`: Google Cloud project ID (for TTS API billing)
+**Infrastructure**: OpenTofu (`mise run tofu:init/plan/apply`)
+**Secrets**: `GCP_SA_KEY`, `GCP_PROJECT_ID` (TTS service)
 
 ## Contributing
 
