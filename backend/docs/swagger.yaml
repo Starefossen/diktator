@@ -159,6 +159,11 @@ definitions:
       correct:
         description: Whether the word was answered correctly
         type: boolean
+      errorTypes:
+        description: Detected spelling error types (doubleConsonant, silentH, etc.)
+        items:
+          type: string
+        type: array
       finalAnswer:
         description: The final answer provided
         type: string

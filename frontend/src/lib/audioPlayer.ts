@@ -4,6 +4,7 @@
  */
 
 import { WordSet, WordItem } from "@/types";
+import { TIMING } from "@/lib/timingConfig";
 
 // Global audio pre-loader for iOS Safari compatibility
 let iOSAudioContext: AudioContext | null = null;
@@ -369,7 +370,7 @@ const getVoicesWithFallback = (): Promise<SpeechSynthesisVoice[]> => {
         voicesChangedHandler,
       );
       resolve(speechSynthesis.getVoices());
-    }, 1000);
+    }, TIMING.AUDIO_CACHE_CLEAR_DELAY_MS);
   });
 };
 

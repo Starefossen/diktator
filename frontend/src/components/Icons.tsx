@@ -32,7 +32,10 @@ import {
   XMarkIcon,
   DevicePhoneMobileIcon,
   PencilIcon,
+  LightBulbIcon,
 } from "@heroicons/react/24/outline";
+
+import { CheckIcon } from "@heroicons/react/24/solid";
 
 // Icon mapping object for easy reference
 export const Icons = {
@@ -64,10 +67,12 @@ export const Icons = {
 
   // Status icons
   check: CheckCircleIcon,
+  checkSolid: CheckIcon,
   success: CheckCircleIcon,
   error: XCircleIcon,
   loading: ArrowPathIcon, // Using rotate as loading substitute
   sparkles: SparklesIcon,
+  lightBulb: LightBulbIcon,
 
   // Time icons
   clock: ClockIcon,
@@ -293,6 +298,22 @@ export function HeroPencilIcon({
   className?: string;
 }) {
   return <PencilIcon className={className} />;
+}
+
+export function HeroLightBulbIcon({
+  className = "w-5 h-5 text-yellow-500",
+}: {
+  className?: string;
+}) {
+  return <LightBulbIcon className={className} />;
+}
+
+export function HeroCheckSolidIcon({
+  className = "w-6 h-6 text-green-500",
+}: {
+  className?: string;
+}) {
+  return <CheckIcon className={className} />;
 }
 
 // Score-based icon component

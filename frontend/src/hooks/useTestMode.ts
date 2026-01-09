@@ -13,6 +13,12 @@ import {
   playErrorSound,
   playCompletionTone,
 } from "@/lib/audioTones";
+import {
+  analyzeSpelling,
+  DEFAULT_SPELLING_CONFIG,
+  ErrorType,
+} from "@/lib/spellingAnalysis";
+import { TIMING } from "@/lib/timingConfig";
 
 export interface UseTestModeReturn {
   // State
@@ -31,6 +37,7 @@ export interface UseTestModeReturn {
   currentWordAudioPlays: number;
   testMode: "standard" | "dictation" | "translation";
   wordDirections: ("toTarget" | "toSource")[]; // For translation mode only
+  lastUserAnswer: string | undefined; // Most recent answer submitted for spelling feedback
 
   // Actions
   startTest: (
@@ -68,6 +75,9 @@ export function useTestMode(): UseTestModeReturn {
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [currentWordAnswers, setCurrentWordAnswers] = useState<string[]>([]);
   const [currentWordAudioPlays, setCurrentWordAudioPlays] = useState(0);
+  const [currentWordErrorTypes, setCurrentWordErrorTypes] = useState<
+    ErrorType[]
+  >([]);
 
   // Refs for stable audio functionality
   const activeTestRef = useRef<WordSet | null>(null);
@@ -102,7 +112,7 @@ export function useTestMode(): UseTestModeReturn {
         isPlayingAudioRef.current = false;
         setIsAudioPlaying(false);
       }
-    }, 10000); // 10 second timeout
+    }, TIMING.AUDIO_SAFETY_TIMEOUT_MS);
 
     playWordAudioHelper(word, currentWordSet, {
       onStart: () => {
@@ -178,6 +188,7 @@ export function useTestMode(): UseTestModeReturn {
       setIsAudioPlaying(false);
       setCurrentWordAnswers([]);
       setCurrentWordAudioPlays(0);
+      setCurrentWordErrorTypes([]);
 
       isPlayingAudioRef.current = false;
       lastAutoPlayIndexRef.current = -1;
@@ -199,6 +210,7 @@ export function useTestMode(): UseTestModeReturn {
     setIsAudioPlaying(false);
     setCurrentWordAnswers([]);
     setCurrentWordAudioPlays(0);
+    setCurrentWordErrorTypes([]);
 
     isPlayingAudioRef.current = false;
     lastAutoPlayIndexRef.current = -1;
@@ -240,6 +252,7 @@ export function useTestMode(): UseTestModeReturn {
           timeSpent: answer.timeSpent,
           finalAnswer: answer.finalAnswer,
           audioPlayCount: answer.audioPlayCount,
+          errorTypes: answer.errorTypes,
         }));
 
         const resultData: SaveResultRequest = {
@@ -294,6 +307,31 @@ export function useTestMode(): UseTestModeReturn {
     const newTries = currentTries + 1;
     const newAnswers = [...currentWordAnswers, userAnswer.trim()];
 
+    // Analyze spelling for incorrect answers and collect error types
+    const newErrorTypes = [...currentWordErrorTypes];
+    if (!isCorrect) {
+      const spellingConfig = {
+        ...DEFAULT_SPELLING_CONFIG,
+        almostCorrectThreshold:
+          activeTest.testConfiguration?.almostCorrectThreshold ?? 2,
+        showHintOnAttempt: activeTest.testConfiguration?.showHintOnAttempt ?? 2,
+        enableKeyboardProximity:
+          activeTest.testConfiguration?.enableKeyboardProximity ?? true,
+      };
+      const analysis = analyzeSpelling(
+        userAnswer.trim(),
+        expectedAnswer,
+        spellingConfig,
+      );
+      // Add new error types (avoid duplicates)
+      for (const errorType of analysis.errorTypes) {
+        if (!newErrorTypes.includes(errorType)) {
+          newErrorTypes.push(errorType);
+        }
+      }
+      setCurrentWordErrorTypes(newErrorTypes);
+    }
+
     setCurrentWordAnswers(newAnswers);
     setLastAnswerCorrect(isCorrect);
     setShowFeedback(true);
@@ -324,6 +362,7 @@ export function useTestMode(): UseTestModeReturn {
           attempts: newTries,
           finalAnswer: userAnswer.trim(),
           audioPlayCount: currentWordAudioPlays,
+          errorTypes: newErrorTypes.length > 0 ? newErrorTypes : undefined,
         };
 
         const newAnswersList = [...answers, answer];
@@ -336,6 +375,7 @@ export function useTestMode(): UseTestModeReturn {
           setCurrentTries(0);
           setCurrentWordAnswers([]);
           setCurrentWordAudioPlays(0);
+          setCurrentWordErrorTypes([]);
           // Reset audio state for next word to prevent stuck spinner
           isPlayingAudioRef.current = false;
           setIsAudioPlaying(false);
@@ -345,10 +385,10 @@ export function useTestMode(): UseTestModeReturn {
       } else {
         setUserAnswer("");
         if (!requiresUserInteractionForAudio()) {
-          playTestWordAudio(currentWord, 500);
+          playTestWordAudio(currentWord, TIMING.AUDIO_REPLAY_DELAY_MS);
         }
       }
-    }, 2000);
+    }, TIMING.FEEDBACK_DISPLAY_MS);
   }, [
     activeTest,
     wordStartTime,
@@ -358,6 +398,7 @@ export function useTestMode(): UseTestModeReturn {
     currentTries,
     currentWordAnswers,
     currentWordAudioPlays,
+    currentWordErrorTypes,
     answers,
     completeTest,
     playTestWordAudio,
@@ -373,7 +414,14 @@ export function useTestMode(): UseTestModeReturn {
       const testConfig = getEffectiveTestConfig(activeTest);
       if (testConfig?.autoPlayAudio && !requiresUserInteractionForAudio()) {
         lastAutoPlayIndexRef.current = 0;
-        setTimeout(() => playTestWordAudio(processedWords[0], 500), 0);
+        setTimeout(
+          () =>
+            playTestWordAudio(
+              processedWords[0],
+              TIMING.TEST_START_AUDIO_DELAY_MS,
+            ),
+          0,
+        );
       }
     }
   }, [activeTest, processedWords, testInitialized, playTestWordAudio]);
@@ -393,7 +441,10 @@ export function useTestMode(): UseTestModeReturn {
       !requiresUserInteractionForAudio()
     ) {
       lastAutoPlayIndexRef.current = currentWordIndex;
-      playTestWordAudio(processedWordsRef.current[currentWordIndex], 500);
+      playTestWordAudio(
+        processedWordsRef.current[currentWordIndex],
+        TIMING.TEST_START_AUDIO_DELAY_MS,
+      );
     }
   }, [currentWordIndex, testInitialized, playTestWordAudio]);
 
@@ -414,6 +465,10 @@ export function useTestMode(): UseTestModeReturn {
     currentWordAudioPlays,
     testMode,
     wordDirections,
+    lastUserAnswer:
+      currentWordAnswers.length > 0
+        ? currentWordAnswers[currentWordAnswers.length - 1]
+        : undefined,
 
     // Actions
     startTest,

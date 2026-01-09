@@ -1,8 +1,18 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useMemo } from "react";
 import { WordSet, TestAnswer, getEffectiveTestConfig } from "@/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { requiresUserInteractionForAudio } from "@/lib/audioPlayer";
 import { HeroVolumeIcon, HeroDevicePhoneMobileIcon } from "@/components/Icons";
+import {
+  analyzeSpelling,
+  SpellingAnalysisResult,
+  DEFAULT_SPELLING_CONFIG,
+} from "@/lib/spellingAnalysis";
+import {
+  SpellingFeedback,
+  CorrectFeedback,
+} from "@/components/SpellingFeedback";
+import { TIMING } from "@/lib/timingConfig";
 
 interface TestViewProps {
   activeTest: WordSet;
@@ -16,6 +26,7 @@ interface TestViewProps {
   isAudioPlaying: boolean;
   testMode: "standard" | "dictation" | "translation";
   wordDirections: ("toTarget" | "toSource")[];
+  lastUserAnswer?: string; // The most recent answer submitted (for spelling feedback)
   onUserAnswerChange: (answer: string) => void;
   onSubmitAnswer: () => void;
   onPlayCurrentWord: () => void;
@@ -34,6 +45,7 @@ export function TestView({
   isAudioPlaying,
   testMode,
   wordDirections,
+  lastUserAnswer,
   onUserAnswerChange,
   onSubmitAnswer,
   onPlayCurrentWord,
@@ -66,6 +78,51 @@ export function TestView({
   // Determine what to show based on direction
   const showWord =
     wordDirection === "toTarget" ? currentWord.word : translation?.text;
+
+  // Get the expected answer for spelling analysis
+  const expectedAnswer = useMemo(() => {
+    if (testMode === "translation" && translation) {
+      return wordDirection === "toTarget" ? translation.text : currentWord.word;
+    }
+    return currentWord.word;
+  }, [testMode, translation, wordDirection, currentWord.word]);
+
+  // Compute spelling analysis when showing feedback for incorrect answer
+  const spellingAnalysis: SpellingAnalysisResult | null = useMemo(() => {
+    if (!showFeedback || lastAnswerCorrect || !lastUserAnswer) {
+      return null;
+    }
+    const config = {
+      ...DEFAULT_SPELLING_CONFIG,
+      almostCorrectThreshold: testConfig?.almostCorrectThreshold ?? 2,
+      showHintOnAttempt: testConfig?.showHintOnAttempt ?? 2,
+      enableKeyboardProximity: testConfig?.enableKeyboardProximity ?? true,
+    };
+    return analyzeSpelling(lastUserAnswer, expectedAnswer, config);
+  }, [
+    showFeedback,
+    lastAnswerCorrect,
+    lastUserAnswer,
+    expectedAnswer,
+    testConfig?.almostCorrectThreshold,
+    testConfig?.showHintOnAttempt,
+    testConfig?.enableKeyboardProximity,
+  ]);
+
+  // Spelling feedback config from test configuration
+  const spellingConfig = useMemo(
+    () => ({
+      ...DEFAULT_SPELLING_CONFIG,
+      almostCorrectThreshold: testConfig?.almostCorrectThreshold ?? 2,
+      showHintOnAttempt: testConfig?.showHintOnAttempt ?? 2,
+      enableKeyboardProximity: testConfig?.enableKeyboardProximity ?? true,
+    }),
+    [
+      testConfig?.almostCorrectThreshold,
+      testConfig?.showHintOnAttempt,
+      testConfig?.enableKeyboardProximity,
+    ],
+  );
 
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
@@ -132,7 +189,7 @@ export function TestView({
                     // Return focus to input after clicking audio
                     setTimeout(() => {
                       inputRef.current?.focus();
-                    }, 100);
+                    }, TIMING.INPUT_FOCUS_DELAY_MS);
                   }}
                   className="relative p-4 text-4xl text-white transition-all duration-200 transform rounded-full shadow-lg sm:p-6 sm:text-6xl bg-linear-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 hover:shadow-xl hover:scale-105"
                 >
@@ -161,23 +218,31 @@ export function TestView({
 
             <div className="flex flex-col justify-center mb-6">
               {showFeedback ? (
-                <div
-                  className={`p-4 rounded-lg animate-in fade-in-0 slide-in-from-top-2 duration-300 ${
-                    lastAnswerCorrect
-                      ? "bg-green-100 border border-green-300"
-                      : "bg-red-100 border border-red-300"
-                  }`}
-                >
-                  <p
-                    className={`font-semibold text-lg ${
-                      lastAnswerCorrect ? "text-green-800" : "text-red-800"
-                    }`}
-                  >
-                    {lastAnswerCorrect
-                      ? t("test.correct")
-                      : `${t("test.incorrect")} - ${t("test.tryAgain")} (${currentTries}/${testConfig?.maxAttempts ?? 3})`}
-                  </p>
-                </div>
+                lastAnswerCorrect ? (
+                  <CorrectFeedback />
+                ) : spellingAnalysis && lastUserAnswer ? (
+                  <SpellingFeedback
+                    userAnswer={lastUserAnswer}
+                    expectedWord={expectedAnswer}
+                    analysis={spellingAnalysis}
+                    currentAttempt={currentTries}
+                    maxAttempts={testConfig?.maxAttempts ?? 3}
+                    config={spellingConfig}
+                    showCorrectAnswer={
+                      currentTries >= (testConfig?.maxAttempts ?? 3) &&
+                      testConfig?.showCorrectAnswer
+                    }
+                    timerDurationMs={TIMING.FEEDBACK_DISPLAY_MS}
+                  />
+                ) : (
+                  // Fallback to simple feedback if no analysis available
+                  <div className="p-4 rounded-lg animate-in fade-in-0 slide-in-from-top-2 duration-300 bg-red-100 border border-red-300">
+                    <p className="font-semibold text-lg text-red-800">
+                      {t("test.incorrect")} - {t("test.tryAgain")} (
+                      {currentTries}/{testConfig?.maxAttempts ?? 3})
+                    </p>
+                  </div>
+                )
               ) : (
                 <input
                   ref={inputRef}
@@ -200,10 +265,13 @@ export function TestView({
             </div>
 
             <div className="flex justify-center h-5 mb-8">
-              <p className="text-sm text-gray-500">
-                {t("test.attemptsRemaining")}:{" "}
-                {(testConfig?.maxAttempts ?? 3) - currentTries}
-              </p>
+              {/* Only show attempts remaining when NOT showing feedback (SpellingFeedback has its own display) */}
+              {!showFeedback && (
+                <p className="text-sm text-gray-500">
+                  {t("test.attemptsRemaining")}:{" "}
+                  {(testConfig?.maxAttempts ?? 3) - currentTries}
+                </p>
+              )}
             </div>
 
             <div className="flex flex-wrap justify-center gap-2 sm:gap-4">
@@ -215,7 +283,7 @@ export function TestView({
                     // Return focus to input after clicking audio
                     setTimeout(() => {
                       inputRef.current?.focus();
-                    }, 100);
+                    }, TIMING.INPUT_FOCUS_DELAY_MS);
                   }}
                   className="flex items-center px-4 py-2 font-semibold text-white transition-colors bg-blue-500 rounded-lg sm:px-6 sm:py-3 hover:bg-blue-600"
                   disabled={showFeedback}

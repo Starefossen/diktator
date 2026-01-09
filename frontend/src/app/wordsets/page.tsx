@@ -311,6 +311,7 @@ function WordSetsPageContent() {
           isAudioPlaying={testMode.isAudioPlaying}
           testMode={testMode.testMode}
           wordDirections={testMode.wordDirections}
+          lastUserAnswer={testMode.lastUserAnswer}
           onUserAnswerChange={testMode.setUserAnswer}
           onSubmitAnswer={testMode.handleSubmitAnswer}
           onPlayCurrentWord={testMode.playCurrentWord}

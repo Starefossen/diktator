@@ -267,4 +267,60 @@ describe("TestView - Mode-Specific Behavior", () => {
       expect(playButton).toBeInTheDocument();
     });
   });
+
+  describe("Spelling Feedback Integration", () => {
+    it("shows spelling feedback when answer is incorrect and lastUserAnswer provided", () => {
+      const props = {
+        ...baseProps,
+        showFeedback: true,
+        lastAnswerCorrect: false,
+        currentTries: 1,
+        lastUserAnswer: "helo", // Misspelled "hello"
+      };
+      renderTestView(baseWordSet, "standard", props);
+      // Should show the incorrect feedback
+      expect(screen.getByText(/incorrect/i)).toBeInTheDocument();
+      // Should show "your answer" section from SpellingFeedback
+      expect(screen.getByText(/your answer/i)).toBeInTheDocument();
+    });
+
+    it("shows correct feedback for correct answers", () => {
+      const props = {
+        ...baseProps,
+        showFeedback: true,
+        lastAnswerCorrect: true,
+        currentTries: 1,
+      };
+      const { container } = renderTestView(baseWordSet, "standard", props);
+      // Should show CorrectFeedback with checkmark icon (SVG)
+      expect(container.querySelector("svg")).toBeInTheDocument();
+      expect(screen.getByText(/correct/i)).toBeInTheDocument();
+    });
+
+    it("shows almost correct badge when answer is close", () => {
+      const props = {
+        ...baseProps,
+        showFeedback: true,
+        lastAnswerCorrect: false,
+        currentTries: 1,
+        lastUserAnswer: "hell", // Missing one letter
+      };
+      renderTestView(baseWordSet, "standard", props);
+      // Should show almost there badge for close answer
+      expect(screen.getByText(/almost/i)).toBeInTheDocument();
+    });
+
+    it("does not show spelling feedback when lastUserAnswer is not provided", () => {
+      const props = {
+        ...baseProps,
+        showFeedback: true,
+        lastAnswerCorrect: false,
+        currentTries: 1,
+        // No lastUserAnswer
+      };
+      renderTestView(baseWordSet, "standard", props);
+      // Should still show incorrect message but not detailed spelling feedback
+      expect(screen.getByText(/incorrect/i)).toBeInTheDocument();
+    });
+  });
 });

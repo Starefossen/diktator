@@ -90,6 +90,7 @@ export interface WordTestResult {
   finalAnswer: string; // The final answer provided
   hintsUsed?: number; // Number of hints used (if applicable)
   audioPlayCount?: number; // Number of times audio was played
+  errorTypes?: string[]; // Detected spelling error types (doubleConsonant, silentH, etc.)
 }
 
 export interface TestResult {
@@ -117,6 +118,7 @@ export interface TestAnswer {
   finalAnswer: string; // The final answer provided
   hintsUsed?: number; // Number of hints used (if applicable)
   audioPlayCount?: number; // Number of times audio was played
+  errorTypes?: string[]; // Detected spelling error types (doubleConsonant, silentH, etc.)
 }
 
 export interface TestConfiguration {
@@ -130,6 +132,10 @@ export interface TestConfiguration {
   defaultMode?: "standard" | "dictation" | "translation"; // Default test mode (default: standard)
   targetLanguage?: string; // Target language for translation mode
   translationDirection?: "toTarget" | "toSource" | "mixed"; // Direction for translation mode: toTarget (source→target), toSource (target→source), mixed (random)
+  // Spelling feedback configuration
+  almostCorrectThreshold?: number; // Levenshtein distance to consider "almost correct" (default: 2)
+  showHintOnAttempt?: number; // Which attempt to show specific hints (default: 2 = progressive)
+  enableKeyboardProximity?: boolean; // Detect QWERTY keyboard typos (default: true)
 }
 
 // Default test configuration

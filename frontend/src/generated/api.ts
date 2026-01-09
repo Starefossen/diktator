@@ -417,6 +417,12 @@ export interface ModelsWordTestResult {
      */
     'correct'?: boolean;
     /**
+     * Detected spelling error types (doubleConsonant, silentH, etc.)
+     * @type {Array<string>}
+     * @memberof ModelsWordTestResult
+     */
+    'errorTypes'?: Array<string>;
+    /**
      * The final answer provided
      * @type {string}
      * @memberof ModelsWordTestResult

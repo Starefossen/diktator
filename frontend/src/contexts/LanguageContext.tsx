@@ -3,8 +3,8 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import { translations, Language, TranslationKey } from "@/locales";
 
-// Re-export Language type for external components
-export type { Language } from "@/locales";
+// Re-export types for external components
+export type { Language, TranslationKey } from "@/locales";
 
 interface LanguageContextType {
   language: Language;

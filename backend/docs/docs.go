@@ -1661,6 +1661,13 @@ const docTemplate = `{
                     "description": "Whether the word was answered correctly",
                     "type": "boolean"
                 },
+                "errorTypes": {
+                    "description": "Detected spelling error types (doubleConsonant, silentH, etc.)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "finalAnswer": {
                     "description": "The final answer provided",
                     "type": "string"

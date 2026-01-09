@@ -55,6 +55,21 @@ textarea {
   @apply inline-block w-6 h-6 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin;
 }
 
+/* Timer shrink animation for feedback display */
+@keyframes shrink-x {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.animate-shrink-x {
+  animation: shrink-x var(--timer-duration, 3500ms) linear forwards;
+  transform-origin: left;
+}
+
 /* Gradient text */
 .text-gradient {
   @apply text-transparent bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text;

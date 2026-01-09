@@ -6,6 +6,7 @@ import {
   initializeAudioForIOS,
   requiresUserInteractionForAudio,
 } from "@/lib/audioPlayer";
+import { TIMING } from "@/lib/timingConfig";
 
 export interface UsePracticeModeReturn {
   // State
@@ -122,8 +123,11 @@ export function usePracticeMode(): UsePracticeModeReturn {
 
     // Auto-play first word after shuffle (with longer delay)
     setTimeout(() => {
-      playPracticeWordAudioWithDelay(shuffled[0], 300);
-    }, 1000);
+      playPracticeWordAudioWithDelay(
+        shuffled[0],
+        TIMING.PRACTICE_SHUFFLE_AUDIO_DELAY_MS,
+      );
+    }, TIMING.PRACTICE_SHUFFLE_DELAY_MS);
   }, [practiceWords, playPracticeWordAudioWithDelay]);
 
   // Auto-play when entering practice mode
@@ -134,8 +138,11 @@ export function usePracticeMode(): UsePracticeModeReturn {
       currentPracticeIndex === 0
     ) {
       const timer = setTimeout(() => {
-        playPracticeWordAudioWithDelay(practiceWords[0], 500);
-      }, 800);
+        playPracticeWordAudioWithDelay(
+          practiceWords[0],
+          TIMING.PRACTICE_MODE_AUDIO_DELAY_MS,
+        );
+      }, TIMING.PRACTICE_MODE_INITIAL_DELAY_MS);
 
       return () => clearTimeout(timer);
     }
@@ -153,9 +160,9 @@ export function usePracticeMode(): UsePracticeModeReturn {
       const timer = setTimeout(() => {
         playPracticeWordAudioWithDelay(
           practiceWords[currentPracticeIndex],
-          300,
+          TIMING.PRACTICE_NAV_AUDIO_DELAY_MS,
         );
-      }, 500);
+      }, TIMING.PRACTICE_NAV_DELAY_MS);
 
       return () => clearTimeout(timer);
     }

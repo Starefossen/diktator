@@ -66,6 +66,7 @@ type WordTestResult struct {
 	FinalAnswer    string   `json:"finalAnswer"`              // The final answer provided
 	HintsUsed      int      `json:"hintsUsed,omitempty"`      // Number of hints used (if applicable)
 	AudioPlayCount int      `json:"audioPlayCount,omitempty"` // Number of times audio was played
+	ErrorTypes     []string `json:"errorTypes,omitempty"`     // Detected spelling error types (doubleConsonant, silentH, etc.)
 }
 
 // TestResult represents the result of a spelling test
