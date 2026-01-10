@@ -136,10 +136,19 @@ export const wordsets = {
 
   // Word Set Editor
   "wordsets.editor.defaultTestMode": "Default Test Mode",
+  "wordsets.editor.mode.standard": "Standard",
   "wordsets.editor.mode.standard.description": "See word, type to spell",
+  "wordsets.editor.mode.dictation": "Dictation",
   "wordsets.editor.mode.dictation.description": "Listen and spell",
+  "wordsets.editor.mode.translation": "Translation",
   "wordsets.editor.mode.translation.description": "Translate words",
   "wordsets.editor.targetLanguage": "Target Language",
+  "wordsets.editor.translationDirection":
+    "Users will translate from {source} to {target}",
+  "wordsets.editor.sourceWord": "Source word ({lang})",
+  "wordsets.editor.translationRequired":
+    "Translation ({lang}) - required for translation mode",
+  "wordsets.editor.noDefinition": "No definition",
   "wordsets.editor.definition.placeholder":
     "Definition/context (optional) - helps distinguish homophones like 'to', 'two', 'too'",
   "wordsets.editor.definition.placeholderShort":

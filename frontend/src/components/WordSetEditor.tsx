@@ -330,7 +330,7 @@ export default function WordSetEditor({
                   <span className="flex flex-1">
                     <span className="flex flex-col">
                       <span className="block text-sm font-medium text-gray-900">
-                        Standard
+                        {t("wordsets.editor.mode.standard")}
                       </span>
                       <span className="flex items-center mt-1 text-sm text-gray-500">
                         {t("wordsets.editor.mode.standard.description")}
@@ -374,7 +374,7 @@ export default function WordSetEditor({
                   <span className="flex flex-1">
                     <span className="flex flex-col">
                       <span className="block text-sm font-medium text-gray-900">
-                        Dictation
+                        {t("wordsets.editor.mode.dictation")}
                       </span>
                       <span className="flex items-center mt-1 text-sm text-gray-500">
                         {t("wordsets.editor.mode.dictation.description")}
@@ -418,7 +418,7 @@ export default function WordSetEditor({
                   <span className="flex flex-1">
                     <span className="flex flex-col">
                       <span className="block text-sm font-medium text-gray-900">
-                        Translation
+                        {t("wordsets.editor.mode.translation")}
                       </span>
                       <span className="flex items-center mt-1 text-sm text-gray-500">
                         {t("wordsets.editor.mode.translation.description")}
@@ -474,9 +474,19 @@ export default function WordSetEditor({
                     </svg>
                   </div>
                   <p className="mt-2 text-sm text-gray-500">
-                    Users will translate from{" "}
-                    {selectedLanguage === "en" ? "English" : "Norwegian"} to{" "}
-                    {targetLanguage === "en" ? "English" : "Norwegian"}
+                    {t("wordsets.editor.translationDirection")
+                      .replace(
+                        "{source}",
+                        selectedLanguage === "en"
+                          ? t("common.english")
+                          : t("common.norwegian"),
+                      )
+                      .replace(
+                        "{target}",
+                        targetLanguage === "en"
+                          ? t("common.english")
+                          : t("common.norwegian"),
+                      )}
                   </p>
                 </div>
               )}
@@ -502,7 +512,10 @@ export default function WordSetEditor({
                       className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-nordic-teal sm:text-sm/6"
                       placeholder={
                         defaultMode === "translation"
-                          ? `Source word (${selectedLanguage})`
+                          ? t("wordsets.editor.sourceWord").replace(
+                              "{lang}",
+                              selectedLanguage,
+                            )
                           : t("wordsets.addWord.placeholder")
                       }
                       onKeyPress={(e) => {
@@ -549,7 +562,9 @@ export default function WordSetEditor({
                       value={newTranslationText}
                       onChange={(e) => setNewTranslationText(e.target.value)}
                       className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-nordic-teal sm:text-sm/6"
-                      placeholder={`Translation (${targetLanguage}) - required for translation mode`}
+                      placeholder={t(
+                        "wordsets.editor.translationRequired",
+                      ).replace("{lang}", targetLanguage)}
                       onKeyPress={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
@@ -676,7 +691,7 @@ export default function WordSetEditor({
                             <div className="text-sm text-gray-600">
                               {word.definition || (
                                 <span className="italic text-gray-400">
-                                  No definition
+                                  {t("wordsets.editor.noDefinition")}
                                 </span>
                               )}
                             </div>

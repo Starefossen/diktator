@@ -136,10 +136,19 @@ export const wordsets = {
 
   // Word Set Editor
   "wordsets.editor.defaultTestMode": "Standard testmodus",
+  "wordsets.editor.mode.standard": "Standard",
   "wordsets.editor.mode.standard.description": "Se ord, skriv stavemåten",
+  "wordsets.editor.mode.dictation": "Diktat",
   "wordsets.editor.mode.dictation.description": "Lytt og stav",
+  "wordsets.editor.mode.translation": "Oversettelse",
   "wordsets.editor.mode.translation.description": "Oversett ord",
   "wordsets.editor.targetLanguage": "Målspråk",
+  "wordsets.editor.translationDirection":
+    "Brukere vil oversette fra {source} til {target}",
+  "wordsets.editor.sourceWord": "Kildeord ({lang})",
+  "wordsets.editor.translationRequired":
+    "Oversettelse ({lang}) - påkrevd for oversettelsesmodus",
+  "wordsets.editor.noDefinition": "Ingen definisjon",
   "wordsets.editor.definition.placeholder":
     "Definisjon/kontekst (valgfritt) - hjelper å skille homofoner som 'de', 'dem', 'dei'",
   "wordsets.editor.definition.placeholderShort":
