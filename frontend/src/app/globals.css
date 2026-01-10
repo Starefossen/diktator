@@ -44,30 +44,128 @@ textarea {
   @apply w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-nordic-teal focus:border-nordic-teal transition-colors duration-200 min-h-12;
 }
 
-/* Button styles - Enhanced for children (ages 5-12) with larger touch targets */
+/* ================================================
+   BUTTON COMPONENT CLASSES
+   ================================================ */
+
+/* Primary Child Button - Large, gradient, for main actions */
+.btn-primary-child {
+  @apply px-8 py-4 min-h-14 bg-linear-to-r from-nordic-sky to-nordic-teal text-white font-bold text-lg rounded-2xl shadow-lg transition-all duration-200;
+  @apply hover:shadow-xl hover:scale-105;
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nordic-sky focus-visible:ring-offset-2;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-lg;
+}
+
+/* Secondary Child Button - Softer, for secondary actions */
+.btn-secondary-child {
+  @apply px-6 py-3 min-h-12 bg-nordic-snow text-nordic-midnight font-semibold text-base rounded-xl border-2 border-nordic-mist transition-all duration-200;
+  @apply hover:border-nordic-sky hover:shadow-md hover:bg-white;
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nordic-sky focus-visible:ring-offset-2;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:border-nordic-mist;
+}
+
+/* Primary Button - Standard size for parents/admin */
 .btn-primary {
-  @apply px-6 py-4 min-h-12 bg-linear-to-r from-nordic-sky to-nordic-teal text-nordic-midnight font-medium rounded-lg hover:from-nordic-sky/90 hover:to-nordic-teal/90 focus-visible:ring-2 focus-visible:ring-nordic-teal focus-visible:ring-offset-2 transition-all duration-200 shadow-md hover:shadow-lg;
+  @apply px-6 py-3 min-h-12 bg-linear-to-r from-nordic-sky to-nordic-teal text-white font-bold rounded-xl shadow-lg transition-all duration-200;
+  @apply hover:shadow-xl hover:scale-105;
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nordic-sky focus-visible:ring-offset-2;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-lg;
 }
 
+/* Secondary Button - Standard size for parents/admin */
 .btn-secondary {
-  @apply px-6 py-4 min-h-12 bg-white text-gray-700 font-medium border border-gray-300 rounded-lg hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-nordic-teal focus-visible:ring-offset-2 transition-all duration-200;
+  @apply px-6 py-3 min-h-12 bg-white text-nordic-midnight font-semibold rounded-xl border-2 border-nordic-mist transition-all duration-200;
+  @apply hover:border-nordic-sky hover:shadow-md;
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nordic-sky focus-visible:ring-offset-2;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:border-nordic-mist;
 }
 
+/* Success Button - Green for positive actions */
+.btn-success {
+  @apply px-8 py-4 min-h-14 bg-nordic-meadow text-white font-bold text-lg rounded-2xl shadow-lg transition-all duration-200;
+  @apply hover:shadow-xl hover:scale-105 hover:brightness-110;
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nordic-meadow focus-visible:ring-offset-2;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-lg;
+}
+
+/* Practice Button - Orange/cloudberry for practice mode */
+.btn-practice {
+  @apply px-8 py-4 min-h-14 bg-nordic-cloudberry text-white font-bold text-lg rounded-2xl shadow-lg transition-all duration-200;
+  @apply hover:shadow-xl hover:scale-105 hover:brightness-110;
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nordic-cloudberry focus-visible:ring-offset-2;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-lg;
+}
+
+/* Danger Button - Red for destructive actions */
 .btn-danger {
-  @apply px-4 py-2 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200;
+  @apply px-4 py-2 min-h-12 bg-nordic-coral text-white font-medium rounded-xl transition-colors duration-200;
+  @apply hover:brightness-110;
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nordic-coral focus-visible:ring-offset-2;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
-/* Card styles */
-.card {
-  @apply bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden;
+/* Icon Button - Square button for icons only */
+.btn-icon {
+  @apply p-2.5 min-h-10 min-w-10 inline-flex items-center justify-center rounded-xl bg-nordic-snow text-nordic-midnight transition-all duration-200;
+  @apply hover:bg-nordic-mist hover:shadow-md;
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nordic-sky focus-visible:ring-offset-2;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-nordic-snow disabled:hover:shadow-none;
 }
 
-.card-header {
-  @apply px-6 py-4 border-b border-gray-100 bg-gray-50;
+/* Icon Button Primary - Colored icon button */
+.btn-icon-primary {
+  @apply p-2.5 min-h-10 min-w-10 inline-flex items-center justify-center rounded-xl bg-nordic-sky text-white transition-all duration-200;
+  @apply hover:bg-nordic-teal hover:shadow-md;
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nordic-sky focus-visible:ring-offset-2;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
-.card-body {
-  @apply px-6 py-4;
+/* Icon Button Danger - Red icon button */
+.btn-icon-danger {
+  @apply p-2.5 min-h-10 min-w-10 inline-flex items-center justify-center rounded-xl bg-nordic-snow text-nordic-coral transition-all duration-200;
+  @apply hover:bg-red-50 hover:shadow-md;
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nordic-coral focus-visible:ring-offset-2;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+/* ================================================
+   CARD COMPONENT CLASSES
+   ================================================ */
+
+/* Child Card - Larger radius, warmer feel */
+.card-child {
+  @apply bg-nordic-snow rounded-2xl shadow-lg border border-nordic-mist;
+}
+
+/* Parent Card - Standard styling for admin views */
+.card-parent {
+  @apply bg-nordic-snow rounded-xl shadow-lg border border-nordic-mist;
+}
+
+/* Achievement Card - With decorative gradient border */
+.card-achievement {
+  @apply bg-nordic-snow rounded-2xl shadow-lg p-1;
+  background-image:
+    linear-gradient(white, white),
+    linear-gradient(
+      135deg,
+      var(--color-nordic-sky),
+      var(--color-nordic-meadow),
+      var(--color-nordic-sunrise)
+    );
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+/* ================================================
+   INPUT COMPONENT CLASSES
+   ================================================ */
+
+/* Child Input - Larger for little fingers */
+.input-child {
+  @apply w-full min-h-14 px-6 py-4 text-lg bg-white border-2 border-nordic-mist rounded-xl transition-all duration-200;
+  @apply focus:border-nordic-sky focus:ring-2 focus:ring-nordic-sky/20 focus:outline-none;
+  @apply disabled:bg-gray-100 disabled:cursor-not-allowed;
 }
 
 /* Loading spinner */

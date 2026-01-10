@@ -14,6 +14,8 @@ import {
 } from "@/components/Icons";
 import { FlagIcon } from "@/components/FlagIcon";
 import { hasAudioAvailable } from "@/lib/audioPlayer";
+import { Button } from "@/components/Button";
+import { IconButton } from "@/components/IconButton";
 
 interface ChildWordSetCardProps {
   wordSet: WordSet;
@@ -111,7 +113,7 @@ export function ChildWordSetCard({
   };
 
   return (
-    <div className="relative flex flex-col h-full p-4 transition-all duration-300 bg-white border-gray-100 shadow-lg borderounded-xl hover:shadow-2xl hover:border-nordic-sky hover:bg-nordic-sky/5">
+    <div className="card-child relative flex flex-col h-full p-4 transition-all duration-300 hover:shadow-2xl hover:border-nordic-sky hover:bg-nordic-sky/5">
       {/* Assignment Badge - Top Right Corner */}
       {isAssignedToMe && (
         <div className="absolute top-2 right-2 flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold text-nordic-midnight bg-nordic-sky/20 border border-nordic-sky/40 rounded-md shadow-sm">
@@ -214,24 +216,25 @@ export function ChildWordSetCard({
 
       {/* Action Buttons - Child Focused */}
       <div className="flex gap-2 shrink-0">
-        <button
+        <Button
+          variant="primary-child"
           onClick={() => onStartTest(wordSet)}
-          className="flex items-center justify-center flex-1 px-4 py-3 text-base font-bold text-nordic-midnight transition-all duration-300 rounded-lg shadow-lg bg-linear-to-r from-nordic-meadow to-nordic-sky hover:from-nordic-meadow/90 hover:to-nordic-sky/90 hover:shadow-xl hover:-translate-y-0.5 min-h-12.5"
+          className="flex-1"
         >
           <HeroPlayIcon className="w-4 h-4 mr-2 shrink-0" />
           <span className="truncate">
             {latestResult ? t("test.retakeTest") : t("wordsets.startTest")}
           </span>
-        </button>
+        </Button>
 
-        <button
+        <IconButton
+          variant="primary"
           onClick={() => onStartPractice(wordSet)}
-          className="flex items-center justify-center px-4 py-3 text-base font-bold text-white transition-all duration-300 bg-nordic-cloudberry rounded-lg shadow-lg hover:bg-nordic-cloudberry/90 hover:shadow-xl hover:-translate-y-0.5 min-h-12.5 min-w-12.5"
-          title={t("wordsets.practice.buttonTooltip")}
           aria-label={t("wordsets.practice.buttonTooltip")}
+          className="min-h-14 min-w-14 bg-nordic-cloudberry hover:bg-nordic-cloudberry/90"
         >
-          <HeroBookIcon className="w-4 h-4" />
-        </button>
+          <HeroBookIcon className="w-5 h-5" />
+        </IconButton>
       </div>
     </div>
   );

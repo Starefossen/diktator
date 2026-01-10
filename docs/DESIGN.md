@@ -1099,12 +1099,77 @@ All old color classes (blue-500, purple-600, indigo-*) have been replaced with N
 - [x] `TestResultsList.tsx` - Nordic sky username
 - [x] `LoadingSpinner.tsx` - Nordic sky spinner
 
-### Phase 3: Button & Card Redesign
+### Phase 3: Button & Card Redesign ✅ COMPLETED
 
-- [ ] Redesign buttons with new hierarchy (larger child buttons)
-- [ ] Update card styles (warmer shadows, nordic-snow backgrounds)
-- [ ] Restyle input fields (nordic-mist borders)
-- [ ] Add new focus ring styles (already using nordic-teal)
+- [x] Created `Button` component (`/components/Button.tsx`)
+  - Variants: `primary-child`, `secondary-child`, `primary`, `secondary`, `success`, `practice`, `danger`
+  - Supports `as` prop for rendering as `<Link>` or `<a>`
+  - Loading state with spinner
+  - Disabled state styling
+  - Layout-only className overrides (w-full, mt-4, etc.)
+- [x] Created `IconButton` component (`/components/IconButton.tsx`)
+  - Variants: `default`, `primary`, `danger`
+  - 40px minimum touch target
+  - Required `aria-label` for accessibility
+- [x] Added comprehensive CSS classes in `globals.css`:
+  - `.btn-primary-child` - 56px, gradient, rounded-2xl
+  - `.btn-secondary-child` - 48px, nordic-snow bg
+  - `.btn-primary` / `.btn-secondary` - Standard 48px buttons
+  - `.btn-success` - Meadow green for positive actions
+  - `.btn-practice` - Cloudberry for practice mode
+  - `.btn-danger` - Coral red for destructive actions
+  - `.btn-icon` / `.btn-icon-primary` / `.btn-icon-danger` - 40px icon buttons
+  - `.card-child` - 20px radius, nordic-snow bg
+  - `.card-parent` - 12px radius, nordic-snow bg
+  - `.card-achievement` - Gradient border effect
+  - `.input-child` - 56px height for little fingers
+- [x] Migrated child components to use Button/IconButton:
+  - `ChildWordSetCard.tsx` - Fixed typo bug, applied card-child class
+  - `TestView.tsx` - All action buttons
+  - `TestResultsView.tsx` - Restart and exit buttons
+  - `PracticeView.tsx` - Navigation and action buttons
+- [x] Migrated parent components:
+  - `ParentWordSetCard.tsx` - Applied card-parent class, IconButtons
+- [x] Migrated page-level buttons:
+  - `not-found.tsx` - Using Button with `as="link"`
+
+#### Button Component Usage
+
+```tsx
+// Primary child button (large, gradient)
+<Button variant="primary-child" onClick={handleStart}>
+  Start Test
+</Button>
+
+// Secondary child button (softer)
+<Button variant="secondary-child" onClick={handleBack}>
+  Go Back
+</Button>
+
+// Button as Next.js Link
+<Button as="link" href="/wordsets" variant="primary">
+  View Word Sets
+</Button>
+
+// Icon button for actions
+<IconButton
+  variant="primary"
+  onClick={handlePlay}
+  aria-label={t('aria.playAudio')}
+>
+  <PlayIcon className="w-4 h-4" />
+</IconButton>
+
+// With loading state
+<Button variant="primary" loading={isSubmitting}>
+  Save Changes
+</Button>
+
+// Layout overrides (only layout classes pass through)
+<Button variant="primary-child" className="w-full mt-4">
+  Full Width Button
+</Button>
+```
 
 ### Phase 4: Tone of Voice
 

@@ -320,9 +320,9 @@ export default function WordSetEditor({
                     onChange={(e) =>
                       setDefaultMode(
                         e.target.value as
-                        | "standard"
-                        | "dictation"
-                        | "translation",
+                          | "standard"
+                          | "dictation"
+                          | "translation",
                       )
                     }
                     className="sr-only"
@@ -364,9 +364,9 @@ export default function WordSetEditor({
                     onChange={(e) =>
                       setDefaultMode(
                         e.target.value as
-                        | "standard"
-                        | "dictation"
-                        | "translation",
+                          | "standard"
+                          | "dictation"
+                          | "translation",
                       )
                     }
                     className="sr-only"
@@ -408,9 +408,9 @@ export default function WordSetEditor({
                     onChange={(e) =>
                       setDefaultMode(
                         e.target.value as
-                        | "standard"
-                        | "dictation"
-                        | "translation",
+                          | "standard"
+                          | "dictation"
+                          | "translation",
                       )
                     }
                     className="sr-only"

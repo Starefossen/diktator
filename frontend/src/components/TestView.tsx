@@ -13,6 +13,7 @@ import {
   CorrectFeedback,
 } from "@/components/SpellingFeedback";
 import { TIMING } from "@/lib/timingConfig";
+import { Button } from "@/components/Button";
 
 interface TestViewProps {
   activeTest: WordSet;
@@ -277,29 +278,28 @@ export function TestView({
             <div className="flex flex-wrap justify-center gap-2 sm:gap-4">
               {/* Play Again Button - Hidden in dictation mode since it auto-plays */}
               {testMode !== "dictation" && (
-                <button
+                <Button
+                  variant="secondary-child"
                   onClick={() => {
                     onPlayCurrentWord();
-                    // Return focus to input after clicking audio
                     setTimeout(() => {
                       inputRef.current?.focus();
                     }, TIMING.INPUT_FOCUS_DELAY_MS);
                   }}
-                  className="flex items-center px-4 py-2 font-semibold text-nordic-midnight transition-colors bg-nordic-sky rounded-lg sm:px-6 sm:py-3 hover:bg-nordic-sky/90"
                   disabled={showFeedback}
                 >
                   <HeroVolumeIcon className="w-4 h-4 sm:mr-2" />
                   <span className="hidden sm:inline">
                     {t("test.playAgain")}
                   </span>
-                </button>
+                </Button>
               )}
 
               {/* Next/Finish Button */}
-              <button
+              <Button
+                variant="primary-child"
                 onClick={onSubmitAnswer}
                 disabled={!userAnswer.trim() || showFeedback}
-                className="px-4 py-2 font-semibold text-nordic-midnight transition-all duration-200 rounded-lg sm:px-6 sm:py-3 bg-linear-to-r from-nordic-meadow to-nordic-sky hover:from-nordic-meadow/90 hover:to-nordic-sky/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="sm:hidden">
                   {currentWordIndex < processedWords.length - 1
@@ -311,18 +311,15 @@ export function TestView({
                     ? t("test.nextWord")
                     : t("test.finishTest")}
                 </span>
-              </button>
+              </Button>
 
               {/* Back Button */}
-              <button
-                onClick={onExitTest}
-                className="px-4 py-2 font-semibold text-gray-600 transition-colors bg-gray-200 rounded-lg sm:px-6 sm:py-3 hover:bg-gray-300"
-              >
+              <Button variant="secondary-child" onClick={onExitTest}>
                 <span className="sm:hidden">{t("test.backMobile")}</span>
                 <span className="hidden sm:inline">
                   {t("test.backToWordSets")}
                 </span>
-              </button>
+              </Button>
             </div>
           </div>
 

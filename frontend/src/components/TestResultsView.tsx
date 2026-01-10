@@ -4,6 +4,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { ScoreIcon, HeroVolumeIcon } from "@/components/Icons";
 import { calculateScores } from "@/lib/scoreCalculator";
+import { Button } from "@/components/Button";
+import { IconButton } from "@/components/IconButton";
 
 interface TestResultsViewProps {
   activeTest: WordSet;
@@ -197,9 +199,11 @@ export function TestResultsView({
                       )}
                     </div>
                   </div>
-                  <button
+                  <IconButton
+                    variant="default"
                     onClick={() => onPlayAudio(answer.word)}
-                    className={`px-3 py-1 transition-colors rounded ml-2 shrink-0 ${
+                    aria-label={`Play pronunciation of ${answer.word}`}
+                    className={`ml-2 shrink-0 ${
                       isCorrectFirstTry
                         ? "text-green-700 bg-green-100 hover:bg-green-200"
                         : isCorrectMultipleTries
@@ -216,7 +220,7 @@ export function TestResultsView({
                             : "text-red-700"
                       }`}
                     />
-                  </button>
+                  </IconButton>
                 </div>
               );
             })}
@@ -224,18 +228,12 @@ export function TestResultsView({
         </div>
 
         <div className="flex justify-center gap-4">
-          <button
-            onClick={onRestart}
-            className="px-6 py-3 font-semibold text-nordic-midnight transition-all duration-200 rounded-lg bg-linear-to-r from-nordic-sky to-nordic-teal hover:from-nordic-sky/90 hover:to-nordic-teal/90"
-          >
+          <Button variant="primary-child" onClick={onRestart}>
             {t("test.restart")}
-          </button>
-          <button
-            onClick={onExit}
-            className="px-6 py-3 font-semibold text-white transition-colors bg-gray-500 rounded-lg hover:bg-gray-600"
-          >
+          </Button>
+          <Button variant="secondary-child" onClick={onExit}>
             {t("test.backToWordSets")}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

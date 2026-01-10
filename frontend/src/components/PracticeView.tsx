@@ -12,6 +12,7 @@ import {
   HeroPlayIcon,
   HeroXMarkIcon,
 } from "@/components/Icons";
+import { Button } from "@/components/Button";
 
 interface PracticeViewProps {
   practiceMode: WordSet;
@@ -176,10 +177,10 @@ export function PracticeView({
 
             {/* Navigation Controls */}
             <div className="flex flex-wrap justify-center gap-4">
-              <button
+              <Button
+                variant="secondary-child"
                 onClick={onPrevious}
                 disabled={currentPracticeIndex === 0}
-                className="flex items-center px-4 py-2 font-medium text-gray-700 transition-colors bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg
                   className="w-4 h-4 mr-2"
@@ -195,11 +196,8 @@ export function PracticeView({
                   />
                 </svg>
                 {t("wordsets.practice.previous")}
-              </button>
-              <button
-                onClick={onShuffle}
-                className="flex items-center px-4 py-2 font-medium text-nordic-midnight transition-colors bg-nordic-sky rounded-lg hover:bg-nordic-sky/90"
-              >
+              </Button>
+              <Button variant="secondary-child" onClick={onShuffle}>
                 <svg
                   className="w-4 h-4 mr-2"
                   fill="none"
@@ -214,11 +212,11 @@ export function PracticeView({
                   />
                 </svg>
                 {t("wordsets.practice.shuffle")}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary-child"
                 onClick={onNext}
                 disabled={currentPracticeIndex === practiceWords.length - 1}
-                className="flex items-center px-4 py-2 font-medium text-gray-700 transition-colors bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t("wordsets.practice.next")}
                 <svg
@@ -234,26 +232,23 @@ export function PracticeView({
                     d="M9 5l7 7-7 7"
                   />
                 </svg>
-              </button>
+              </Button>
             </div>
 
             {/* Action Buttons */}
             <div className="flex flex-wrap justify-center gap-4 mt-8">
-              <button
+              <Button
+                variant="primary-child"
                 onClick={() => onStartTest(practiceMode)}
-                className="flex items-center px-6 py-3 font-semibold text-nordic-midnight transition-all duration-200 rounded-lg shadow-lg bg-linear-to-r from-nordic-meadow to-nordic-sky hover:from-nordic-meadow/90 hover:to-nordic-sky/90 hover:shadow-xl hover:scale-105"
               >
                 <HeroPlayIcon className="w-5 h-5 mr-2" />
                 {t("wordsets.startTest")}
-              </button>
+              </Button>
 
-              <button
-                onClick={onExit}
-                className="flex items-center px-6 py-3 font-medium text-gray-700 transition-colors bg-gray-200 rounded-lg hover:bg-gray-300"
-              >
+              <Button variant="secondary-child" onClick={onExit}>
                 <HeroXMarkIcon className="w-5 h-5 mr-2" />
                 {t("wordsets.cancel")}
-              </button>
+              </Button>
             </div>
           </div>
 

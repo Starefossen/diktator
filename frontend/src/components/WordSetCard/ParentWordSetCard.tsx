@@ -15,6 +15,7 @@ import {
 } from "@/components/Icons";
 import { FlagIcon } from "@/components/FlagIcon";
 import { hasAudioAvailable } from "@/lib/audioPlayer";
+import { IconButton } from "@/components/IconButton";
 
 interface ParentWordSetCardProps {
   wordSet: WordSet;
@@ -71,7 +72,7 @@ export function ParentWordSetCard({
   const assignmentCount = wordSet.assignedUserIds?.length || 0;
 
   return (
-    <div className="flex flex-col p-6 transition-shadow duration-200 bg-white border border-gray-100 rounded-lg shadow-lg hover:shadow-xl">
+    <div className="card-parent flex flex-col p-6 transition-shadow duration-200 hover:shadow-xl">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -127,13 +128,12 @@ export function ParentWordSetCard({
                 <div className="flex items-center gap-2">
                   {child.score && (
                     <span
-                      className={`px-2 py-1 rounded-full font-medium ${
-                        child.score >= 90
+                      className={`px-2 py-1 rounded-full font-medium ${child.score >= 90
                           ? "text-amber-700 bg-nordic-sunrise/20"
                           : child.score >= 70
                             ? "text-emerald-700 bg-nordic-meadow/20"
                             : "text-orange-700 bg-nordic-cloudberry/20"
-                      }`}
+                        }`}
                     >
                       {child.score}%
                     </span>
@@ -183,9 +183,8 @@ export function ParentWordSetCard({
                   aria-label={`Play pronunciation of ${wordItem.word}`}
                 >
                   <HeroVolumeIcon
-                    className={`w-3 h-3 mr-1 ${
-                      hasGeneratedAudio ? "text-nordic-sky" : "text-gray-500"
-                    }`}
+                    className={`w-3 h-3 mr-1 ${hasGeneratedAudio ? "text-nordic-sky" : "text-gray-500"
+                      }`}
                     aria-hidden="true"
                   />
                   {wordItem.word}
@@ -213,17 +212,17 @@ export function ParentWordSetCard({
       </div>
 
       {/* Action Buttons - Parent Focused */}
-      <div className="flex flex-wrap gap-2 pt-4 mt-auto">
-        <div className="inline-flex flex-1 rounded-md shadow-xs">
+      <div className="flex flex-wrap items-stretch gap-2 pt-4 mt-auto">
+        <div className="inline-flex flex-1 rounded-xl shadow-xs">
           <button
             onClick={() => onStartTest(wordSet)}
-            className="relative inline-flex items-center justify-center flex-1 px-3 py-2 text-sm font-semibold text-nordic-midnight transition-all duration-200 rounded-l-md bg-linear-to-r from-nordic-meadow to-nordic-sky hover:from-nordic-meadow/90 hover:to-nordic-sky/90 focus:z-10"
+            className="relative inline-flex items-center justify-center flex-1 px-3 min-h-10 text-sm font-semibold text-nordic-midnight transition-all duration-200 rounded-l-xl bg-linear-to-r from-nordic-meadow to-nordic-sky hover:from-nordic-meadow/90 hover:to-nordic-sky/90 focus:z-10"
           >
             <HeroPlayIcon className="w-4 h-4 mr-1" />
             {t("wordsets.startTest")}
           </button>
           <Menu as="div" className="relative block -ml-px">
-            <MenuButton className="relative inline-flex items-center px-2 py-2 text-nordic-midnight rounded-r-md bg-linear-to-r from-nordic-meadow to-nordic-sky hover:from-nordic-meadow/90 hover:to-nordic-sky/90 focus:z-10">
+            <MenuButton className="relative inline-flex items-center h-full px-2 text-nordic-midnight rounded-r-xl bg-linear-to-r from-nordic-meadow to-nordic-sky hover:from-nordic-meadow/90 hover:to-nordic-sky/90 focus:z-10">
               <span className="sr-only">Open options</span>
               <ChevronDownIcon aria-hidden="true" className="w-5 h-5" />
             </MenuButton>
@@ -265,22 +264,23 @@ export function ParentWordSetCard({
         </div>
 
         {onViewAnalytics && (
-          <button
+          <IconButton
+            variant="primary"
             onClick={() => onViewAnalytics(wordSet)}
-            className="flex items-center justify-center px-3 py-2 text-sm font-medium text-nordic-midnight transition-all duration-200 bg-nordic-sky rounded-lg shadow-md hover:bg-nordic-sky/90 hover:shadow-lg"
-            title="Analytics"
+            aria-label="Analytics"
           >
             <HeroChartBarIcon className="w-4 h-4" />
-          </button>
+          </IconButton>
         )}
 
-        <button
+        <IconButton
+          variant="primary"
           onClick={() => onStartPractice(wordSet)}
-          className="flex items-center justify-center px-3 py-2 text-sm font-medium text-white transition-all duration-200 bg-nordic-cloudberry rounded-lg shadow-md hover:bg-nordic-cloudberry/90 hover:shadow-lg"
-          title={t("wordsets.practice.buttonTooltip")}
+          aria-label={t("wordsets.practice.buttonTooltip")}
+          className="bg-nordic-cloudberry hover:bg-nordic-cloudberry/90"
         >
           <HeroBookIcon className="w-4 h-4" />
-        </button>
+        </IconButton>
       </div>
     </div>
   );
