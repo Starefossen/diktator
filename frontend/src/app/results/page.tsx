@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { TestResult, WordSet, FamilyProgress } from "@/types";
@@ -23,6 +24,7 @@ import {
 export default function ResultsPage() {
   const { t } = useLanguage();
   const { userData } = useAuth();
+  const searchParams = useSearchParams();
   const [results, setResults] = useState<TestResult[]>([]);
   const [wordSets, setWordSets] = useState<WordSet[]>([]);
   const [familyProgress, setFamilyProgress] = useState<FamilyProgress[]>([]);
@@ -35,6 +37,7 @@ export default function ResultsPage() {
   >("all");
 
   const isParent = userData?.role === "parent";
+  const isNewResult = searchParams.get("new") === "true";
 
   // Helper function for interpolated translations
   const interpolate = (
@@ -276,10 +279,10 @@ export default function ResultsPage() {
                     </h3>
                     <div
                       className={`w-6 h-6 rounded-full flex items-center justify-center ${stats.improvementTrend > 0
-                          ? "bg-nordic-meadow/20 text-nordic-meadow"
-                          : stats.improvementTrend < 0
-                            ? "bg-red-100 text-red-600"
-                            : "bg-gray-100 text-gray-600"
+                        ? "bg-nordic-meadow/20 text-nordic-meadow"
+                        : stats.improvementTrend < 0
+                          ? "bg-red-100 text-red-600"
+                          : "bg-gray-100 text-gray-600"
                         }`}
                     >
                       {stats.improvementTrend > 0 ? (
@@ -293,10 +296,10 @@ export default function ResultsPage() {
                   </div>
                   <p
                     className={`text-3xl font-bold ${stats.improvementTrend > 0
-                        ? "text-nordic-meadow"
-                        : stats.improvementTrend < 0
-                          ? "text-red-600"
-                          : "text-gray-600"
+                      ? "text-nordic-meadow"
+                      : stats.improvementTrend < 0
+                        ? "text-red-600"
+                        : "text-gray-600"
                       }`}
                   >
                     {stats.improvementTrend > 0 ? "+" : ""}
@@ -491,6 +494,7 @@ export default function ResultsPage() {
                 <TestResultsList
                   results={filteredResults}
                   wordSets={wordSets}
+                  isNewResult={isNewResult}
                 />
 
                 {filteredResults.length === 0 && (

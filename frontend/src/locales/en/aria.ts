@@ -103,4 +103,8 @@ export const aria = {
   // Curated word sets
   "aria.browseCuratedSets": "Browse official word sets from Stavle",
   "aria.curatedWordSet": "Official word set",
+
+  // Child results
+  "aria.toggleWordDetails": "Show or hide word details",
+  "aria.tryAgain": "Try this word set again",
 };

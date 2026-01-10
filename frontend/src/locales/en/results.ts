@@ -157,4 +157,17 @@ export const results = {
   "results.empty.noTestsMessage":
     "Once you take some spelling tests, you'll see all your progress right here. Ready to start?",
   "results.empty.startFirstTest": "Let's Go!",
+
+  // Child-friendly labels
+  "results.child.amazing": "Amazing!",
+  "results.child.nice": "Nice!",
+  "results.child.keepPracticing": "Keep practicing!",
+  "results.child.today": "Today",
+  "results.child.yesterday": "Yesterday",
+  "results.child.daysAgo": "days ago",
+  "results.child.outOf": "out of",
+  "results.child.wordsCorrect": "words correct",
+  "results.child.seeWords": "See which words",
+  "results.child.hideWords": "Hide words",
+  "results.child.tryAgain": "Try again",
 };

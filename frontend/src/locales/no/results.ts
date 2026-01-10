@@ -157,4 +157,17 @@ export const results = {
   "results.empty.noTestsMessage":
     "Når du tar noen stavetester, vil du se all fremgangen din her. Klar til å starte?",
   "results.empty.startFirstTest": "La oss begynne!",
+
+  // Child-friendly labels
+  "results.child.amazing": "Fantastisk!",
+  "results.child.nice": "Bra!",
+  "results.child.keepPracticing": "Fortsett å øve!",
+  "results.child.today": "I dag",
+  "results.child.yesterday": "I går",
+  "results.child.daysAgo": "dager siden",
+  "results.child.outOf": "av",
+  "results.child.wordsCorrect": "ord riktig",
+  "results.child.seeWords": "Se hvilke ord",
+  "results.child.hideWords": "Skjul ord",
+  "results.child.tryAgain": "Prøv igjen",
 };

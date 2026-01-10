@@ -103,4 +103,8 @@ export const aria = {
   // Curated word sets
   "aria.browseCuratedSets": "Se offisielle ordsett fra Stavle",
   "aria.curatedWordSet": "Offisielt ordsett",
+
+  // Child results
+  "aria.toggleWordDetails": "Vis eller skjul orddetaljer",
+  "aria.tryAgain": "Prøv dette ordsettet igjen",
 };

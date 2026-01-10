@@ -1,9 +1,19 @@
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { axe } from "vitest-axe";
 import TestResultsList from "../TestResultsList";
 import { TestResult, WordSet } from "@/types";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+
+// Mock useAuth to avoid requiring AuthProvider
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({
+    userData: { role: "parent" },
+    user: null,
+    loading: false,
+    error: null,
+  }),
+}));
 
 const mockWordSets: WordSet[] = [
   {
