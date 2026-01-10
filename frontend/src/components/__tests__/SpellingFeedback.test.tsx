@@ -58,7 +58,7 @@ describe("SpellingFeedback", () => {
 
     it("shows 'almost there' badge when isAlmostCorrect is true", () => {
       renderWithLanguage(<SpellingFeedback {...baseProps} />);
-      expect(screen.getByText(/almost/i)).toBeInTheDocument();
+      expect(screen.getByText(/so close/i)).toBeInTheDocument();
     });
 
     it("does not show 'almost there' badge when isAlmostCorrect is false", () => {
@@ -70,7 +70,7 @@ describe("SpellingFeedback", () => {
         },
       };
       renderWithLanguage(<SpellingFeedback {...propsNotClose} />);
-      expect(screen.queryByText(/almost/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/so close/i)).not.toBeInTheDocument();
     });
   });
 
@@ -84,10 +84,13 @@ describe("SpellingFeedback", () => {
 
     it("shows color legend", () => {
       renderWithLanguage(<SpellingFeedback {...baseProps} />);
-      // Legend has "Correct", "Wrong", "Missing" labels
-      // Note: "Incorrect" also appears in header so we use getAllByText
-      expect(screen.getAllByText(/correct/i).length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByText(/wrong/i).length).toBeGreaterThanOrEqual(1);
+      // Legend has "Nailed it", "Not quite", "Missing" labels
+      expect(screen.getAllByText(/nailed it/i).length).toBeGreaterThanOrEqual(
+        1,
+      );
+      expect(screen.getAllByText(/not quite/i).length).toBeGreaterThanOrEqual(
+        1,
+      );
       expect(screen.getAllByText(/missing/i).length).toBeGreaterThanOrEqual(1);
     });
 
@@ -189,8 +192,8 @@ describe("SpellingFeedback", () => {
   describe("Norwegian language support", () => {
     it("renders in Norwegian when language is set to no", () => {
       renderWithLanguage(<SpellingFeedback {...baseProps} />, "no");
-      // Check for Norwegian text - "Feil" means "Incorrect" and appears in header and legend
-      expect(screen.getAllByText(/feil/i).length).toBeGreaterThanOrEqual(1);
+      // Check for Norwegian text - "Nesten" means "Almost/Not quite" and appears in header
+      expect(screen.getAllByText(/nesten/i).length).toBeGreaterThanOrEqual(1);
     });
 
     it("shows Norwegian hint text", () => {

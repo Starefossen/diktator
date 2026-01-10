@@ -1171,13 +1171,15 @@ All old color classes (blue-500, purple-600, indigo-*) have been replaced with N
 </Button>
 ```
 
-### Phase 4: Tone of Voice
+### Phase 4: Tone of Voice ✅ COMPLETED
 
-- [ ] Audit all i18n strings
-- [ ] Rewrite error messages (softer tone)
-- [ ] Add graduated success messages
-- [ ] Update empty state copy
-- [ ] Add personality to loading states
+- [x] Audit all i18n strings
+- [x] Rewrite error messages (softer tone)
+- [x] Add graduated success messages (score-tier based: 90%+ excellent, 80-89% great, 70-79% good, <70% keepGoing)
+- [x] Update empty state copy (inviting, encouraging language)
+- [x] Add personality to loading states
+- [x] Create TestResultsView tests (graduated message logic, accessibility)
+- [x] Create TestResultsList tests (empty state, results display)
 
 ### Phase 5: Stavle Integration
 

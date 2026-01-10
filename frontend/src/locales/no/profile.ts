@@ -1,8 +1,9 @@
 export const profile = {
   // Page title and navigation
   "profile.title": "Min Profil",
-  "profile.loading": "Laster profil...",
-  "profile.error.load": "Kunne ikke laste profildata",
+  "profile.loading": "Henter profilen din...",
+  "profile.error.load":
+    "Oi! Vi klarte ikke laste profilen. La oss prøve igjen!",
   "profile.retry": "Prøv Igjen",
 
   // Settings page
@@ -16,7 +17,7 @@ export const profile = {
   "profile.settings.cancel": "Avbryt",
   "profile.settings.saving": "Lagrer...",
   "profile.settings.success": "Visningsnavn oppdatert!",
-  "profile.settings.error": "Kunne ikke oppdatere visningsnavn. Prøv igjen.",
+  "profile.settings.error": "Kunne ikke lagre endringene. Prøv igjen!",
   "profile.settings.validation.required": "Navn er påkrevd",
   "profile.settings.validation.tooShort": "Navn må være minst 1 tegn",
   "profile.settings.validation.tooLong": "Navn kan ikke være mer enn 100 tegn",
@@ -68,6 +69,6 @@ export const profile = {
   // Empty states
   "profile.noResults": "Ingen testresultater ennå",
   "profile.noResults.subtitle":
-    "Start å ta stavetester for å se fremgangen din her",
-  "profile.startTesting": "Start Testing",
+    "Ta noen stavetester, så viser fremgangen din her!",
+  "profile.startTesting": "La oss begynne!",
 };

@@ -2,8 +2,8 @@ export const results = {
   // Page title and navigation
   "results.title": "Test Results",
   "results.desc": "Detailed analysis of your spelling test performance",
-  "results.loading": "Loading results...",
-  "results.error.load": "Failed to load test results",
+  "results.loading": "Getting your results ready...",
+  "results.error.load": "Oops! We couldn't load your results. Let's try again!",
   "results.retry": "Try Again",
 
   // Overall statistics
@@ -43,8 +43,9 @@ export const results = {
 
   // Test history
   "results.history.title": "Test History",
-  "results.history.noResults": "No test results found",
-  "results.history.noResultsFiltered": "No results match your current filters",
+  "results.history.noResults": "No results here yet — time to take a test!",
+  "results.history.noResultsFiltered":
+    "No results match these filters. Try adjusting them!",
   "results.history.wordSetTest": "Word Set Test",
   "results.history.score": "Score",
   "results.history.time": "Time",
@@ -71,9 +72,10 @@ export const results = {
   "results.time.hours": "hours",
 
   // Empty states
-  "results.empty.title": "No Test Results",
-  "results.empty.subtitle": "You haven't taken any spelling tests yet",
-  "results.empty.cta": "Take Your First Test",
+  "results.empty.title": "No Test Results Yet",
+  "results.empty.subtitle":
+    "Ready to try your first spelling test? It'll be fun!",
+  "results.empty.cta": "Start Your First Test",
 
   // Performance indicators
   "results.performance.excellent": "Excellent",
@@ -138,9 +140,9 @@ export const results = {
 
   // Results list
   "results.list.title": "Test Results",
-  "results.list.noResultsTitle": "No results found",
+  "results.list.noResultsTitle": "Nothing here yet!",
   "results.list.noResultsMessage":
-    "Try adjusting your filters to see more results.",
+    "Adjust your filters or take more tests to see results here.",
 
   // Achievements
   "results.achievement.spellingChampion": "Spelling Champion",
@@ -151,8 +153,8 @@ export const results = {
     "Completed {count} spelling tests",
 
   // Empty state
-  "results.empty.noTestsTitle": "No Test Results Yet",
+  "results.empty.noTestsTitle": "Your Results Await!",
   "results.empty.noTestsMessage":
-    "Start taking spelling tests to track your progress and see detailed results here.",
-  "results.empty.startFirstTest": "Start Your First Test",
+    "Once you take some spelling tests, you'll see all your progress right here. Ready to start?",
+  "results.empty.startFirstTest": "Let's Go!",
 };

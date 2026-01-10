@@ -12,8 +12,8 @@ export const test = {
   // Test interface
   "test.listenToWordMobile": "Trykk for å høre",
   "test.listenToWord": "Klikk for å høre ordet",
-  "test.incorrect": "Feil",
-  "test.tryAgain": "Prøv igjen",
+  "test.incorrect": "Nesten...",
+  "test.tryAgain": "Prøv en gang til!",
   "test.typeWordHere": "Skriv ordet her...",
   "test.attemptsRemaining": "forsøk gjenstår",
   "test.playAgain": "Spill igjen",
@@ -33,12 +33,20 @@ export const test = {
   "test.translateToTarget": "Oversett til",
   "test.translateToSource": "Oversett til",
 
+  // Graduated success messages (with {score} interpolation)
+  "test.results.excellent":
+    "Fantastisk! {score}% riktig! Du er en stavemester!",
+  "test.results.great": "Kjempebra! {score}% — du blir virkelig god på dette!",
+  "test.results.good": "Godt jobba! {score}% — øvelse gjør mester!",
+  "test.results.keepGoing":
+    "Fortsett sånn! {score}% — hvert ord du lærer er fremgang!",
+
   // Spelling feedback
-  "test.feedback.correct": "Riktig",
-  "test.feedback.wrong": "Feil",
+  "test.feedback.correct": "Helt riktig!",
+  "test.feedback.wrong": "Ikke helt",
   "test.feedback.missing": "Mangler",
-  "test.feedback.almostThere": "Nesten!",
-  "test.feedback.correctAnswer": "Riktig svar",
+  "test.feedback.almostThere": "Nesten der!",
+  "test.feedback.correctAnswer": "Svaret var",
 
   // Spelling hints (Norwegian Bokmål patterns)
   "test.hint.doubleConsonant": "Sjekk om det skal være dobbel konsonant",

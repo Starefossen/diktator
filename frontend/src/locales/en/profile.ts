@@ -1,8 +1,8 @@
 export const profile = {
   // Page title and navigation
   "profile.title": "My Profile",
-  "profile.loading": "Loading profile...",
-  "profile.error.load": "Failed to load profile data",
+  "profile.loading": "Getting your profile ready...",
+  "profile.error.load": "Oops! We couldn't load your profile. Let's try again!",
   "profile.retry": "Try Again",
 
   // Settings page
@@ -16,7 +16,7 @@ export const profile = {
   "profile.settings.cancel": "Cancel",
   "profile.settings.saving": "Saving...",
   "profile.settings.success": "Display name updated successfully!",
-  "profile.settings.error": "Failed to update display name. Please try again.",
+  "profile.settings.error": "Couldn't save your changes. Give it another try!",
   "profile.settings.validation.required": "Name is required",
   "profile.settings.validation.tooShort": "Name must be at least 1 character",
   "profile.settings.validation.tooLong":
@@ -69,6 +69,6 @@ export const profile = {
   // Empty states
   "profile.noResults": "No test results yet",
   "profile.noResults.subtitle":
-    "Start taking spelling tests to see your progress here",
-  "profile.startTesting": "Start Testing",
+    "Take some spelling tests and your progress will show up here!",
+  "profile.startTesting": "Let's Go!",
 };

@@ -2,8 +2,9 @@ export const results = {
   // Page title and navigation
   "results.title": "Testresultater",
   "results.desc": "Detaljert analyse av dine stavetest-prestasjoner",
-  "results.loading": "Laster resultater...",
-  "results.error.load": "Kunne ikke laste testresultater",
+  "results.loading": "Henter resultatene dine...",
+  "results.error.load":
+    "Oi! Vi klarte ikke å laste resultatene. La oss prøve igjen!",
   "results.retry": "Prøv Igjen",
 
   // Overall statistics
@@ -43,9 +44,10 @@ export const results = {
 
   // Test history
   "results.history.title": "Testhistorikk",
-  "results.history.noResults": "Ingen testresultater funnet",
+  "results.history.noResults":
+    "Ingen resultater her ennå — på tide med en test!",
   "results.history.noResultsFiltered":
-    "Ingen resultater samsvarer med dine nåværende filtre",
+    "Ingen resultater passer disse filtrene. Prøv å justere dem!",
   "results.history.wordSetTest": "Ordsett-test",
   "results.history.score": "Score",
   "results.history.time": "Tid",
@@ -72,9 +74,9 @@ export const results = {
   "results.time.hours": "timer",
 
   // Empty states
-  "results.empty.title": "Ingen Testresultater",
-  "results.empty.subtitle": "Du har ikke tatt noen stavetester ennå",
-  "results.empty.cta": "Ta Din Første Test",
+  "results.empty.title": "Ingen Testresultater Ennå",
+  "results.empty.subtitle": "Klar for din første stavetest? Det blir gøy!",
+  "results.empty.cta": "Start Din Første Test",
 
   // Performance indicators
   "results.performance.excellent": "Utmerket",
@@ -139,9 +141,9 @@ export const results = {
 
   // Results list
   "results.list.title": "Testresultater",
-  "results.list.noResultsTitle": "Ingen resultater funnet",
+  "results.list.noResultsTitle": "Ingenting her ennå!",
   "results.list.noResultsMessage":
-    "Prøv å justere filtrene dine for å se flere resultater.",
+    "Juster filtrene eller ta flere tester for å se resultater her.",
 
   // Achievements
   "results.achievement.spellingChampion": "Stavemester",
@@ -151,8 +153,8 @@ export const results = {
   "results.achievement.dedicatedLearnerDesc": "Fullført {count} stavetester",
 
   // Empty state
-  "results.empty.noTestsTitle": "Ingen Testresultater Ennå",
+  "results.empty.noTestsTitle": "Resultatene dine venter!",
   "results.empty.noTestsMessage":
-    "Start å ta stavetester for å spore fremgangen din og se detaljerte resultater her.",
-  "results.empty.startFirstTest": "Start Din Første Test",
+    "Når du tar noen stavetester, vil du se all fremgangen din her. Klar til å starte?",
+  "results.empty.startFirstTest": "La oss begynne!",
 };

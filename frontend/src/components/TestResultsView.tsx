@@ -6,6 +6,7 @@ import { ScoreIcon, HeroVolumeIcon } from "@/components/Icons";
 import { calculateScores } from "@/lib/scoreCalculator";
 import { Button } from "@/components/Button";
 import { IconButton } from "@/components/IconButton";
+import { en } from "@/locales/en";
 
 interface TestResultsViewProps {
   activeTest: WordSet;
@@ -13,6 +14,15 @@ interface TestResultsViewProps {
   onRestart: () => void;
   onExit: () => void;
   onPlayAudio: (word: string) => void;
+}
+
+type TranslationKey = keyof typeof en;
+
+export function getScoreMessageKey(score: number): TranslationKey {
+  if (score >= 90) return "test.results.excellent";
+  if (score >= 80) return "test.results.great";
+  if (score >= 70) return "test.results.good";
+  return "test.results.keepGoing";
 }
 
 export function TestResultsView({
@@ -27,8 +37,20 @@ export function TestResultsView({
   const isParent = userData?.role === "parent";
 
   const scoreBreakdown = calculateScores(answers);
-  // Use weighted score for display (100% only if all first attempt)
   const score = scoreBreakdown.weightedScore;
+
+  const interpolate = (
+    key: TranslationKey,
+    variables: Record<string, string | number>,
+  ): string => {
+    let translation = t(key);
+    Object.entries(variables).forEach(([variable, value]) => {
+      translation = translation.replace(`{${variable}}`, String(value));
+    });
+    return translation;
+  };
+
+  const scoreMessage = interpolate(getScoreMessageKey(score), { score });
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-nordic-birch">
@@ -55,6 +77,12 @@ export function TestResultsView({
             </div>
             <div className="text-gray-600">{t("test.correct")}</div>
           </div>
+        </div>
+
+        <div className="mb-8 text-center">
+          <p className="text-lg font-medium text-nordic-midnight">
+            {scoreMessage}
+          </p>
         </div>
 
         {/* Detailed breakdown for parents */}
@@ -96,8 +124,8 @@ export function TestResultsView({
               </div>
             </div>
             {scoreBreakdown.isPerfect && (
-              <div className="mt-3 text-sm text-center text-green-600">
-                ⭐ {t("test.perfectScore")}
+              <div className="mt-3 text-sm text-center text-nordic-meadow font-medium">
+                {t("test.perfectScore")}
               </div>
             )}
           </div>

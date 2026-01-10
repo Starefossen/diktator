@@ -1,8 +1,8 @@
 export const common = {
   // Basic terms
   score: "Score",
-  correct: "Correct!",
-  "common.error": "Error",
+  correct: "Nailed it!",
+  "common.error": "Oops!",
   "common.words": "words",
   "common.back": "Back",
   "common.of": "of",
@@ -29,7 +29,7 @@ export const common = {
   listen: "Listen",
   "type.word.here": "Type the word here...",
   "check.spelling": "Check Spelling",
-  "not.quite": "Not quite! The correct spelling is:",
+  "not.quite": "Almost! The correct spelling is:",
 
   // PWA Install and Updates
   "pwa.install.title": "Install Diktator",

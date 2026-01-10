@@ -306,8 +306,8 @@ describe("TestView - Mode-Specific Behavior", () => {
         lastUserAnswer: "hell", // Missing one letter
       };
       renderTestView(baseWordSet, "standard", props);
-      // Should show almost there badge for close answer
-      expect(screen.getByText(/almost/i)).toBeInTheDocument();
+      // Should show "So close!" badge for close answer
+      expect(screen.getByText(/so close/i)).toBeInTheDocument();
     });
 
     it("does not show spelling feedback when lastUserAnswer is not provided", () => {

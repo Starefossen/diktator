@@ -12,8 +12,8 @@ export const test = {
   // Test interface
   "test.listenToWordMobile": "Tap to hear",
   "test.listenToWord": "Click to hear the word",
-  "test.incorrect": "Incorrect",
-  "test.tryAgain": "Try again",
+  "test.incorrect": "Not quite...",
+  "test.tryAgain": "Give it another go!",
   "test.typeWordHere": "Type the word here...",
   "test.attemptsRemaining": "attempts remaining",
   "test.playAgain": "Play Again",
@@ -33,12 +33,21 @@ export const test = {
   "test.translateToTarget": "Translate to",
   "test.translateToSource": "Translate to",
 
+  // Graduated success messages (with {score} interpolation)
+  "test.results.excellent":
+    "Amazing! {score}% correct! You're a spelling star!",
+  "test.results.great":
+    "Great job! {score}% — you're really getting the hang of this!",
+  "test.results.good": "Good effort! {score}% — practice makes perfect!",
+  "test.results.keepGoing":
+    "Keep going! {score}% — every word you learn is progress!",
+
   // Spelling feedback
-  "test.feedback.correct": "Correct",
-  "test.feedback.wrong": "Wrong",
+  "test.feedback.correct": "Nailed it!",
+  "test.feedback.wrong": "Not quite",
   "test.feedback.missing": "Missing",
-  "test.feedback.almostThere": "Almost!",
-  "test.feedback.correctAnswer": "Correct answer",
+  "test.feedback.almostThere": "So close!",
+  "test.feedback.correctAnswer": "The answer was",
 
   // Spelling hints (Norwegian Bokmål patterns - still relevant for learning Norwegian)
   "test.hint.doubleConsonant": "Check if there should be a double consonant",
