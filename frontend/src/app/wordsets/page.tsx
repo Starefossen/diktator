@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect, Suspense } from "react";
+import React, { useState, useCallback, useEffect, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -83,8 +83,16 @@ function WordSetsPageContent() {
   // Audio state for word list
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
 
+  // Track explicit exits to prevent useEffect from re-starting modes
+  const isExitingRef = useRef(false);
+
   // Handle URL-based navigation for test/practice modes
   useEffect(() => {
+    // Skip if we're in the process of exiting
+    if (isExitingRef.current) {
+      return;
+    }
+
     if (view === "test" && wordSetId && mode) {
       // Find and start test
       const wordSet = wordSets.find((ws) => ws.id === wordSetId);
@@ -99,6 +107,13 @@ function WordSetsPageContent() {
       }
     }
   }, [view, wordSetId, mode, wordSets, testMode, practiceMode]);
+
+  // Reset exiting flag when URL params clear
+  useEffect(() => {
+    if (!view) {
+      isExitingRef.current = false;
+    }
+  }, [view]);
 
   // Load personalization data when component mounts or userData changes
   useEffect(() => {
@@ -264,14 +279,25 @@ function WordSetsPageContent() {
           onPlayAudio={practiceMode.playPracticeWordAudio}
           onShuffle={practiceMode.shufflePracticeWords}
           onStartTest={(wordSet) => {
+            // Set flag to prevent useEffect from re-starting practice
+            isExitingRef.current = true;
             // Exit practice and show mode selection modal
             practiceMode.exitPractice();
             setSelectedWordSetForTest(wordSet);
             setModeSelectionOpen(true);
+            // Clear URL params if present
+            if (view === "practice") {
+              router.replace("/wordsets");
+            }
           }}
           onExit={() => {
+            // Set flag to prevent useEffect from re-starting practice
+            isExitingRef.current = true;
             practiceMode.exitPractice();
-            router.push("/wordsets");
+            // Clear URL params if present
+            if (view === "practice") {
+              router.replace("/wordsets");
+            }
           }}
         />
       </ProtectedRoute>
@@ -287,8 +313,13 @@ function WordSetsPageContent() {
           answers={testMode.answers}
           onRestart={testMode.restartTest}
           onExit={() => {
+            // Set flag to prevent useEffect from re-starting test
+            isExitingRef.current = true;
             testMode.exitTest();
-            router.push("/wordsets");
+            // Clear URL params if present
+            if (view === "test") {
+              router.replace("/wordsets");
+            }
           }}
           onPlayAudio={testMode.playTestWordAudio}
         />
@@ -317,8 +348,13 @@ function WordSetsPageContent() {
           onSubmitAnswer={testMode.handleSubmitAnswer}
           onPlayCurrentWord={testMode.playCurrentWord}
           onExitTest={() => {
+            // Set flag to prevent useEffect from re-starting test
+            isExitingRef.current = true;
             testMode.exitTest();
-            router.push("/wordsets");
+            // Clear URL params if present
+            if (view === "test") {
+              router.replace("/wordsets");
+            }
           }}
         />
       </ProtectedRoute>
@@ -328,7 +364,7 @@ function WordSetsPageContent() {
   // Main word sets list view
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-nordic-birch">
+      <div className="bg-nordic-birch">
         <div className="container px-4 py-8 mx-auto">
           <div className="mb-8">
             <h1 className="mb-4 text-4xl font-bold text-transparent bg-linear-to-r from-nordic-sky to-nordic-teal bg-clip-text">
@@ -439,7 +475,7 @@ function WordSetsPageContent() {
         />
 
         {/* Footer */}
-        <footer className="pb-4 mt-12 text-center">
+        <footer className="py-4 text-center">
           <div className="text-xs text-gray-400">
             Build:{" "}
             {process.env.NEXT_PUBLIC_BUILD_TIME || new Date().toISOString()}

@@ -80,7 +80,7 @@ export function ChildWordSetCard({
       )}
 
       {/* Header - Big friendly name */}
-      <div className="flex items-start gap-3 mb-3">
+      <div className="flex items-start gap-3 mb-4">
         <FlagIcon
           language={wordSet.language as "no" | "en"}
           className="w-8 h-8 shrink-0 mt-1"
@@ -89,35 +89,35 @@ export function ChildWordSetCard({
           <h3 className="text-xl font-bold text-nordic-midnight leading-tight">
             {wordSet.name}
           </h3>
-          <p className="text-base text-gray-600 mt-0.5">
-            {wordSet.words.length}{" "}
-            {wordSet.words.length === 1
-              ? t("results.word")
-              : t("wordsets.words.count")}
-          </p>
+          {/* Word count and score on same line */}
+          <div className="flex items-center gap-3 mt-1">
+            <span className="text-base text-gray-600">
+              {wordSet.words.length}{" "}
+              {wordSet.words.length === 1
+                ? t("results.word")
+                : t("wordsets.words.count")}
+            </span>
+            {/* Score badge inline */}
+            {performance ? (
+              <div
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-bold rounded-lg ${performance.color}`}
+              >
+                <performance.icon className="w-4 h-4" />
+                {latestResult!.score}%
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-bold text-nordic-midnight bg-nordic-sky/20 rounded-lg">
+                <HeroStarIcon className="w-4 h-4" />
+                {t("wordsets.status.tryIt")}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Simple status - encouraging language */}
-      <div className="mb-4">
-        {performance ? (
-          <div
-            className={`inline-flex items-center gap-2 px-3 py-2 text-base font-bold rounded-xl ${performance.color}`}
-          >
-            <performance.icon className="w-5 h-5" />
-            {latestResult!.score}%
-          </div>
-        ) : (
-          <div className="inline-flex items-center gap-2 px-3 py-2 text-base font-bold text-nordic-midnight bg-nordic-sky/20 rounded-xl">
-            <HeroStarIcon className="w-5 h-5" />
-            {t("wordsets.status.tryIt")}
-          </div>
-        )}
-      </div>
-
       {/* Word Preview - Simple, clean pills */}
-      <div className="flex flex-wrap gap-2 mb-4 min-h-12 content-start">
-        {wordSet.words.slice(0, 6).map((wordItem, index) => {
+      <div className="flex flex-wrap gap-2 mb-4 min-h-12 content-start items-center">
+        {wordSet.words.slice(0, 5).map((wordItem, index) => {
           const hasAudio = hasAudioAvailable(wordItem);
           const isPlaying = playingAudio === wordItem.word;
 
@@ -141,9 +141,9 @@ export function ChildWordSetCard({
             </span>
           );
         })}
-        {wordSet.words.length > 6 && (
+        {wordSet.words.length > 5 && (
           <span className="px-3 py-2 text-sm font-medium text-gray-500 bg-gray-100 rounded-full">
-            +{wordSet.words.length - 6}
+            +{wordSet.words.length - 5}
           </span>
         )}
       </div>
@@ -156,10 +156,10 @@ export function ChildWordSetCard({
         <Button
           variant="primary-child"
           onClick={() => onStartTest(wordSet)}
-          className="flex-1 text-lg"
+          className="flex-1"
         >
-          <HeroPlayIcon className="w-5 h-5 mr-2 shrink-0" />
-          <span>{latestResult ? t("test.tryAgain") : t("wordsets.go")}</span>
+          <HeroPlayIcon className="w-5 h-5 shrink-0" />
+          {latestResult ? t("test.tryAgain") : t("wordsets.go")}
         </Button>
 
         <Button

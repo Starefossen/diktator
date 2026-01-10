@@ -44,11 +44,12 @@ export function ParentWordSetCard({
 }: ParentWordSetCardProps) {
   const { t } = useLanguage();
 
-  // Get children's performance for this wordset
+  // Get children's performance for this wordset (filter out parents)
   const getChildrenPerformance = () => {
     if (!familyProgress) return [];
 
     return familyProgress
+      .filter((member) => member.role === "child")
       .map((child) => {
         // Find the child's latest result for this wordset
         const latestResult = child.recentResults?.find(
@@ -72,52 +73,47 @@ export function ParentWordSetCard({
   const assignmentCount = wordSet.assignedUserIds?.length || 0;
 
   return (
-    <div className="card-parent flex flex-col p-6 transition-shadow duration-200 hover:shadow-xl">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div>
-            <h3 className="text-xl font-semibold text-gray-800">
-              {wordSet.name}
-            </h3>
-            <p className="text-base text-gray-600">
-              {wordSet.words.length}{" "}
-              {wordSet.words.length === 1
-                ? t("results.word")
-                : t("wordsets.words.count")}
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-col items-end gap-2">
+    <div className="card-parent flex flex-col p-4 transition-shadow duration-200 hover:shadow-xl">
+      {/* Header - Compact */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-gray-800">
+            {wordSet.name}
+          </h3>
           <FlagIcon
             language={wordSet.language as "no" | "en"}
-            className="w-5 h-4"
+            className="w-4 h-3"
           />
-          <p className="text-sm text-gray-600">
-            {t("wordsets.created")}:{" "}
-            {new Date(wordSet.createdAt).toLocaleDateString()}
-          </p>
         </div>
+        <p className="text-xs text-gray-500">
+          {new Date(wordSet.createdAt).toLocaleDateString()}
+        </p>
       </div>
 
-      {/* Assignment Status - Subtle indicator for parents */}
-      {assignmentCount > 0 ? (
-        <div className="flex items-center gap-1.5 px-2.5 py-1.5 mb-3 text-sm font-semibold text-gray-700 bg-gray-100 border border-gray-200 rounded-md w-fit">
-          <HeroCheckIcon className="w-3.5 h-3.5" />
-          {t("wordsets.assignment.assigned")} ({assignmentCount})
-        </div>
-      ) : (
-        <div className="flex items-center gap-1.5 px-2.5 py-1.5 mb-3 text-sm font-semibold text-gray-500 bg-gray-50 border border-gray-200 rounded-md w-fit opacity-70">
-          {t("wordsets.assignment.noAssignments")}
-        </div>
-      )}
+      {/* Word count and assignment inline */}
+      <div className="flex items-center gap-2 mb-2 text-sm text-gray-600">
+        <span>
+          {wordSet.words.length}{" "}
+          {wordSet.words.length === 1
+            ? t("results.word")
+            : t("wordsets.words.count")}
+        </span>
+        <span className="text-gray-300">•</span>
+        {assignmentCount > 0 ? (
+          <span className="flex items-center gap-1 text-gray-700">
+            <HeroCheckIcon className="w-3 h-3" />
+            {t("wordsets.assignment.assigned")} ({assignmentCount})
+          </span>
+        ) : (
+          <span className="text-gray-400">
+            {t("wordsets.assignment.noAssignments")}
+          </span>
+        )}
+      </div>
 
-      {/* Children's Performance Summary */}
+      {/* Children's Progress - Compact */}
       {childrenPerformance.length > 0 && (
-        <div className="p-3 mb-4 rounded-lg bg-gray-50">
-          <h4 className="mb-2 text-base font-semibold text-gray-700">
-            {t("wordsets.childrenProgress")} ({childrenPerformance.length})
-          </h4>
+        <div className="p-2 mb-3 rounded-lg bg-gray-50">
           <div className="space-y-1">
             {childrenPerformance.slice(0, 3).map((child, index) => (
               <div
@@ -125,48 +121,38 @@ export function ParentWordSetCard({
                 className="flex items-center justify-between text-xs"
               >
                 <span className="font-medium text-gray-600">{child.name}</span>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   {child.score && (
                     <span
-                      className={`px-2 py-1 rounded-full font-medium ${
-                        child.score >= 90
+                      className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${child.score >= 90
                           ? "text-amber-700 bg-nordic-sunrise/20"
                           : child.score >= 70
                             ? "text-emerald-700 bg-nordic-meadow/20"
                             : "text-orange-700 bg-nordic-cloudberry/20"
-                      }`}
+                        }`}
                     >
                       {child.score}%
                     </span>
                   )}
-                  <span className="text-gray-500">
-                    {child.attempts}{" "}
-                    {child.attempts === 1
-                      ? t("wordsets.attempt")
-                      : t("wordsets.attempts")}
+                  <span className="text-gray-400">
+                    {child.attempts}×
                   </span>
-                  {child.score && child.score >= 90 && (
-                    <HeroCheckIcon className="w-3 h-3 text-nordic-sunrise" />
-                  )}
-                  {child.score && child.score < 70 && (
-                    <HeroPencilIcon className="w-3 h-3 text-nordic-cloudberry" />
-                  )}
                 </div>
               </div>
             ))}
             {childrenPerformance.length > 3 && (
-              <p className="mt-1 text-xs text-gray-500">
-                +{childrenPerformance.length - 3} {t("wordsets.moreChildren")}
+              <p className="text-xs text-gray-400">
+                +{childrenPerformance.length - 3}
               </p>
             )}
           </div>
         </div>
       )}
 
-      {/* Content Info */}
+      {/* Word Pills - Compact */}
       <div className="grow">
-        <div className="flex flex-wrap gap-1 mb-4 overflow-y-auto max-h-16">
-          {wordSet.words.slice(0, 8).map((wordItem, index) => {
+        <div className="flex flex-wrap gap-1 mb-3">
+          {wordSet.words.slice(0, 6).map((wordItem, index) => {
             const hasAudio = hasAudioAvailable(wordItem);
             const hasGeneratedAudio = wordItem.audio?.audioUrl;
             const isPlaying = playingAudio === wordItem.word;
@@ -184,9 +170,8 @@ export function ParentWordSetCard({
                   aria-label={`Play pronunciation of ${wordItem.word}`}
                 >
                   <HeroVolumeIcon
-                    className={`w-3 h-3 mr-1 ${
-                      hasGeneratedAudio ? "text-nordic-sky" : "text-gray-500"
-                    }`}
+                    className={`w-3 h-3 mr-1 ${hasGeneratedAudio ? "text-nordic-sky" : "text-gray-500"
+                      }`}
                     aria-hidden="true"
                   />
                   {wordItem.word}
@@ -205,16 +190,16 @@ export function ParentWordSetCard({
               </span>
             );
           })}
-          {wordSet.words.length > 8 && (
-            <span className="px-2 py-1 text-xs text-gray-600 bg-gray-200 rounded">
-              +{wordSet.words.length - 8} {t("wordsets.moreWords")}
+          {wordSet.words.length > 6 && (
+            <span className="px-1.5 py-0.5 text-xs text-gray-500 bg-gray-100 rounded">
+              +{wordSet.words.length - 6}
             </span>
           )}
         </div>
       </div>
 
-      {/* Action Buttons - Parent Focused */}
-      <div className="flex flex-wrap items-stretch gap-2 pt-4 mt-auto">
+      {/* Action Buttons */}
+      <div className="flex flex-wrap items-stretch gap-2 pt-3 mt-auto">
         <div className="inline-flex flex-1 rounded-xl shadow-xs">
           <button
             onClick={() => onStartTest(wordSet)}

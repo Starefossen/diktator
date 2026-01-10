@@ -98,11 +98,10 @@ export function PracticeView({
                 <button
                   onClick={onPlayAudio}
                   disabled={!hasAudio}
-                  className={`relative p-6 text-6xl transition-all duration-200 transform rounded-full shadow-lg ${
-                    hasAudio
+                  className={`relative p-6 text-6xl transition-all duration-200 transform rounded-full shadow-lg ${hasAudio
                       ? "text-nordic-midnight bg-linear-to-r from-nordic-teal to-nordic-cloudberry hover:from-nordic-teal/90 hover:to-nordic-cloudberry/90 hover:shadow-xl hover:scale-105"
                       : "text-gray-400 bg-gray-200 cursor-not-allowed"
-                  }`}
+                    }`}
                   title={
                     hasAudio ? t("wordsets.clickToPlay") : t("wordsets.noAudio")
                   }
@@ -136,9 +135,8 @@ export function PracticeView({
               <div className="duration-300 animate-in fade-in-0 slide-in-from-bottom-2">
                 <button
                   onClick={() => onSetShowWord(!showPracticeWord)}
-                  className={`transition-all duration-500 cursor-pointer focus:outline-none focus:ring-4 focus:ring-nordic-teal/30 rounded-lg p-4 ${
-                    showPracticeWord ? "" : "hover:scale-105 hover:shadow-lg"
-                  }`}
+                  className={`transition-all duration-500 cursor-pointer focus:outline-none focus:ring-4 focus:ring-nordic-teal/30 rounded-lg p-4 ${showPracticeWord ? "" : "hover:scale-105 hover:shadow-lg"
+                    }`}
                   title={
                     showPracticeWord
                       ? t("wordsets.practice.clickToBlur")
@@ -146,9 +144,8 @@ export function PracticeView({
                   }
                 >
                   <h2
-                    className={`text-6xl font-bold text-gray-800 mb-4 transition-all duration-500 select-none ${
-                      showPracticeWord ? "filter-none" : "filter blur-xl"
-                    }`}
+                    className={`text-6xl font-bold text-gray-800 mb-4 transition-all duration-500 select-none ${showPracticeWord ? "filter-none" : "filter blur-xl"
+                      }`}
                     style={{
                       textShadow: showPracticeWord
                         ? "none"
@@ -183,7 +180,7 @@ export function PracticeView({
                 disabled={currentPracticeIndex === 0}
               >
                 <svg
-                  className="w-4 h-4 mr-2"
+                  className="w-4 h-4 shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -199,7 +196,7 @@ export function PracticeView({
               </Button>
               <Button variant="secondary-child" onClick={onShuffle}>
                 <svg
-                  className="w-4 h-4 mr-2"
+                  className="w-4 h-4 shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -220,7 +217,7 @@ export function PracticeView({
               >
                 {t("wordsets.practice.next")}
                 <svg
-                  className="w-4 h-4 ml-2"
+                  className="w-4 h-4 shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -263,11 +260,10 @@ export function PracticeView({
                 <button
                   key={index}
                   onClick={() => onSetCurrentIndex(index)}
-                  className={`px-3 py-1 text-sm rounded transition-colors ${
-                    index === currentPracticeIndex
+                  className={`px-3 py-1 text-sm rounded transition-colors ${index === currentPracticeIndex
                       ? "bg-nordic-cloudberry text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
+                    }`}
                 >
                   {word}
                 </button>
