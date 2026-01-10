@@ -57,14 +57,16 @@ export function DevUserSwitcher({ className = "" }: DevUserSwitcherProps) {
                   <button
                     key={id}
                     onClick={() => handleUserSwitch(id as MockUserId)}
-                    className={`w-full px-3 py-2 text-left flex items-center gap-3 hover:bg-gray-50 transition-colors ${isSelected ? "bg-blue-50" : ""
-                      }`}
+                    className={`w-full px-3 py-2 text-left flex items-center gap-3 hover:bg-gray-50 transition-colors ${
+                      isSelected ? "bg-blue-50" : ""
+                    }`}
                   >
                     <div
-                      className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${userIsParent
+                      className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                        userIsParent
                           ? "bg-purple-100 text-purple-600"
                           : "bg-green-100 text-green-600"
-                        }`}
+                      }`}
                     >
                       {userIsParent ? (
                         <HeroUsersIcon className="w-4 h-4" />
@@ -92,17 +94,19 @@ export function DevUserSwitcher({ className = "" }: DevUserSwitcherProps) {
 
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className={`flex items-center gap-2 px-3 py-2 rounded-full shadow-lg border-2 transition-all ${isParent
+          className={`flex items-center gap-2 px-3 py-2 rounded-full shadow-lg border-2 transition-all ${
+            isParent
               ? "bg-purple-100 border-purple-300 hover:bg-purple-200"
               : "bg-green-100 border-green-300 hover:bg-green-200"
-            }`}
+          }`}
           aria-label={`Switch user, currently ${currentUser.name}`}
         >
           <div
-            className={`w-6 h-6 rounded-full flex items-center justify-center ${isParent
+            className={`w-6 h-6 rounded-full flex items-center justify-center ${
+              isParent
                 ? "bg-purple-200 text-purple-700"
                 : "bg-green-200 text-green-700"
-              }`}
+            }`}
           >
             {isParent ? (
               <HeroUsersIcon className="w-3.5 h-3.5" />
@@ -114,10 +118,11 @@ export function DevUserSwitcher({ className = "" }: DevUserSwitcherProps) {
             {currentUser.name.split(" ")[0]}
           </span>
           <span
-            className={`text-xs px-1.5 py-0.5 rounded ${isParent
+            className={`text-xs px-1.5 py-0.5 rounded ${
+              isParent
                 ? "bg-purple-200 text-purple-700"
                 : "bg-green-200 text-green-700"
-              }`}
+            }`}
           >
             DEV
           </span>

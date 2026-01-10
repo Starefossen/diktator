@@ -10,6 +10,10 @@ vi.mock("@/contexts/LanguageContext", () => ({
   }),
 }));
 
+vi.mock("@/lib/i18n", () => ({
+  interpolateMessage: (template: string) => template,
+}));
+
 const mockUseAuth = vi.fn();
 vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => mockUseAuth(),
@@ -59,7 +63,7 @@ describe("StavleCompanion", () => {
 
       await waitFor(() => {
         expect(
-          findCompanionText("stavle.companion.child.welcome"),
+          findCompanionText("stavle.companion.wordsets.child.welcome"),
         ).toBeInTheDocument();
       });
     });
@@ -75,7 +79,7 @@ describe("StavleCompanion", () => {
 
       await waitFor(() => {
         expect(
-          findCompanionText("stavle.companion.child.readyToStart"),
+          findCompanionText("stavle.companion.wordsets.child.readyToStart"),
         ).toBeInTheDocument();
       });
     });
@@ -97,7 +101,7 @@ describe("StavleCompanion", () => {
 
       await waitFor(() => {
         expect(
-          findCompanionText("stavle.companion.child.doingGreat"),
+          findCompanionText("stavle.companion.wordsets.child.doingGreat"),
         ).toBeInTheDocument();
       });
     });
@@ -119,7 +123,7 @@ describe("StavleCompanion", () => {
 
       await waitFor(() => {
         expect(
-          findCompanionText("stavle.companion.child.goodProgress"),
+          findCompanionText("stavle.companion.wordsets.child.goodProgress"),
         ).toBeInTheDocument();
       });
     });
@@ -137,7 +141,7 @@ describe("StavleCompanion", () => {
 
       await waitFor(() => {
         expect(
-          findCompanionText("stavle.companion.child.comeBack"),
+          findCompanionText("stavle.companion.wordsets.child.comeBack"),
         ).toBeInTheDocument();
       });
     });
@@ -157,7 +161,7 @@ describe("StavleCompanion", () => {
 
       await waitFor(() => {
         expect(
-          findCompanionText("stavle.companion.parent.noWordSets"),
+          findCompanionText("stavle.companion.wordsets.parent.noWordSets"),
         ).toBeInTheDocument();
       });
     });
@@ -173,7 +177,9 @@ describe("StavleCompanion", () => {
 
       await waitFor(() => {
         expect(
-          findCompanionText("stavle.companion.parent.waitingForChildren"),
+          findCompanionText(
+            "stavle.companion.wordsets.parent.waitingForChildren",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -199,7 +205,7 @@ describe("StavleCompanion", () => {
 
       await waitFor(() => {
         expect(
-          findCompanionText("stavle.companion.parent.familyExcelling"),
+          findCompanionText("stavle.companion.wordsets.parent.familyExcelling"),
         ).toBeInTheDocument();
       });
     });
@@ -213,7 +219,7 @@ describe("StavleCompanion", () => {
 
       await waitFor(() => {
         expect(
-          findCompanionText("stavle.companion.child.welcome"),
+          findCompanionText("stavle.companion.wordsets.child.welcome"),
         ).toBeInTheDocument();
       });
 
@@ -222,7 +228,7 @@ describe("StavleCompanion", () => {
 
       expect(
         screen.queryByText((content) =>
-          content.includes("stavle.companion.child.welcome"),
+          content.includes("stavle.companion.wordsets.child.welcome"),
         ),
       ).not.toBeInTheDocument();
     });

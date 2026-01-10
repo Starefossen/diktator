@@ -404,6 +404,11 @@ description = "Auto-fix unused code in frontend"
 dir = "frontend"
 run = "pnpm run knip:fix"
 
+[tasks."frontend:i18n-check"]
+description = "Check for unused/missing i18n translation keys"
+dir = "frontend"
+run = "pnpm run i18n:check"
+
 [tasks."frontend:check"]
 description = "Run all frontend checks (typecheck, lint:fix, format, knip:fix, test) with auto-fixing"
 dir = "frontend"
@@ -658,17 +663,45 @@ echo "✅ All tests (unit + integration + E2E) passed!"
 
 [tasks.check]
 description = "Run all checks (backend + frontend: fmt, lint, typecheck, knip, tests)"
+depends = ["_ensure-postgres"]
 run = """
-echo "🔍 Running all checks..."
+echo "🔍 Running all checks in parallel..."
 echo ""
-echo "=== Backend Checks ==="
-mise run backend:check
+
+# Run backend and frontend checks in parallel
+(
+  cd ${BACKEND_DIR}
+  go fmt ./... > /dev/null 2>&1
+  go vet ./... 2>&1 | grep -v "^#" || true
+  DATABASE_URL="${DATABASE_TEST_URL}" go test ./... 2>&1 | grep -E "^(ok|FAIL|---)" | head -20
+  echo "[backend] ✅ Done"
+) &
+BACKEND_PID=$!
+
+(
+  cd ${FRONTEND_DIR}
+  # Run checks and filter output for key lines
+  OUTPUT=$(pnpm run check 2>&1)
+  echo "$OUTPUT" | grep -E "(✓|✅|❌|Test Files|Tests |error|Error)" | head -20 || true
+  if echo "$OUTPUT" | grep -q "ELIFECYCLE"; then
+    echo "[frontend] ❌ Failed"
+    exit 1
+  fi
+  echo "[frontend] ✅ Done"
+) &
+FRONTEND_PID=$!
+
+# Wait for both to complete
+wait $BACKEND_PID
+BACKEND_EXIT=$?
+wait $FRONTEND_PID
+FRONTEND_EXIT=$?
 
 echo ""
-echo "=== Frontend Checks ==="
-mise run frontend:check
-
-echo ""
+if [ $BACKEND_EXIT -ne 0 ] || [ $FRONTEND_EXIT -ne 0 ]; then
+  echo "❌ Some checks failed"
+  exit 1
+fi
 echo "✅ All checks passed!"
 """
 

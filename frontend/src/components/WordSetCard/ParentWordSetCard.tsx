@@ -134,9 +134,7 @@ export function ParentWordSetCard({
                       {child.score}%
                     </span>
                   )}
-                  <span className="text-gray-400">
-                    {child.attempts}×
-                  </span>
+                  <span className="text-gray-400">{child.attempts}×</span>
                 </div>
               </div>
             ))}
@@ -175,7 +173,9 @@ export function ParentWordSetCard({
                     aria-hidden="true"
                   />
                   {wordItem.word}
-                  {isPlaying && <span className="sr-only"> (Playing)</span>}
+                  {isPlaying && (
+                    <span className="sr-only"> ({t("aria.playing")})</span>
+                  )}
                 </button>
               );
             }
@@ -210,7 +210,7 @@ export function ParentWordSetCard({
           </button>
           <Menu as="div" className="relative block -ml-px">
             <MenuButton className="relative inline-flex items-center h-full px-2 text-nordic-midnight rounded-r-xl bg-linear-to-r from-nordic-meadow to-nordic-sky hover:from-nordic-meadow/90 hover:to-nordic-sky/90 focus:z-10">
-              <span className="sr-only">Open options</span>
+              <span className="sr-only">{t("aria.openOptions")}</span>
               <ChevronDownIcon aria-hidden="true" className="w-5 h-5" />
             </MenuButton>
             <MenuItems
@@ -254,7 +254,7 @@ export function ParentWordSetCard({
           <IconButton
             variant="primary"
             onClick={() => onViewAnalytics(wordSet)}
-            aria-label="Analytics"
+            aria-label={t("aria.analytics")}
           >
             <HeroChartBarIcon className="w-4 h-4" />
           </IconButton>

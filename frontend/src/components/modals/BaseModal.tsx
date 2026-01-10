@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { HeroXMarkIcon } from "@/components/Icons";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface BaseModalProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ export function BaseModal({
   showCloseButton = true,
 }: BaseModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   // Handle ESC key
   useEffect(() => {
@@ -73,16 +75,15 @@ export function BaseModal({
         }}
         role="button"
         tabIndex={-1}
-        aria-label="Close modal"
+        aria-label={t("aria.closeModal")}
       />
 
       {/* Modal container */}
       <div className="flex items-end justify-center min-h-full p-4 text-center sm:items-center sm:p-0">
         <div
           ref={modalRef}
-          className={`relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all duration-300 ease-out w-full mx-4 ${sizeClasses[size]} ${
-            size === "xl" ? "max-h-[90vh] overflow-hidden" : ""
-          }`}
+          className={`relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all duration-300 ease-out w-full mx-4 ${sizeClasses[size]} ${size === "xl" ? "max-h-[90vh] overflow-hidden" : ""
+            }`}
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.key === "Escape" && onClose()}
           role="dialog"
@@ -96,7 +97,7 @@ export function BaseModal({
                 onClick={onClose}
                 className="text-gray-400 transition-colors bg-white rounded-md hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-nordic-teal focus:ring-offset-2"
               >
-                <span className="sr-only">Close</span>
+                <span className="sr-only">{t("aria.close")}</span>
                 <HeroXMarkIcon className="w-6 h-6" />
               </button>
             </div>

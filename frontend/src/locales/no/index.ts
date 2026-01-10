@@ -21,17 +21,10 @@ export const no = {
   "home.welcome": "Velkommen til Diktator!",
   "home.subtitle":
     "En morsom og interaktiv stavepraksis-app designet spesielt for barn",
-  "home.api.checking": "Sjekker API...",
-  "home.api.connected": "API tilkoblet",
-  "home.api.disconnected": "API frakoblet",
   "home.wordsets.title": "Ordsett",
   "home.wordsets.desc":
     "Opprett og administrer tilpassede ordsett, og ta staveprøver for å følge fremgangen din!",
   "home.wordsets.button": "Utforsk ordsett",
-  "home.practice.title": "Start å øve",
-  "home.practice.desc":
-    "Øv på staving med våre interaktive ordspill og forbedre ferdighetene dine!",
-  "home.practice.button": "Begynn øving",
   "home.about.title": "Lær mer",
   "home.about.desc":
     "Oppdag hvordan Diktator kan hjelpe barn med å utvikle bedre staveferdigheter.",
@@ -100,13 +93,10 @@ export const no = {
   "home.cta.footer": "Ingen nedlastinger nødvendig • Fungerer på alle enheter",
 
   // Footer
-  "footer.tagline": "Gjør staveøving morsomt for barn",
+  "footer.tagline": "Gjør staving morsomt for barn",
 
   // Existing features
-  "home.features.auth": "OIDC autentisering",
-  "home.features.database": "PostgreSQL database",
   "home.features.i18n": "Flerspråklig støtte (EN/NO)",
-  "home.features.wordsets": "Tilpassede ordsett og tester",
   "home.features.profiles": "Brukerprofiler og statistikk",
   "home.features.tts": "Talesyntese (TTS)",
   "home.features.tts.desc": "Profesjonell tekst-til-tale uttale",
@@ -114,49 +104,6 @@ export const no = {
   "home.features.results.desc": "Fremgangssporing og detaljerte resultater",
   "home.features.profiles.desc": "Familiekontoer med individuell sporing",
   "home.features.i18n.desc": "Norsk og engelsk språkstøtte",
-  "home.features.emulators": "Lokale utviklingstjenester",
-  "home.nextPhase.title": "Klar for fase 2:",
-  "home.nextPhase.desc":
-    "Tilpassede ordsett, familiedeling og avansert analyse",
-  "home.nextPhase.command": "Start utvikling",
-  "home.phaseComplete.title": "Fullstendig utstyrt!",
-  "home.phaseComplete.desc":
-    "Alle kjernefunksjoner er klare for en optimal stavingsøvingsopplevelse",
-  "home.phaseComplete.features":
-    "✨ Lydtilbakemelding, visuelle animasjoner, fremdriftssporing og responsivt design",
-
-  // Development progress section
-  "home.progress.title": "Utviklingsfremdrift",
-  "home.progress.subtitle":
-    "Følg vår reise mot den ultimate stavingsøvingsappen",
-
-  // Phase 0
-  "home.progress.phase0.title": "Grunnlag",
-  "home.progress.phase0.subtitle": "Grunnleggende infrastruktur",
-  "home.progress.phase0.point1": "Next.js + TypeScript oppsett",
-  "home.progress.phase0.point2": "Knative distribusjon",
-  "home.progress.phase0.point3": "CI/CD-pipeline etablert",
-
-  // Phase 1
-  "home.progress.phase1.title": "Autentisering",
-  "home.progress.phase1.subtitle": "Brukerbehandling",
-  "home.progress.phase1.point1": "OIDC autentisering",
-  "home.progress.phase1.point2": "Beskyttede ruter og sikkerhet",
-  "home.progress.phase1.point3": "Brukerprofiler og familier",
-
-  // Phase 2
-  "home.progress.phase2.title": "Kjernefunksjoner",
-  "home.progress.phase2.subtitle": "Stavingsøving",
-  "home.progress.phase2.point1": "Ordsettbehandling",
-  "home.progress.phase2.point2": "Tekst-til-tale integrasjon",
-  "home.progress.phase2.point3": "Interaktive stavingstester",
-
-  // Phase 3
-  "home.progress.phase3.title": "Avansert",
-  "home.progress.phase3.subtitle": "Polering og analyse",
-  "home.progress.phase3.point1": "Fremdriftsanalyse",
-  "home.progress.phase3.point2": "Spillifiseringssystem",
-  "home.progress.phase3.point3": "Ytelsesoptimalisering",
 
   // About page
   "about.title": "Om Diktator",
@@ -181,33 +128,6 @@ export const no = {
   "about.development.title": "Utvikling",
   "about.development.desc":
     "Denne applikasjonen er bygget med moderne utviklingspraksis inkludert Infrastructure as Code (Terraform), automatiserte CI/CD-pipelines (GitHub Actions), og strømlinjeformet lokal utvikling med mise for oppgavehåndtering.",
-
-  // Practice page
-  "practice.title": "Stavepraksis",
-  "practice.subtitle": "Velg et ordsett for å øve på staveferdigheter",
-  "practice.noWordSets": "Ingen ordsett tilgjengelig",
-  "practice.createFirst": "Opprett ditt første ordsett for å begynne å øve",
-  "practice.createWordSet": "Opprett ordsett",
-  "practice.start": "Start øving",
-  "practice.clickToHear": "Klikk for å høre ordet",
-  "practice.playAgain": "Klikk for å høre igjen",
-  "practice.typeHere": "Skriv ordet her...",
-  "practice.checkAnswer": "Sjekk svar",
-  "practice.correct": "Riktig!",
-  "practice.incorrect": "Ikke helt riktig",
-  "practice.correctSpelling": "Korrekt staving",
-  "practice.yourAnswer": "Ditt svar",
-  "practice.nextWordSoon": "Går til neste ord...",
-  "practice.practiceComplete": "Øving fullført!",
-  "practice.correctSoFar": "Riktige så langt",
-  "practice.attempt": "Forsøk",
-  "practice.attemptsLeft": "forsøk igjen",
-  "practice.tryAgain": "Prøv igjen",
-  "practice.maxAttemptsReached": "Maks forsøk nådd",
-  "practice.configuration.title": "Test konfigurasjon",
-  "practice.configuration.maxAttempts": "Maks forsøk per ord",
-  "practice.configuration.showCorrectAnswer": "Vis riktig svar etter feil",
-  "practice.configuration.autoAdvance": "Auto-fortsett etter riktig svar",
 
   // Profile page
   "profile.title": "Min profil",

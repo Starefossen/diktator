@@ -84,4 +84,19 @@ export const aria = {
   "aria.stavle.sleeping": "Stavle the fox is sleeping",
   "aria.stavle.idle": "Stavle the fox",
   "aria.stavle.idleResting": "Stavle the fox is resting",
+
+  // Navigation
+  "aria.openUserMenu": "Open user menu",
+  "aria.openMainMenu": "Open main menu",
+
+  // Word set cards
+  "aria.openOptions": "Open options",
+  "aria.analytics": "Analytics",
+  "aria.playing": "Playing",
+
+  // Word set editor
+  "aria.saveButton": "Save",
+  "aria.cancelButton": "Cancel",
+  "aria.editButton": "Edit",
+  "aria.removeButton": "Remove",
 };

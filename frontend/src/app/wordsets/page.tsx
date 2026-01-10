@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useCallback, useEffect, Suspense, useRef } from "react";
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  Suspense,
+  useRef,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";

@@ -55,7 +55,7 @@ export default function AboutPage() {
                 <HeroRocketIcon className="w-10 h-10 text-emerald-500" />
               </div>
               <h3 className="mb-3 text-lg font-semibold text-gray-900">
-                Interactive Learning
+                {t("about.features.interactiveLearning")}
               </h3>
               <ul className="space-y-2">
                 <li className="flex items-start text-sm text-gray-600">
@@ -75,7 +75,7 @@ export default function AboutPage() {
                 <HeroVolumeIcon className="w-10 h-10 text-nordic-sky" />
               </div>
               <h3 className="mb-3 text-lg font-semibold text-gray-900">
-                Audio Experience
+                {t("about.features.audioExperience")}
               </h3>
               <ul className="space-y-2">
                 <li className="flex items-start text-sm text-gray-600">
@@ -99,7 +99,7 @@ export default function AboutPage() {
                 <HeroCheckIcon className="w-10 h-10 text-nordic-teal" />
               </div>
               <h3 className="mb-3 text-lg font-semibold text-gray-900">
-                Modern Design
+                {t("about.features.modernDesign")}
               </h3>
               <ul className="space-y-2">
                 <li className="flex items-start text-sm text-gray-600">
@@ -121,7 +121,7 @@ export default function AboutPage() {
           {/* Additional Features */}
           <div className="p-6 bg-nordic-sky/10 rounded-xl">
             <h3 className="mb-4 text-lg font-semibold text-center text-gray-900">
-              Additional Features
+              {t("about.features.additional")}
             </h3>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="flex items-center">
@@ -149,19 +149,19 @@ export default function AboutPage() {
               <ul className="space-y-2 text-sm text-nordic-midnight">
                 <li className="flex items-center">
                   <HeroCheckIcon className="w-4 h-4 mr-2" />
-                  Next.js 16 (App Router)
+                  {t("about.tech.nextjs")}
                 </li>
                 <li className="flex items-center">
                   <HeroCheckIcon className="w-4 h-4 mr-2" />
-                  TypeScript
+                  {t("about.tech.typescript")}
                 </li>
                 <li className="flex items-center">
                   <HeroCheckIcon className="w-4 h-4 mr-2" />
-                  Tailwind CSS 4
+                  {t("about.tech.tailwind")}
                 </li>
                 <li className="flex items-center">
                   <HeroCheckIcon className="w-4 h-4 mr-2" />
-                  React 19
+                  {t("about.tech.react")}
                 </li>
               </ul>
             </div>
@@ -172,19 +172,19 @@ export default function AboutPage() {
               <ul className="space-y-2 text-sm text-nordic-midnight">
                 <li className="flex items-center">
                   <HeroCheckIcon className="w-4 h-4 mr-2" />
-                  Go with Gin
+                  {t("about.tech.go")}
                 </li>
                 <li className="flex items-center">
                   <HeroCheckIcon className="w-4 h-4 mr-2" />
-                  Knative
+                  {t("about.tech.knative")}
                 </li>
                 <li className="flex items-center">
                   <HeroCheckIcon className="w-4 h-4 mr-2" />
-                  RESTful API
+                  {t("about.tech.restful")}
                 </li>
                 <li className="flex items-center">
                   <HeroCheckIcon className="w-4 h-4 mr-2" />
-                  Docker
+                  {t("about.tech.docker")}
                 </li>
               </ul>
             </div>

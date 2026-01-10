@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { TestResult, WordSet } from "@/types";
+import { useAuth } from "@/contexts/AuthContext";
+import { TestResult, WordSet, FamilyProgress } from "@/types";
 import { generatedApiClient } from "../../lib/api-generated";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import TestResultsList from "@/components/TestResultsList";
+import { StavleCompanion } from "@/components/StavleCompanion";
 import {
   HeroChartIcon,
   HeroTrophyIcon,
@@ -20,8 +22,10 @@ import {
 
 export default function ResultsPage() {
   const { t } = useLanguage();
+  const { userData } = useAuth();
   const [results, setResults] = useState<TestResult[]>([]);
   const [wordSets, setWordSets] = useState<WordSet[]>([]);
+  const [familyProgress, setFamilyProgress] = useState<FamilyProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [filteredResults, setFilteredResults] = useState<TestResult[]>([]);
   const [sortBy, setSortBy] = useState<"date" | "score" | "time">("date");
@@ -29,6 +33,8 @@ export default function ResultsPage() {
   const [filterScore, setFilterScore] = useState<
     "all" | "excellent" | "good" | "needs-work"
   >("all");
+
+  const isParent = userData?.role === "parent";
 
   // Helper function for interpolated translations
   const interpolate = (
@@ -46,11 +52,25 @@ export default function ResultsPage() {
     try {
       setLoading(true);
 
-      // Load both results and word sets
-      const [resultsResponse, wordSetsResponse] = await Promise.all([
+      // Load results and word sets, plus family progress for parents
+      const apiCalls: Promise<unknown>[] = [
         generatedApiClient.getResults(),
         generatedApiClient.getWordSets(),
-      ]);
+      ];
+
+      if (isParent) {
+        apiCalls.push(generatedApiClient.getFamilyProgress());
+      }
+
+      const [resultsResponse, wordSetsResponse, familyProgressResponse] =
+        (await Promise.all(apiCalls)) as [
+          Awaited<ReturnType<typeof generatedApiClient.getResults>>,
+          Awaited<ReturnType<typeof generatedApiClient.getWordSets>>,
+          (
+            | Awaited<ReturnType<typeof generatedApiClient.getFamilyProgress>>
+            | undefined
+          ),
+        ];
 
       if (resultsResponse.data?.data) {
         const allResults = resultsResponse.data.data as TestResult[];
@@ -61,12 +81,16 @@ export default function ResultsPage() {
       if (wordSetsResponse.data?.data) {
         setWordSets(wordSetsResponse.data.data as WordSet[]);
       }
+
+      if (familyProgressResponse?.data?.data) {
+        setFamilyProgress(familyProgressResponse.data.data as FamilyProgress[]);
+      }
     } catch (error) {
       console.error("Failed to load data:", error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isParent]);
 
   useEffect(() => {
     loadData();
@@ -540,6 +564,12 @@ export default function ResultsPage() {
             </div>
           )}
         </div>
+
+        <StavleCompanion
+          page="results"
+          userResults={results}
+          familyProgress={familyProgress}
+        />
       </div>
     </ProtectedRoute>
   );

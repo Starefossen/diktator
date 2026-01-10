@@ -667,7 +667,7 @@ export default function WordSetEditor({
                               type="button"
                               onClick={() => handleSaveEdit(word.id)}
                               className="p-1 text-green-600 rounded hover:text-green-800 hover:bg-green-100"
-                              title="Save"
+                              title={t("aria.saveButton")}
                             >
                               <HeroCheckIcon className="w-4 h-4" />
                             </button>
@@ -675,7 +675,7 @@ export default function WordSetEditor({
                               type="button"
                               onClick={() => handleCancelEdit(word.id)}
                               className="p-1 text-gray-600 rounded hover:text-gray-800 hover:bg-gray-100"
-                              title="Cancel"
+                              title={t("aria.cancelButton")}
                             >
                               <HeroXMarkIcon className="w-4 h-4" />
                             </button>
@@ -701,7 +701,7 @@ export default function WordSetEditor({
                               type="button"
                               onClick={() => handleEditWord(word.id)}
                               className="p-1 text-nordic-sky rounded hover:text-nordic-sky/80 hover:bg-nordic-sky/10"
-                              title="Edit"
+                              title={t("aria.editButton")}
                             >
                               <HeroPencilIcon className="w-4 h-4" />
                             </button>
@@ -709,7 +709,7 @@ export default function WordSetEditor({
                               type="button"
                               onClick={() => handleRemoveWord(word.id)}
                               className="p-1 text-red-600 rounded hover:text-red-800 hover:bg-red-100"
-                              title="Remove"
+                              title={t("aria.removeButton")}
                             >
                               <HeroTrashIcon className="w-4 h-4" />
                             </button>

@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { TestResult, FamilyStats, ChildAccount } from "@/types";
+import { TestResult, FamilyStats, ChildAccount, FamilyProgress } from "@/types";
 import { generatedApiClient } from "@/lib/api-generated";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { StavleCompanion } from "@/components/StavleCompanion";
 import {
   HeroTrophyIcon,
   HeroChartBarIcon,
@@ -21,6 +22,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const [recentResults, setRecentResults] = useState<TestResult[]>([]);
   const [familyStats, setFamilyStats] = useState<FamilyStats | null>(null);
+  const [familyProgress, setFamilyProgress] = useState<FamilyProgress[]>([]);
   const [children, setChildren] = useState<ChildAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,12 +38,17 @@ export default function ProfilePage() {
 
       if (isParent) {
         // Load all data for parents in parallel
-        const [resultsResponse, statsResponse, childrenResponse] =
-          await Promise.all([
-            generatedApiClient.getResults(),
-            generatedApiClient.getFamilyStats(),
-            generatedApiClient.getFamilyChildren(),
-          ]);
+        const [
+          resultsResponse,
+          statsResponse,
+          childrenResponse,
+          progressResponse,
+        ] = await Promise.all([
+          generatedApiClient.getResults(),
+          generatedApiClient.getFamilyStats(),
+          generatedApiClient.getFamilyChildren(),
+          generatedApiClient.getFamilyProgress(),
+        ]);
 
         if (resultsResponse.data?.data) {
           const allResults = resultsResponse.data.data as TestResult[];
@@ -63,6 +70,10 @@ export default function ProfilePage() {
 
         if (childrenResponse.data?.data) {
           setChildren(childrenResponse.data.data as ChildAccount[]);
+        }
+
+        if (progressResponse.data?.data) {
+          setFamilyProgress(progressResponse.data.data as FamilyProgress[]);
         }
       } else {
         // Load only results for children
@@ -99,9 +110,9 @@ export default function ProfilePage() {
   const averageScore =
     totalTests > 0
       ? Math.round(
-          recentResults.reduce((sum, result) => sum + result.score, 0) /
-            totalTests,
-        )
+        recentResults.reduce((sum, result) => sum + result.score, 0) /
+        totalTests,
+      )
       : 0;
 
   const formatDate = (dateString: string) => {
@@ -298,13 +309,12 @@ export default function ProfilePage() {
                     </div>
                     <div className="text-right">
                       <div
-                        className={`inline-block px-3 py-1 rounded-full font-semibold ${
-                          result.score >= 90
+                        className={`inline-block px-3 py-1 rounded-full font-semibold ${result.score >= 90
                             ? "text-nordic-meadow bg-nordic-meadow/10"
                             : result.score >= 70
                               ? "text-nordic-sunrise bg-nordic-sunrise/10"
                               : "text-nordic-cloudberry bg-nordic-cloudberry/10"
-                        }`}
+                          }`}
                       >
                         {result.score}%
                       </div>
@@ -364,11 +374,10 @@ export default function ProfilePage() {
                             {child.displayName}
                           </span>
                           <span
-                            className={`text-xs px-2 py-1 rounded ${
-                              child.isActive
+                            className={`text-xs px-2 py-1 rounded ${child.isActive
                                 ? "bg-nordic-meadow/20 text-nordic-midnight"
                                 : "bg-gray-100 text-gray-600"
-                            }`}
+                              }`}
                           >
                             {child.isActive
                               ? t("profile.family.active")
@@ -378,7 +387,7 @@ export default function ProfilePage() {
                       ))}
                       {children.length > 3 && (
                         <p className="text-xs text-gray-500">
-                          +{children.length - 3} more
+                          +{children.length - 3} {t("profile.family.more")}
                         </p>
                       )}
                     </div>
@@ -475,6 +484,13 @@ export default function ProfilePage() {
             </div>
           )}
         </div>
+
+        <StavleCompanion
+          page="profile"
+          userResults={recentResults}
+          familyProgress={familyProgress}
+          childAccounts={children}
+        />
       </div>
     </ProtectedRoute>
   );

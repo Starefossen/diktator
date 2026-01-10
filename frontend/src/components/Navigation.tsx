@@ -74,7 +74,7 @@ export function Navigation() {
                   <span className="text-lg font-bold text-white">D</span>
                 </div>
                 <span className="text-xl font-bold text-transparent bg-linear-to-r from-nordic-sky to-nordic-teal bg-clip-text">
-                  Diktator
+                  {t("nav.appName")}
                 </span>
               </Link>
             </div>
@@ -139,13 +139,12 @@ export function Navigation() {
             {/* API Status Indicator */}
             <div className="flex items-center pr-4 mr-4 border-r border-gray-200">
               <div
-                className={`w-3 h-3 rounded-full transition-colors ${
-                  status === "connected"
+                className={`w-3 h-3 rounded-full transition-colors ${status === "connected"
                     ? "bg-emerald-500"
                     : status === "error"
                       ? "bg-red-500"
                       : "bg-amber-500 animate-pulse"
-                }`}
+                  }`}
                 title={
                   status === "connected"
                     ? `API Connected: ${message}`
@@ -167,7 +166,7 @@ export function Navigation() {
                 <div>
                   <MenuButton className="relative flex items-center max-w-xs text-sm bg-white rounded-full focus:outline-none focus:ring-2 focus:ring-nordic-teal focus:ring-offset-2">
                     <span className="absolute -inset-1.5" />
-                    <span className="sr-only">Open user menu</span>
+                    <span className="sr-only">{t("aria.openUserMenu")}</span>
                     <div className="flex items-center space-x-2">
                       <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-linear-to-br from-nordic-sky to-nordic-teal">
                         <span className="text-sm font-medium text-white">
@@ -279,7 +278,7 @@ export function Navigation() {
           <div className="flex items-center -mr-2 sm:hidden">
             <DisclosureButton className="relative inline-flex items-center justify-center p-2 text-gray-400 bg-white rounded-md group hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-nordic-teal focus:ring-offset-2">
               <span className="absolute -inset-0.5" />
-              <span className="sr-only">Open main menu</span>
+              <span className="sr-only">{t("aria.openMainMenu")}</span>
               <Bars3Icon
                 aria-hidden="true"
                 className="block h-6 w-6 group-data-[open]:hidden"
@@ -425,19 +424,18 @@ export function Navigation() {
           <div className="px-4">
             <div className="flex items-center justify-between mb-2">
               <div className="text-sm font-medium text-gray-500">
-                Language / Språk
+                {t("nav.languageSwitcher")}
               </div>
               {/* API Status Indicator for Mobile */}
               <div className="flex items-center space-x-2">
                 <span className="text-xs text-gray-500">API</span>
                 <div
-                  className={`w-2.5 h-2.5 rounded-full transition-colors ${
-                    status === "connected"
+                  className={`w-2.5 h-2.5 rounded-full transition-colors ${status === "connected"
                       ? "bg-emerald-500"
                       : status === "error"
                         ? "bg-red-500"
                         : "bg-amber-500 animate-pulse"
-                  }`}
+                    }`}
                   title={
                     status === "connected"
                       ? `API Connected: ${message}`

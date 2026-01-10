@@ -23,9 +23,11 @@ export default function GlobalError({
           }}
         >
           <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>
+            {/* i18n-ignore */}
             Noe gikk galt
           </h1>
           <p style={{ marginBottom: "2rem", color: "#666" }}>
+            {/* i18n-ignore */}
             En uventet feil oppstod. Vennligst prøv igjen.
           </p>
           <button
@@ -40,6 +42,7 @@ export default function GlobalError({
               cursor: "pointer",
             }}
           >
+            {/* i18n-ignore */}
             Prøv igjen
           </button>
         </div>

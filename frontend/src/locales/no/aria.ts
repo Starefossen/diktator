@@ -84,4 +84,19 @@ export const aria = {
   "aria.stavle.sleeping": "Stavle reven sover",
   "aria.stavle.idle": "Stavle reven",
   "aria.stavle.idleResting": "Stavle reven hviler",
+
+  // Navigation
+  "aria.openUserMenu": "Åpne brukermeny",
+  "aria.openMainMenu": "Åpne hovedmeny",
+
+  // Word set cards
+  "aria.openOptions": "Åpne alternativer",
+  "aria.analytics": "Analyse",
+  "aria.playing": "Spiller",
+
+  // Word set editor
+  "aria.saveButton": "Lagre",
+  "aria.cancelButton": "Avbryt",
+  "aria.editButton": "Rediger",
+  "aria.removeButton": "Fjern",
 };
