@@ -134,7 +134,7 @@ export const no = {
   "profile.loading": "Laster profil...",
   "profile.correct": "Riktig",
   "profile.stats.testsCompleted": "Tester fullført",
-  "profile.stats.averageScore": "Gjennomsnittlig poengsum",
+  "profile.stats.averageScore": "Gjennomsnitt",
   "profile.stats.totalWords": "Totalt ord",
   "profile.stats.correctWords": "Riktige ord",
   "profile.recentResults": "Nylige resultater",
@@ -210,7 +210,7 @@ export const no = {
   "results.completedTests": "Du har fullført",
   "results.tests": "tester",
   "results.stats.totalTests": "Totale tester",
-  "results.stats.averageScore": "Gjennomsnittlig poengsum",
+  "results.stats.averageScore": "Gjennomsnitt",
   "results.stats.bestScore": "Best poengsum",
   "results.stats.timeSpent": "Tid brukt",
 
