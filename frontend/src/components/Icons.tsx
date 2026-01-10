@@ -33,6 +33,7 @@ import {
   DevicePhoneMobileIcon,
   PencilIcon,
   LightBulbIcon,
+  ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
 
 import { CheckIcon } from "@heroicons/react/24/solid";
@@ -314,6 +315,30 @@ export function HeroCheckSolidIcon({
   className?: string;
 }) {
   return <CheckIcon className={className} />;
+}
+
+export function HeroSparklesIcon({
+  className = "w-6 h-6 text-nordic-sunrise",
+}: {
+  className?: string;
+}) {
+  return <SparklesIcon className={className} />;
+}
+
+export function HeroArrowLeftIcon({
+  className = "w-5 h-5 text-gray-600",
+}: {
+  className?: string;
+}) {
+  return <ArrowLeftIcon className={className} />;
+}
+
+export function HeroShieldCheckIcon({
+  className = "w-5 h-5 text-nordic-sky",
+}: {
+  className?: string;
+}) {
+  return <ShieldCheckIcon className={className} />;
 }
 
 // Score-based icon component

@@ -97,6 +97,8 @@ func (stubRepo) GetWordSetAssignments(wordSetID string) ([]string, error) {
 }
 func (stubRepo) UpdateUserDisplayName(userID, displayName string) error   { return nil }
 func (stubRepo) UpdateChildDisplayName(childID, displayName string) error { return nil }
+func (stubRepo) GetGlobalWordSets() ([]models.WordSet, error)             { return nil, nil }
+func (stubRepo) IsGlobalWordSet(wordSetID string) (bool, error)           { return false, nil }
 
 func TestOIDCAuthMiddlewareRequiresRegistration(t *testing.T) {
 	gin.SetMode(gin.TestMode)

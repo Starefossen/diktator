@@ -39,11 +39,12 @@ func TestWordSetDefinitions(t *testing.T) {
 		}
 
 		// Create a new word set with definitions
+		famID := c.GetString("familyID")
 		wordSet := models.WordSet{
 			ID:       "test-wordset-1",
 			Name:     req.Name,
 			Language: req.Language,
-			FamilyID: c.GetString("familyID"),
+			FamilyID: &famID,
 		}
 
 		// Convert WordInput to WordSet Words structure

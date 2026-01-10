@@ -1105,6 +1105,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/wordsets/curated": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get curated word sets available to all users (global/official word sets)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wordsets"
+                ],
+                "summary": "Get Curated Word Sets",
+                "responses": {
+                    "200": {
+                        "description": "Curated word sets",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Service unavailable or failed to retrieve word sets",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/wordsets/voices": {
             "get": {
                 "security": [

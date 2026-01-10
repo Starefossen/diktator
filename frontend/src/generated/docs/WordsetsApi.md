@@ -4,6 +4,7 @@ All URIs are relative to *http://localhost:8080/api*
 
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|
+|[**apiWordsetsCuratedGet**](#apiwordsetscuratedget) | **GET** /api/wordsets/curated | Get Curated Word Sets|
 |[**apiWordsetsGet**](#apiwordsetsget) | **GET** /api/wordsets | Get Word Sets|
 |[**apiWordsetsIdAssignmentsUserIdDelete**](#apiwordsetsidassignmentsuseriddelete) | **DELETE** /api/wordsets/{id}/assignments/{userId} | Unassign Word Set from User|
 |[**apiWordsetsIdAssignmentsUserIdPost**](#apiwordsetsidassignmentsuseridpost) | **POST** /api/wordsets/{id}/assignments/{userId} | Assign Word Set to User|
@@ -12,6 +13,51 @@ All URIs are relative to *http://localhost:8080/api*
 |[**apiWordsetsIdWordsWordAudioGet**](#apiwordsetsidwordswordaudioget) | **GET** /api/wordsets/{id}/words/{word}/audio | Stream Audio for Word|
 |[**apiWordsetsPost**](#apiwordsetspost) | **POST** /api/wordsets | Create Word Set|
 |[**apiWordsetsVoicesGet**](#apiwordsetsvoicesget) | **GET** /api/wordsets/voices | List available TTS voices|
+
+# **apiWordsetsCuratedGet**
+> ModelsAPIResponse apiWordsetsCuratedGet()
+
+Get curated word sets available to all users (global/official word sets)
+
+### Example
+
+```typescript
+import {
+    WordsetsApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new WordsetsApi(configuration);
+
+const { status, data } = await apiInstance.apiWordsetsCuratedGet();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**ModelsAPIResponse**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Curated word sets |  -  |
+|**500** | Service unavailable or failed to retrieve word sets |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiWordsetsGet**
 > ModelsAPIResponse apiWordsetsGet()

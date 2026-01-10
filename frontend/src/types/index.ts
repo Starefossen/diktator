@@ -71,12 +71,13 @@ export interface WordSet {
   id: string;
   name: string;
   words: WordItem[]; // Array of word objects instead of strings
-  familyId: string;
+  familyId?: string; // Optional for global word sets (null when isGlobal is true)
   createdBy: string;
   language: "en" | "no";
   assignedUserIds?: string[]; // IDs of child users assigned to this wordset
   createdAt: string;
   updatedAt: string;
+  isGlobal?: boolean; // True for system-created curated word sets
   // Test configuration for this wordset
   testConfiguration?: TestConfiguration;
 }

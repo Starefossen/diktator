@@ -153,7 +153,8 @@ func (env *IntegrationTestEnv) CreateTestWordSet(familyID, createdBy string) *mo
 		ID:        uuid.New().String(),
 		Name:      "Test Word Set",
 		Language:  "en",
-		FamilyID:  familyID,
+		FamilyID:  &familyID,
+		IsGlobal:  false,
 		CreatedBy: createdBy,
 	}
 
@@ -218,6 +219,15 @@ func (env *IntegrationTestEnv) AssertRowCount(tableName string, expected int) {
 		fmt.Sprintf("SELECT COUNT(*) FROM %s", tableName)).Scan(&count)
 	require.NoError(env.T, err)
 	require.Equal(env.T, expected, count, "Row count mismatch for table %s", tableName)
+}
+
+// AssertUserRowCount verifies user count excluding system users
+func (env *IntegrationTestEnv) AssertUserRowCount(expected int) {
+	var count int
+	err := env.Pool.QueryRow(context.Background(),
+		"SELECT COUNT(*) FROM users WHERE role != 'system'").Scan(&count)
+	require.NoError(env.T, err)
+	require.Equal(env.T, expected, count, "Row count mismatch for table users (excluding system)")
 }
 
 // GetUserByID retrieves a user from the database

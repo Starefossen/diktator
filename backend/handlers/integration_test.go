@@ -78,12 +78,13 @@ func setupIntegrationTest(t *testing.T) *gin.Engine {
 		// Word sets - family scoped
 		api.GET("/wordsets", func(c *gin.Context) {
 			familyID, _ := c.Get("validatedFamilyID")
+			famIDStr := familyID.(string)
 			// Mock response with family-scoped word sets
 			wordSets := []models.WordSet{
 				{
-					ID:       "wordset-" + familyID.(string) + "-1",
+					ID:       "wordset-" + famIDStr + "-1",
 					Name:     "Family Words",
-					FamilyID: familyID.(string),
+					FamilyID: &famIDStr,
 				},
 			}
 			c.JSON(http.StatusOK, models.APIResponse{Data: wordSets})

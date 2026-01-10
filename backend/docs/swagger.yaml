@@ -1065,6 +1065,28 @@ paths:
       summary: Stream Audio for Word
       tags:
       - wordsets
+  /api/wordsets/curated:
+    get:
+      consumes:
+      - application/json
+      description: Get curated word sets available to all users (global/official word
+        sets)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Curated word sets
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Service unavailable or failed to retrieve word sets
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Curated Word Sets
+      tags:
+      - wordsets
   /api/wordsets/voices:
     get:
       consumes:

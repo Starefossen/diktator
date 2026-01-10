@@ -52,25 +52,31 @@ export default function ResultsPage() {
     try {
       setLoading(true);
 
-      // Load results and word sets, plus family progress for parents
+      // Load results and word sets (including curated), plus family progress for parents
       const apiCalls: Promise<unknown>[] = [
         generatedApiClient.getResults(),
         generatedApiClient.getWordSets(),
+        generatedApiClient.getCuratedWordSets(),
       ];
 
       if (isParent) {
         apiCalls.push(generatedApiClient.getFamilyProgress());
       }
 
-      const [resultsResponse, wordSetsResponse, familyProgressResponse] =
-        (await Promise.all(apiCalls)) as [
-          Awaited<ReturnType<typeof generatedApiClient.getResults>>,
-          Awaited<ReturnType<typeof generatedApiClient.getWordSets>>,
-          (
-            | Awaited<ReturnType<typeof generatedApiClient.getFamilyProgress>>
-            | undefined
-          ),
-        ];
+      const [
+        resultsResponse,
+        wordSetsResponse,
+        curatedWordSetsResponse,
+        familyProgressResponse,
+      ] = (await Promise.all(apiCalls)) as [
+        Awaited<ReturnType<typeof generatedApiClient.getResults>>,
+        Awaited<ReturnType<typeof generatedApiClient.getWordSets>>,
+        Awaited<ReturnType<typeof generatedApiClient.getCuratedWordSets>>,
+        (
+          | Awaited<ReturnType<typeof generatedApiClient.getFamilyProgress>>
+          | undefined
+        ),
+      ];
 
       if (resultsResponse.data?.data) {
         const allResults = resultsResponse.data.data as TestResult[];
@@ -78,9 +84,11 @@ export default function ResultsPage() {
         setFilteredResults(allResults);
       }
 
-      if (wordSetsResponse.data?.data) {
-        setWordSets(wordSetsResponse.data.data as WordSet[]);
-      }
+      // Combine family word sets with curated word sets
+      const familyWordSets = (wordSetsResponse.data?.data as WordSet[]) || [];
+      const curatedWordSets =
+        (curatedWordSetsResponse.data?.data as WordSet[]) || [];
+      setWordSets([...familyWordSets, ...curatedWordSets]);
 
       if (familyProgressResponse?.data?.data) {
         setFamilyProgress(familyProgressResponse.data.data as FamilyProgress[]);
@@ -150,25 +158,25 @@ export default function ResultsPage() {
   const stats =
     results.length > 0
       ? {
-          totalTests: results.length,
-          averageScore: Math.round(
-            results.reduce((sum, r) => sum + r.score, 0) / results.length,
-          ),
-          bestScore: Math.max(...results.map((r) => r.score)),
-          worstScore: Math.min(...results.map((r) => r.score)),
-          totalTimeSpent: results.reduce((sum, r) => sum + r.timeSpent, 0),
-          totalWords: results.reduce((sum, r) => sum + r.totalWords, 0),
-          totalCorrectWords: results.reduce(
-            (sum, r) => sum + r.correctWords,
-            0,
-          ),
-          improvementTrend: calculateImprovementTrend(),
-          recentResults: results.slice(0, 5),
-          excellentTests: results.filter((r) => r.score >= 90).length,
-          goodTests: results.filter((r) => r.score >= 70 && r.score < 90)
-            .length,
-          needsWorkTests: results.filter((r) => r.score < 70).length,
-        }
+        totalTests: results.length,
+        averageScore: Math.round(
+          results.reduce((sum, r) => sum + r.score, 0) / results.length,
+        ),
+        bestScore: Math.max(...results.map((r) => r.score)),
+        worstScore: Math.min(...results.map((r) => r.score)),
+        totalTimeSpent: results.reduce((sum, r) => sum + r.timeSpent, 0),
+        totalWords: results.reduce((sum, r) => sum + r.totalWords, 0),
+        totalCorrectWords: results.reduce(
+          (sum, r) => sum + r.correctWords,
+          0,
+        ),
+        improvementTrend: calculateImprovementTrend(),
+        recentResults: results.slice(0, 5),
+        excellentTests: results.filter((r) => r.score >= 90).length,
+        goodTests: results.filter((r) => r.score >= 70 && r.score < 90)
+          .length,
+        needsWorkTests: results.filter((r) => r.score < 70).length,
+      }
       : null;
 
   function calculateImprovementTrend() {
@@ -267,13 +275,12 @@ export default function ResultsPage() {
                       {t("results.stats.improvementCard")}
                     </h3>
                     <div
-                      className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                        stats.improvementTrend > 0
+                      className={`w-6 h-6 rounded-full flex items-center justify-center ${stats.improvementTrend > 0
                           ? "bg-nordic-meadow/20 text-nordic-meadow"
                           : stats.improvementTrend < 0
                             ? "bg-red-100 text-red-600"
                             : "bg-gray-100 text-gray-600"
-                      }`}
+                        }`}
                     >
                       {stats.improvementTrend > 0 ? (
                         <ArrowTrendingUpIcon className="w-4 h-4" />
@@ -285,13 +292,12 @@ export default function ResultsPage() {
                     </div>
                   </div>
                   <p
-                    className={`text-3xl font-bold ${
-                      stats.improvementTrend > 0
+                    className={`text-3xl font-bold ${stats.improvementTrend > 0
                         ? "text-nordic-meadow"
                         : stats.improvementTrend < 0
                           ? "text-red-600"
                           : "text-gray-600"
-                    }`}
+                      }`}
                   >
                     {stats.improvementTrend > 0 ? "+" : ""}
                     {stats.improvementTrend}%
@@ -372,10 +378,10 @@ export default function ResultsPage() {
                         onChange={(e) =>
                           setFilterScore(
                             e.target.value as
-                              | "all"
-                              | "excellent"
-                              | "good"
-                              | "needs-work",
+                            | "all"
+                            | "excellent"
+                            | "good"
+                            | "needs-work",
                           )
                         }
                         className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-nordic-teal sm:text-sm/6"

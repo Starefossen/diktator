@@ -75,7 +75,7 @@ func (m *MockDBService) GetWordSets(familyID string) ([]models.WordSet, error) {
 	args := m.Called(familyID)
 	var wordSets []models.WordSet
 	for _, ws := range m.wordSets {
-		if ws.FamilyID == familyID {
+		if ws.FamilyID != nil && *ws.FamilyID == familyID {
 			wordSets = append(wordSets, *ws)
 		}
 	}
@@ -97,7 +97,7 @@ func (m *MockDBService) DeleteWordSet(wordSetID string) error {
 func (m *MockDBService) VerifyWordSetAccess(familyID, wordSetID string) error {
 	args := m.Called(familyID, wordSetID)
 	if ws, exists := m.wordSets[wordSetID]; exists {
-		if ws.FamilyID != familyID {
+		if ws.FamilyID == nil || *ws.FamilyID != familyID {
 			return fmt.Errorf("access denied")
 		}
 		return nil
@@ -415,7 +415,8 @@ func MockUpdateWordSet(c *gin.Context) {
 	}
 
 	// Verify family access
-	if existingWordSet.FamilyID != familyID.(string) {
+	famIDStr := familyID.(string)
+	if existingWordSet.FamilyID == nil || *existingWordSet.FamilyID != famIDStr {
 		c.JSON(http.StatusNotFound, models.APIResponse{Error: "Word set not found"})
 		return
 	}
@@ -632,11 +633,14 @@ func setupTestData(mockDB *MockDBService) {
 		return result
 	}
 
+	familySmith := "family-smith"
+	familyJohnson := "family-johnson"
+
 	wordSetSmith := &models.WordSet{
 		ID:        "wordset-smith-1",
 		Name:      "Smith Family Words",
 		Words:     stringToWordItems([]string{"apple", "banana", "cherry"}),
-		FamilyID:  "family-smith",
+		FamilyID:  &familySmith,
 		CreatedBy: "parent-smith",
 		Language:  "en",
 		CreatedAt: time.Now(),
@@ -647,7 +651,7 @@ func setupTestData(mockDB *MockDBService) {
 		ID:        "wordset-johnson-1",
 		Name:      "Johnson Family Words",
 		Words:     stringToWordItems([]string{"dog", "cat", "bird"}),
-		FamilyID:  "family-johnson",
+		FamilyID:  &familyJohnson,
 		CreatedBy: "parent-johnson",
 		Language:  "en",
 		CreatedAt: time.Now(),
@@ -1121,10 +1125,11 @@ func TestUpdateWordSet(t *testing.T) {
 			},
 			setupMocks: func() {
 				// Mock the GetWordSet call
+				famID := "family-smith"
 				existingWordSet := &models.WordSet{
 					ID:        "wordset-smith-1",
 					Name:      "Smith Family Words",
-					FamilyID:  "family-smith",
+					FamilyID:  &famID,
 					CreatedBy: "parent-smith",
 					Language:  "en",
 					CreatedAt: time.Now(),
@@ -1162,10 +1167,11 @@ func TestUpdateWordSet(t *testing.T) {
 			},
 			setupMocks: func() {
 				// Mock existing word set from different family
+				famID := "family-johnson"
 				existingWordSet := &models.WordSet{
 					ID:        "wordset-johnson-1",
 					Name:      "Johnson Family Words",
-					FamilyID:  "family-johnson", // Different family
+					FamilyID:  &famID, // Different family
 					CreatedBy: "parent-johnson",
 					Language:  "en",
 					CreatedAt: time.Now(),

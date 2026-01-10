@@ -34,13 +34,18 @@ function FamilyProgressPageContent() {
     try {
       setLoading(true);
 
-      // Load family progress and stats
-      const [progressResponse, resultsResponse, wordSetsResponse] =
-        await Promise.all([
-          generatedApiClient.getFamilyProgress(),
-          generatedApiClient.getFamilyResults(),
-          generatedApiClient.getWordSets(),
-        ]);
+      // Load family progress and stats (including curated word sets)
+      const [
+        progressResponse,
+        resultsResponse,
+        wordSetsResponse,
+        curatedWordSetsResponse,
+      ] = await Promise.all([
+        generatedApiClient.getFamilyProgress(),
+        generatedApiClient.getFamilyResults(),
+        generatedApiClient.getWordSets(),
+        generatedApiClient.getCuratedWordSets(),
+      ]);
 
       if (progressResponse.data?.data) {
         // Filter to only include children
@@ -50,8 +55,12 @@ function FamilyProgressPageContent() {
       }
       if (resultsResponse.data?.data)
         setResults(resultsResponse.data.data as TestResult[]);
-      if (wordSetsResponse.data?.data)
-        setWordSets(wordSetsResponse.data.data as WordSet[]);
+
+      // Combine family word sets with curated word sets
+      const familyWordSets = (wordSetsResponse.data?.data as WordSet[]) || [];
+      const curatedWordSets =
+        (curatedWordSetsResponse.data?.data as WordSet[]) || [];
+      setWordSets([...familyWordSets, ...curatedWordSets]);
     } catch (error) {
       console.error("Failed to load family data:", error);
     } finally {
@@ -251,8 +260,8 @@ function FamilyProgressPageContent() {
                         <p className="font-bold">
                           {member.totalWords > 0
                             ? Math.round(
-                                (member.correctWords / member.totalWords) * 100,
-                              )
+                              (member.correctWords / member.totalWords) * 100,
+                            )
                             : 0}
                           %
                         </p>

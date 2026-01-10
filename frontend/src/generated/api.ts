@@ -2305,6 +2305,39 @@ export class UsersApi extends BaseAPI implements UsersApiInterface {
 export const WordsetsApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
         /**
+         * Get curated word sets available to all users (global/official word sets)
+         * @summary Get Curated Word Sets
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiWordsetsCuratedGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/wordsets/curated`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Get word sets for the authenticated user\'s family
          * @summary Get Word Sets
          * @param {*} [options] Override http request option.
@@ -2625,6 +2658,18 @@ export const WordsetsApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = WordsetsApiAxiosParamCreator(configuration)
     return {
         /**
+         * Get curated word sets available to all users (global/official word sets)
+         * @summary Get Curated Word Sets
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiWordsetsCuratedGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAPIResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiWordsetsCuratedGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WordsetsApi.apiWordsetsCuratedGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Get word sets for the authenticated user\'s family
          * @summary Get Word Sets
          * @param {*} [options] Override http request option.
@@ -2742,6 +2787,15 @@ export const WordsetsApiFactory = function (configuration?: Configuration, baseP
     const localVarFp = WordsetsApiFp(configuration)
     return {
         /**
+         * Get curated word sets available to all users (global/official word sets)
+         * @summary Get Curated Word Sets
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiWordsetsCuratedGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
+            return localVarFp.apiWordsetsCuratedGet(options).then((request) => request(axios, basePath));
+        },
+        /**
          * Get word sets for the authenticated user\'s family
          * @summary Get Word Sets
          * @param {*} [options] Override http request option.
@@ -2834,6 +2888,15 @@ export const WordsetsApiFactory = function (configuration?: Configuration, baseP
  */
 export interface WordsetsApiInterface {
     /**
+     * Get curated word sets available to all users (global/official word sets)
+     * @summary Get Curated Word Sets
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WordsetsApiInterface
+     */
+    apiWordsetsCuratedGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
      * Get word sets for the authenticated user\'s family
      * @summary Get Word Sets
      * @param {*} [options] Override http request option.
@@ -2925,6 +2988,17 @@ export interface WordsetsApiInterface {
  * @extends {BaseAPI}
  */
 export class WordsetsApi extends BaseAPI implements WordsetsApiInterface {
+    /**
+     * Get curated word sets available to all users (global/official word sets)
+     * @summary Get Curated Word Sets
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WordsetsApi
+     */
+    public apiWordsetsCuratedGet(options?: RawAxiosRequestConfig) {
+        return WordsetsApiFp(this.configuration).apiWordsetsCuratedGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
     /**
      * Get word sets for the authenticated user\'s family
      * @summary Get Word Sets

@@ -159,16 +159,17 @@ func testGetWordSets(c *gin.Context) {
 	}
 
 	// Mock word sets for the family
+	famID := familyID.(string)
 	wordSets := []models.WordSet{
 		{
-			ID:       "wordset-" + familyID.(string) + "-1",
+			ID:       "wordset-" + famID + "-1",
 			Name:     "Basic Words",
-			FamilyID: familyID.(string),
+			FamilyID: &famID,
 		},
 		{
-			ID:       "wordset-" + familyID.(string) + "-2",
+			ID:       "wordset-" + famID + "-2",
 			Name:     "Advanced Words",
-			FamilyID: familyID.(string),
+			FamilyID: &famID,
 		},
 	}
 

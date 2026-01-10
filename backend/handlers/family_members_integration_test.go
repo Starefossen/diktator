@@ -28,8 +28,8 @@ func TestAddFamilyMember_Integration(t *testing.T) {
 	env.Router.POST("/api/family/members", AddFamilyMember)
 
 	t.Run("Success_CreateChild", func(t *testing.T) {
-		// Initially only the parent exists
-		env.AssertRowCount("users", 1)
+		// Initially only the parent exists (excluding system user)
+		env.AssertUserRowCount(1)
 
 		// Request to add a child
 		payload := map[string]interface{}{
@@ -61,7 +61,8 @@ func TestAddFamilyMember_Integration(t *testing.T) {
 		assert.Equal(t, "child", invitation["role"])
 
 		// Verify NO new user was added yet (user is created when they accept the invitation)
-		env.AssertRowCount("users", 1)
+		// Using AssertUserRowCount to exclude system user
+		env.AssertUserRowCount(1)
 
 		// Verify the invitation exists in the database
 		invitations, err := env.DB.GetPendingInvitationsByEmail("child@example.com")
@@ -242,8 +243,8 @@ func TestAddFamilyMember_DatabaseConstraints_Integration(t *testing.T) {
 		assert.NotEqual(t, http.StatusCreated, resp.Code,
 			"Database should prevent duplicate emails")
 
-		// Should still only have the original users
-		env.AssertRowCount("users", 2) // parent + child
+		// Should still only have the original users (excluding system user)
+		env.AssertUserRowCount(2) // parent + child
 	})
 
 	t.Run("DatabaseEnforces_PrimaryKey", func(t *testing.T) {

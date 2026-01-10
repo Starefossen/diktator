@@ -115,6 +115,37 @@ func GetWordSets(c *gin.Context) {
 	})
 }
 
+// @Summary		Get Curated Word Sets
+// @Description	Get curated word sets available to all users (global/official word sets)
+// @Tags			wordsets
+// @Accept			json
+// @Produce		json
+// @Success		200	{object}	models.APIResponse	"Curated word sets"
+// @Failure		500	{object}	models.APIResponse	"Service unavailable or failed to retrieve word sets"
+// @Security		BearerAuth
+// @Router			/api/wordsets/curated [get]
+func GetCuratedWordSets(c *gin.Context) {
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
+	wordSets, err := serviceManager.DB.GetGlobalWordSets()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to retrieve curated word sets",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Data: wordSets,
+	})
+}
+
 // CreateWordSet creates a new word set
 //
 //	@Summary		Create Word Set
@@ -185,10 +216,12 @@ func CreateWordSet(c *gin.Context) {
 	}
 
 	// Create new word set
+	familyIDStr := familyID.(string)
 	wordSet := &models.WordSet{
 		ID:                uuid.New().String(),
 		Name:              req.Name,
-		FamilyID:          familyID.(string),
+		FamilyID:          &familyIDStr,
+		IsGlobal:          false,
 		CreatedBy:         userID.(string),
 		Language:          req.Language,
 		TestConfiguration: req.TestConfiguration,
@@ -292,8 +325,16 @@ func UpdateWordSet(c *gin.Context) {
 		return
 	}
 
+	// Prevent editing global (curated) word sets
+	if existingWordSet.IsGlobal {
+		c.JSON(http.StatusForbidden, models.APIResponse{
+			Error: "Cannot edit curated word sets",
+		})
+		return
+	}
+
 	// Verify family access
-	if existingWordSet.FamilyID != familyID.(string) {
+	if existingWordSet.FamilyID == nil || *existingWordSet.FamilyID != familyID.(string) {
 		c.JSON(http.StatusNotFound, models.APIResponse{
 			Error: "Word set not found",
 		})
@@ -413,7 +454,22 @@ func DeleteWordSet(c *gin.Context) {
 		return
 	}
 
-	err := sm.DB.DeleteWordSet(id)
+	// Check if word set is global (curated) - prevent deletion
+	isGlobal, err := sm.DB.IsGlobalWordSet(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, models.APIResponse{
+			Error: "Word set not found",
+		})
+		return
+	}
+	if isGlobal {
+		c.JSON(http.StatusForbidden, models.APIResponse{
+			Error: "Cannot delete curated word sets",
+		})
+		return
+	}
+
+	err = sm.DB.DeleteWordSet(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to delete word set",
@@ -672,6 +728,7 @@ func SaveResult(c *gin.Context) {
 
 	err := serviceManager.DB.SaveTestResult(result)
 	if err != nil {
+		log.Printf("[SaveResult] Error saving test result for user %s, wordset %s: %v", userID, req.WordSetID, err)
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to save test result",
 		})

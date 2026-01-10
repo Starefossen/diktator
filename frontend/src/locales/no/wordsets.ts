@@ -1,6 +1,7 @@
 export const wordsets = {
   "wordsets.title": "Ordsett",
   "wordsets.subtitle": "Opprett og administrer dine staveordsamlinger",
+  "wordsets.unknownWordSet": "Ukjent ordsett",
   "wordsets.loading": "Finner ordsettene dine...",
   "wordsets.create": "Opprett nytt ordsett",
   "wordsets.cancel": "Avbryt",
@@ -171,4 +172,16 @@ export const wordsets = {
     "Kunne ikke oppdatere tildeling. Prøv igjen?",
   "wordsets.assignment.unassignSuccess": "Barn fjernet fra tildeling!",
   "wordsets.assignment.unassignError": "Kunne ikke fjerne. Prøv igjen?",
+
+  // Curated word sets
+  "wordsets.curated.title": "Offisielle ordsett",
+  "wordsets.curated.subtitle": "Staveøvelser laget av Stavle",
+  "wordsets.curated.officialBadge": "Offisiell",
+  "wordsets.curated.backToWordSets": "Tilbake til mine ordsett",
+  "wordsets.curated.noSets": "Ingen offisielle sett ennå",
+  "wordsets.curated.noSetsDescription":
+    "Kom tilbake senere for offisielle ordsett fra Stavle!",
+  "wordsets.curated.loadError":
+    "Kunne ikke laste offisielle ordsett. Vennligst prøv igjen.",
+  "wordsets.curated.browse": "Se offisielle tester",
 };

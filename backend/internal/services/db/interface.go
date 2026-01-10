@@ -41,9 +41,11 @@ type Repository interface {
 	// Word set operations
 	GetWordSet(id string) (*models.WordSet, error)
 	GetWordSets(familyID string) ([]models.WordSet, error)
+	GetGlobalWordSets() ([]models.WordSet, error) // Get curated word sets available to all users
 	CreateWordSet(wordSet *models.WordSet) error
 	UpdateWordSet(wordSet *models.WordSet) error
 	DeleteWordSet(id string) error
+	IsGlobalWordSet(wordSetID string) (bool, error) // Check if a word set is global/curated
 
 	// Word set assignment operations
 	AssignWordSetToUser(wordSetID, userID, assignedBy string) error

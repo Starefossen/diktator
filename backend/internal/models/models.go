@@ -4,6 +4,10 @@ import (
 	"time"
 )
 
+// SystemUserID is the user ID used for system-created content (e.g., curated word sets)
+// When displaying this in the UI, show "Stavle" instead of a user name
+const SystemUserID = "system"
+
 // User represents a user in the system - Enhanced for family management
 type User struct {
 	ID           string    `json:"id" db:"id"`
@@ -47,8 +51,9 @@ type WordSet struct {
 		Definition   string        `json:"definition,omitempty"`   // Optional definition for the word
 		Translations []Translation `json:"translations,omitempty"` // Optional translations to other languages
 	} `json:"words"`
-	FamilyID          string                  `json:"familyId"`
-	CreatedBy         string                  `json:"createdBy"`
+	FamilyID          *string                 `json:"familyId,omitempty"`        // NULL for global word sets
+	IsGlobal          bool                    `json:"isGlobal"`                  // True for curated word sets available to all users
+	CreatedBy         string                  `json:"createdBy"`                 // SystemUserID for curated sets
 	Language          string                  `json:"language"`                  // 'en' or 'no'
 	AssignedUserIDs   []string                `json:"assignedUserIds,omitempty"` // IDs of child users assigned to this wordset
 	TestConfiguration *map[string]interface{} `json:"testConfiguration,omitempty"`

@@ -175,6 +175,11 @@ export const generatedApiClient = {
     return wordsetsApi.apiWordsetsGet();
   },
 
+  async getCuratedWordSets() {
+    const { wordsetsApi } = await createApiInstances();
+    return wordsetsApi.apiWordsetsCuratedGet();
+  },
+
   async createWordSet(request: ModelsCreateWordSetRequest) {
     const { wordsetsApi } = await createApiInstances();
     return wordsetsApi.apiWordsetsPost(request);

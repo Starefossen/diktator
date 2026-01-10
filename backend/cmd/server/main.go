@@ -164,6 +164,7 @@ func main() {
 			wordsets.Use(middleware.RequireWordSetAccess(serviceManager.DB))
 			{
 				wordsets.GET("", handlers.GetWordSets)
+				wordsets.GET("/curated", handlers.GetCuratedWordSets) // Global/curated word sets
 				wordsets.POST("", handlers.CreateWordSet)
 				wordsets.PUT("/:id", handlers.UpdateWordSet)
 				wordsets.DELETE("/:id", handlers.DeleteWordSet)

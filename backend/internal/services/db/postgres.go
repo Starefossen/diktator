@@ -566,13 +566,13 @@ func (db *Postgres) GetWordSet(id string) (*models.WordSet, error) {
 
 	// Get word set basic info
 	query := `
-		SELECT id, name, family_id, created_by, language, test_configuration, created_at, updated_at
+		SELECT id, name, family_id, is_global, created_by, language, test_configuration, created_at, updated_at
 		FROM word_sets WHERE id = $1`
 
 	var ws models.WordSet
 	var testConfigJSON []byte
 	err := db.pool.QueryRow(ctx, query, id).Scan(
-		&ws.ID, &ws.Name, &ws.FamilyID, &ws.CreatedBy, &ws.Language,
+		&ws.ID, &ws.Name, &ws.FamilyID, &ws.IsGlobal, &ws.CreatedBy, &ws.Language,
 		&testConfigJSON, &ws.CreatedAt, &ws.UpdatedAt,
 	)
 	if err == pgx.ErrNoRows {
@@ -653,7 +653,7 @@ func (db *Postgres) GetWordSet(id string) (*models.WordSet, error) {
 func (db *Postgres) GetWordSets(familyID string) ([]models.WordSet, error) {
 	ctx := context.Background()
 	query := `
-		SELECT id, name, family_id, created_by, language, test_configuration, created_at, updated_at
+		SELECT id, name, family_id, is_global, created_by, language, test_configuration, created_at, updated_at
 		FROM word_sets WHERE family_id = $1 ORDER BY created_at DESC`
 
 	rows, err := db.pool.Query(ctx, query, familyID)
@@ -667,7 +667,7 @@ func (db *Postgres) GetWordSets(familyID string) ([]models.WordSet, error) {
 		var ws models.WordSet
 		var testConfigJSON []byte
 		err := rows.Scan(
-			&ws.ID, &ws.Name, &ws.FamilyID, &ws.CreatedBy, &ws.Language,
+			&ws.ID, &ws.Name, &ws.FamilyID, &ws.IsGlobal, &ws.CreatedBy, &ws.Language,
 			&testConfigJSON, &ws.CreatedAt, &ws.UpdatedAt,
 		)
 		if err != nil {
@@ -766,6 +766,120 @@ func (db *Postgres) GetWordSets(familyID string) ([]models.WordSet, error) {
 	return wordSets, nil
 }
 
+// GetGlobalWordSets returns all global (curated) word sets available to all users
+func (db *Postgres) GetGlobalWordSets() ([]models.WordSet, error) {
+	ctx := context.Background()
+	query := `
+		SELECT id, name, family_id, is_global, created_by, language, test_configuration, created_at, updated_at
+		FROM word_sets WHERE is_global = true ORDER BY name ASC`
+
+	rows, err := db.pool.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get global word sets: %w", err)
+	}
+	defer rows.Close()
+
+	var wordSets []models.WordSet
+	for rows.Next() {
+		var ws models.WordSet
+		var testConfigJSON []byte
+		err := rows.Scan(
+			&ws.ID, &ws.Name, &ws.FamilyID, &ws.IsGlobal, &ws.CreatedBy, &ws.Language,
+			&testConfigJSON, &ws.CreatedAt, &ws.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan word set: %w", err)
+		}
+
+		if testConfigJSON != nil {
+			var testConfig map[string]interface{}
+			if err := json.Unmarshal(testConfigJSON, &testConfig); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal test config: %w", err)
+			}
+			ws.TestConfiguration = &testConfig
+		}
+
+		// Get words for this word set
+		wordsQuery := `
+			SELECT word, audio_url, audio_id, voice_id, audio_created_at, definition, translations
+			FROM words WHERE word_set_id = $1 ORDER BY position`
+		wordRows, err := db.pool.Query(ctx, wordsQuery, ws.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get words: %w", err)
+		}
+
+		for wordRows.Next() {
+			var wordStr, definition string
+			var audioURL, audioID, voiceID *string
+			var audioCreatedAt *time.Time
+			var translationsJSON []byte
+			err := wordRows.Scan(&wordStr, &audioURL, &audioID, &voiceID, &audioCreatedAt, &definition, &translationsJSON)
+			if err != nil {
+				wordRows.Close()
+				return nil, fmt.Errorf("failed to scan word: %w", err)
+			}
+
+			wordEntry := struct {
+				Word         string               `json:"word"`
+				Audio        models.WordAudio     `json:"audio,omitempty"`
+				Definition   string               `json:"definition,omitempty"`
+				Translations []models.Translation `json:"translations,omitempty"`
+			}{
+				Word:       wordStr,
+				Definition: definition,
+			}
+
+			if len(translationsJSON) > 0 {
+				var translations []models.Translation
+				if err := json.Unmarshal(translationsJSON, &translations); err != nil {
+					wordRows.Close()
+					return nil, fmt.Errorf("failed to unmarshal translations: %w", err)
+				}
+				wordEntry.Translations = translations
+			}
+
+			if audioURL != nil {
+				wordEntry.Audio = models.WordAudio{
+					Word:     wordStr,
+					AudioURL: *audioURL,
+				}
+				if audioID != nil {
+					wordEntry.Audio.AudioID = *audioID
+				}
+				if voiceID != nil {
+					wordEntry.Audio.VoiceID = *voiceID
+				}
+				if audioCreatedAt != nil {
+					wordEntry.Audio.CreatedAt = *audioCreatedAt
+				}
+			}
+			ws.Words = append(ws.Words, wordEntry)
+		}
+		wordRows.Close()
+
+		wordSets = append(wordSets, ws)
+	}
+
+	return wordSets, nil
+}
+
+// IsGlobalWordSet checks if a word set is global (curated)
+func (db *Postgres) IsGlobalWordSet(wordSetID string) (bool, error) {
+	ctx := context.Background()
+	query := `SELECT is_global FROM word_sets WHERE id = $1`
+
+	var isGlobal bool
+	err := db.pool.QueryRow(ctx, query, wordSetID).Scan(&isGlobal)
+	if err == pgx.ErrNoRows {
+		return false, ErrWordSetNotFound
+	}
+	if err != nil {
+		return false, fmt.Errorf("failed to check if word set is global: %w", err)
+	}
+
+	return isGlobal, nil
+}
+
 func (db *Postgres) CreateWordSet(ws *models.WordSet) error {
 	ctx := context.Background()
 
@@ -788,12 +902,12 @@ func (db *Postgres) CreateWordSet(ws *models.WordSet) error {
 	}
 
 	query := `
-		INSERT INTO word_sets (id, name, family_id, created_by, language, test_configuration,
+		INSERT INTO word_sets (id, name, family_id, is_global, created_by, language, test_configuration,
 		                       created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 
 	_, err = tx.Exec(ctx, query,
-		ws.ID, ws.Name, ws.FamilyID, ws.CreatedBy, ws.Language,
+		ws.ID, ws.Name, ws.FamilyID, ws.IsGlobal, ws.CreatedBy, ws.Language,
 		testConfigJSON, ws.CreatedAt, ws.UpdatedAt,
 	)
 	if err != nil {
@@ -1093,13 +1207,13 @@ func (db *Postgres) SaveTestResult(result *models.TestResult) error {
 		wtrQuery := `
 			INSERT INTO word_test_results (id, test_result_id, word, user_answers,
 			                               attempts, correct, time_spent, final_answer,
-			                               hints_used, audio_play_count)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+			                               hints_used, audio_play_count, error_types)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
 
 		_, err = tx.Exec(ctx, wtrQuery,
 			uuid.New().String(), result.ID, wtr.Word, answersJSON,
 			wtr.Attempts, wtr.Correct, wtr.TimeSpent, wtr.FinalAnswer,
-			wtr.HintsUsed, wtr.AudioPlayCount,
+			wtr.HintsUsed, wtr.AudioPlayCount, wtr.ErrorTypes,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to save word test result: %w", err)
@@ -1575,7 +1689,8 @@ func (db *Postgres) VerifyChildOwnership(parentID, childID string) error {
 
 func (db *Postgres) VerifyWordSetAccess(familyID, wordSetID string) error {
 	ctx := context.Background()
-	query := `SELECT 1 FROM word_sets WHERE id = $1 AND family_id = $2`
+	// Allow access if word set belongs to family OR if it's a global (curated) word set
+	query := `SELECT 1 FROM word_sets WHERE id = $1 AND (family_id = $2 OR is_global = true)`
 
 	var exists int
 	err := db.pool.QueryRow(ctx, query, wordSetID, familyID).Scan(&exists)

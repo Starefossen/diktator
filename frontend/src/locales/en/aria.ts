@@ -99,4 +99,8 @@ export const aria = {
   "aria.cancelButton": "Cancel",
   "aria.editButton": "Edit",
   "aria.removeButton": "Remove",
+
+  // Curated word sets
+  "aria.browseCuratedSets": "Browse official word sets from Stavle",
+  "aria.curatedWordSet": "Official word set",
 };

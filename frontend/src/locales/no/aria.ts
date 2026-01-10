@@ -99,4 +99,8 @@ export const aria = {
   "aria.cancelButton": "Avbryt",
   "aria.editButton": "Rediger",
   "aria.removeButton": "Fjern",
+
+  // Curated word sets
+  "aria.browseCuratedSets": "Se offisielle ordsett fra Stavle",
+  "aria.curatedWordSet": "Offisielt ordsett",
 };

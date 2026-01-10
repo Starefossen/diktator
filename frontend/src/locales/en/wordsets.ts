@@ -1,6 +1,7 @@
 export const wordsets = {
   "wordsets.title": "Word Sets",
   "wordsets.subtitle": "Create and manage your spelling word collections",
+  "wordsets.unknownWordSet": "Unknown Word Set",
   "wordsets.loading": "Finding your word sets...",
   "wordsets.create": "Create New Word Set",
   "wordsets.cancel": "Cancel",
@@ -169,4 +170,16 @@ export const wordsets = {
   "wordsets.assignment.assignError": "Couldn't update assignment. Try again?",
   "wordsets.assignment.unassignSuccess": "Child unassigned!",
   "wordsets.assignment.unassignError": "Couldn't unassign. Try again?",
+
+  // Curated word sets
+  "wordsets.curated.title": "Official Word Sets",
+  "wordsets.curated.subtitle": "Curated spelling practice created by Stavle",
+  "wordsets.curated.officialBadge": "Official",
+  "wordsets.curated.backToWordSets": "Back to My Word Sets",
+  "wordsets.curated.noSets": "No Curated Sets Yet",
+  "wordsets.curated.noSetsDescription":
+    "Check back later for official word sets from Stavle!",
+  "wordsets.curated.loadError":
+    "Could not load curated word sets. Please try again.",
+  "wordsets.curated.browse": "Browse Curated Tests",
 };
