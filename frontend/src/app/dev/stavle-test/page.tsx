@@ -22,7 +22,9 @@ const GRID_COLORS: Record<string, string> = {
 };
 
 export default function StavleTestPage() {
-  const [frames, setFrames] = useState<FramesMap>(() => ({ ...SPRITE_DATA.frames }));
+  const [frames, setFrames] = useState<FramesMap>(() => ({
+    ...SPRITE_DATA.frames,
+  }));
   const [showGrid, setShowGrid] = useState(true);
   const [selectedFrame, setSelectedFrame] = useState<string | null>(null);
   const [animate, setAnimate] = useState(false);
@@ -61,13 +63,13 @@ export default function StavleTestPage() {
         ...prev[selectedFrame],
         ...(dragMode === "move"
           ? {
-            x: Math.max(0, Math.round(dragRef.current!.startFrame.x + dx)),
-            y: Math.max(0, Math.round(dragRef.current!.startFrame.y + dy)),
-          }
+              x: Math.max(0, Math.round(dragRef.current!.startFrame.x + dx)),
+              y: Math.max(0, Math.round(dragRef.current!.startFrame.y + dy)),
+            }
           : {
-            w: Math.max(50, Math.round(dragRef.current!.startFrame.w + dx)),
-            h: Math.max(50, Math.round(dragRef.current!.startFrame.h + dy)),
-          }),
+              w: Math.max(50, Math.round(dragRef.current!.startFrame.w + dx)),
+              h: Math.max(50, Math.round(dragRef.current!.startFrame.h + dy)),
+            }),
       },
     }));
   };

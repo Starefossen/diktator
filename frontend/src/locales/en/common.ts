@@ -46,7 +46,8 @@ export const common = {
   // Stavle Companion messages
   // Stavle speaks like a friendly study buddy — warm, encouraging, direct
   "stavle.companion.dismiss": "Dismiss",
-  "stavle.companion.child.welcome": "Hey! Want to learn some new words with me?",
+  "stavle.companion.child.welcome":
+    "Hey! Want to learn some new words with me?",
   "stavle.companion.child.readyToStart": "Pick one and let's go!",
   "stavle.companion.child.comeBack": "There you are! Ready to practice?",
   "stavle.companion.child.doingGreat": "Wow, you're really good at this!",

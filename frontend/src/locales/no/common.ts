@@ -56,7 +56,8 @@ export const common = {
   "stavle.companion.parent.noWordSets": "La oss lage noen ord å øve på!",
   "stavle.companion.parent.waitingForChildren":
     "Alt klart! Nå kan barna begynne å øve.",
-  "stavle.companion.parent.familyExcelling": "Familien din er skikkelig flinke!",
+  "stavle.companion.parent.familyExcelling":
+    "Familien din er skikkelig flinke!",
   "stavle.companion.parent.familyLearning":
     "Barna øver flittig — se hvordan det går!",
 };

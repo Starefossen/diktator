@@ -24,10 +24,7 @@ const mockWordSet: WordSet = {
   updatedAt: new Date().toISOString(),
 };
 
-const createTestResult = (
-  score: number,
-  daysAgo: number = 0,
-): TestResult => {
+const createTestResult = (score: number, daysAgo: number = 0): TestResult => {
   const date = new Date();
   date.setDate(date.getDate() - daysAgo);
   return {
@@ -57,11 +54,7 @@ describe("StavleCompanion", () => {
   describe("Child user states", () => {
     it("shows welcome message for new user with no word sets", async () => {
       render(
-        <StavleCompanion
-          wordSets={[]}
-          userResults={[]}
-          familyProgress={[]}
-        />,
+        <StavleCompanion wordSets={[]} userResults={[]} familyProgress={[]} />,
       );
 
       await waitFor(() => {
@@ -159,11 +152,7 @@ describe("StavleCompanion", () => {
 
     it("shows create word sets message for parent with no sets", async () => {
       render(
-        <StavleCompanion
-          wordSets={[]}
-          userResults={[]}
-          familyProgress={[]}
-        />,
+        <StavleCompanion wordSets={[]} userResults={[]} familyProgress={[]} />,
       );
 
       await waitFor(() => {
@@ -219,11 +208,7 @@ describe("StavleCompanion", () => {
   describe("Dismiss behavior", () => {
     it("can be dismissed by clicking the close button", async () => {
       render(
-        <StavleCompanion
-          wordSets={[]}
-          userResults={[]}
-          familyProgress={[]}
-        />,
+        <StavleCompanion wordSets={[]} userResults={[]} familyProgress={[]} />,
       );
 
       await waitFor(() => {

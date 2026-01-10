@@ -6,6 +6,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ClientSideRouter } from "@/components/ClientSideRouter";
 import { PWAInstaller } from "@/components/PWAInstaller";
 import { HydrationMarker } from "@/components/HydrationMarker";
+import { DevUserSwitcher } from "@/components/DevUserSwitcher";
 import "./globals.css";
 
 const lexend = Lexend({
@@ -104,6 +105,7 @@ export default function RootLayout({
             <ClientSideRouter />
             <Navigation />
             <main className="pb-8">{children}</main>
+            <DevUserSwitcher />
           </AuthProvider>
         </LanguageProvider>
       </body>

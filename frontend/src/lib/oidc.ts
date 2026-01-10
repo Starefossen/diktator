@@ -14,6 +14,7 @@
 // - Useful for local development and testing
 // - Any credentials work (they're ignored)
 // - Mock tokens are stored immediately
+// - Supports user switching via localStorage key 'mock_user_id'
 
 // OIDC Configuration from environment
 const oidcConfig = {
@@ -41,15 +42,61 @@ const authMode = process.env.NEXT_PUBLIC_AUTH_MODE || "mock";
 // Check if we're in mock mode (for local development without OIDC provider)
 export const isMockMode = authMode === "mock";
 
-// Mock user for development mode
-const mockUser = {
-  id: process.env.NEXT_PUBLIC_MOCK_USER_ID || "mock-user-12345",
-  email: process.env.NEXT_PUBLIC_MOCK_USER_EMAIL || "dev@localhost",
-  name: process.env.NEXT_PUBLIC_MOCK_USER_NAME || "Development User",
-};
+// Mock users for development mode - must match backend/internal/services/auth/mock.go
+export const MOCK_USERS = {
+  "mock-user-12345": {
+    id: "mock-user-12345",
+    email: "dev@localhost",
+    name: "Development User",
+    role: "parent" as const,
+  },
+  "mock-child-1": {
+    id: "mock-child-1",
+    email: "child1@dev.localhost",
+    name: "Alex Dev",
+    role: "child" as const,
+  },
+  "mock-child-2": {
+    id: "mock-child-2",
+    email: "child2@dev.localhost",
+    name: "Sam Dev",
+    role: "child" as const,
+  },
+} as const;
 
-// Mock token for development (never use in production!)
-export const mockToken = "mock-jwt-token-for-development";
+export type MockUserId = keyof typeof MOCK_USERS;
+
+// Key for storing selected mock user in localStorage
+const MOCK_USER_KEY = "mock_user_id";
+
+// Get currently selected mock user ID
+export function getMockUserId(): MockUserId {
+  if (typeof window === "undefined") return "mock-user-12345";
+  const stored = localStorage.getItem(MOCK_USER_KEY);
+  if (stored && stored in MOCK_USERS) {
+    return stored as MockUserId;
+  }
+  return "mock-user-12345";
+}
+
+// Set mock user ID and trigger auth refresh
+export function setMockUserId(userId: MockUserId): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(MOCK_USER_KEY, userId);
+  // Trigger storage event to refresh auth state
+  window.dispatchEvent(new Event("storage"));
+}
+
+// Get current mock user based on selected ID
+function getMockUser() {
+  const userId = getMockUserId();
+  return MOCK_USERS[userId];
+}
+
+// Mock token for development - now includes user ID for switching
+export function getMockToken(): string {
+  return getMockUserId();
+}
 
 // Token storage keys
 const ACCESS_TOKEN_KEY = "oidc_access_token";
@@ -187,7 +234,7 @@ export function getAccessToken(): string | null {
   if (typeof window === "undefined") return null;
 
   if (isMockMode) {
-    return mockToken;
+    return getMockToken();
   }
 
   const token = localStorage.getItem(ACCESS_TOKEN_KEY);
@@ -224,7 +271,7 @@ export function getIdToken(): string | null {
   if (typeof window === "undefined") return null;
 
   if (isMockMode) {
-    return mockToken;
+    return getMockToken();
   }
 
   const token = localStorage.getItem(ID_TOKEN_KEY);
@@ -289,6 +336,7 @@ function parseJwt(token: string): Record<string, unknown> | null {
  */
 export async function getUserInfo(): Promise<OIDCUser | null> {
   if (isMockMode) {
+    const mockUser = getMockUser();
     return {
       id: mockUser.id,
       email: mockUser.email,
@@ -411,9 +459,10 @@ export async function initiateLogin(returnTo?: string): Promise<void> {
   if (isMockMode) {
     console.log("Mock mode: Login simulated");
     // In mock mode, store mock tokens
+    const token = getMockToken();
     storeTokens({
-      access_token: mockToken,
-      id_token: mockToken,
+      access_token: token,
+      id_token: token,
       token_type: "Bearer",
       expires_in: 3600,
     });

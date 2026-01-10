@@ -3,7 +3,7 @@
  * This wraps the generated OpenAPI client with OIDC authentication
  */
 
-import { getIdToken, isMockMode, mockToken } from "@/lib/oidc";
+import { getIdToken, isMockMode, getMockToken } from "@/lib/oidc";
 import {
   Configuration,
   ChildrenApi,
@@ -30,7 +30,7 @@ const createConfiguration = async (
   if (requireAuth) {
     // Use ID token for API authentication (has correct audience claim from Zitadel)
     // Access tokens from Zitadel may not include the client ID in aud claim
-    let token = isMockMode ? mockToken : getIdToken();
+    let token = isMockMode ? getMockToken() : getIdToken();
 
     // If no token initially, wait briefly for auth to complete (max 2 seconds)
     if (!token && !isMockMode) {

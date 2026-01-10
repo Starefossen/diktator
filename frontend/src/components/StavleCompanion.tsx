@@ -215,5 +215,3 @@ export function StavleCompanion({
     </div>
   );
 }
-
-export default StavleCompanion;

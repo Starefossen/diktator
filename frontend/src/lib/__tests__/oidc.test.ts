@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { isAuthenticated, getAccessToken, isMockMode } from "../oidc";
+import {
+  isAuthenticated,
+  getAccessToken,
+  isMockMode,
+  getMockUserId,
+} from "../oidc";
 
 describe("OIDC Library", () => {
   beforeEach(() => {
@@ -17,9 +22,10 @@ describe("OIDC Library", () => {
       expect(isAuthenticated()).toBe(true);
     });
 
-    it("should return mock token from getAccessToken() in mock mode", () => {
+    it("should return mock user ID as token from getAccessToken() in mock mode", () => {
       const token = getAccessToken();
-      expect(token).toBe("mock-jwt-token-for-development");
+      // In mock mode, the token is the mock user ID (used to switch users)
+      expect(token).toBe(getMockUserId());
     });
   });
 
