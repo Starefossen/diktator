@@ -25,6 +25,7 @@ import { TestResultsView } from "@/components/TestResultsView";
 import { SettingsModal } from "@/components/modals/SettingsModal";
 import { DeleteConfirmationModal } from "@/components/modals/DeleteConfirmationModal";
 import { ModeSelectionModal } from "@/components/ModeSelectionModal";
+import { StavleCompanion } from "@/components/StavleCompanion";
 import { HeroPlusIcon } from "@/components/Icons";
 
 // Custom hooks
@@ -429,6 +430,13 @@ function WordSetsPageContent() {
             }}
           />
         )}
+
+        {/* Stavle Companion - context-aware encouragement */}
+        <StavleCompanion
+          wordSets={wordSets}
+          userResults={userResults}
+          familyProgress={familyProgress}
+        />
 
         {/* Footer */}
         <footer className="pb-4 mt-12 text-center">

@@ -7,13 +7,13 @@ export const test = {
   "test.reviewResults": "Review Results",
   "test.yourAnswer": "Your answer",
   "test.restart": "Restart Test",
+  "test.tryAgain": "Again!",
   "test.backToWordSets": "Back to Word Sets",
 
   // Test interface
   "test.listenToWordMobile": "Tap to hear",
   "test.listenToWord": "Click to hear the word",
   "test.incorrect": "Not quite...",
-  "test.tryAgain": "Give it another go!",
   "test.typeWordHere": "Type the word here...",
   "test.attemptsRemaining": "attempts remaining",
   "test.playAgain": "Play Again",

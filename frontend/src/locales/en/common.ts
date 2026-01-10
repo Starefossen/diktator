@@ -42,4 +42,21 @@ export const common = {
     "A new version of Diktator is ready. Reload to get the latest features and improvements.",
   "pwa.update.button": "Reload Now",
   "pwa.update.dismiss": "Later",
+
+  // Stavle Companion messages
+  // Stavle speaks like a friendly study buddy — warm, encouraging, direct
+  "stavle.companion.dismiss": "Dismiss",
+  "stavle.companion.child.welcome": "Hey! Want to learn some new words with me?",
+  "stavle.companion.child.readyToStart": "Pick one and let's go!",
+  "stavle.companion.child.comeBack": "There you are! Ready to practice?",
+  "stavle.companion.child.doingGreat": "Wow, you're really good at this!",
+  "stavle.companion.child.goodProgress": "Nice! You're getting better!",
+  "stavle.companion.child.keepPracticing": "Keep going — you've got this!",
+  "stavle.companion.child.practiceMore": "Let's try a few more together!",
+  "stavle.companion.parent.noWordSets": "Let's make some words to practice!",
+  "stavle.companion.parent.waitingForChildren":
+    "All set! Now the kids can start practicing.",
+  "stavle.companion.parent.familyExcelling": "Your family is doing amazing!",
+  "stavle.companion.parent.familyLearning":
+    "The kids are practicing — check how they're doing!",
 };

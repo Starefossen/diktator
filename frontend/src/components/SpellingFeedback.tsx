@@ -10,6 +10,7 @@ import {
 } from "@/lib/spellingAnalysis";
 import { useLanguage, TranslationKey } from "@/contexts/LanguageContext";
 import { HeroLightBulbIcon, HeroCheckSolidIcon } from "@/components/Icons";
+import Stavle from "@/components/Stavle";
 
 interface SpellingFeedbackProps {
   userAnswer: string;
@@ -125,10 +126,17 @@ export function SpellingFeedback({
     <div className="rounded-xl bg-red-50 border border-red-200 overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-300">
       {/* Header with attempt info */}
       <div className="flex items-center justify-between px-4 py-3 bg-red-100/50">
-        <p className="font-semibold text-red-800">
-          {t("test.incorrect")} - {t("test.tryAgain")} ({currentAttempt}/
-          {maxAttempts})
-        </p>
+        <div className="flex items-center gap-2">
+          <Stavle
+            pose={analysis.isAlmostCorrect ? "thinking" : "encouraging"}
+            size={48}
+            animate
+          />
+          <p className="font-semibold text-red-800">
+            {t("test.incorrect")} - {t("test.tryAgain")} ({currentAttempt}/
+            {maxAttempts})
+          </p>
+        </div>
         {analysis.isAlmostCorrect && (
           <span className="px-2 py-1 text-xs font-medium text-orange-700 bg-orange-100 rounded-full">
             {t("test.feedback.almostThere" as TranslationKey)}
@@ -209,10 +217,13 @@ export function CorrectFeedback() {
 
   return (
     <div className="p-4 rounded-lg bg-green-100 border border-green-300 animate-in fade-in-0 slide-in-from-top-2 duration-300">
-      <p className="font-semibold text-lg text-green-800 flex items-center justify-center gap-2">
-        <HeroCheckSolidIcon className="w-7 h-7 text-green-600" />
-        {t("test.correct")}
-      </p>
+      <div className="flex items-center justify-center gap-3">
+        <Stavle pose="celebrating" size={64} animate />
+        <p className="font-semibold text-lg text-green-800 flex items-center gap-2">
+          <HeroCheckSolidIcon className="w-7 h-7 text-green-600" />
+          {t("test.correct")}
+        </p>
+      </div>
     </div>
   );
 }

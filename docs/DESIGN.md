@@ -303,6 +303,39 @@ interface StavleProps {
 - Not a reward to unlock (should feel like a friend from day one)
 - Not gendered or given complex backstory
 
+### Stavle's Tone of Voice
+
+Stavle speaks like a **friendly study buddy** — warm, encouraging, and direct. Think of a supportive classmate who's genuinely excited about learning together.
+
+#### Voice Principles
+
+| Principle       | Do                       | Don't                                          |
+| --------------- | ------------------------ | ---------------------------------------------- |
+| **Direct**      | "Pick one and let's go!" | "Please select a word set to begin your test." |
+| **Warm**        | "There you are!"         | "Welcome back, user."                          |
+| **Encouraging** | "You're getting better!" | "Your score has improved."                     |
+| **Inclusive**   | "Let's try together"     | "You should practice more"                     |
+| **Brief**       | Short, punchy phrases    | Long explanations                              |
+
+#### Voice Examples by Context
+
+| Context               | Stavle Says                                          | NOT This                                              |
+| --------------------- | ---------------------------------------------------- | ----------------------------------------------------- |
+| Welcome               | "Hey! Want to learn some new words with me?"         | "Welcome to the vocabulary learning application."     |
+| Ready to start        | "Pick one and let's go!"                             | "Select a word set and click Start Test."             |
+| Good score            | "Wow, you're really good at this!"                   | "Excellent performance on this assessment."           |
+| Needs practice        | "Let's try a few more together!"                     | "Your score indicates additional practice is needed." |
+| Parent: no sets       | "Let's make some words to practice!"                 | "Create your first word set to get started."          |
+| Parent: kids learning | "The kids are practicing — check how they're doing!" | "Learning in progress. View family statistics."       |
+
+#### Key Characteristics
+
+1. **Uses "we" and "let's"** — Stavle is a partner, not an instructor
+2. **Short sentences** — Fits in speech bubbles, easy to read quickly
+3. **Exclamation points sparingly** — Enthusiastic but not manic
+4. **No baby talk** — Respects children's intelligence
+5. **Norwegian sensibility** — Understated warmth, not American over-enthusiasm
+
 ---
 
 ## Color System
@@ -787,6 +820,67 @@ The app serves two audiences with different needs:
 | **Animation**  | Celebratory, feedback-rich           | Subtle, functional                |
 | **Complexity** | Minimal options, clear paths         | Full feature access               |
 
+### Child-Friendly UI Guidelines
+
+When designing for children (ages 5-12), prioritize simplicity and encouragement over information density.
+
+#### Card Design for Children
+
+| Principle   | Do                                   | Don't                                       |
+| ----------- | ------------------------------------ | ------------------------------------------- |
+| **Content** | Show name, word count, simple status | Show dates, detailed stats, attempt counts  |
+| **Status**  | "Try it!" / "92%" with icon          | "Never taken" / "Last attempted 3 days ago" |
+| **Words**   | 6 clean pills, no borders            | 8+ cluttered pills with multiple icons      |
+| **Actions** | "Go!" / "Again!"                     | "Start Test" / "Retake Test"                |
+| **Badges**  | Fun, prominent "For you!"            | Technical "Assigned to user"                |
+
+#### Language Simplification
+
+| Context        | Child-Friendly    | Too Formal               |
+| -------------- | ----------------- | ------------------------ |
+| New wordset    | "Try it!"         | "Never taken"            |
+| Has score      | "92%" with trophy | "Score: 92% - Excellent" |
+| Primary action | "Go!"             | "Start Test"             |
+| Retry          | "Again!"          | "Retake Test"            |
+| Assigned       | "For you!"        | "Assigned to me"         |
+
+#### Visual Simplification
+
+1. **Remove borders from pills** — Use subtle background tints instead
+2. **Fewer items** — Show 6 words max, not 8
+3. **Bigger text** — 20px+ for titles, 16px for body
+4. **Rounder shapes** — `rounded-full` pills, `rounded-2xl` cards
+5. **More whitespace** — Generous padding (p-5 not p-4)
+6. **Single focus** — One clear call-to-action per card
+
+#### Example: ChildWordSetCard
+
+```text
+┌─────────────────────────────────────┐
+│  🇳🇴 Norwegian Colors               │  ← Big, bold title
+│     10 ord                          │  ← Simple count
+│                                     │
+│  ┌──────────┐                       │
+│  │ Try it!  │  (or 92% 🏆)          │  ← Encouraging status
+│  └──────────┘                       │
+│                                     │
+│  🔊 rød   🔊 blå   🔊 grønn         │  ← Clean word pills
+│  🔊 gul   🔊 hvit  +5               │     (no borders)
+│                                     │
+│  ┌─────────────────────┐  ┌────┐   │
+│  │      ▶ Go!          │  │ 📖 │   │  ← Big friendly buttons
+│  └─────────────────────┘  └────┘   │
+└─────────────────────────────────────┘
+```
+
+Compare to ParentWordSetCard which includes:
+
+- Created date
+- Assignment count
+- Children's progress with scores
+- Multiple menu options
+- Analytics access
+
 ### Button Hierarchy
 
 #### Child Interface Buttons
@@ -1181,13 +1275,111 @@ All old color classes (blue-500, purple-600, indigo-*) have been replaced with N
 - [x] Create TestResultsView tests (graduated message logic, accessibility)
 - [x] Create TestResultsList tests (empty state, results display)
 
-### Phase 5: Stavle Integration
+### Phase 5: Stavle Integration ✅ COMPLETED
 
-- [ ] Generate Stavle illustrations (all required poses)
-- [ ] Add Stavle to empty states
-- [ ] Add Stavle to test feedback
-- [ ] Add Stavle to celebration screens
-- [ ] Create loading animation with Stavle
+- [x] Stavle sprite component (`/components/Stavle.tsx`)
+  - 10 poses: listening, celebrating, encouraging, waving, thinking, reading, pointing, sleeping, idle, idle-resting
+  - 6 sizes: 48, 64, 96, 128, 160, 200px
+  - Pose-specific animations (bounce, nod, breathe, bob)
+  - Full ARIA support with EN/NO translations
+  - Respects `prefers-reduced-motion`
+- [x] Add Stavle to empty states
+  - `WordSetsListView.tsx`: pointing (128px) — guiding users to create content
+  - `TestResultsList.tsx`: encouraging (128px) — supportive when no history
+- [x] Add Stavle to test feedback
+  - `SpellingFeedback.tsx`: encouraging (48px) for wrong answers, thinking (48px) for "almost correct"
+  - `CorrectFeedback`: celebrating (64px) — immediate positive reinforcement
+  - Note: Stavle is NOT shown during active test input — keep focus on the task
+- [x] Add Stavle to celebration screens
+  - `TestResultsView.tsx`: Score-based poses via `getScorePose()`:
+    - 90%+: celebrating (160px) — big celebration
+    - 70-89%: encouraging (128px) — supportive
+    - <70%: reading (128px) — gentle, non-judgmental
+- [x] Create loading animation with Stavle
+  - `LoadingSpinner.tsx`: idle (96px) with bob animation
+
+#### Stavle Placement Principles
+
+**When to use Stavle:**
+- **Feedback moments** — Correct/incorrect answers, test results
+- **Empty states** — Guiding users when there's no content
+- **Celebrations** — Score reveals, achievements, milestones
+- **Waiting states** — Loading screens (brief, non-blocking)
+
+**When NOT to use Stavle:**
+- **During active tasks** — Don't distract from typing, reading, or primary actions
+- **Next to primary buttons** — Creates visual confusion about what to focus on
+- **In cramped spaces** — Stavle needs breathing room to feel natural
+- **Repetitively** — Overuse diminishes impact; save for meaningful moments
+
+**Size guidelines:**
+- **48px** — Inline feedback, tight spaces (minimum readable size)
+- **64px** — Brief celebrations, secondary feedback
+- **96-128px** — Empty states, results, medium emphasis
+- **160-200px** — Major celebrations, hero moments (use sparingly)
+
+**Placement rules:**
+- Give Stavle visual "breathing room" — don't crowd against other elements
+- Center Stavle above or below related content, not beside primary actions
+- On mobile, consider hiding decorative Stavle instances to save space
+- Stavle should feel like a supportive guide, not a distraction
+
+#### Stavle Usage Reference
+
+| Context                      | Pose        | Size  | Animation | Purpose                             |
+| ---------------------------- | ----------- | ----- | --------- | ----------------------------------- |
+| **Correct answer**           | celebrating | 64px  | bounce    | Brief celebration, not overwhelming |
+| **Wrong answer**             | encouraging | 48px  | nod       | Supportive, not discouraging        |
+| **Almost correct**           | thinking    | 48px  | nod       | Acknowledges effort                 |
+| **Excellent results (90%+)** | celebrating | 160px | bounce    | Big celebration earned              |
+| **Good results (70-89%)**    | encouraging | 128px | nod       | Acknowledges solid effort           |
+| **Needs practice (<70%)**    | reading     | 128px | bob       | Non-judgmental, study companion     |
+| **Empty word sets**          | pointing    | 128px | bob       | Guides toward action                |
+| **No test history**          | encouraging | 128px | nod       | Invites to start                    |
+| **Loading page**             | idle        | 96px  | bob       | Friendly waiting companion          |
+| **Companion (greeting)**     | waving      | 64px  | bob       | Welcome/context-aware greeting      |
+| **Companion (encouraging)**  | encouraging | 64px  | nod       | Progress acknowledgment             |
+| **Companion (celebrating)**  | celebrating | 64px  | bounce    | High performance recognition        |
+
+### Stavle Companion (Clippy-style Helper)
+
+The `StavleCompanion` component provides context-aware encouragement on the word sets page, adapting its message based on user state. It appears in the bottom-left corner like a helpful assistant.
+
+#### Companion States
+
+| User State                        | Pose        | Message (EN)                                         | Message (NO)                               |
+| --------------------------------- | ----------- | ---------------------------------------------------- | ------------------------------------------ |
+| **Child: New user**               | waving      | "Hey! Want to learn some new words with me?"         | "Hei! Skal vi lære noen nye ord sammen?"   |
+| **Child: Has sets, no tests**     | pointing    | "Pick one and let's go!"                             | "Velg et ordsett, så kjører vi!"           |
+| **Child: Returning (>7 days)**    | encouraging | "There you are! Ready to practice?"                  | "Der er du jo! Klar for å øve?"            |
+| **Child: Doing great (90%+)**     | celebrating | "Wow, you're really good at this!"                   | "Wow, du er skikkelig flink!"              |
+| **Child: Good progress (70-89%)** | encouraging | "Nice! You're getting better!"                       | "Bra jobba! Du blir bedre og bedre!"       |
+| **Child: Needs practice (<70%)**  | reading     | "Let's try a few more together!"                     | "Skal vi prøve noen flere sammen?"         |
+| **Parent: No word sets**          | pointing    | "Let's make some words to practice!"                 | "La oss lage noen ord å øve på!"           |
+| **Parent: Waiting for kids**      | encouraging | "All set! Now the kids can start practicing."        | "Alt klart! Nå kan barna begynne å øve."   |
+| **Parent: Family excelling**      | celebrating | "Your family is doing amazing!"                      | "Familien din er skikkelig flinke!"        |
+| **Parent: Family learning**       | reading     | "The kids are practicing — check how they're doing!" | "Barna øver flittig — se hvordan det går!" |
+
+#### Companion Behavior
+
+- **Appears after 500ms** — Doesn't compete with page load
+- **Dismissible** — Click × to hide for the session
+- **Non-blocking** — Fixed position, doesn't cover content
+- **Contextual** — Message changes based on user data
+- **Consistent placement** — Always bottom-left corner
+
+#### Implementation
+
+```tsx
+import { StavleCompanion } from "@/components/StavleCompanion";
+
+// In wordsets page
+<StavleCompanion
+  wordSets={wordSets}
+  userResults={userResults}
+  familyProgress={familyProgress}
+/>
+```
 
 ### Phase 6: Animation & Polish
 

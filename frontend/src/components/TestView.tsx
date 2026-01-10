@@ -180,22 +180,24 @@ export function TestView({
         <div className="max-w-2xl mx-auto">
           <div className="p-4 text-center bg-white rounded-lg shadow-xl sm:p-8">
             <div className="mb-8">
-              <div className="relative inline-block">
-                {isAudioPlaying && (
-                  <div className="absolute border-4 border-transparent rounded-full -inset-3 border-t-nordic-sky border-r-nordic-sky/80 animate-spin"></div>
-                )}
-                <button
-                  onClick={() => {
-                    onPlayCurrentWord();
-                    // Return focus to input after clicking audio
-                    setTimeout(() => {
-                      inputRef.current?.focus();
-                    }, TIMING.INPUT_FOCUS_DELAY_MS);
-                  }}
-                  className="relative p-4 text-4xl text-nordic-midnight transition-all duration-200 transform rounded-full shadow-lg sm:p-6 sm:text-6xl bg-linear-to-r from-nordic-meadow to-nordic-sky hover:from-nordic-meadow/90 hover:to-nordic-sky/90 hover:shadow-xl hover:scale-105"
-                >
-                  <HeroVolumeIcon className="w-12 h-12 text-nordic-midnight sm:w-16 sm:h-16" />
-                </button>
+              <div className="flex items-center justify-center gap-4">
+                <div className="relative inline-block">
+                  {isAudioPlaying && (
+                    <div className="absolute border-4 border-transparent rounded-full -inset-3 border-t-nordic-sky border-r-nordic-sky/80 animate-spin"></div>
+                  )}
+                  <button
+                    onClick={() => {
+                      onPlayCurrentWord();
+                      // Return focus to input after clicking audio
+                      setTimeout(() => {
+                        inputRef.current?.focus();
+                      }, TIMING.INPUT_FOCUS_DELAY_MS);
+                    }}
+                    className="relative p-4 text-4xl text-nordic-midnight transition-all duration-200 transform rounded-full shadow-lg sm:p-6 sm:text-6xl bg-linear-to-r from-nordic-meadow to-nordic-sky hover:from-nordic-meadow/90 hover:to-nordic-sky/90 hover:shadow-xl hover:scale-105"
+                  >
+                    <HeroVolumeIcon className="w-12 h-12 text-nordic-midnight sm:w-16 sm:h-16" />
+                  </button>
+                </div>
               </div>
               <p className="mt-4 text-gray-600">
                 <span className="sm:hidden">

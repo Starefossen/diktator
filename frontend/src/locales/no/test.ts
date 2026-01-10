@@ -7,13 +7,13 @@ export const test = {
   "test.reviewResults": "Se gjennom resultatene",
   "test.yourAnswer": "Ditt svar",
   "test.restart": "Start på nytt",
+  "test.tryAgain": "En gang til!",
   "test.backToWordSets": "Tilbake til ordsett",
 
   // Test interface
   "test.listenToWordMobile": "Trykk for å høre",
   "test.listenToWord": "Klikk for å høre ordet",
   "test.incorrect": "Nesten...",
-  "test.tryAgain": "Prøv en gang til!",
   "test.typeWordHere": "Skriv ordet her...",
   "test.attemptsRemaining": "forsøk gjenstår",
   "test.playAgain": "Spill igjen",

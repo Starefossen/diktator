@@ -2,8 +2,8 @@ import React, { useMemo } from "react";
 import { WordSet, TestResult, FamilyProgress } from "@/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { HeroBookIcon } from "@/components/Icons";
 import { WordSetCard } from "@/components/WordSetCard";
+import Stavle from "@/components/Stavle";
 
 interface WordSetsListViewProps {
   wordSets: WordSet[];
@@ -57,13 +57,13 @@ export function WordSetsListView({
   if (wordSets.length === 0) {
     return (
       <div className="py-12 text-center">
-        <div className="mb-4">
-          <HeroBookIcon className="w-16 h-16 mx-auto text-nordic-teal" />
+        <div className="mb-4 flex justify-center">
+          <Stavle pose="pointing" size={128} animate />
         </div>
-        <h3 className="mb-2 text-xl font-semibold text-gray-600">
+        <h3 className="mb-2 text-xl font-semibold text-nordic-midnight">
           {t("wordsets.noTitle")}
         </h3>
-        <p className="text-gray-500">{t("wordsets.noSubtitle")}</p>
+        <p className="text-gray-600">{t("wordsets.noSubtitle")}</p>
       </div>
     );
   }

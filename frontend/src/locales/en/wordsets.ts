@@ -95,7 +95,10 @@ export const wordsets = {
 
   // Status and time labels
   "wordsets.status.new": "New!",
+  "wordsets.status.tryIt": "Try it!",
   "wordsets.status.neverTaken": "Never taken",
+  "wordsets.go": "Go!",
+  "wordsets.assignment.forYou": "For you!",
   "wordsets.time.today": "Today",
   "wordsets.time.dayAgo": "1 day ago",
   "wordsets.time.daysAgo": "days ago",

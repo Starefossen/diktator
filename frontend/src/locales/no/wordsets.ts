@@ -96,7 +96,10 @@ export const wordsets = {
 
   // Status and time labels
   "wordsets.status.new": "Ny!",
+  "wordsets.status.tryIt": "Prøv!",
   "wordsets.status.neverTaken": "Aldri tatt",
+  "wordsets.go": "Kjør!",
+  "wordsets.assignment.forYou": "Til deg!",
   "wordsets.time.today": "I dag",
   "wordsets.time.dayAgo": "1 dag siden",
   "wordsets.time.daysAgo": "dager siden",

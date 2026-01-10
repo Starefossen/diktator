@@ -9,7 +9,7 @@ import {
   HandThumbUpIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/16/solid";
-import { HeroChartIcon } from "@/components/Icons";
+import Stavle from "@/components/Stavle";
 
 interface TestResultsListProps {
   results: TestResult[];
@@ -72,10 +72,10 @@ export default function TestResultsList({
   if (results.length === 0) {
     return (
       <div className="p-12 text-center">
-        <div className="mb-4 text-gray-400">
-          <HeroChartIcon className="w-16 h-16 mx-auto" />
+        <div className="mb-4 flex justify-center">
+          <Stavle pose="encouraging" size={128} animate />
         </div>
-        <h3 className="mb-2 text-lg font-medium text-gray-900">
+        <h3 className="mb-2 text-lg font-medium text-nordic-midnight">
           {t("results.history.noResults")}
         </h3>
         <p className="text-gray-600">
@@ -103,9 +103,8 @@ export default function TestResultsList({
                   {getWordSetName(result.wordSetId)}
                 </h4>
                 <div
-                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-full border font-semibold text-xs ${
-                    getScoreInfo(result.score).color
-                  }`}
+                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-full border font-semibold text-xs ${getScoreInfo(result.score).color
+                    }`}
                 >
                   {getScoreInfo(result.score).icon}
                   {result.score}% - {getScoreInfo(result.score).label}
@@ -197,11 +196,10 @@ export default function TestResultsList({
                             <div className="flex items-center space-x-2">
                               {wordResult.correct ? (
                                 <span
-                                  className={`px-2 py-0.5 text-xs font-medium rounded-full flex items-center gap-1 ${
-                                    isCorrectMultipleAttempts
+                                  className={`px-2 py-0.5 text-xs font-medium rounded-full flex items-center gap-1 ${isCorrectMultipleAttempts
                                       ? "text-orange-800 bg-orange-100"
                                       : "text-green-800 bg-green-100"
-                                  }`}
+                                    }`}
                                 >
                                   <CheckCircleIcon className="w-3 h-3" />
                                   {isCorrectMultipleAttempts
@@ -235,12 +233,11 @@ export default function TestResultsList({
                                     (answer, answerIndex) => (
                                       <span
                                         key={answerIndex}
-                                        className={`px-1.5 py-0.5 text-xs rounded ${
-                                          answer.toLowerCase().trim() ===
-                                          wordResult.word.toLowerCase()
+                                        className={`px-1.5 py-0.5 text-xs rounded ${answer.toLowerCase().trim() ===
+                                            wordResult.word.toLowerCase()
                                             ? "bg-green-100 text-green-800"
                                             : "bg-gray-100 text-gray-700"
-                                        }`}
+                                          }`}
                                       >
                                         {answer || t("results.words.empty")}
                                       </span>

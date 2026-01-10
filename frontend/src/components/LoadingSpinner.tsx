@@ -1,4 +1,5 @@
 import { useLanguage } from "@/contexts/LanguageContext";
+import Stavle from "@/components/Stavle";
 
 export default function LoadingSpinner({
   size = "md",
@@ -30,8 +31,11 @@ export default function LoadingSpinner({
 export function LoadingPage() {
   const { t } = useLanguage();
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-nordic-birch">
       <div className="text-center">
+        <div className="mb-4 flex justify-center">
+          <Stavle pose="idle" size={96} animate aria-hidden />
+        </div>
         <LoadingSpinner size="lg" />
         <p className="mt-4 text-gray-600">{t("common.loading")}</p>
       </div>

@@ -7,15 +7,12 @@ import {
   HeroVolumeIcon,
   HeroPlayIcon,
   HeroRocketIcon,
-  HeroTargetIcon,
   HeroStarIcon,
   HeroTrophyIcon,
-  HeroCheckIcon,
 } from "@/components/Icons";
 import { FlagIcon } from "@/components/FlagIcon";
 import { hasAudioAvailable } from "@/lib/audioPlayer";
 import { Button } from "@/components/Button";
-import { IconButton } from "@/components/IconButton";
 
 interface ChildWordSetCardProps {
   wordSet: WordSet;
@@ -52,19 +49,18 @@ export function ChildWordSetCard({
     if (score >= 90)
       return {
         label: t("results.performance.excellent"),
-        color: "text-amber-700 bg-nordic-sunrise/20 border-nordic-sunrise/40",
+        color: "text-amber-700 bg-nordic-sunrise/20",
         icon: HeroTrophyIcon,
       };
     if (score >= 70)
       return {
         label: t("results.performance.good"),
-        color: "text-emerald-700 bg-nordic-meadow/20 border-nordic-meadow/40",
+        color: "text-emerald-700 bg-nordic-meadow/20",
         icon: HeroDumbbellIcon,
       };
     return {
       label: t("results.performance.needsWork"),
-      color:
-        "text-orange-700 bg-nordic-cloudberry/20 border-nordic-cloudberry/40",
+      color: "text-orange-700 bg-nordic-cloudberry/20",
       icon: HeroRocketIcon,
     };
   };
@@ -73,140 +69,81 @@ export function ChildWordSetCard({
     ? getPerformanceLevel(latestResult.score)
     : null;
 
-  // Determine which words need practice (prioritize words with lowest scores)
-  const needsPracticeWords =
-    latestResult && latestResult.score < 90
-      ? wordSet.words.slice(
-          0,
-          Math.ceil((wordSet.words.length * (100 - latestResult.score)) / 100),
-        )
-      : [];
-
-  // Sort words to show practice words first, then regular words (stable sort)
-  const sortedWords = [...wordSet.words].sort((a, b) => {
-    const aNeedsPractice = needsPracticeWords.some((w) => w.word === a.word);
-    const bNeedsPractice = needsPracticeWords.some((w) => w.word === b.word);
-    if (aNeedsPractice && !bNeedsPractice) return -1;
-    if (!aNeedsPractice && bNeedsPractice) return 1;
-    return 0;
-  });
-
-  // Calculate relative time for last active
-  const getRelativeTime = (date: Date) => {
-    const now = new Date();
-    const diffInMs = now.getTime() - date.getTime();
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-
-    if (diffInDays === 0) return t("wordsets.time.today");
-    if (diffInDays === 1) return t("wordsets.time.dayAgo");
-    if (diffInDays < 7) return `${diffInDays} ${t("wordsets.time.daysAgo")}`;
-    if (diffInDays < 14) return t("wordsets.time.weekAgo");
-    if (diffInDays < 30) {
-      const weeks = Math.floor(diffInDays / 7);
-      return weeks === 1
-        ? t("wordsets.time.weekAgo")
-        : `${weeks} ${t("wordsets.time.weeksAgo")}`;
-    }
-    if (diffInDays < 60) return t("wordsets.time.monthAgo");
-    const months = Math.floor(diffInDays / 30);
-    return `${months} ${t("wordsets.time.monthsAgo")}`;
-  };
-
   return (
-    <div className="card-child relative flex flex-col h-full p-4 transition-all duration-300 hover:shadow-2xl hover:border-nordic-sky hover:bg-nordic-sky/5">
+    <div className="card-child relative flex flex-col h-full p-5 transition-all duration-300 hover:shadow-2xl hover:border-nordic-sky hover:bg-nordic-sky/5">
       {/* Assignment Badge - Top Right Corner */}
       {isAssignedToMe && (
-        <div className="absolute top-2 right-2 flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold text-nordic-midnight bg-nordic-sky/20 border border-nordic-sky/40 rounded-md shadow-sm">
-          <HeroCheckIcon className="w-3.5 h-3.5" />
-          {t("wordsets.assignment.assignedToMe")}
+        <div className="absolute -top-2 -right-2 flex items-center gap-1 px-3 py-1.5 text-sm font-bold text-white bg-nordic-sky rounded-full shadow-md">
+          <HeroStarIcon className="w-4 h-4" />
+          {t("wordsets.assignment.forYou")}
         </div>
       )}
 
-      {/* Header with Flag and Name */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center flex-1 min-w-0 gap-2">
-          <FlagIcon
-            language={wordSet.language as "no" | "en"}
-            className="w-6 h-6 shrink-0"
-          />
-          <h3 className="text-lg font-bold text-gray-800 truncate">
+      {/* Header - Big friendly name */}
+      <div className="flex items-start gap-3 mb-3">
+        <FlagIcon
+          language={wordSet.language as "no" | "en"}
+          className="w-8 h-8 shrink-0 mt-1"
+        />
+        <div className="flex-1 min-w-0">
+          <h3 className="text-xl font-bold text-nordic-midnight leading-tight">
             {wordSet.name}
           </h3>
+          <p className="text-base text-gray-600 mt-0.5">
+            {wordSet.words.length}{" "}
+            {wordSet.words.length === 1
+              ? t("results.word")
+              : t("wordsets.words.count")}
+          </p>
         </div>
+      </div>
+
+      {/* Simple status - encouraging language */}
+      <div className="mb-4">
         {performance ? (
           <div
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-bold rounded-lg border shrink-0 ${performance.color}`}
+            className={`inline-flex items-center gap-2 px-3 py-2 text-base font-bold rounded-xl ${performance.color}`}
           >
-            <performance.icon className="w-4 h-4" />
+            <performance.icon className="w-5 h-5" />
             {latestResult!.score}%
           </div>
         ) : (
-          <div className="flex items-center shrink-0 gap-1.5 px-2.5 py-1.5 text-sm font-bold text-nordic-midnight bg-nordic-sky/20 border border-nordic-sky/40 rounded-lg">
-            <HeroStarIcon className="w-4 h-4" />
-            {t("wordsets.status.new")}
+          <div className="inline-flex items-center gap-2 px-3 py-2 text-base font-bold text-nordic-midnight bg-nordic-sky/20 rounded-xl">
+            <HeroStarIcon className="w-5 h-5" />
+            {t("wordsets.status.tryIt")}
           </div>
         )}
       </div>
 
-      {/* Word Count and Status */}
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-base font-semibold text-gray-700">
-          {wordSet.words.length}{" "}
-          {wordSet.words.length === 1
-            ? t("results.word")
-            : t("wordsets.words.count")}
-        </p>
-        <p className="text-sm text-gray-600">
-          {latestResult ? (
-            <>{getRelativeTime(new Date(latestResult.completedAt))}</>
-          ) : (
-            <>{t("wordsets.status.neverTaken")}</>
-          )}
-        </p>
-      </div>
-
-      {/* Word Preview Pills - Highlight words that need practice */}
-      <div className="flex flex-wrap gap-1.5 mb-4 min-h-16 content-start">
-        {sortedWords.slice(0, 8).map((wordItem, index) => {
+      {/* Word Preview - Simple, clean pills */}
+      <div className="flex flex-wrap gap-2 mb-4 min-h-12 content-start">
+        {wordSet.words.slice(0, 6).map((wordItem, index) => {
           const hasAudio = hasAudioAvailable(wordItem);
           const isPlaying = playingAudio === wordItem.word;
-          const needsPractice = needsPracticeWords.some(
-            (w) => w.word === wordItem.word,
-          );
 
           return hasAudio ? (
             <button
               key={`${wordItem.word}-${index}`}
               onClick={() => onWordClick(wordItem.word, wordSet)}
-              className={`inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
-                needsPractice
-                  ? "text-orange-800 bg-nordic-cloudberry/20 border border-nordic-cloudberry/40 cursor-pointer hover:bg-nordic-cloudberry/30 animate-pulse"
-                  : "text-nordic-midnight bg-nordic-sky/20 border border-nordic-sky/40 cursor-pointer hover:bg-nordic-sky/30 hover:border-nordic-sky/50"
-              } ${isPlaying ? "ring-4 ring-nordic-sky ring-opacity-50" : ""}`}
-              aria-label={`Play pronunciation of ${wordItem.word}`}
+              className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-full transition-all duration-200 text-nordic-midnight bg-nordic-sky/15 hover:bg-nordic-sky/25 active:scale-95 ${isPlaying ? "ring-2 ring-nordic-sky bg-nordic-sky/30" : ""}`}
+              aria-label={`${t("aria.playAudio")} ${wordItem.word}`}
               type="button"
             >
-              <HeroVolumeIcon className="shrink-0 w-3 h-3 mr-1.5" />
-              {needsPractice && (
-                <HeroTargetIcon className="shrink-0 w-3 h-3 mr-1.5 text-nordic-cloudberry" />
-              )}
-              <span className="truncate">{wordItem.word}</span>
+              <HeroVolumeIcon className="shrink-0 w-4 h-4 mr-1.5" />
+              <span>{wordItem.word}</span>
             </button>
           ) : (
             <span
               key={`${wordItem.word}-${index}`}
-              className="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded-lg"
+              className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-full"
             >
-              {needsPractice && (
-                <HeroTargetIcon className="shrink-0 w-3 h-3 mr-1.5 text-orange-600" />
-              )}
-              <span className="truncate">{wordItem.word}</span>
+              <span>{wordItem.word}</span>
             </span>
           );
         })}
-        {wordSet.words.length > 8 && (
-          <span className="px-2.5 py-1.5 text-xs font-medium text-gray-500 bg-gray-100 border border-gray-200 rounded-lg">
-            +{wordSet.words.length - 8} {t("wordsets.moreWords")}
+        {wordSet.words.length > 6 && (
+          <span className="px-3 py-2 text-sm font-medium text-gray-500 bg-gray-100 rounded-full">
+            +{wordSet.words.length - 6}
           </span>
         )}
       </div>
@@ -214,27 +151,25 @@ export function ChildWordSetCard({
       {/* Spacer to push content to bottom */}
       <div className="grow"></div>
 
-      {/* Action Buttons - Child Focused */}
-      <div className="flex gap-2 shrink-0">
+      {/* Action Buttons - Big and friendly */}
+      <div className="flex gap-3 shrink-0">
         <Button
           variant="primary-child"
           onClick={() => onStartTest(wordSet)}
-          className="flex-1"
+          className="flex-1 text-lg"
         >
-          <HeroPlayIcon className="w-4 h-4 mr-2 shrink-0" />
-          <span className="truncate">
-            {latestResult ? t("test.retakeTest") : t("wordsets.startTest")}
-          </span>
+          <HeroPlayIcon className="w-5 h-5 mr-2 shrink-0" />
+          <span>{latestResult ? t("test.tryAgain") : t("wordsets.go")}</span>
         </Button>
 
-        <IconButton
-          variant="primary"
+        <Button
+          variant="secondary-child"
           onClick={() => onStartPractice(wordSet)}
           aria-label={t("wordsets.practice.buttonTooltip")}
-          className="min-h-14 min-w-14 bg-nordic-cloudberry hover:bg-nordic-cloudberry/90"
+          className="px-4"
         >
           <HeroBookIcon className="w-5 h-5" />
-        </IconButton>
+        </Button>
       </div>
     </div>
   );

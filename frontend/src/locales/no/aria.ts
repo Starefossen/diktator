@@ -72,4 +72,16 @@ export const aria = {
   "aria.collapse": "Skjul",
   "aria.select": "Velg",
   "aria.deselect": "Fjern valg",
+
+  // Stavle mascot
+  "aria.stavle.listening": "Stavle reven lytter oppmerksomt",
+  "aria.stavle.celebrating": "Stavle reven feirer",
+  "aria.stavle.encouraging": "Stavle reven oppmuntrer deg",
+  "aria.stavle.waving": "Stavle reven vinker hei",
+  "aria.stavle.thinking": "Stavle reven tenker",
+  "aria.stavle.reading": "Stavle reven leser",
+  "aria.stavle.pointing": "Stavle reven peker",
+  "aria.stavle.sleeping": "Stavle reven sover",
+  "aria.stavle.idle": "Stavle reven",
+  "aria.stavle.idleResting": "Stavle reven hviler",
 };

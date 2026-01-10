@@ -42,4 +42,21 @@ export const common = {
     "En ny versjon av Diktator er klar. Last inn på nytt for å få de nyeste funksjonene og forbedringene.",
   "pwa.update.button": "Last inn på nytt",
   "pwa.update.dismiss": "Senere",
+
+  // Stavle Companion messages
+  // Stavle speaks like a friendly study buddy — warm, encouraging, direct
+  "stavle.companion.dismiss": "Lukk",
+  "stavle.companion.child.welcome": "Hei! Skal vi lære noen nye ord sammen?",
+  "stavle.companion.child.readyToStart": "Velg et ordsett, så kjører vi!",
+  "stavle.companion.child.comeBack": "Der er du jo! Klar for å øve?",
+  "stavle.companion.child.doingGreat": "Wow, du er skikkelig flink!",
+  "stavle.companion.child.goodProgress": "Bra jobba! Du blir bedre og bedre!",
+  "stavle.companion.child.keepPracticing": "Fortsett sånn — dette klarer du!",
+  "stavle.companion.child.practiceMore": "Skal vi prøve noen flere sammen?",
+  "stavle.companion.parent.noWordSets": "La oss lage noen ord å øve på!",
+  "stavle.companion.parent.waitingForChildren":
+    "Alt klart! Nå kan barna begynne å øve.",
+  "stavle.companion.parent.familyExcelling": "Familien din er skikkelig flinke!",
+  "stavle.companion.parent.familyLearning":
+    "Barna øver flittig — se hvordan det går!",
 };

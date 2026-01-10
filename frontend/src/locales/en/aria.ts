@@ -72,4 +72,16 @@ export const aria = {
   "aria.collapse": "Collapse",
   "aria.select": "Select",
   "aria.deselect": "Deselect",
+
+  // Stavle mascot
+  "aria.stavle.listening": "Stavle the fox is listening attentively",
+  "aria.stavle.celebrating": "Stavle the fox is celebrating",
+  "aria.stavle.encouraging": "Stavle the fox is encouraging you",
+  "aria.stavle.waving": "Stavle the fox is waving hello",
+  "aria.stavle.thinking": "Stavle the fox is thinking",
+  "aria.stavle.reading": "Stavle the fox is reading",
+  "aria.stavle.pointing": "Stavle the fox is pointing",
+  "aria.stavle.sleeping": "Stavle the fox is sleeping",
+  "aria.stavle.idle": "Stavle the fox",
+  "aria.stavle.idleResting": "Stavle the fox is resting",
 };
