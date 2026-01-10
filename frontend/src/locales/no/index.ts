@@ -99,6 +99,9 @@ export const no = {
   "home.cta.continue": "Fortsett læring",
   "home.cta.footer": "Ingen nedlastinger nødvendig • Fungerer på alle enheter",
 
+  // Footer
+  "footer.tagline": "Gjør staveøving morsomt for barn",
+
   // Existing features
   "home.features.auth": "OIDC autentisering",
   "home.features.database": "PostgreSQL database",

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Lexend } from "next/font/google";
 import { Navigation } from "@/components/Navigation";
+import { Footer } from "@/components/Footer";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ClientSideRouter } from "@/components/ClientSideRouter";
@@ -95,7 +96,7 @@ export default function RootLayout({
   return (
     <html suppressHydrationWarning lang="no" className={lexend.variable}>
       <body
-        className={`${lexend.className} min-h-screen bg-nordic-birch`}
+        className={`${lexend.className} flex flex-col min-h-screen bg-nordic-birch`}
         suppressHydrationWarning
       >
         <HydrationMarker />
@@ -104,7 +105,8 @@ export default function RootLayout({
             <PWAInstaller />
             <ClientSideRouter />
             <Navigation />
-            <main className="pb-8">{children}</main>
+            <main className="grow pb-8">{children}</main>
+            <Footer />
             <DevUserSwitcher />
           </AuthProvider>
         </LanguageProvider>

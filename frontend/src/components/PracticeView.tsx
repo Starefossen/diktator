@@ -53,7 +53,7 @@ export function PracticeView({
   const hasGeneratedAudio = wordItem?.audio?.audioUrl;
 
   return (
-    <div className="min-h-screen bg-nordic-birch">
+    <div className="bg-nordic-birch">
       <div className="container px-4 py-8 mx-auto">
         {/* Header */}
         <div className="mb-8 text-center">
@@ -99,8 +99,8 @@ export function PracticeView({
                   onClick={onPlayAudio}
                   disabled={!hasAudio}
                   className={`relative p-6 text-6xl transition-all duration-200 transform rounded-full shadow-lg ${hasAudio
-                      ? "text-nordic-midnight bg-linear-to-r from-nordic-teal to-nordic-cloudberry hover:from-nordic-teal/90 hover:to-nordic-cloudberry/90 hover:shadow-xl hover:scale-105"
-                      : "text-gray-400 bg-gray-200 cursor-not-allowed"
+                    ? "text-nordic-midnight bg-linear-to-r from-nordic-teal to-nordic-cloudberry hover:from-nordic-teal/90 hover:to-nordic-cloudberry/90 hover:shadow-xl hover:scale-105"
+                    : "text-gray-400 bg-gray-200 cursor-not-allowed"
                     }`}
                   title={
                     hasAudio ? t("wordsets.clickToPlay") : t("wordsets.noAudio")
@@ -261,8 +261,8 @@ export function PracticeView({
                   key={index}
                   onClick={() => onSetCurrentIndex(index)}
                   className={`px-3 py-1 text-sm rounded transition-colors ${index === currentPracticeIndex
-                      ? "bg-nordic-cloudberry text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-nordic-cloudberry text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
                 >
                   {word}

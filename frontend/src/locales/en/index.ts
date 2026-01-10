@@ -101,6 +101,9 @@ export const en = {
   "home.cta.continue": "Continue Learning",
   "home.cta.footer": "No downloads required • Works on all devices",
 
+  // Footer
+  "footer.tagline": "Making spelling practice fun for kids",
+
   // Existing features
   "home.features.auth": "OIDC Authentication",
   "home.features.database": "PostgreSQL Database",

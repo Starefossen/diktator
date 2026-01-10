@@ -126,7 +126,7 @@ export function TestView({
   );
 
   return (
-    <div className="min-h-screen bg-nordic-birch">
+    <div className="bg-nordic-birch">
       <div className="container px-4 py-8 mx-auto">
         {/* Header */}
         <div className="mb-8 text-center">

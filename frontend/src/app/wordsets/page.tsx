@@ -473,15 +473,6 @@ function WordSetsPageContent() {
           userResults={userResults}
           familyProgress={familyProgress}
         />
-
-        {/* Footer */}
-        <footer className="py-4 text-center">
-          <div className="text-xs text-gray-400">
-            Build:{" "}
-            {process.env.NEXT_PUBLIC_BUILD_TIME || new Date().toISOString()}
-            {process.env.NODE_ENV === "development" && " (dev)"}
-          </div>
-        </footer>
       </div>
     </ProtectedRoute>
   );
