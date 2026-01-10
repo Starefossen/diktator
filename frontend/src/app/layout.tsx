@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Lexend } from "next/font/google";
 import { Navigation } from "@/components/Navigation";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -6,6 +7,12 @@ import { ClientSideRouter } from "@/components/ClientSideRouter";
 import { PWAInstaller } from "@/components/PWAInstaller";
 import { HydrationMarker } from "@/components/HydrationMarker";
 import "./globals.css";
+
+const lexend = Lexend({
+  subsets: ["latin", "latin-ext"],
+  display: "swap",
+  variable: "--font-lexend",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -46,7 +53,7 @@ export const metadata: Metadata = {
   other: {
     "mobile-web-app-capable": "yes",
     "msapplication-config": "/browserconfig.xml",
-    "msapplication-TileColor": "#3b82f6",
+    "msapplication-TileColor": "#7DD3FC",
     "msapplication-tap-highlight": "no",
   },
   openGraph: {
@@ -76,7 +83,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  themeColor: "#3b82f6",
+  themeColor: "#7DD3FC",
 };
 
 export default function RootLayout({
@@ -85,8 +92,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html suppressHydrationWarning lang="no">
-      <body className="min-h-screen bg-gray-50" suppressHydrationWarning>
+    <html suppressHydrationWarning lang="no" className={lexend.variable}>
+      <body
+        className={`${lexend.className} min-h-screen bg-nordic-birch`}
+        suppressHydrationWarning
+      >
         <HydrationMarker />
         <LanguageProvider>
           <AuthProvider>

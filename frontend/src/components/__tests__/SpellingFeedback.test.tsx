@@ -99,12 +99,11 @@ describe("SpellingFeedback", () => {
 
   describe("Hint display", () => {
     it("does not show hint on first attempt with default config", () => {
-      const { container } = renderWithLanguage(
-        <SpellingFeedback {...baseProps} />,
-      );
+      renderWithLanguage(<SpellingFeedback {...baseProps} />);
       // Hint should not be shown on attempt 1 (showHintOnAttempt defaults to 2)
-      // Check that the hint container (blue background) is not present
-      expect(container.querySelector(".bg-blue-50")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(/A letter is missing/i),
+      ).not.toBeInTheDocument();
     });
 
     it("shows hint on second attempt with default config", () => {
@@ -112,11 +111,9 @@ describe("SpellingFeedback", () => {
         ...baseProps,
         currentAttempt: 2,
       };
-      const { container } = renderWithLanguage(
-        <SpellingFeedback {...propsSecondAttempt} />,
-      );
-      // Hint should be shown on attempt 2 - check for hint container
-      expect(container.querySelector(".bg-blue-50")).toBeInTheDocument();
+      renderWithLanguage(<SpellingFeedback {...propsSecondAttempt} />);
+      // Hint should be shown on attempt 2 - check for actual hint text
+      expect(screen.getByText(/A letter is missing/i)).toBeInTheDocument();
     });
 
     it("shows hint on third attempt", () => {
@@ -124,10 +121,8 @@ describe("SpellingFeedback", () => {
         ...baseProps,
         currentAttempt: 3,
       };
-      const { container } = renderWithLanguage(
-        <SpellingFeedback {...propsThirdAttempt} />,
-      );
-      expect(container.querySelector(".bg-blue-50")).toBeInTheDocument();
+      renderWithLanguage(<SpellingFeedback {...propsThirdAttempt} />);
+      expect(screen.getByText(/A letter is missing/i)).toBeInTheDocument();
     });
 
     it("shows correct hint for double consonant error", () => {
@@ -140,11 +135,9 @@ describe("SpellingFeedback", () => {
           primaryHint: "test.hint.doubleConsonant",
         },
       };
-      const { container } = renderWithLanguage(
-        <SpellingFeedback {...propsDoubleConsonant} />,
-      );
-      // Check that hint container is displayed
-      expect(container.querySelector(".bg-blue-50")).toBeInTheDocument();
+      renderWithLanguage(<SpellingFeedback {...propsDoubleConsonant} />);
+      // Check for the specific double consonant hint text
+      expect(screen.getByText(/double consonant/i)).toBeInTheDocument();
     });
   });
 

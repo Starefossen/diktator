@@ -50,12 +50,12 @@ export function Navigation() {
 
     if (isMobile) {
       return isActive
-        ? "border-blue-500 bg-blue-50 text-blue-700 block border-l-4 py-2 pr-4 pl-3 text-base font-medium"
+        ? "border-nordic-sky bg-sky-50 text-sky-700 block border-l-4 py-2 pr-4 pl-3 text-base font-medium"
         : "border-transparent text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800 block border-l-4 py-2 pr-4 pl-3 text-base font-medium";
     }
 
     return isActive
-      ? "border-blue-500 text-gray-900 inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium"
+      ? "border-nordic-sky text-gray-900 inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium"
       : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium";
   };
 
@@ -70,10 +70,10 @@ export function Navigation() {
             {/* Logo */}
             <div className="flex items-center">
               <Link href="/" className="flex items-center space-x-2 group">
-                <div className="flex items-center justify-center w-8 h-8 transition-transform duration-200 rounded-lg bg-linear-to-br from-blue-500 to-purple-600 group-hover:scale-110">
+                <div className="flex items-center justify-center w-8 h-8 transition-transform duration-200 rounded-lg bg-linear-to-br from-nordic-sky to-nordic-teal group-hover:scale-110">
                   <span className="text-lg font-bold text-white">D</span>
                 </div>
-                <span className="text-xl font-bold text-transparent bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text">
+                <span className="text-xl font-bold text-transparent bg-linear-to-r from-nordic-sky to-nordic-teal bg-clip-text">
                   Diktator
                 </span>
               </Link>
@@ -139,13 +139,12 @@ export function Navigation() {
             {/* API Status Indicator */}
             <div className="flex items-center pr-4 mr-4 border-r border-gray-200">
               <div
-                className={`w-3 h-3 rounded-full transition-colors ${
-                  status === "connected"
+                className={`w-3 h-3 rounded-full transition-colors ${status === "connected"
                     ? "bg-emerald-500"
                     : status === "error"
                       ? "bg-red-500"
                       : "bg-amber-500 animate-pulse"
-                }`}
+                  }`}
                 title={
                   status === "connected"
                     ? `API Connected: ${message}`
@@ -165,11 +164,11 @@ export function Navigation() {
             {user && (
               <Menu as="div" className="relative">
                 <div>
-                  <MenuButton className="relative flex items-center max-w-xs text-sm bg-white rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                  <MenuButton className="relative flex items-center max-w-xs text-sm bg-white rounded-full focus:outline-none focus:ring-2 focus:ring-nordic-teal focus:ring-offset-2">
                     <span className="absolute -inset-1.5" />
                     <span className="sr-only">Open user menu</span>
                     <div className="flex items-center space-x-2">
-                      <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-linear-to-br from-blue-500 to-purple-600">
+                      <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-linear-to-br from-nordic-sky to-nordic-teal">
                         <span className="text-sm font-medium text-white">
                           {(userData?.displayName || user.email)
                             ?.charAt(0)
@@ -277,7 +276,7 @@ export function Navigation() {
 
           {/* Mobile menu button */}
           <div className="flex items-center -mr-2 sm:hidden">
-            <DisclosureButton className="relative inline-flex items-center justify-center p-2 text-gray-400 bg-white rounded-md group hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+            <DisclosureButton className="relative inline-flex items-center justify-center p-2 text-gray-400 bg-white rounded-md group hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-nordic-teal focus:ring-offset-2">
               <span className="absolute -inset-0.5" />
               <span className="sr-only">Open main menu</span>
               <Bars3Icon
@@ -368,7 +367,7 @@ export function Navigation() {
           <div className="pt-4 pb-3 border-t border-gray-200">
             <div className="flex items-center px-4">
               <div className="shrink-0">
-                <div className="relative flex items-center justify-center w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-600">
+                <div className="relative flex items-center justify-center w-10 h-10 rounded-full bg-linear-to-br from-nordic-sky to-nordic-teal">
                   <span className="text-sm font-medium text-white">
                     {(userData?.displayName || user.email)
                       ?.charAt(0)
@@ -431,13 +430,12 @@ export function Navigation() {
               <div className="flex items-center space-x-2">
                 <span className="text-xs text-gray-500">API</span>
                 <div
-                  className={`w-2.5 h-2.5 rounded-full transition-colors ${
-                    status === "connected"
+                  className={`w-2.5 h-2.5 rounded-full transition-colors ${status === "connected"
                       ? "bg-emerald-500"
                       : status === "error"
                         ? "bg-red-500"
                         : "bg-amber-500 animate-pulse"
-                  }`}
+                    }`}
                   title={
                     status === "connected"
                       ? `API Connected: ${message}`

@@ -1,16 +1,35 @@
 @import "tailwindcss";
 @import "flag-icons/css/flag-icons.min.css";
 
+/* CSS Custom Properties for Nordic Spring Theme */
+:root {
+  /* Primary palette */
+  --color-nordic-sky: #7dd3fc;
+  --color-nordic-teal: #2dd4bf;
+  --color-nordic-meadow: #4ade80;
+  --color-nordic-cloudberry: #fb923c;
+  --color-nordic-sunrise: #fbbf24;
+
+  /* Neutral palette */
+  --color-nordic-midnight: #1e3a5a;
+  --color-nordic-slate: #475569;
+  --color-nordic-birch: #fefce8;
+  --color-nordic-snow: #fafaf9;
+  --color-nordic-mist: #e7e5e4;
+
+  /* Semantic colors */
+  --color-success: #4ade80;
+  --color-success-bg: #dcfce7;
+  --color-error: #f87171;
+  --color-error-bg: #fee2e2;
+  --color-warning: #fb923c;
+  --color-warning-bg: #fed7aa;
+  --color-info: #7dd3fc;
+  --color-info-bg: #e0f2fe;
+}
+
 /* Base styles */
 body {
-  font-family:
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
   line-height: 1.6;
   color: #1f2937;
 }
@@ -21,16 +40,16 @@ input[type="email"],
 input[type="password"],
 select,
 textarea {
-  @apply w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 min-h-12;
+  @apply w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-nordic-teal focus:border-nordic-teal transition-colors duration-200 min-h-12;
 }
 
 /* Button styles - Enhanced for children (ages 5-12) with larger touch targets */
 .btn-primary {
-  @apply px-6 py-4 min-h-12 bg-linear-to-r from-blue-500 to-purple-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-purple-700 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 transition-all duration-200 shadow-md hover:shadow-lg;
+  @apply px-6 py-4 min-h-12 bg-linear-to-r from-nordic-sky to-nordic-teal text-nordic-midnight font-medium rounded-lg hover:from-nordic-sky/90 hover:to-nordic-teal/90 focus-visible:ring-2 focus-visible:ring-nordic-teal focus-visible:ring-offset-2 transition-all duration-200 shadow-md hover:shadow-lg;
 }
 
 .btn-secondary {
-  @apply px-6 py-4 min-h-12 bg-white text-gray-700 font-medium border border-gray-300 rounded-lg hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 transition-all duration-200;
+  @apply px-6 py-4 min-h-12 bg-white text-gray-700 font-medium border border-gray-300 rounded-lg hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-nordic-teal focus-visible:ring-offset-2 transition-all duration-200;
 }
 
 .btn-danger {
@@ -52,7 +71,7 @@ textarea {
 
 /* Loading spinner */
 .spinner {
-  @apply inline-block w-6 h-6 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin;
+  @apply inline-block w-6 h-6 border-2 border-gray-300 border-t-nordic-sky rounded-full animate-spin;
 }
 
 /* Timer shrink animation for feedback display */
@@ -72,12 +91,12 @@ textarea {
 
 /* Gradient text */
 .text-gradient {
-  @apply text-transparent bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text;
+  @apply text-transparent bg-linear-to-r from-nordic-sky to-nordic-teal bg-clip-text;
 }
 
 /* Page container */
 .page-container {
-  @apply min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50;
+  @apply min-h-screen bg-linear-to-br from-nordic-birch via-white to-amber-50;
 }
 
 .content-container {
@@ -90,16 +109,13 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  @apply outline-2 outline-offset-2 outline-blue-600 ring-2 ring-blue-600;
+  @apply outline-2 outline-offset-2 outline-nordic-teal ring-2 ring-nordic-teal;
 }
 
 /* Enhanced focus for elements on colored backgrounds */
-.bg-blue-500:focus-visible,
-.bg-blue-600:focus-visible,
-.bg-purple-500:focus-visible,
-.bg-purple-600:focus-visible,
-.bg-indigo-500:focus-visible,
-.bg-indigo-600:focus-visible {
+.bg-nordic-sky:focus-visible,
+.bg-nordic-teal:focus-visible,
+.bg-nordic-meadow:focus-visible {
   @apply ring-2 ring-white ring-offset-2 ring-offset-black;
 }
 
@@ -191,7 +207,7 @@ textarea:focus-visible {
   width: 48px;
   height: 48px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  background: linear-gradient(135deg, #7dd3fc, #2dd4bf);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -232,13 +248,13 @@ textarea:focus-visible {
 }
 
 .install-prompt-button.primary {
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  background: linear-gradient(135deg, #7dd3fc, #2dd4bf);
   color: white;
 }
 
 .install-prompt-button.primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(125, 211, 252, 0.3);
 }
 
 .install-prompt-button.secondary {
