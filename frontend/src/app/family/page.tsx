@@ -291,7 +291,7 @@ export default function FamilyPage() {
                 <div className="flex items-center">
                   <HeroUsersIcon className="w-8 h-8 text-blue-500" />
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-base md:text-lg font-medium text-gray-600">
                       {t("family.stats.members")}
                     </p>
                     <p className="text-2xl font-bold text-gray-900">
@@ -305,7 +305,7 @@ export default function FamilyPage() {
                 <div className="flex items-center">
                   <HeroUserIcon className="w-8 h-8 text-green-500" />
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-base md:text-lg font-medium text-gray-600">
                       {t("family.stats.children")}
                     </p>
                     <p className="text-2xl font-bold text-gray-900">
@@ -319,7 +319,7 @@ export default function FamilyPage() {
                 <div className="flex items-center">
                   <HeroChartBarIcon className="w-8 h-8 text-purple-500" />
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-base md:text-lg font-medium text-gray-600">
                       {t("family.stats.testsCompleted")}
                     </p>
                     <p className="text-2xl font-bold text-gray-900">
@@ -333,7 +333,7 @@ export default function FamilyPage() {
                 <div className="flex items-center">
                   <HeroChartBarIcon className="w-8 h-8 text-orange-500" />
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-base md:text-lg font-medium text-gray-600">
                       {t("family.stats.averageScore")}
                     </p>
                     <p className="text-2xl font-bold text-gray-900">
@@ -622,21 +622,24 @@ export default function FamilyPage() {
                                   setEditingChildId(child.id);
                                   setEditingName(child.displayName);
                                 }}
-                                className="text-blue-600 hover:text-blue-800"
+                                className="p-2 text-blue-600 hover:text-blue-800 min-h-11 min-w-11 flex items-center justify-center rounded-lg hover:bg-blue-50"
                                 title={t("family.child.editName")}
+                                aria-label={t("aria.editChild")}
                               >
                                 <HeroPencilIcon className="h-5 w-5" />
                               </button>
                             </div>
                           )}
-                          <p className="text-sm text-gray-500">{child.email}</p>
-                          <p className="text-xs text-gray-400">
+                          <p className="text-base text-gray-600">
+                            {child.email}
+                          </p>
+                          <p className="text-sm text-gray-600">
                             {t("family.child.lastActive")}:{" "}
                             {new Date(child.lastActiveAt).toLocaleDateString()}
                           </p>
                         </div>
                         <span
-                          className={`px-2 py-1 text-xs rounded-full ${child.isActive
+                          className={`px-2.5 py-1 text-sm font-semibold rounded-full ${child.isActive
                               ? "bg-green-100 text-green-800"
                               : "bg-red-100 text-red-800"
                             }`}
@@ -649,8 +652,8 @@ export default function FamilyPage() {
 
                       {childProgress && (
                         <div className="mb-4 space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">
+                          <div className="flex justify-between text-base">
+                            <span className="text-gray-700">
                               {t("family.child.progress.tests")}
                             </span>
                             <span className="font-medium">
@@ -687,10 +690,11 @@ export default function FamilyPage() {
                         </button>
                         <button
                           onClick={() => handleDeleteChild(child.id)}
-                          className="flex items-center justify-center px-4 py-2 font-medium text-white transition-all duration-200 bg-red-500 rounded-lg hover:bg-red-600 hover:shadow-md"
+                          className="flex items-center justify-center px-4 py-2 font-medium text-white transition-all duration-200 bg-red-500 rounded-lg hover:bg-red-600 hover:shadow-md min-h-12"
                           title={t("family.child.delete.title")}
+                          aria-label={t("aria.deleteChild")}
                         >
-                          <HeroTrashIcon className="w-4 h-4" />
+                          <HeroTrashIcon className="w-5 h-5" />
                         </button>
                       </div>
                     </div>

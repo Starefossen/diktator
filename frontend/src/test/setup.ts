@@ -1,6 +1,10 @@
 import "@testing-library/jest-dom";
 import { cleanup } from "@testing-library/react";
-import { afterEach, vi } from "vitest";
+import { afterEach, vi, expect } from "vitest";
+import * as matchers from "vitest-axe/matchers";
+
+// Extend Vitest matchers with axe-core accessibility matchers
+expect.extend(matchers);
 
 // Cleanup after each test
 afterEach(() => {
@@ -17,7 +21,7 @@ process.env.NEXT_PUBLIC_MOCK_USER_NAME = "Test User";
 // Define window.matchMedia for components that use it
 Object.defineProperty(window, "matchMedia", {
   writable: true,
-  value: vi.fn().mockImplementation((query) => ({
+  value: vi.fn().mockImplementation((query: string) => ({
     matches: false,
     media: query,
     onchange: null,

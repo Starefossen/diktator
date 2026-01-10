@@ -200,7 +200,7 @@ export function Navigation() {
                   <MenuItem>
                     <Link
                       href="/profile/"
-                      className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100"
+                      className="block px-4 py-3 text-base text-gray-700 data-[focus]:bg-gray-100"
                     >
                       <div className="flex items-center">
                         <svg
@@ -223,7 +223,7 @@ export function Navigation() {
                   <MenuItem>
                     <Link
                       href="/settings/"
-                      className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100"
+                      className="block px-4 py-3 text-base text-gray-700 data-[focus]:bg-gray-100"
                     >
                       <div className="flex items-center">
                         <svg
@@ -252,7 +252,7 @@ export function Navigation() {
                   <MenuItem>
                     <button
                       onClick={handleLogout}
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100"
+                      className="flex items-center w-full px-4 py-3 text-base text-gray-700 data-[focus]:bg-gray-100"
                     >
                       <svg
                         className="w-4 h-4 mr-3"

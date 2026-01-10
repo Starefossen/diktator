@@ -13,6 +13,27 @@ Diktator is a Norwegian vocabulary learning app for children featuring gamified 
 - 🎯 **Test Modes**: Standard, Dictation, Translation with real-time validation
 - 🎤 **Text-to-Speech**: On-demand audio generation for all words
 - 📊 **Progress Tracking**: Detailed test results and performance analytics
+- ♿ **Accessibility**: WCAG 2.1 AA compliant with automated testing
+
+## Accessibility
+
+**WCAG 2.1 Level AA Compliant** - Designed specifically for children ages 5-12:
+
+- **Touch Targets**: Minimum 48px height for all interactive elements (buttons, links, form inputs)
+- **Color Contrast**: 4.5:1 minimum ratio for all text content, tested with automated tools
+- **Keyboard Navigation**: Full keyboard support with visible focus indicators on all interactive elements
+- **Screen Reader Support**: Comprehensive ARIA labels and live regions for dynamic content
+- **Responsive Typography**: Base text at 16px (text-base) with responsive scaling (md:text-lg)
+- **Automated Testing**: vitest-axe integration for continuous accessibility compliance
+- **ESLint Enforcement**: Strict jsx-a11y rules to prevent accessibility regressions
+
+### Key Implementation Details
+
+- **i18n ARIA Support**: Dedicated `aria.ts` files in English and Norwegian locales for all screen reader labels
+- **Semantic HTML**: Interactive elements use proper semantic markup (buttons, not divs)
+- **Focus Management**: Enhanced focus-visible states with high-contrast ring indicators
+- **Form Accessibility**: HTML5 validation with ARIA support for error messaging
+- **Loading States**: Proper ARIA live regions and status announcements
 
 ## Architecture
 

@@ -198,12 +198,13 @@ function FamilyProgressPageContent() {
               </p>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {familyMembers.map((member) => (
-                  <div
+                  <button
                     key={member.userId}
+                    type="button"
                     onClick={() =>
                       router.push(`/family/progress?childId=${member.userId}`)
                     }
-                    className="p-4 transition-all border border-gray-200 rounded-lg cursor-pointer hover:shadow-md hover:border-gray-300"
+                    className="w-full p-4 text-left transition-all border border-gray-200 rounded-lg cursor-pointer hover:shadow-md hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <div className="flex items-center mb-3 space-x-3">
                       <div className="flex items-center justify-center w-10 h-10 font-bold text-white rounded-full bg-linear-to-br from-blue-500 to-purple-500">
@@ -250,14 +251,14 @@ function FamilyProgressPageContent() {
                         <p className="font-bold">
                           {member.totalWords > 0
                             ? Math.round(
-                              (member.correctWords / member.totalWords) * 100,
-                            )
+                                (member.correctWords / member.totalWords) * 100,
+                              )
                             : 0}
                           %
                         </p>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>

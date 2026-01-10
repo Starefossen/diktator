@@ -58,6 +58,7 @@
     "@vitejs/plugin-react": "^5.1.2",
     "@vitest/coverage-v8": "^4.0.16",
     "autoprefixer": "^10.4.23",
+    "axe-core": "^4.11.1",
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.1.1",
     "globals": "^17.0.0",
@@ -66,6 +67,7 @@
     "postcss": "^8.5.6",
     "prettier": "^3.7.4",
     "typescript-eslint": "^8.51.0",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.16",
+    "vitest-axe": "^0.1.0"
   }
 }

@@ -79,7 +79,7 @@ export function ParentWordSetCard({
             <h3 className="text-xl font-semibold text-gray-800">
               {wordSet.name}
             </h3>
-            <p className="text-sm text-gray-500">
+            <p className="text-base text-gray-600">
               {wordSet.words.length}{" "}
               {wordSet.words.length === 1
                 ? t("results.word")
@@ -92,7 +92,7 @@ export function ParentWordSetCard({
             language={wordSet.language as "no" | "en"}
             className="w-5 h-4"
           />
-          <p className="text-xs text-gray-500">
+          <p className="text-sm text-gray-600">
             {t("wordsets.created")}:{" "}
             {new Date(wordSet.createdAt).toLocaleDateString()}
           </p>
@@ -101,12 +101,12 @@ export function ParentWordSetCard({
 
       {/* Assignment Status - Subtle indicator for parents */}
       {assignmentCount > 0 ? (
-        <div className="flex items-center gap-1.5 px-2.5 py-1.5 mb-3 text-xs font-medium text-gray-700 bg-gray-100 border border-gray-200 rounded-md w-fit">
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5 mb-3 text-sm font-semibold text-gray-700 bg-gray-100 border border-gray-200 rounded-md w-fit">
           <HeroCheckIcon className="w-3.5 h-3.5" />
           {t("wordsets.assignment.assigned")} ({assignmentCount})
         </div>
       ) : (
-        <div className="flex items-center gap-1.5 px-2.5 py-1.5 mb-3 text-xs font-medium text-gray-500 bg-gray-50 border border-gray-200 rounded-md w-fit opacity-70">
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5 mb-3 text-sm font-semibold text-gray-500 bg-gray-50 border border-gray-200 rounded-md w-fit opacity-70">
           {t("wordsets.assignment.noAssignments")}
         </div>
       )}
@@ -114,7 +114,7 @@ export function ParentWordSetCard({
       {/* Children's Performance Summary */}
       {childrenPerformance.length > 0 && (
         <div className="p-3 mb-4 rounded-lg bg-gray-50">
-          <h4 className="mb-2 text-sm font-medium text-gray-700">
+          <h4 className="mb-2 text-base font-semibold text-gray-700">
             {t("wordsets.childrenProgress")} ({childrenPerformance.length})
           </h4>
           <div className="space-y-1">
@@ -170,26 +170,36 @@ export function ParentWordSetCard({
             const hasGeneratedAudio = wordItem.audio?.audioUrl;
             const isPlaying = playingAudio === wordItem.word;
 
-            return (
-              <span
-                key={index}
-                onClick={() =>
-                  hasAudio ? onWordClick(wordItem.word, wordSet) : undefined
-                }
-                className={`inline-flex items-center px-2 py-1 text-xs rounded transition-all duration-200 ${
-                  hasAudio
-                    ? "text-blue-700 bg-blue-100 cursor-pointer hover:bg-blue-200 hover:shadow-sm"
-                    : "text-gray-700 bg-gray-100"
-                } ${isPlaying ? "ring-2 ring-blue-500 shadow-md" : ""}`}
-                title={hasGeneratedAudio ? "Generated audio" : "Text-to-speech"}
-              >
-                {hasAudio && (
+            if (hasAudio) {
+              return (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => onWordClick(wordItem.word, wordSet)}
+                  className={`inline-flex items-center px-2 py-1 text-xs rounded transition-all duration-200 text-blue-700 bg-blue-100 cursor-pointer hover:bg-blue-200 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${isPlaying ? "ring-2 ring-blue-500 shadow-md" : ""}`}
+                  title={
+                    hasGeneratedAudio ? "Generated audio" : "Text-to-speech"
+                  }
+                  aria-label={`Play pronunciation of ${wordItem.word}`}
+                >
                   <HeroVolumeIcon
                     className={`w-3 h-3 mr-1 ${
                       hasGeneratedAudio ? "text-blue-500" : "text-gray-500"
                     }`}
+                    aria-hidden="true"
                   />
-                )}
+                  {wordItem.word}
+                  {isPlaying && <span className="sr-only"> (Playing)</span>}
+                </button>
+              );
+            }
+
+            return (
+              <span
+                key={index}
+                className="inline-flex items-center px-2 py-1 text-xs rounded transition-all duration-200 text-gray-700 bg-gray-100"
+                title={hasGeneratedAudio ? "Generated audio" : "Text-to-speech"}
+              >
                 {wordItem.word}
               </span>
             );

@@ -2,6 +2,10 @@
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "entry": ["src/app/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}"],
   "project": ["src/**/*.{ts,tsx}"],
-  "ignore": ["src/generated/**"],
-  "ignoreDependencies": ["@openapitools/openapi-generator-cli", "flag-icons"]
+  "ignore": ["src/generated/**", "src/test/vitest-axe.d.ts"],
+  "ignoreDependencies": [
+    "@openapitools/openapi-generator-cli",
+    "flag-icons",
+    "axe-core"
+  ]
 }

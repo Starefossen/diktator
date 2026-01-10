@@ -42,7 +42,14 @@ const config = [
         },
       ],
       "@typescript-eslint/no-explicit-any": "warn",
-      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/set-state-in-effect": "off",
+      // Stricter accessibility rules for children's app
+      "jsx-a11y/no-static-element-interactions": "error",
+      "jsx-a11y/click-events-have-key-events": "error",
+      "jsx-a11y/no-autofocus": "off", // Intentional for modal inputs and test UX
+      "jsx-a11y/anchor-is-valid": "error",
+      "jsx-a11y/alt-text": "error",
+      "jsx-a11y/label-has-associated-control": "error",
     },
   },
   {

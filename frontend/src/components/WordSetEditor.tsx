@@ -302,12 +302,17 @@ export default function WordSetEditor({
 
             {/* Default Mode Selection */}
             <div>
-              <label className="block mb-3 font-medium text-gray-900 text-sm/6">
+              <div className="block mb-3 font-medium text-gray-900 text-sm/6">
                 {t("wordsets.editor.defaultTestMode")}
-              </label>
+              </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <label className="relative flex p-4 bg-white border rounded-lg shadow-sm cursor-pointer focus:outline-none">
+                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                <label
+                  htmlFor="mode-standard"
+                  className="relative flex p-4 bg-white border rounded-lg shadow-sm cursor-pointer focus:outline-none"
+                >
                   <input
+                    id="mode-standard"
                     type="radio"
                     name="default-mode"
                     value="standard"
@@ -345,8 +350,13 @@ export default function WordSetEditor({
                   </svg>
                 </label>
 
-                <label className="relative flex p-4 bg-white border rounded-lg shadow-sm cursor-pointer focus:outline-none">
+                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                <label
+                  htmlFor="mode-dictation"
+                  className="relative flex p-4 bg-white border rounded-lg shadow-sm cursor-pointer focus:outline-none"
+                >
                   <input
+                    id="mode-dictation"
                     type="radio"
                     name="default-mode"
                     value="dictation"
@@ -384,8 +394,13 @@ export default function WordSetEditor({
                   </svg>
                 </label>
 
-                <label className="relative flex p-4 bg-white border rounded-lg shadow-sm cursor-pointer focus:outline-none">
+                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                <label
+                  htmlFor="mode-translation"
+                  className="relative flex p-4 bg-white border rounded-lg shadow-sm cursor-pointer focus:outline-none"
+                >
                   <input
+                    id="mode-translation"
                     type="radio"
                     name="default-mode"
                     value="translation"

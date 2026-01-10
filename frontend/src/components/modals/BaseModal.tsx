@@ -66,6 +66,14 @@ export function BaseModal({
       <div
         className="fixed inset-0 transition-opacity duration-300 ease-out bg-gray-500/75"
         onClick={handleBackdropClick}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            onClose();
+          }
+        }}
+        role="button"
+        tabIndex={-1}
+        aria-label="Close modal"
       />
 
       {/* Modal container */}
@@ -76,6 +84,9 @@ export function BaseModal({
             size === "xl" ? "max-h-[90vh] overflow-hidden" : ""
           }`}
           onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.key === "Escape" && onClose()}
+          role="dialog"
+          aria-modal="true"
         >
           {/* Close button */}
           {showCloseButton && (

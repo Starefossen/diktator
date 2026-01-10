@@ -113,7 +113,7 @@ export function ChildWordSetCard({
     <div className="relative flex flex-col h-full p-4 transition-all duration-300 bg-white border-gray-100 shadow-lg borderounded-xl hover:shadow-2xl hover:border-blue-200 hover:bg-linear-to-br hover:from-blue-50 hover:to-purple-50">
       {/* Assignment Badge - Top Right Corner */}
       {isAssignedToMe && (
-        <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-800 bg-blue-100 border border-blue-300 rounded-md shadow-sm">
+        <div className="absolute top-2 right-2 flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold text-blue-800 bg-blue-100 border border-blue-300 rounded-md shadow-sm">
           <HeroCheckIcon className="w-3.5 h-3.5" />
           {t("wordsets.assignment.assignedToMe")}
         </div>
@@ -132,13 +132,13 @@ export function ChildWordSetCard({
         </div>
         {performance ? (
           <div
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-lg border shrink-0 ${performance.color}`}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-bold rounded-lg border shrink-0 ${performance.color}`}
           >
             <performance.icon className="w-4 h-4" />
             {latestResult!.score}%
           </div>
         ) : (
-          <div className="flex items-center shrink-0 gap-1.5 px-2.5 py-1.5 text-xs font-bold text-blue-800 bg-blue-100 border border-blue-200 rounded-lg">
+          <div className="flex items-center shrink-0 gap-1.5 px-2.5 py-1.5 text-sm font-bold text-blue-800 bg-blue-100 border border-blue-200 rounded-lg">
             <HeroStarIcon className="w-4 h-4" />
             {t("wordsets.status.new")}
           </div>
@@ -147,13 +147,13 @@ export function ChildWordSetCard({
 
       {/* Word Count and Status */}
       <div className="flex items-center justify-between mb-4">
-        <p className="text-sm font-medium text-gray-700">
+        <p className="text-base font-semibold text-gray-700">
           {wordSet.words.length}{" "}
           {wordSet.words.length === 1
             ? t("results.word")
             : t("wordsets.words.count")}
         </p>
-        <p className="text-xs text-gray-500">
+        <p className="text-sm text-gray-600">
           {latestResult ? (
             <>{getRelativeTime(new Date(latestResult.completedAt))}</>
           ) : (
@@ -171,23 +171,29 @@ export function ChildWordSetCard({
             (w) => w.word === wordItem.word,
           );
 
-          return (
-            <span
+          return hasAudio ? (
+            <button
               key={`${wordItem.word}-${index}`}
-              onClick={() =>
-                hasAudio ? onWordClick(wordItem.word, wordSet) : undefined
-              }
+              onClick={() => onWordClick(wordItem.word, wordSet)}
               className={`inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
                 needsPractice
                   ? "text-orange-800 bg-orange-100 border border-orange-300 cursor-pointer hover:bg-orange-200 animate-pulse"
-                  : hasAudio
-                    ? "text-blue-800 bg-blue-100 border border-blue-200 cursor-pointer hover:bg-blue-200 hover:border-blue-300"
-                    : "text-gray-600 bg-gray-100 border border-gray-200"
+                  : "text-blue-800 bg-blue-100 border border-blue-200 cursor-pointer hover:bg-blue-200 hover:border-blue-300"
               } ${isPlaying ? "ring-4 ring-blue-400 ring-opacity-50" : ""}`}
+              aria-label={`Play pronunciation of ${wordItem.word}`}
+              type="button"
             >
-              {hasAudio && (
-                <HeroVolumeIcon className="shrink-0 w-3 h-3 mr-1.5" />
+              <HeroVolumeIcon className="shrink-0 w-3 h-3 mr-1.5" />
+              {needsPractice && (
+                <HeroTargetIcon className="shrink-0 w-3 h-3 mr-1.5 text-orange-600" />
               )}
+              <span className="truncate">{wordItem.word}</span>
+            </button>
+          ) : (
+            <span
+              key={`${wordItem.word}-${index}`}
+              className="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded-lg"
+            >
               {needsPractice && (
                 <HeroTargetIcon className="shrink-0 w-3 h-3 mr-1.5 text-orange-600" />
               )}
@@ -221,6 +227,7 @@ export function ChildWordSetCard({
           onClick={() => onStartPractice(wordSet)}
           className="flex items-center justify-center px-4 py-3 text-base font-bold text-white transition-all duration-300 bg-purple-500 rounded-lg shadow-lg hover:bg-purple-600 hover:shadow-xl hover:-translate-y-0.5 min-h-12.5 min-w-12.5"
           title={t("wordsets.practice.buttonTooltip")}
+          aria-label={t("wordsets.practice.buttonTooltip")}
         >
           <HeroBookIcon className="w-4 h-4" />
         </button>

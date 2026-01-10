@@ -21,16 +21,16 @@ input[type="email"],
 input[type="password"],
 select,
 textarea {
-  @apply w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200;
+  @apply w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 min-h-12;
 }
 
-/* Button styles */
+/* Button styles - Enhanced for children (ages 5-12) with larger touch targets */
 .btn-primary {
-  @apply px-6 py-3 bg-linear-to-r from-blue-500 to-purple-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-purple-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-md hover:shadow-lg;
+  @apply px-6 py-4 min-h-12 bg-linear-to-r from-blue-500 to-purple-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-purple-700 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 transition-all duration-200 shadow-md hover:shadow-lg;
 }
 
 .btn-secondary {
-  @apply px-6 py-3 bg-white text-gray-700 font-medium border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200;
+  @apply px-6 py-4 min-h-12 bg-white text-gray-700 font-medium border border-gray-300 rounded-lg hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 transition-all duration-200;
 }
 
 .btn-danger {
@@ -84,10 +84,29 @@ textarea {
   @apply container mx-auto px-4 py-8 max-w-4xl;
 }
 
-/* Focus styles for accessibility */
+/* Focus styles for accessibility - Enhanced for better visibility */
 button:focus-visible,
-a:focus-visible {
-  @apply outline-2 outline-offset-2 outline-blue-500;
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  @apply outline-2 outline-offset-2 outline-blue-600 ring-2 ring-blue-600;
+}
+
+/* Enhanced focus for elements on colored backgrounds */
+.bg-blue-500:focus-visible,
+.bg-blue-600:focus-visible,
+.bg-purple-500:focus-visible,
+.bg-purple-600:focus-visible,
+.bg-indigo-500:focus-visible,
+.bg-indigo-600:focus-visible {
+  @apply ring-2 ring-white ring-offset-2 ring-offset-black;
+}
+
+/* Focus for danger actions */
+.bg-red-500:focus-visible,
+.bg-red-600:focus-visible {
+  @apply ring-2 ring-white ring-offset-2 ring-offset-red-900;
 }
 
 /* Smooth animations */

@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { axe } from "vitest-axe";
 import { ModeSelectionModal } from "../ModeSelectionModal";
 import { WordSet } from "@/types";
 import { LanguageProvider } from "@/contexts/LanguageContext";
@@ -199,5 +200,11 @@ describe("ModeSelectionModal", () => {
     expect(
       screen.getByText(/translate words between languages/i),
     ).toBeInTheDocument();
+  });
+
+  it("has no accessibility violations", async () => {
+    const { container } = renderModal(mockWordSetWithTranslations);
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
   });
 });

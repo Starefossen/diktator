@@ -5,6 +5,7 @@ import { common } from "./common";
 import { profile } from "./profile";
 import { results } from "./results";
 import { test } from "./test";
+import { aria } from "./aria";
 
 export const no = {
   ...auth,
@@ -14,6 +15,7 @@ export const no = {
   ...profile,
   ...results,
   ...test,
+  ...aria,
 
   // Home page
   "home.welcome": "Velkommen til Diktator!",
