@@ -19,7 +19,7 @@ export default function LoadingSpinner({
       aria-live="polite"
     >
       <div
-        className={`${sizeClasses[size]} animate-spin rounded-full border-4 border-gray-200 border-t-blue-600`}
+        className={`${sizeClasses[size]} animate-spin rounded-full border-4 border-gray-200 border-t-nordic-sky`}
         aria-hidden="true"
       ></div>
       <span className="sr-only">{t("aria.loading")}</span>

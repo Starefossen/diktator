@@ -75,9 +75,9 @@ export function ChildWordSetCard({
   const needsPracticeWords =
     latestResult && latestResult.score < 90
       ? wordSet.words.slice(
-        0,
-        Math.ceil((wordSet.words.length * (100 - latestResult.score)) / 100),
-      )
+          0,
+          Math.ceil((wordSet.words.length * (100 - latestResult.score)) / 100),
+        )
       : [];
 
   // Sort words to show practice words first, then regular words (stable sort)
@@ -176,10 +176,11 @@ export function ChildWordSetCard({
             <button
               key={`${wordItem.word}-${index}`}
               onClick={() => onWordClick(wordItem.word, wordSet)}
-              className={`inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${needsPractice
+              className={`inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
+                needsPractice
                   ? "text-orange-800 bg-nordic-cloudberry/20 border border-nordic-cloudberry/40 cursor-pointer hover:bg-nordic-cloudberry/30 animate-pulse"
                   : "text-nordic-midnight bg-nordic-sky/20 border border-nordic-sky/40 cursor-pointer hover:bg-nordic-sky/30 hover:border-nordic-sky/50"
-                } ${isPlaying ? "ring-4 ring-nordic-sky ring-opacity-50" : ""}`}
+              } ${isPlaying ? "ring-4 ring-nordic-sky ring-opacity-50" : ""}`}
               aria-label={`Play pronunciation of ${wordItem.word}`}
               type="button"
             >

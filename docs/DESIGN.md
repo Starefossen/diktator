@@ -8,12 +8,13 @@ A comprehensive design guide for Diktator—a Norwegian vocabulary learning app 
 2. [Tone of Voice](#tone-of-voice)
 3. [Stavle the Mascot](#stavle-the-mascot)
 4. [Color System](#color-system)
-5. [Typography](#typography)
-6. [Component Patterns](#component-patterns)
-7. [Animation & Motion](#animation--motion)
-8. [AI Anti-Patterns to Avoid](#ai-anti-patterns-to-avoid)
-9. [Accessibility](#accessibility)
-10. [Implementation Checklist](#implementation-checklist)
+5. [Achievement & Badge System](#achievement--badge-system)
+6. [Typography](#typography)
+7. [Component Patterns](#component-patterns)
+8. [Animation & Motion](#animation--motion)
+9. [AI Anti-Patterns to Avoid](#ai-anti-patterns-to-avoid)
+10. [Accessibility](#accessibility)
+11. [Implementation Checklist](#implementation-checklist)
 
 ---
 
@@ -171,20 +172,108 @@ Cold/Clinical ←————————•————————→ Gushing/
 3. **Consistent across contexts** — Same character whether celebrating or encouraging
 4. **Norwegian sensibility** — Understated charm, not American-cartoon energy
 
-### Required Poses & Expressions
+### Sprite Sheet Reference
 
-| Pose             | Use Case                            | Expression Details                                            |
-| ---------------- | ----------------------------------- | ------------------------------------------------------------- |
-| **Listening**    | Audio playback, waiting for input   | Ears perked forward, head slightly tilted, attentive eyes     |
-| **Celebrating**  | Correct answer, test complete       | Small jump or fist pump, tail wagging, big genuine smile      |
-| **Encouraging**  | Wrong answer, try again             | Tilted head, soft smile, one paw up in "you got this" gesture |
-| **Thinking**     | Hints, loading complex content      | Paw on chin, looking up thoughtfully, one ear flopped         |
-| **Waving**       | Welcome screens, onboarding         | Friendly wave, warm smile, inviting posture                   |
-| **Reading**      | Practice mode, word lists           | Holding a small book or paper, focused but happy              |
-| **Sleeping**     | Long loading states (rare)          | Curled up with tail over nose, peaceful, zzz                  |
-| **Surprised**    | Achievements, perfect scores        | Wide eyes, ears up, delighted "wow" expression                |
-| **Pointing**     | Highlighting UI elements, tutorials | Gesturing toward something, helpful guide pose                |
-| **Neutral/Idle** | Background presence, icons          | Relaxed stance, pleasant default expression                   |
+All Stavle poses are available in a single sprite sheet at `public/stavle-sprite.png` with coordinates defined in `public/stavle-sprite.json`.
+
+| Sprite Name           | Position (x, y) | Size    | Description                               |
+| --------------------- | --------------- | ------- | ----------------------------------------- |
+| `stavle-listening`    | (0, 0)          | 256×256 | Ears perked, attentive, waiting for input |
+| `stavle-celebrating`  | (256, 0)        | 256×256 | Small jump, tail wagging, big smile       |
+| `stavle-encouraging`  | (512, 0)        | 256×256 | Soft smile, "you got this" gesture        |
+| `stavle-waving`       | (0, 256)        | 256×256 | Friendly wave, welcoming posture          |
+| `stavle-thinking`     | (256, 256)      | 256×256 | Paw on chin, looking up thoughtfully      |
+| `stavle-reading`      | (512, 256)      | 256×256 | Holding a book, focused but happy         |
+| `stavle-pointing`     | (0, 512)        | 256×256 | Gesturing toward something, guide pose    |
+| `stavle-sleeping`     | (256, 512)      | 256×256 | Curled up, peaceful, zzz                  |
+| `stavle-idle`         | (512, 512)      | 256×256 | Relaxed stance, pleasant default          |
+| `stavle-idle-resting` | (0, 768)        | 256×256 | Relaxed, slightly tired but content       |
+
+### When to Show Stavle
+
+Stavle should appear at **emotionally significant moments** — not everywhere. Strategic placement makes appearances meaningful.
+
+#### ✅ DO Show Stavle
+
+| Context                    | Pose          | Size      | Placement                | Trigger                     |
+| -------------------------- | ------------- | --------- | ------------------------ | --------------------------- |
+| **Welcome/Onboarding**     | `waving`      | 160-200px | Center of empty state    | First visit, new user       |
+| **Empty Word Sets**        | `pointing`    | 128px     | Above "Create" CTA       | No word sets exist          |
+| **Empty Results**          | `encouraging` | 128px     | Center of empty state    | No tests taken yet          |
+| **Test Start**             | `listening`   | 64px      | Corner of test card      | Test begins                 |
+| **Correct Answer**         | `celebrating` | 64px      | Next to feedback         | Immediate, animate in       |
+| **Wrong Answer**           | `encouraging` | 64px      | Next to feedback         | Gentle, no harsh transition |
+| **Hint Requested**         | `thinking`    | 48px      | Next to hint text        | User asks for hint          |
+| **Test Complete (90%+)**   | `celebrating` | 160px     | Hero position on results | Score revealed              |
+| **Test Complete (70-89%)** | `encouraging` | 128px     | Above score              | Score revealed              |
+| **Test Complete (<70%)**   | `reading`     | 128px     | With "Practice more" CTA | Gentle, not disappointed    |
+| **Achievement Unlocked**   | `celebrating` | 128px     | Behind/beside badge      | Achievement popup           |
+| **Practice Mode Active**   | `reading`     | 48px      | Corner, subtle presence  | While practicing            |
+| **Audio Playing**          | `listening`   | 48px      | Near audio button        | Word audio plays            |
+| **Long Loading (>3s)**     | `sleeping`    | 96px      | Center of loading state  | Rare, adds personality      |
+| **Error State**            | `encouraging` | 96px      | Above error message      | Something went wrong        |
+
+#### ❌ DON'T Show Stavle
+
+| Context                      | Reason                                  |
+| ---------------------------- | --------------------------------------- |
+| Every single screen          | Becomes noise, loses meaning            |
+| During active typing         | Distracting from the task               |
+| Navigation/header            | Too prominent, clutters UI              |
+| Settings/admin pages         | Parent-focused, keep professional       |
+| While child is concentrating | Don't interrupt focus                   |
+| Multiple Stavles at once     | Confusing, breaks character consistency |
+| Constantly animated          | Distracting, increases cognitive load   |
+
+### Animation Guidelines for Stavle
+
+| Animation Type      | Duration | Easing            | Usage                              |
+| ------------------- | -------- | ----------------- | ---------------------------------- |
+| **Fade in**         | 300ms    | ease-out          | Appearing on screen                |
+| **Slide up**        | 400ms    | ease-out          | Entering from below (celebrations) |
+| **Gentle bounce**   | 500ms    | spring            | Celebrating correct answer         |
+| **Head tilt**       | 200ms    | ease-in-out       | Thinking, encouraging              |
+| **Idle bob**        | 2000ms   | ease-in-out, loop | Subtle presence while waiting      |
+| **Sleep breathing** | 3000ms   | ease-in-out, loop | Sleeping pose only                 |
+
+```css
+/* Example: Stavle celebration entrance */
+@keyframes stavle-celebrate-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.8);
+  }
+  60% {
+    transform: translateY(-5px) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.stavle-celebrating {
+  animation: stavle-celebrate-enter 0.5s ease-out;
+}
+```
+
+### Implementation: Stavle Component
+
+```tsx
+// Example usage with sprite sheet
+interface StavleProps {
+  pose: 'listening' | 'celebrating' | 'encouraging' | 'waving' |
+        'thinking' | 'reading' | 'pointing' | 'sleeping' | 'idle' | 'idle-resting';
+  size?: 48 | 64 | 96 | 128 | 160 | 200;
+  animate?: boolean;
+  className?: string;
+}
+
+// Stavle should be imported and used like:
+<Stavle pose="celebrating" size={64} animate />
+<Stavle pose="encouraging" size={128} />
+<Stavle pose="reading" size={48} className="opacity-70" />
+```
 
 ### Size Specifications
 
@@ -392,6 +481,216 @@ Achievement badges and celebration screens use warm, celebratory colors:
   background: linear-gradient(135deg, #4ADE80, #2DD4BF);
 }
 ```
+
+---
+
+## Achievement & Badge System
+
+### Design Philosophy
+
+Badges reward **genuine learning milestones**, not engagement metrics. Every badge should answer: "Does earning this mean the child learned something?" Avoid badges that reward time spent or clicks—focus on mastery and growth.
+
+### Badge Visual Design
+
+All badges share a consistent visual language:
+
+```
+┌─────────────────────────────────────┐
+│                                     │
+│         ╭─────────────╮             │
+│        ╱   [ICON]      ╲            │  ← Gradient background
+│       │                 │           │     (achievement-specific)
+│       │    ⭐ / 🏆 / 📚   │           │
+│        ╲               ╱            │
+│         ╰─────────────╯             │
+│                                     │
+│     Badge Name                      │  ← Bold, centered
+│     Short description               │  ← Secondary text
+│                                     │
+└─────────────────────────────────────┘
+```
+
+#### Badge Tiers
+
+| Tier       | Border Color        | Background Gradient                | Meaning          |
+| ---------- | ------------------- | ---------------------------------- | ---------------- |
+| **Bronze** | `nordic-cloudberry` | `cloudberry/10` to `cloudberry/20` | Getting started  |
+| **Silver** | `nordic-sky`        | `sky/10` to `teal/20`              | Solid progress   |
+| **Gold**   | `nordic-sunrise`    | `sunrise/10` to `sunrise/30`       | Mastery achieved |
+
+### Achievement Categories
+
+#### 1. Mastery Badges (Score-Based)
+
+Earned by achieving high scores on tests. These are the "goal" badges children work toward.
+
+| Badge Name            | Icon | Criteria                        | Tier   | EN Description                   | NO Description                  |
+| --------------------- | ---- | ------------------------------- | ------ | -------------------------------- | ------------------------------- |
+| **First Steps**       | 🌱    | Complete first test             | Bronze | "You took your first test!"      | "Du tok din første test!"       |
+| **Word Learner**      | 📖    | Score 70%+ on any test          | Bronze | "Good effort on your test!"      | "Godt jobba på testen!"         |
+| **Word Master**       | ⭐    | Score 90%+ on any test          | Silver | "Amazing score!"                 | "Fantastisk resultat!"          |
+| **Perfect Speller**   | 🏆    | Score 100% on any test          | Gold   | "Perfect! Not a single mistake!" | "Perfekt! Ikke én eneste feil!" |
+| **Spelling Champion** | 👑    | Score 100% on 5 different tests | Gold   | "A true spelling champion!"      | "En ekte stavemester!"          |
+
+#### 2. Consistency Badges (Streak-Based)
+
+Earned by practicing regularly. Encourages habit formation without punishing breaks.
+
+| Badge Name             | Icon | Criteria      | Tier   | EN Description              | NO Description          |
+| ---------------------- | ---- | ------------- | ------ | --------------------------- | ----------------------- |
+| **Getting Started**    | 🔥    | 3-day streak  | Bronze | "3 days in a row!"          | "3 dager på rad!"       |
+| **Consistent Learner** | 🔥🔥   | 7-day streak  | Silver | "A whole week of practice!" | "En hel uke med øving!" |
+| **Dedicated Student**  | 🔥🔥🔥  | 14-day streak | Gold   | "Two weeks strong!"         | "To uker i strekk!"     |
+| **Learning Machine**   | ⚡    | 30-day streak | Gold   | "Incredible dedication!"    | "Utrolig dedikasjon!"   |
+
+**Streak rules:**
+- A "day" counts if the child completes at least one test
+- Streak resets after 48 hours of inactivity (gives grace period)
+- Weekends don't break streaks if Friday was active
+
+#### 3. Volume Badges (Quantity-Based)
+
+Earned by completing many tests. Celebrates persistence.
+
+| Badge Name         | Icon | Criteria           | Tier   | EN Description           | NO Description             |
+| ------------------ | ---- | ------------------ | ------ | ------------------------ | -------------------------- |
+| **Test Taker**     | 📝    | Complete 10 tests  | Bronze | "10 tests completed!"    | "10 tester fullført!"      |
+| **Frequent Flyer** | ✈️    | Complete 25 tests  | Silver | "25 tests and counting!" | "25 tester og teller!"     |
+| **Test Veteran**   | 🎖️    | Complete 50 tests  | Silver | "50 tests! Impressive!"  | "50 tester! Imponerende!"  |
+| **Century Club**   | 💯    | Complete 100 tests | Gold   | "100 tests! Legendary!"  | "100 tester! Legendarisk!" |
+
+#### 4. Word Count Badges
+
+Earned by learning many unique words correctly.
+
+| Badge Name             | Icon | Criteria                         | Tier   | EN Description                 | NO Description                 |
+| ---------------------- | ---- | -------------------------------- | ------ | ------------------------------ | ------------------------------ |
+| **Word Collector**     | 🔤    | Spell 50 unique words correctly  | Bronze | "50 words in your collection!" | "50 ord i samlingen din!"      |
+| **Vocabulary Builder** | 📚    | Spell 100 unique words correctly | Silver | "100 words mastered!"          | "100 ord mestret!"             |
+| **Word Wizard**        | 🧙    | Spell 250 unique words correctly | Gold   | "250 words! You're a wizard!"  | "250 ord! Du er en trollmann!" |
+| **Dictionary Master**  | 📖✨   | Spell 500 unique words correctly | Gold   | "500 words! Incredible!"       | "500 ord! Utrolig!"            |
+
+#### 5. Improvement Badges
+
+Earned by showing growth over time. Celebrates effort, not just talent.
+
+| Badge Name         | Icon | Criteria                         | Tier   | EN Description           | NO Description         |
+| ------------------ | ---- | -------------------------------- | ------ | ------------------------ | ---------------------- |
+| **Getting Better** | 📈    | Improve score by 20%+ on retake  | Bronze | "Great improvement!"     | "Flott forbedring!"    |
+| **Comeback Kid**   | 🔄    | Go from <60% to 90%+ on same set | Silver | "What a turnaround!"     | "For en snuoperasjon!" |
+| **Growth Mindset** | 🌟    | Improve on 5 different word sets | Gold   | "Always getting better!" | "Alltid i fremgang!"   |
+
+#### 6. Special Badges
+
+Unique achievements that add variety.
+
+| Badge Name           | Icon | Criteria                        | Tier   | EN Description                    | NO Description              |
+| -------------------- | ---- | ------------------------------- | ------ | --------------------------------- | --------------------------- |
+| **Early Bird**       | 🐦    | Complete a test before 8am      | Bronze | "Up and learning early!"          | "Oppe og lærer tidlig!"     |
+| **Night Owl**        | 🦉    | Complete a test after 8pm       | Bronze | "Learning into the night!"        | "Lærer til langt på kveld!" |
+| **Speed Demon**      | ⚡    | Complete a 10-word test in <60s | Silver | "Lightning fast!"                 | "Lynrask!"                  |
+| **Careful Speller**  | 🎯    | 100% with no hints used         | Silver | "Perfect without any help!"       | "Perfekt uten hjelp!"       |
+| **Polyglot Starter** | 🌍    | Complete tests in 2+ languages  | Silver | "Learning in multiple languages!" | "Lærer på flere språk!"     |
+| **Family Helper**    | 👨‍👩‍👧    | Parent creates 5+ word sets     | Gold   | "Building a great collection!"    | "Bygger en flott samling!"  |
+
+### Badge Display & Unlock Flow
+
+#### Unlock Animation
+
+When a badge is earned:
+
+1. **Overlay appears** — Semi-transparent backdrop
+2. **Stavle enters** — `celebrating` pose, slides up
+3. **Badge reveals** — Scales up with glow effect
+4. **Confetti burst** — Subtle, brief (respect `prefers-reduced-motion`)
+5. **Sound effect** — Pleasant chime (optional, respects mute settings)
+6. **Dismiss** — Tap anywhere or auto-dismiss after 4 seconds
+
+```css
+@keyframes badge-unlock {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(-10deg);
+  }
+  50% {
+    transform: scale(1.1) rotate(5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.badge-unlocking {
+  animation: badge-unlock 0.6s ease-out;
+}
+```
+
+#### Badge Collection View
+
+Badges are displayed in a grid on the profile/achievements page:
+
+- **Earned badges**: Full color, gradient background
+- **Locked badges**: Grayscale with lock icon overlay
+- **Progress badges**: Show progress bar (e.g., "15/25 tests")
+- **Tap to expand**: Shows full description and date earned
+
+### Badge Component Specifications
+
+```tsx
+interface BadgeProps {
+  name: string;
+  icon: string;
+  tier: 'bronze' | 'silver' | 'gold';
+  earned: boolean;
+  earnedAt?: Date;
+  progress?: { current: number; target: number };
+  description: string;
+}
+```
+
+#### Visual Specifications
+
+| Property      | Bronze              | Silver            | Gold                |
+| ------------- | ------------------- | ----------------- | ------------------- |
+| Border width  | 2px                 | 3px               | 4px                 |
+| Border color  | `nordic-cloudberry` | `nordic-sky`      | `nordic-sunrise`    |
+| Background    | `cloudberry/10`     | `sky/10`          | `sunrise/20`        |
+| Icon size     | 32px                | 36px              | 40px                |
+| Glow on hover | None                | Subtle `sky` glow | Warm `sunrise` glow |
+| Shadow        | `shadow-sm`         | `shadow-md`       | `shadow-lg`         |
+
+### Data Model Considerations
+
+Badges should be stored with:
+
+```typescript
+interface UserBadge {
+  badgeId: string;           // e.g., "perfect-speller"
+  earnedAt: Date;
+  metadata?: {
+    testId?: string;         // Which test triggered it
+    wordSetId?: string;      // Related word set
+    score?: number;          // Score that earned it
+  };
+}
+
+interface BadgeProgress {
+  badgeId: string;
+  currentValue: number;      // e.g., 15 tests completed
+  targetValue: number;       // e.g., 25 tests needed
+  lastUpdated: Date;
+}
+```
+
+### Badge Display Priority
+
+When showing badges in limited space (e.g., profile summary), prioritize:
+
+1. **Most recently earned** — Immediate gratification
+2. **Highest tier** — Gold > Silver > Bronze
+3. **Rarest** — Fewer users have earned it
+4. **Most impressive** — Perfect scores, long streaks
 
 ### Dark Mode Consideration
 
@@ -762,36 +1061,43 @@ The app must meet accessibility standards, especially important for children who
 - [x] Update PWA manifest and SVG icons
 - [x] Add CSS custom properties for semantic colors
 
-### Phase 2: Component Color Migration 🚧 IN PROGRESS
+### Phase 2: Component Color Migration ✅ COMPLETED
 
-**Goal**: Replace all old color classes (blue-500, purple-600, indigo-*) with Nordic palette across all pages and components.
+All old color classes (blue-500, purple-600, indigo-*) have been replaced with Nordic palette across all pages and components.
 
-#### Pages to Update
+#### Pages Updated
 
-- [ ] `/app/page.tsx` - Home page (10+ gradients)
-- [ ] `/app/about/page.tsx` - About page
-- [ ] `/app/wordsets/page.tsx` - Word sets page
-- [ ] `/app/family/page.tsx` - Family page
-- [ ] `/app/results/page.tsx` - Results page
-- [ ] `/app/profile/page.tsx` - Profile page
-- [ ] `/app/settings/page.tsx` - Settings page
-- [ ] `/app/family/progress/page.tsx` - Progress page
+- [x] `/app/page.tsx` - Home page
+- [x] `/app/about/page.tsx` - About page
+- [x] `/app/wordsets/page.tsx` - Word sets page
+- [x] `/app/family/page.tsx` - Family page
+- [x] `/app/results/page.tsx` - Results page
+- [x] `/app/profile/page.tsx` - Profile page
+- [x] `/app/settings/page.tsx` - Settings page
+- [x] `/app/family/progress/page.tsx` - Progress page
+- [x] `/app/auth/callback/page.tsx` - Auth callback page
+- [x] `/app/register/page.tsx` - Registration page
+- [x] `/app/not-found.tsx` - 404 page
 
-#### Core Components to Update
+#### Core Components Updated
 
-
-- [ ] `TestView.tsx` - Progress bar, buttons
-- [ ] `PracticeView.tsx` - Purple-pink → Nordic colors
-- [ ] `TestResultsView.tsx` - Buttons, backgrounds
-- [ ] `SpellingFeedback.tsx` - Hint backgrounds (bg-blue-50 → nordic-sky/50)
-- [ ] `AuthForm.tsx` - Logo, buttons
-- [ ] `WordSetEditor.tsx` - Indigo → Nordic sky throughout
-- [ ] `ModeSelectionModal.tsx` - Indigo → Nordic sky
-- [ ] `WordSetCard/ChildWordSetCard.tsx` - Purple → Nordic teal
-- [ ] `WordSetCard/ParentWordSetCard.tsx` - Indigo/purple → Nordic
-- [ ] `ChildAssignmentSelector.tsx` - Blue → Nordic sky
-- [ ] `NavigationLanguageSwitcher.tsx` - Blue → Nordic sky
-- [ ] `Icons.tsx` - Default colors (purple/indigo → nordic)
+- [x] `TestView.tsx` - Progress bar, buttons
+- [x] `PracticeView.tsx` - Nordic colors throughout
+- [x] `TestResultsView.tsx` - Buttons, backgrounds
+- [x] `SpellingFeedback.tsx` - Hint backgrounds
+- [x] `AuthForm.tsx` - Logo, buttons
+- [x] `WordSetEditor.tsx` - Nordic sky throughout
+- [x] `ModeSelectionModal.tsx` - Nordic sky
+- [x] `WordSetCard/ChildWordSetCard.tsx` - Nordic teal
+- [x] `WordSetCard/ParentWordSetCard.tsx` - Nordic palette
+- [x] `ChildAssignmentSelector.tsx` - Nordic sky
+- [x] `NavigationLanguageSwitcher.tsx` - Nordic sky
+- [x] `Icons.tsx` - Nordic colors
+- [x] `modals/BaseModal.tsx` - Nordic sky/teal buttons
+- [x] `modals/SettingsModal.tsx` - Nordic teal checkboxes/inputs
+- [x] `WordSetsListView.tsx` - Nordic teal empty state
+- [x] `TestResultsList.tsx` - Nordic sky username
+- [x] `LoadingSpinner.tsx` - Nordic sky spinner
 
 ### Phase 3: Button & Card Redesign
 

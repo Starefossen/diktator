@@ -320,9 +320,9 @@ export default function WordSetEditor({
                     onChange={(e) =>
                       setDefaultMode(
                         e.target.value as
-                          | "standard"
-                          | "dictation"
-                          | "translation",
+                        | "standard"
+                        | "dictation"
+                        | "translation",
                       )
                     }
                     className="sr-only"
@@ -364,9 +364,9 @@ export default function WordSetEditor({
                     onChange={(e) =>
                       setDefaultMode(
                         e.target.value as
-                          | "standard"
-                          | "dictation"
-                          | "translation",
+                        | "standard"
+                        | "dictation"
+                        | "translation",
                       )
                     }
                     className="sr-only"
@@ -408,9 +408,9 @@ export default function WordSetEditor({
                     onChange={(e) =>
                       setDefaultMode(
                         e.target.value as
-                          | "standard"
-                          | "dictation"
-                          | "translation",
+                        | "standard"
+                        | "dictation"
+                        | "translation",
                       )
                     }
                     className="sr-only"
@@ -685,7 +685,7 @@ export default function WordSetEditor({
                             <button
                               type="button"
                               onClick={() => handleEditWord(word.id)}
-                              className="p-1 text-blue-600 rounded hover:text-blue-800 hover:bg-blue-100"
+                              className="p-1 text-nordic-sky rounded hover:text-nordic-sky/80 hover:bg-nordic-sky/10"
                               title="Edit"
                             >
                               <HeroPencilIcon className="w-4 h-4" />

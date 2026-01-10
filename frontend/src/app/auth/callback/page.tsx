@@ -70,7 +70,7 @@ function CallbackContent() {
             <p className="mt-2 text-sm text-red-600">{error}</p>
             <button
               onClick={() => router.push("/auth")}
-              className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-nordic-sky hover:bg-nordic-sky/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nordic-teal"
             >
               Try Again
             </button>
@@ -83,7 +83,7 @@ function CallbackContent() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-nordic-sky mx-auto"></div>
         <p className="mt-4 text-gray-600">Completing sign in...</p>
       </div>
     </div>
@@ -96,7 +96,7 @@ export default function AuthCallbackPage() {
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-nordic-sky mx-auto"></div>
             <p className="mt-4 text-gray-600">Loading...</p>
           </div>
         </div>

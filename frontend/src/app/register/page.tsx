@@ -189,7 +189,7 @@ export default function RegisterPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-nordic-sky"></div>
           <p className="mt-4 text-gray-600">{t("auth.register.loading")}</p>
         </div>
       </div>
@@ -206,7 +206,7 @@ export default function RegisterPage() {
           </h1>
           <button
             onClick={signIn}
-            className="w-full px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+            className="w-full px-4 py-2 bg-nordic-sky text-white rounded hover:bg-nordic-sky/90"
           >
             {t("auth.register.signinButton")}
           </button>
@@ -221,7 +221,7 @@ export default function RegisterPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-nordic-sky"></div>
           <p className="mt-4 text-gray-600">{t("auth.register.redirecting")}</p>
         </div>
       </div>
@@ -259,7 +259,7 @@ export default function RegisterPage() {
                 <button
                   onClick={() => handleAcceptInvitation(invitation.id)}
                   disabled={acceptingInvite}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+                  className="px-4 py-2 bg-nordic-sky text-white rounded hover:bg-nordic-sky/90 disabled:opacity-50"
                 >
                   {acceptingInvite
                     ? t("auth.invitations.accepting")
@@ -331,7 +331,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+            className="w-full px-4 py-2 bg-nordic-sky text-white rounded hover:bg-nordic-sky/90 disabled:opacity-50"
           >
             {submitting
               ? t("auth.register.button.submitting")

@@ -127,12 +127,13 @@ export function ParentWordSetCard({
                 <div className="flex items-center gap-2">
                   {child.score && (
                     <span
-                      className={`px-2 py-1 rounded-full font-medium ${child.score >= 90
+                      className={`px-2 py-1 rounded-full font-medium ${
+                        child.score >= 90
                           ? "text-amber-700 bg-nordic-sunrise/20"
                           : child.score >= 70
                             ? "text-emerald-700 bg-nordic-meadow/20"
                             : "text-orange-700 bg-nordic-cloudberry/20"
-                        }`}
+                      }`}
                     >
                       {child.score}%
                     </span>
@@ -182,8 +183,9 @@ export function ParentWordSetCard({
                   aria-label={`Play pronunciation of ${wordItem.word}`}
                 >
                   <HeroVolumeIcon
-                    className={`w-3 h-3 mr-1 ${hasGeneratedAudio ? "text-nordic-sky" : "text-gray-500"
-                      }`}
+                    className={`w-3 h-3 mr-1 ${
+                      hasGeneratedAudio ? "text-nordic-sky" : "text-gray-500"
+                    }`}
                     aria-hidden="true"
                   />
                   {wordItem.word}

@@ -58,7 +58,7 @@ export function WordSetsListView({
     return (
       <div className="py-12 text-center">
         <div className="mb-4">
-          <HeroBookIcon className="w-16 h-16 mx-auto text-indigo-500" />
+          <HeroBookIcon className="w-16 h-16 mx-auto text-nordic-teal" />
         </div>
         <h3 className="mb-2 text-xl font-semibold text-gray-600">
           {t("wordsets.noTitle")}

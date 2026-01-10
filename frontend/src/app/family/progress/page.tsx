@@ -65,7 +65,7 @@ function FamilyProgressPageContent() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
+      <div className="flex items-center justify-center min-h-screen bg-nordic-birch">
         <div className="text-center">
           <LoadingSpinner />
           <p className="mt-4 text-gray-600">{t("family.loading")}</p>
@@ -102,12 +102,12 @@ function FamilyProgressPageContent() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-nordic-birch">
         <div className="container px-4 py-8 mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="mb-4 text-4xl font-bold text-transparent bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text">
+              <h1 className="mb-4 text-4xl font-bold text-transparent bg-linear-to-r from-nordic-sky to-nordic-teal bg-clip-text">
                 {isChildView
                   ? selectedChild?.userName || t("family.progress.unknown")
                   : t("family.title")}
@@ -130,7 +130,7 @@ function FamilyProgressPageContent() {
           <div className="grid gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
             <div className="p-6 bg-white rounded-lg shadow-lg">
               <div className="flex items-center">
-                <HeroChartBarIcon className="w-8 h-8 text-blue-500" />
+                <HeroChartBarIcon className="w-8 h-8 text-nordic-sky" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">
                     {t("family.stats.testsCompleted")}
@@ -172,7 +172,7 @@ function FamilyProgressPageContent() {
 
             <div className="p-6 bg-white rounded-lg shadow-lg">
               <div className="flex items-center">
-                <HeroTrophyIcon className="w-8 h-8 text-purple-500" />
+                <HeroTrophyIcon className="w-8 h-8 text-nordic-teal" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">
                     {t("family.stats.wordsCorrect")}
@@ -204,10 +204,10 @@ function FamilyProgressPageContent() {
                     onClick={() =>
                       router.push(`/family/progress?childId=${member.userId}`)
                     }
-                    className="w-full p-4 text-left transition-all border border-gray-200 rounded-lg cursor-pointer hover:shadow-md hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-4 text-left transition-all border border-gray-200 rounded-lg cursor-pointer hover:shadow-md hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-nordic-teal"
                   >
                     <div className="flex items-center mb-3 space-x-3">
-                      <div className="flex items-center justify-center w-10 h-10 font-bold text-white rounded-full bg-linear-to-br from-blue-500 to-purple-500">
+                      <div className="flex items-center justify-center w-10 h-10 font-bold text-white rounded-full bg-linear-to-br from-nordic-sky to-nordic-teal">
                         {member.userName.charAt(0).toUpperCase()}
                       </div>
                       <div>
@@ -251,8 +251,8 @@ function FamilyProgressPageContent() {
                         <p className="font-bold">
                           {member.totalWords > 0
                             ? Math.round(
-                                (member.correctWords / member.totalWords) * 100,
-                              )
+                              (member.correctWords / member.totalWords) * 100,
+                            )
                             : 0}
                           %
                         </p>
@@ -274,7 +274,7 @@ function FamilyProgressPageContent() {
                 {isChildView && (
                   <button
                     onClick={() => router.push("/family/progress")}
-                    className="px-3 py-1 text-sm text-blue-600 transition-colors border border-blue-600 rounded-lg hover:bg-blue-50"
+                    className="px-3 py-1 text-sm text-nordic-sky transition-colors border border-nordic-sky rounded-lg hover:bg-nordic-sky/10"
                   >
                     {t("family.progress.viewAll")}
                   </button>
@@ -309,9 +309,9 @@ export default function FamilyProgressPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
+        <div className="flex items-center justify-center min-h-screen bg-nordic-birch">
           <div className="text-center">
-            <div className="w-12 h-12 mx-auto border-b-2 border-blue-600 rounded-full animate-spin" />
+            <div className="w-12 h-12 mx-auto border-b-2 border-nordic-sky rounded-full animate-spin" />
             <p className="mt-4 text-gray-600">Loading...</p>
           </div>
         </div>

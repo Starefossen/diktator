@@ -80,9 +80,8 @@ export function BaseModal({
       <div className="flex items-end justify-center min-h-full p-4 text-center sm:items-center sm:p-0">
         <div
           ref={modalRef}
-          className={`relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all duration-300 ease-out w-full mx-4 ${sizeClasses[size]} ${
-            size === "xl" ? "max-h-[90vh] overflow-hidden" : ""
-          }`}
+          className={`relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all duration-300 ease-out w-full mx-4 ${sizeClasses[size]} ${size === "xl" ? "max-h-[90vh] overflow-hidden" : ""
+            }`}
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.key === "Escape" && onClose()}
           role="dialog"
@@ -94,7 +93,7 @@ export function BaseModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="text-gray-400 transition-colors bg-white rounded-md hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                className="text-gray-400 transition-colors bg-white rounded-md hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-nordic-teal focus:ring-offset-2"
               >
                 <span className="sr-only">Close</span>
                 <HeroXMarkIcon className="w-6 h-6" />
@@ -166,9 +165,9 @@ export function ModalButton({
 
   const variantClasses = {
     primary:
-      "bg-indigo-600 text-white hover:bg-indigo-500 focus:ring-indigo-600",
+      "bg-nordic-sky text-white hover:bg-nordic-sky/90 focus:ring-nordic-teal",
     secondary:
-      "bg-white text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:ring-indigo-600",
+      "bg-white text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:ring-nordic-teal",
     danger: "bg-red-600 text-white hover:bg-red-500 focus:ring-red-600",
   };
 
