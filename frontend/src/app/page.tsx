@@ -38,7 +38,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-nordic-birch">
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-linear-to-br from-nordic-midnight to-nordic-midnight/90">
+      <div className="relative bg-nordic-midnight">
         <div className="relative py-16 text-center">
           <div className="mb-6">
             <h1 className="mb-4 text-5xl font-bold text-transparent md:text-6xl bg-linear-to-r from-nordic-sky to-nordic-teal bg-clip-text">
@@ -50,16 +50,18 @@ export default function HomePage() {
             {t("home.subtitle")}
           </p>
         </div>
-        {/* CSS Wave divider */}
-        <div className="relative h-18 w-full bg-nordic-midnight">
-          <div
-            className="absolute w-[55%] bg-nordic-birch right-[-1.5%] top-[60%] h-[109%]"
-            style={{ borderRadius: "100% 50%" }}
-          />
-          <div
-            className="absolute w-[55%] bg-nordic-midnight left-[-1.5%] top-[40%] h-full"
-            style={{ borderRadius: "100% 50%" }}
-          />
+        {/* Wave divider */}
+        <div className="w-full overflow-hidden leading-none">
+          <svg
+            className="relative block w-full h-16 md:h-24"
+            viewBox="0 0 1200 120"
+            preserveAspectRatio="none"
+          >
+            <path
+              d="M0,0 C300,100 900,20 1200,80 L1200,120 L0,120 Z"
+              fill="#FEFCE8"
+            />
+          </svg>
         </div>
       </div>
 
