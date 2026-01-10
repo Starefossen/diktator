@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,7 +21,7 @@ import {
   ArrowRightIcon,
 } from "@heroicons/react/16/solid";
 
-export default function ResultsPage() {
+function ResultsPageContent() {
   const { t } = useLanguage();
   const { userData } = useAuth();
   const searchParams = useSearchParams();
@@ -582,5 +582,13 @@ export default function ResultsPage() {
         />
       </div>
     </ProtectedRoute>
+  );
+}
+
+export default function ResultsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-nordic-birch"><div className="w-12 h-12 mx-auto border-b-2 border-nordic-sky rounded-full animate-spin" /></div>}>
+      <ResultsPageContent />
+    </Suspense>
   );
 }
