@@ -111,7 +111,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <ProtectedRoute>
-        <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
+        <div className="flex items-center justify-center min-h-screen bg-nordic-birch">
           <div className="text-center">
             <LoadingSpinner />
             <p className="mt-4 text-gray-600">{t("profile.loading")}</p>
@@ -124,12 +124,12 @@ export default function ProfilePage() {
   if (error) {
     return (
       <ProtectedRoute>
-        <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
+        <div className="flex items-center justify-center min-h-screen bg-nordic-birch">
           <div className="text-center">
             <p className="text-red-600">{error}</p>
             <button
               onClick={() => loadProfileData()}
-              className="px-4 py-2 mt-4 text-white bg-blue-500 rounded-lg hover:bg-blue-600"
+              className="px-4 py-2 mt-4 text-nordic-midnight bg-nordic-sky rounded-lg hover:bg-nordic-sky/90"
             >
               {t("profile.retry")}
             </button>
@@ -141,10 +141,10 @@ export default function ProfilePage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-nordic-birch">
         <div className="container max-w-4xl px-4 py-8 mx-auto">
           <div className="mb-8">
-            <h1 className="mb-4 text-4xl font-bold text-transparent bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text">
+            <h1 className="mb-4 text-4xl font-bold text-transparent bg-linear-to-r from-nordic-sky to-nordic-teal bg-clip-text">
               {t("profile.title")}
             </h1>
             <p className="text-lg text-gray-600">
@@ -156,7 +156,7 @@ export default function ProfilePage() {
           <div className="p-8 mb-8 bg-white shadow-lg rounded-xl">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
               <div className="flex items-center mb-6 space-x-6 md:mb-0">
-                <div className="flex items-center justify-center w-20 h-20 rounded-full bg-linear-to-br from-blue-500 to-purple-600">
+                <div className="flex items-center justify-center w-20 h-20 rounded-full bg-linear-to-br from-nordic-sky to-nordic-teal">
                   <span className="text-3xl font-bold text-white">
                     {userData?.displayName?.charAt(0)?.toUpperCase() ||
                       user?.email?.charAt(0)?.toUpperCase()}
@@ -173,7 +173,7 @@ export default function ProfilePage() {
                   </p>
                   <p className="mt-1 text-sm text-gray-500">{user?.email}</p>
                   {isChild && userData?.parentId && (
-                    <p className="text-sm font-medium text-blue-600">
+                    <p className="text-sm font-medium text-nordic-sky">
                       {t("profile.family.member")}
                     </p>
                   )}
@@ -183,14 +183,14 @@ export default function ProfilePage() {
               <div className="flex flex-col space-y-3">
                 <button
                   onClick={() => router.push("/results")}
-                  className="px-4 py-2 text-white transition-colors bg-blue-500 rounded-lg hover:bg-blue-600"
+                  className="px-4 py-2 text-nordic-midnight transition-colors bg-nordic-sky rounded-lg hover:bg-nordic-sky/90"
                 >
                   {t("profile.viewAllResults")}
                 </button>
                 {isParent && (
                   <button
                     onClick={() => router.push("/family")}
-                    className="px-4 py-2 text-white transition-colors bg-purple-500 rounded-lg hover:bg-purple-600"
+                    className="px-4 py-2 text-nordic-midnight transition-colors bg-nordic-teal rounded-lg hover:bg-nordic-teal/90"
                   >
                     {t("profile.manageFamily")}
                   </button>
@@ -207,11 +207,11 @@ export default function ProfilePage() {
                   <p className="text-sm font-medium text-gray-600">
                     {t("profile.stats.recentTests")}
                   </p>
-                  <p className="text-3xl font-bold text-blue-600">
+                  <p className="text-3xl font-bold text-nordic-sky">
                     {totalTests}
                   </p>
                 </div>
-                <HeroChartBarIcon className="w-12 h-12 text-blue-500" />
+                <HeroChartBarIcon className="w-12 h-12 text-nordic-sky" />
               </div>
             </div>
 
@@ -221,11 +221,11 @@ export default function ProfilePage() {
                   <p className="text-sm font-medium text-gray-600">
                     {t("profile.stats.averageScore")}
                   </p>
-                  <p className="text-3xl font-bold text-yellow-600">
+                  <p className="text-3xl font-bold text-nordic-sunrise">
                     {averageScore}%
                   </p>
                 </div>
-                <HeroTrophyIcon className="w-12 h-12 text-yellow-500" />
+                <HeroTrophyIcon className="w-12 h-12 text-nordic-sunrise" />
               </div>
             </div>
 
@@ -236,11 +236,11 @@ export default function ProfilePage() {
                     <p className="text-sm font-medium text-gray-600">
                       {t("profile.stats.familyTests")}
                     </p>
-                    <p className="text-3xl font-bold text-purple-600">
+                    <p className="text-3xl font-bold text-nordic-teal">
                       {familyStats.totalTestsCompleted}
                     </p>
                   </div>
-                  <HeroUsersIcon className="w-12 h-12 text-purple-500" />
+                  <HeroUsersIcon className="w-12 h-12 text-nordic-teal" />
                 </div>
               </div>
             ) : (
@@ -250,15 +250,17 @@ export default function ProfilePage() {
                     <p className="text-sm font-medium text-gray-600">
                       {t("profile.stats.bestScore")}
                     </p>
-                    <p className="text-3xl font-bold text-green-600">
+                    <p className="text-3xl font-bold text-nordic-meadow">
                       {recentResults.length > 0
                         ? Math.max(...recentResults.map((r) => r.score))
                         : 0}
                       %
                     </p>
                   </div>
-                  <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg">
-                    <span className="text-xl font-bold text-green-600">★</span>
+                  <div className="flex items-center justify-center w-12 h-12 bg-nordic-meadow/20 rounded-lg">
+                    <span className="text-xl font-bold text-nordic-meadow">
+                      ★
+                    </span>
                   </div>
                 </div>
               </div>
@@ -274,7 +276,7 @@ export default function ProfilePage() {
                 </h3>
                 <button
                   onClick={() => router.push("/results")}
-                  className="font-medium text-blue-600 hover:text-blue-700"
+                  className="font-medium text-nordic-sky hover:text-nordic-sky/80"
                 >
                   {t("profile.activity.viewAll")}
                 </button>
@@ -298,10 +300,10 @@ export default function ProfilePage() {
                       <div
                         className={`inline-block px-3 py-1 rounded-full font-semibold ${
                           result.score >= 90
-                            ? "text-green-600 bg-green-50"
+                            ? "text-nordic-meadow bg-nordic-meadow/10"
                             : result.score >= 70
-                              ? "text-yellow-600 bg-yellow-50"
-                              : "text-red-600 bg-red-50"
+                              ? "text-nordic-sunrise bg-nordic-sunrise/10"
+                              : "text-nordic-cloudberry bg-nordic-cloudberry/10"
                         }`}
                       >
                         {result.score}%
@@ -327,7 +329,7 @@ export default function ProfilePage() {
                 </p>
                 <button
                   onClick={() => router.push("/wordsets")}
-                  className="px-4 py-2 font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600"
+                  className="px-4 py-2 font-medium text-nordic-midnight bg-nordic-sky rounded-lg hover:bg-nordic-sky/90"
                 >
                   {t("profile.startTesting")}
                 </button>
@@ -364,7 +366,7 @@ export default function ProfilePage() {
                           <span
                             className={`text-xs px-2 py-1 rounded ${
                               child.isActive
-                                ? "bg-green-100 text-green-700"
+                                ? "bg-nordic-meadow/20 text-nordic-midnight"
                                 : "bg-gray-100 text-gray-600"
                             }`}
                           >
@@ -388,7 +390,7 @@ export default function ProfilePage() {
 
                   <button
                     onClick={() => router.push("/family")}
-                    className="w-full px-3 py-2 mt-3 text-sm text-blue-600 rounded bg-blue-50 hover:bg-blue-100"
+                    className="w-full px-3 py-2 mt-3 text-sm text-nordic-sky rounded bg-nordic-sky/10 hover:bg-nordic-sky/20"
                   >
                     {t("profile.family.manageChildren")}
                   </button>
@@ -436,7 +438,7 @@ export default function ProfilePage() {
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {averageScore >= 90 && (
-                  <div className="p-4 text-white rounded-lg bg-linear-to-r from-yellow-400 to-orange-500">
+                  <div className="p-4 text-nordic-midnight rounded-lg bg-linear-to-r from-nordic-sunrise to-nordic-cloudberry">
                     <div className="flex items-center space-x-3">
                       <HeroTrophyIcon className="w-8 h-8" />
                       <div>
@@ -452,7 +454,7 @@ export default function ProfilePage() {
                 )}
 
                 {totalTests >= 2 && (
-                  <div className="p-4 text-white rounded-lg bg-linear-to-r from-purple-500 to-pink-500">
+                  <div className="p-4 text-nordic-midnight rounded-lg bg-linear-to-r from-nordic-sky to-nordic-teal">
                     <div className="flex items-center space-x-3">
                       <HeroBookIcon className="w-8 h-8" />
                       <div>

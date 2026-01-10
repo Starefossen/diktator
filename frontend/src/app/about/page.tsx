@@ -22,19 +22,19 @@ export default function AboutPage() {
   }
 
   return (
-    <div className="min-h-screen py-12 bg-linear-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen py-12 bg-nordic-birch">
       <div className="max-w-4xl px-4 mx-auto">
         <div className="mb-12 text-center">
-          <h1 className="mb-4 text-4xl font-bold text-transparent md:text-5xl bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text">
+          <h1 className="mb-4 text-4xl font-bold text-transparent md:text-5xl bg-linear-to-r from-nordic-sky to-nordic-teal bg-clip-text">
             {t("about.title")}
           </h1>
-          <div className="w-24 h-1 mx-auto rounded-full bg-linear-to-r from-blue-500 to-purple-500"></div>
+          <div className="w-24 h-1 mx-auto rounded-full bg-linear-to-r from-nordic-sky to-nordic-teal"></div>
         </div>
 
         {/* What is Diktator */}
         <div className="p-8 mb-8 bg-white shadow-lg rounded-2xl">
           <h2 className="flex items-center mb-6 text-2xl font-bold text-gray-900">
-            <HeroBookIcon className="w-8 h-8 mr-3 text-blue-500" />
+            <HeroBookIcon className="w-8 h-8 mr-3 text-nordic-sky" />
             {t("about.what.title")}
           </h2>
           <p className="text-lg leading-relaxed text-gray-700">
@@ -72,22 +72,22 @@ export default function AboutPage() {
             {/* Audio Experience */}
             <div className="p-6 bg-white shadow-md rounded-xl">
               <div className="mb-4">
-                <HeroVolumeIcon className="w-10 h-10 text-blue-500" />
+                <HeroVolumeIcon className="w-10 h-10 text-nordic-sky" />
               </div>
               <h3 className="mb-3 text-lg font-semibold text-gray-900">
                 Audio Experience
               </h3>
               <ul className="space-y-2">
                 <li className="flex items-start text-sm text-gray-600">
-                  <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-blue-500 shrink-0" />
+                  <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-nordic-sky shrink-0" />
                   {t("about.feature.2")}
                 </li>
                 <li className="flex items-start text-sm text-gray-600">
-                  <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-blue-500 shrink-0" />
+                  <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-nordic-sky shrink-0" />
                   {t("about.feature.6")}
                 </li>
                 <li className="flex items-start text-sm text-gray-600">
-                  <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-blue-500 shrink-0" />
+                  <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-nordic-sky shrink-0" />
                   {t("about.feature.9")}
                 </li>
               </ul>
@@ -96,22 +96,22 @@ export default function AboutPage() {
             {/* Modern Design */}
             <div className="p-6 bg-white shadow-md rounded-xl">
               <div className="mb-4">
-                <HeroCheckIcon className="w-10 h-10 text-purple-500" />
+                <HeroCheckIcon className="w-10 h-10 text-nordic-teal" />
               </div>
               <h3 className="mb-3 text-lg font-semibold text-gray-900">
                 Modern Design
               </h3>
               <ul className="space-y-2">
                 <li className="flex items-start text-sm text-gray-600">
-                  <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-purple-500 shrink-0" />
+                  <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-nordic-teal shrink-0" />
                   {t("about.feature.4")}
                 </li>
                 <li className="flex items-start text-sm text-gray-600">
-                  <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-purple-500 shrink-0" />
+                  <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-nordic-teal shrink-0" />
                   {t("about.feature.7")}
                 </li>
                 <li className="flex items-start text-sm text-gray-600">
-                  <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-purple-500 shrink-0" />
+                  <HeroCheckIcon className="w-4 h-4 mt-0.5 mr-2 text-nordic-teal shrink-0" />
                   {t("about.feature.8")}
                 </li>
               </ul>
@@ -119,7 +119,7 @@ export default function AboutPage() {
           </div>
 
           {/* Additional Features */}
-          <div className="p-6 bg-linear-to-r from-gray-50 to-blue-50 rounded-xl">
+          <div className="p-6 bg-nordic-sky/10 rounded-xl">
             <h3 className="mb-4 text-lg font-semibold text-center text-gray-900">
               Additional Features
             </h3>
@@ -142,11 +142,11 @@ export default function AboutPage() {
             {t("about.tech.title")}
           </h2>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div className="p-6 rounded-xl bg-linear-to-br from-blue-50 to-blue-100">
-              <h3 className="mb-4 text-lg font-semibold text-blue-800">
+            <div className="p-6 rounded-xl bg-nordic-sky/10">
+              <h3 className="mb-4 text-lg font-semibold text-nordic-midnight">
                 {t("about.tech.frontend")}
               </h3>
-              <ul className="space-y-2 text-sm text-blue-700">
+              <ul className="space-y-2 text-sm text-nordic-midnight">
                 <li className="flex items-center">
                   <HeroCheckIcon className="w-4 h-4 mr-2" />
                   Next.js 16 (App Router)
@@ -165,11 +165,11 @@ export default function AboutPage() {
                 </li>
               </ul>
             </div>
-            <div className="p-6 rounded-xl bg-linear-to-br from-emerald-50 to-emerald-100">
-              <h3 className="mb-4 text-lg font-semibold text-emerald-800">
+            <div className="p-6 rounded-xl bg-nordic-meadow/10">
+              <h3 className="mb-4 text-lg font-semibold text-nordic-midnight">
                 {t("about.tech.backend")}
               </h3>
-              <ul className="space-y-2 text-sm text-emerald-700">
+              <ul className="space-y-2 text-sm text-nordic-midnight">
                 <li className="flex items-center">
                   <HeroCheckIcon className="w-4 h-4 mr-2" />
                   Go with Gin

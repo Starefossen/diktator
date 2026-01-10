@@ -56,8 +56,8 @@ export function ModeSelectionModal({
             onClick={() => handleModeSelection("standard")}
             className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
               defaultMode === "standard"
-                ? "border-indigo-500 bg-indigo-50"
-                : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50"
+                ? "border-nordic-sky bg-nordic-sky/10"
+                : "border-gray-200 hover:border-nordic-sky/50 hover:bg-gray-50"
             }`}
           >
             <div className="flex items-start justify-between">
@@ -65,7 +65,7 @@ export function ModeSelectionModal({
                 <h3 className="font-semibold text-gray-900">
                   {t("wordsets.mode.standard")}
                   {defaultMode === "standard" && (
-                    <span className="ml-2 text-xs font-normal text-indigo-600">
+                    <span className="ml-2 text-xs font-normal text-nordic-sky">
                       ({t("wordsets.mode.recommended")})
                     </span>
                   )}
@@ -75,7 +75,7 @@ export function ModeSelectionModal({
                 </p>
               </div>
               <svg
-                className="w-6 h-6 text-indigo-600"
+                className="w-6 h-6 text-nordic-sky"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -95,8 +95,8 @@ export function ModeSelectionModal({
             onClick={() => handleModeSelection("dictation")}
             className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
               defaultMode === "dictation"
-                ? "border-indigo-500 bg-indigo-50"
-                : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50"
+                ? "border-nordic-sky bg-nordic-sky/10"
+                : "border-gray-200 hover:border-nordic-sky/50 hover:bg-gray-50"
             }`}
           >
             <div className="flex items-start justify-between">
@@ -104,7 +104,7 @@ export function ModeSelectionModal({
                 <h3 className="font-semibold text-gray-900">
                   {t("wordsets.mode.dictation")}
                   {defaultMode === "dictation" && (
-                    <span className="ml-2 text-xs font-normal text-indigo-600">
+                    <span className="ml-2 text-xs font-normal text-nordic-sky">
                       ({t("wordsets.mode.recommended")})
                     </span>
                   )}
@@ -114,7 +114,7 @@ export function ModeSelectionModal({
                 </p>
               </div>
               <svg
-                className="w-6 h-6 text-indigo-600"
+                className="w-6 h-6 text-nordic-sky"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -140,8 +140,8 @@ export function ModeSelectionModal({
               !hasTranslations
                 ? "opacity-50 cursor-not-allowed border-gray-200 bg-gray-50"
                 : defaultMode === "translation"
-                  ? "border-indigo-500 bg-indigo-50"
-                  : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50"
+                  ? "border-nordic-sky bg-nordic-sky/10"
+                  : "border-gray-200 hover:border-nordic-sky/50 hover:bg-gray-50"
             }`}
           >
             <div className="flex items-start justify-between">
@@ -149,7 +149,7 @@ export function ModeSelectionModal({
                 <h3 className="font-semibold text-gray-900">
                   {t("wordsets.mode.translation")}
                   {defaultMode === "translation" && hasTranslations && (
-                    <span className="ml-2 text-xs font-normal text-indigo-600">
+                    <span className="ml-2 text-xs font-normal text-nordic-sky">
                       ({t("wordsets.mode.recommended")})
                     </span>
                   )}
@@ -169,7 +169,7 @@ export function ModeSelectionModal({
                 </p>
               </div>
               <svg
-                className="w-6 h-6 text-indigo-600"
+                className="w-6 h-6 text-nordic-sky"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"

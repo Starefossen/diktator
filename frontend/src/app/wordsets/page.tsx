@@ -235,9 +235,9 @@ function WordSetsPageContent() {
   // Loading state
   if (loading || personalizationLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
+      <div className="flex items-center justify-center min-h-screen bg-nordic-birch">
         <div className="text-center">
-          <div className="w-12 h-12 mx-auto border-b-2 border-blue-600 rounded-full animate-spin"></div>
+          <div className="w-12 h-12 mx-auto border-b-2 border-nordic-sky rounded-full animate-spin"></div>
           <p className="mt-4 text-gray-600">
             {loading ? t("wordsets.loading") : "Loading personalization..."}
           </p>
@@ -327,10 +327,10 @@ function WordSetsPageContent() {
   // Main word sets list view
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-nordic-birch">
         <div className="container px-4 py-8 mx-auto">
           <div className="mb-8">
-            <h1 className="mb-4 text-4xl font-bold text-transparent bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text">
+            <h1 className="mb-4 text-4xl font-bold text-transparent bg-linear-to-r from-nordic-sky to-nordic-teal bg-clip-text">
               {t("wordsets.title")}
             </h1>
             <p className="text-lg text-gray-600">{t("wordsets.subtitle")}</p>
@@ -340,7 +340,7 @@ function WordSetsPageContent() {
           <div className="mb-8">
             <button
               onClick={modalState.openCreateForm}
-              className="flex items-center px-6 py-3 font-semibold text-white transition-all duration-200 rounded-lg shadow-lg bg-linear-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 hover:shadow-xl hover:scale-105"
+              className="flex items-center px-6 py-3 font-semibold text-nordic-midnight transition-all duration-200 rounded-lg shadow-lg bg-linear-to-r from-nordic-meadow to-nordic-sky hover:from-nordic-meadow/90 hover:to-nordic-sky/90 hover:shadow-xl hover:scale-105"
             >
               <HeroPlusIcon className="w-5 h-5 mr-2" />
               {t("wordsets.create")}
@@ -447,9 +447,9 @@ export default function WordSetsPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
+        <div className="flex items-center justify-center min-h-screen bg-nordic-birch">
           <div className="text-center">
-            <div className="w-12 h-12 mx-auto border-b-2 border-blue-600 rounded-full animate-spin"></div>
+            <div className="w-12 h-12 mx-auto border-b-2 border-nordic-sky rounded-full animate-spin"></div>
             <p className="mt-4 text-gray-600">Loading...</p>
           </div>
         </div>

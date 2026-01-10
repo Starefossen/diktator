@@ -280,6 +280,44 @@ Active: Darken 15%
 Focus ring: Fjord Teal (#2DD4BF) with 2px offset
 ```
 
+#### Button Color Hierarchy
+
+Use distinct colors to communicate button purpose and create visual variety:
+
+| Button Type               | Color                 | Tailwind Classes                   | Rationale                                |
+| ------------------------- | --------------------- | ---------------------------------- | ---------------------------------------- |
+| **Primary Action (Test)** | Meadow → Sky gradient | `from-nordic-meadow to-nordic-sky` | Green signals "go" / positive action     |
+| **Create / Add**          | Meadow → Sky gradient | `from-nordic-meadow to-nordic-sky` | Consistent with primary positive actions |
+| **Practice / Study**      | Cloudberry            | `bg-nordic-cloudberry`             | Warm, relaxed, distinct from test        |
+| **Analytics / Info**      | Sky                   | `bg-nordic-sky`                    | Informational, neutral-positive          |
+| **Secondary**             | Gray/transparent      | `bg-gray-100` or `border-gray-200` | De-emphasized actions                    |
+| **Destructive**           | Red                   | `text-red-700`                     | Clear warning for delete actions         |
+
+**Anti-pattern**: Avoid using the same color (e.g., teal) for both primary and secondary buttons. This creates monotony and reduces visual hierarchy.
+
+#### Score-Based Color Coding
+
+Use color to communicate performance at a glance:
+
+| Score Range   | Color             | Hex       | Tailwind Classes                                 | Meaning                 |
+| ------------- | ----------------- | --------- | ------------------------------------------------ | ----------------------- |
+| **90-100%**   | Sunrise Yellow    | `#FBBF24` | `text-nordic-sunrise bg-nordic-sunrise/20`       | Excellence, celebration |
+| **70-89%**    | Meadow Green      | `#4ADE80` | `text-nordic-meadow bg-nordic-meadow/20`         | Good performance        |
+| **Below 70%** | Cloudberry Orange | `#FB923C` | `text-nordic-cloudberry bg-nordic-cloudberry/20` | Needs more practice     |
+
+**Important**: This graduated scale helps children understand their progress intuitively—gold is the goal, green is good, orange means keep trying.
+
+#### Word Pill Colors
+
+Word pills should use warm, varied colors that feel inviting:
+
+| State              | Color             | Tailwind Classes                                                             | Usage                    |
+| ------------------ | ----------------- | ---------------------------------------------------------------------------- | ------------------------ |
+| **Default**        | Sky Blue tint     | `bg-nordic-sky/20 text-nordic-midnight`                                      | Regular words with audio |
+| **Needs Practice** | Cloudberry accent | `bg-nordic-cloudberry/20 text-nordic-cloudberry border-nordic-cloudberry/40` | Words to focus on        |
+| **No Audio**       | Gray              | `bg-gray-100 text-gray-600`                                                  | Words without playback   |
+| **Playing**        | Sky ring          | `ring-2 ring-nordic-sky`                                                     | Currently playing audio  |
+
 ### Gradients (Use Sparingly)
 
 Gradients should feel natural, like light or sky, not artificial "tech" gradients.
@@ -292,6 +330,67 @@ background: linear-gradient(to right, #7DD3FC, #2DD4BF);
 background: linear-gradient(135deg, #FBBF24, #FB923C);
 
 /* Avoid: harsh purple-blue, neon, or overly saturated gradients */
+```
+
+### Mode-Specific Gradients
+
+To visually differentiate learning modes, each mode has a distinct gradient:
+
+| Mode         | Gradient                | Tailwind Classes                        | Purpose                    |
+| ------------ | ----------------------- | --------------------------------------- | -------------------------- |
+| **Test**     | Sky Blue → Fjord Teal   | `from-nordic-sky to-nordic-teal`        | Primary learning activity  |
+| **Practice** | Fjord Teal → Cloudberry | `from-nordic-teal to-nordic-cloudberry` | Relaxed, exploratory study |
+| **Results**  | Meadow Green → Sky Blue | `from-nordic-meadow to-nordic-sky`      | Celebration, completion    |
+
+```css
+/* Test mode — focused, clear, primary */
+.progress-bar-test {
+  background: linear-gradient(to right, #7DD3FC, #2DD4BF);
+}
+
+/* Practice mode — warm, relaxed, exploratory */
+.progress-bar-practice {
+  background: linear-gradient(to right, #2DD4BF, #FB923C);
+}
+
+/* Results/completion — celebratory, accomplished */
+.progress-bar-results {
+  background: linear-gradient(to right, #4ADE80, #7DD3FC);
+}
+```
+
+### Role-Specific Colors
+
+For sections that highlight different user roles (e.g., benefits section on home page), use distinct colors from the Nordic palette while maintaining warmth:
+
+| Role         | Primary Color | Background         | Tailwind Classes                            |
+| ------------ | ------------- | ------------------ | ------------------------------------------- |
+| **Parents**  | Sky Blue      | `nordic-sky/10`    | `text-nordic-sky`, `bg-nordic-sky/10`       |
+| **Children** | Meadow Green  | `nordic-meadow/10` | `text-nordic-meadow`, `bg-nordic-meadow/10` |
+| **Family**   | Fjord Teal    | `nordic-teal/10`   | `text-nordic-teal`, `bg-nordic-teal/10`     |
+
+This maintains visual differentiation while staying within the Nordic palette.
+
+### Achievement & Celebration Colors
+
+Achievement badges and celebration screens use warm, celebratory colors:
+
+| Achievement Type | Gradient                  | Tailwind Classes                           |
+| ---------------- | ------------------------- | ------------------------------------------ |
+| **Gold/Primary** | Sunrise → Cloudberry      | `from-nordic-sunrise to-nordic-cloudberry` |
+| **Progress**     | Cloudberry → Sunrise      | `from-nordic-cloudberry to-nordic-sunrise` |
+| **Streak**       | Meadow Green → Fjord Teal | `from-nordic-meadow to-nordic-teal`        |
+
+```css
+/* Achievement badge — warm celebratory glow */
+.badge-achievement {
+  background: linear-gradient(135deg, #FBBF24, #FB923C);
+}
+
+/* Streak badge — growth and consistency */
+.badge-streak {
+  background: linear-gradient(135deg, #4ADE80, #2DD4BF);
+}
 ```
 
 ### Dark Mode Consideration

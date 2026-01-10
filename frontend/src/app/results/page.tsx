@@ -166,9 +166,9 @@ export default function ResultsPage() {
   if (loading) {
     return (
       <ProtectedRoute>
-        <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
+        <div className="flex items-center justify-center min-h-screen bg-nordic-birch">
           <div className="text-center">
-            <div className="w-12 h-12 mx-auto border-b-2 border-blue-600 rounded-full"></div>
+            <div className="w-12 h-12 mx-auto border-b-2 border-nordic-sky rounded-full"></div>
             <p className="mt-4 text-gray-600">{t("common.loading")}</p>
           </div>
         </div>
@@ -178,10 +178,10 @@ export default function ResultsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-nordic-birch">
         <div className="container px-4 py-8 mx-auto max-w-7xl">
           <div className="mb-8">
-            <h1 className="mb-4 text-4xl font-bold text-transparent bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text">
+            <h1 className="mb-4 text-4xl font-bold text-transparent bg-linear-to-r from-nordic-sky to-nordic-teal bg-clip-text">
               {t("results.title")}
             </h1>
             <p className="text-lg text-gray-600">{t("results.desc")}</p>
@@ -196,9 +196,9 @@ export default function ResultsPage() {
                     <h3 className="text-sm font-medium text-gray-600">
                       {t("results.stats.totalTestsCard")}
                     </h3>
-                    <HeroChartIcon className="w-6 h-6 text-blue-500" />
+                    <HeroChartIcon className="w-6 h-6 text-nordic-sky" />
                   </div>
-                  <p className="text-3xl font-bold text-blue-600">
+                  <p className="text-3xl font-bold text-nordic-sky">
                     {stats.totalTests}
                   </p>
                   <p className="text-sm text-gray-500">
@@ -211,9 +211,9 @@ export default function ResultsPage() {
                     <h3 className="text-sm font-medium text-gray-600">
                       {t("results.stats.averageScoreCard")}
                     </h3>
-                    <HeroTrophyIcon className="w-6 h-6 text-yellow-500" />
+                    <HeroTrophyIcon className="w-6 h-6 text-nordic-sunrise" />
                   </div>
-                  <p className="text-3xl font-bold text-yellow-600">
+                  <p className="text-3xl font-bold text-nordic-sunrise">
                     {stats.averageScore}%
                   </p>
                   <p className="text-sm text-gray-500">
@@ -227,9 +227,9 @@ export default function ResultsPage() {
                     <h3 className="text-sm font-medium text-gray-600">
                       {t("results.stats.bestScoreCard")}
                     </h3>
-                    <HeroTargetIcon className="w-6 h-6 text-green-500" />
+                    <HeroTargetIcon className="w-6 h-6 text-nordic-meadow" />
                   </div>
-                  <p className="text-3xl font-bold text-green-600">
+                  <p className="text-3xl font-bold text-nordic-meadow">
                     {stats.bestScore}%
                   </p>
                   <p className="text-sm text-gray-500">
@@ -245,7 +245,7 @@ export default function ResultsPage() {
                     <div
                       className={`w-6 h-6 rounded-full flex items-center justify-center ${
                         stats.improvementTrend > 0
-                          ? "bg-green-100 text-green-600"
+                          ? "bg-nordic-meadow/20 text-nordic-meadow"
                           : stats.improvementTrend < 0
                             ? "bg-red-100 text-red-600"
                             : "bg-gray-100 text-gray-600"
@@ -263,7 +263,7 @@ export default function ResultsPage() {
                   <p
                     className={`text-3xl font-bold ${
                       stats.improvementTrend > 0
-                        ? "text-green-600"
+                        ? "text-nordic-meadow"
                         : stats.improvementTrend < 0
                           ? "text-red-600"
                           : "text-gray-600"
@@ -284,11 +284,11 @@ export default function ResultsPage() {
                   {t("results.performance.distributionTitle")}
                 </h3>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                  <div className="p-4 text-center rounded-lg bg-green-50">
-                    <div className="text-2xl font-bold text-green-600">
+                  <div className="p-4 text-center rounded-lg bg-nordic-meadow/10">
+                    <div className="text-2xl font-bold text-nordic-meadow">
                       {stats.excellentTests}
                     </div>
-                    <div className="text-sm text-green-700">
+                    <div className="text-sm text-nordic-midnight">
                       {t("results.performance.excellentLabel")}
                     </div>
                     <div className="text-xs text-gray-500">
@@ -298,11 +298,11 @@ export default function ResultsPage() {
                       {t("results.performance.ofTests")}
                     </div>
                   </div>
-                  <div className="p-4 text-center rounded-lg bg-yellow-50">
-                    <div className="text-2xl font-bold text-yellow-600">
+                  <div className="p-4 text-center rounded-lg bg-nordic-sunrise/10">
+                    <div className="text-2xl font-bold text-nordic-sunrise">
                       {stats.goodTests}
                     </div>
-                    <div className="text-sm text-yellow-700">
+                    <div className="text-sm text-nordic-midnight">
                       {t("results.performance.goodLabel")}
                     </div>
                     <div className="text-xs text-gray-500">
@@ -310,11 +310,11 @@ export default function ResultsPage() {
                       {t("results.performance.ofTests")}
                     </div>
                   </div>
-                  <div className="p-4 text-center rounded-lg bg-red-50">
-                    <div className="text-2xl font-bold text-red-600">
+                  <div className="p-4 text-center rounded-lg bg-nordic-cloudberry/10">
+                    <div className="text-2xl font-bold text-nordic-cloudberry">
                       {stats.needsWorkTests}
                     </div>
-                    <div className="text-sm text-red-700">
+                    <div className="text-sm text-nordic-midnight">
                       {t("results.performance.needsWorkLabel")}
                     </div>
                     <div className="text-xs text-gray-500">
@@ -354,7 +354,7 @@ export default function ResultsPage() {
                               | "needs-work",
                           )
                         }
-                        className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600 sm:text-sm/6"
+                        className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-nordic-teal sm:text-sm/6"
                       >
                         <option value="all">
                           {t("results.filters.allScores")}
@@ -391,7 +391,7 @@ export default function ResultsPage() {
                         onChange={(e) =>
                           setSortBy(e.target.value as "date" | "score" | "time")
                         }
-                        className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600 sm:text-sm/6"
+                        className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-nordic-teal sm:text-sm/6"
                       >
                         <option value="date">
                           {t("results.filters.dateOption")}
@@ -425,7 +425,7 @@ export default function ResultsPage() {
                         onChange={(e) =>
                           setSortOrder(e.target.value as "asc" | "desc")
                         }
-                        className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600 sm:text-sm/6"
+                        className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-nordic-teal sm:text-sm/6"
                       >
                         <option value="desc">
                           {t("results.filters.descendingOption")}
@@ -483,14 +483,14 @@ export default function ResultsPage() {
               {/* Achievement Badges */}
               <div className="grid grid-cols-1 gap-6 mt-8 md:grid-cols-2">
                 {stats.averageScore >= 90 && (
-                  <div className="p-6 text-white bg-linear-to-r from-yellow-400 to-orange-500 rounded-xl">
+                  <div className="p-6 text-nordic-midnight bg-linear-to-r from-nordic-sunrise to-nordic-cloudberry rounded-xl">
                     <div className="flex items-center space-x-3">
                       <HeroTrophyIcon className="w-10 h-10" />
                       <div>
                         <h3 className="text-lg font-bold">
                           {t("results.achievement.spellingChampion")}
                         </h3>
-                        <p className="text-yellow-100">
+                        <p className="text-nordic-midnight/80">
                           {t("results.achievement.spellingChampionDesc")}
                         </p>
                       </div>
@@ -499,14 +499,14 @@ export default function ResultsPage() {
                 )}
 
                 {stats.totalTests >= 20 && (
-                  <div className="p-6 text-white bg-linear-to-r from-purple-500 to-pink-500 rounded-xl">
+                  <div className="p-6 text-nordic-midnight bg-linear-to-r from-nordic-sky to-nordic-teal rounded-xl">
                     <div className="flex items-center space-x-3">
                       <HeroTargetIcon className="w-10 h-10" />
                       <div>
                         <h3 className="text-lg font-bold">
                           {t("results.achievement.dedicatedLearner")}
                         </h3>
-                        <p className="text-purple-100">
+                        <p className="text-nordic-midnight/80">
                           {interpolate(
                             "results.achievement.dedicatedLearnerDesc",
                             {
@@ -533,7 +533,7 @@ export default function ResultsPage() {
               </p>
               <button
                 onClick={() => (window.location.href = "/wordsets/")}
-                className="px-6 py-3 text-white transition-colors bg-blue-500 rounded-lg hover:bg-blue-600"
+                className="px-6 py-3 text-nordic-midnight transition-colors bg-nordic-sky rounded-lg hover:bg-nordic-sky/90"
               >
                 {t("results.empty.startFirstTest")}
               </button>

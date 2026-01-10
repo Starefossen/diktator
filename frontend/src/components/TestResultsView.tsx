@@ -29,7 +29,7 @@ export function TestResultsView({
   const score = scoreBreakdown.weightedScore;
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
+    <div className="flex items-center justify-center min-h-screen bg-nordic-birch">
       <div className="w-full max-w-2xl p-8 mx-4 bg-white rounded-lg shadow-xl">
         <div className="mb-8 text-center">
           <div className="mb-4">
@@ -46,8 +46,8 @@ export function TestResultsView({
             <div className="text-3xl font-bold text-green-600">{score}%</div>
             <div className="text-gray-600">{t("test.score")}</div>
           </div>
-          <div className="p-4 text-center rounded-lg bg-blue-50">
-            <div className="text-3xl font-bold text-blue-600">
+          <div className="p-4 text-center rounded-lg bg-nordic-sky/10">
+            <div className="text-3xl font-bold text-nordic-sky">
               {scoreBreakdown.totalWords - scoreBreakdown.failed}/
               {scoreBreakdown.totalWords}
             </div>
@@ -226,7 +226,7 @@ export function TestResultsView({
         <div className="flex justify-center gap-4">
           <button
             onClick={onRestart}
-            className="px-6 py-3 font-semibold text-white transition-all duration-200 rounded-lg bg-linear-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+            className="px-6 py-3 font-semibold text-nordic-midnight transition-all duration-200 rounded-lg bg-linear-to-r from-nordic-sky to-nordic-teal hover:from-nordic-sky/90 hover:to-nordic-teal/90"
           >
             {t("test.restart")}
           </button>

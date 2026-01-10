@@ -156,9 +156,9 @@ export function SpellingFeedback({
 
         {/* Hint message (progressive - only shown after first attempt) */}
         {hintKey && (
-          <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-blue-800 text-sm font-medium text-center flex items-center justify-center gap-2">
-              <HeroLightBulbIcon className="w-5 h-5 text-blue-600" />
+          <div className="mb-4 p-3 bg-nordic-sky/10 rounded-lg border border-nordic-sky/30">
+            <p className="text-nordic-midnight text-sm font-medium text-center flex items-center justify-center gap-2">
+              <HeroLightBulbIcon className="w-5 h-5 text-nordic-sky" />
               {t(hintKey as TranslationKey)}
             </p>
           </div>

@@ -120,7 +120,7 @@ export function ChildAssignmentSelector({
               onClick={() => handleToggleAssignment(child.id)}
               className={`w-full flex items-center justify-between p-3 rounded-lg border-2 transition-all ${
                 isAssigned
-                  ? "border-blue-500 bg-blue-50 hover:bg-blue-100"
+                  ? "border-nordic-sky bg-nordic-sky/10 hover:bg-nordic-sky/20"
                   : "border-gray-200 bg-white hover:bg-gray-50"
               }`}
             >
@@ -128,7 +128,7 @@ export function ChildAssignmentSelector({
                 <div
                   className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
                     isAssigned
-                      ? "border-blue-500 bg-blue-500"
+                      ? "border-nordic-sky bg-nordic-sky"
                       : "border-gray-300 bg-white"
                   }`}
                 >
@@ -145,7 +145,7 @@ export function ChildAssignmentSelector({
               </div>
 
               {isAssigned && (
-                <span className="text-xs font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded-full">
+                <span className="text-xs font-medium text-nordic-midnight bg-nordic-sky/20 px-2 py-1 rounded-full">
                   {t("wordsets.assignment.assigned")}
                 </span>
               )}

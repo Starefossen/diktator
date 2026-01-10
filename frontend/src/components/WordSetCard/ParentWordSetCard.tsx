@@ -127,13 +127,12 @@ export function ParentWordSetCard({
                 <div className="flex items-center gap-2">
                   {child.score && (
                     <span
-                      className={`px-2 py-1 rounded-full font-medium ${
-                        child.score >= 90
-                          ? "text-green-700 bg-green-100"
+                      className={`px-2 py-1 rounded-full font-medium ${child.score >= 90
+                          ? "text-amber-700 bg-nordic-sunrise/20"
                           : child.score >= 70
-                            ? "text-yellow-700 bg-yellow-100"
-                            : "text-red-700 bg-red-100"
-                      }`}
+                            ? "text-emerald-700 bg-nordic-meadow/20"
+                            : "text-orange-700 bg-nordic-cloudberry/20"
+                        }`}
                     >
                       {child.score}%
                     </span>
@@ -145,10 +144,10 @@ export function ParentWordSetCard({
                       : t("wordsets.attempts")}
                   </span>
                   {child.score && child.score >= 90 && (
-                    <HeroCheckIcon className="w-3 h-3 text-green-600" />
+                    <HeroCheckIcon className="w-3 h-3 text-nordic-sunrise" />
                   )}
                   {child.score && child.score < 70 && (
-                    <HeroPencilIcon className="w-3 h-3 text-orange-600" />
+                    <HeroPencilIcon className="w-3 h-3 text-nordic-cloudberry" />
                   )}
                 </div>
               </div>
@@ -176,16 +175,15 @@ export function ParentWordSetCard({
                   key={index}
                   type="button"
                   onClick={() => onWordClick(wordItem.word, wordSet)}
-                  className={`inline-flex items-center px-2 py-1 text-xs rounded transition-all duration-200 text-blue-700 bg-blue-100 cursor-pointer hover:bg-blue-200 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${isPlaying ? "ring-2 ring-blue-500 shadow-md" : ""}`}
+                  className={`inline-flex items-center px-2 py-1 text-xs rounded transition-all duration-200 text-nordic-midnight bg-nordic-sky/20 cursor-pointer hover:bg-nordic-sky/30 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-nordic-sky ${isPlaying ? "ring-2 ring-nordic-sky shadow-md" : ""}`}
                   title={
                     hasGeneratedAudio ? "Generated audio" : "Text-to-speech"
                   }
                   aria-label={`Play pronunciation of ${wordItem.word}`}
                 >
                   <HeroVolumeIcon
-                    className={`w-3 h-3 mr-1 ${
-                      hasGeneratedAudio ? "text-blue-500" : "text-gray-500"
-                    }`}
+                    className={`w-3 h-3 mr-1 ${hasGeneratedAudio ? "text-nordic-sky" : "text-gray-500"
+                      }`}
                     aria-hidden="true"
                   />
                   {wordItem.word}
@@ -217,13 +215,13 @@ export function ParentWordSetCard({
         <div className="inline-flex flex-1 rounded-md shadow-xs">
           <button
             onClick={() => onStartTest(wordSet)}
-            className="relative inline-flex items-center justify-center flex-1 px-3 py-2 text-sm font-semibold text-white transition-all duration-200 rounded-l-md bg-linear-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 focus:z-10"
+            className="relative inline-flex items-center justify-center flex-1 px-3 py-2 text-sm font-semibold text-nordic-midnight transition-all duration-200 rounded-l-md bg-linear-to-r from-nordic-meadow to-nordic-sky hover:from-nordic-meadow/90 hover:to-nordic-sky/90 focus:z-10"
           >
             <HeroPlayIcon className="w-4 h-4 mr-1" />
             {t("wordsets.startTest")}
           </button>
           <Menu as="div" className="relative block -ml-px">
-            <MenuButton className="relative inline-flex items-center px-2 py-2 text-white rounded-r-md bg-linear-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 focus:z-10">
+            <MenuButton className="relative inline-flex items-center px-2 py-2 text-nordic-midnight rounded-r-md bg-linear-to-r from-nordic-meadow to-nordic-sky hover:from-nordic-meadow/90 hover:to-nordic-sky/90 focus:z-10">
               <span className="sr-only">Open options</span>
               <ChevronDownIcon aria-hidden="true" className="w-5 h-5" />
             </MenuButton>
@@ -267,7 +265,7 @@ export function ParentWordSetCard({
         {onViewAnalytics && (
           <button
             onClick={() => onViewAnalytics(wordSet)}
-            className="flex items-center justify-center px-3 py-2 text-sm font-medium text-white transition-all duration-200 bg-indigo-500 rounded-lg shadow-md hover:bg-indigo-600 hover:shadow-lg"
+            className="flex items-center justify-center px-3 py-2 text-sm font-medium text-nordic-midnight transition-all duration-200 bg-nordic-sky rounded-lg shadow-md hover:bg-nordic-sky/90 hover:shadow-lg"
             title="Analytics"
           >
             <HeroChartBarIcon className="w-4 h-4" />
@@ -276,7 +274,7 @@ export function ParentWordSetCard({
 
         <button
           onClick={() => onStartPractice(wordSet)}
-          className="flex items-center justify-center px-3 py-2 text-sm font-medium text-white transition-all duration-200 bg-purple-500 rounded-lg shadow-md hover:bg-purple-600 hover:shadow-lg"
+          className="flex items-center justify-center px-3 py-2 text-sm font-medium text-white transition-all duration-200 bg-nordic-cloudberry rounded-lg shadow-md hover:bg-nordic-cloudberry/90 hover:shadow-lg"
           title={t("wordsets.practice.buttonTooltip")}
         >
           <HeroBookIcon className="w-4 h-4" />

@@ -52,7 +52,7 @@ export function PracticeView({
   const hasGeneratedAudio = wordItem?.audio?.audioUrl;
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-nordic-birch">
       <div className="container px-4 py-8 mx-auto">
         {/* Header */}
         <div className="mb-8 text-center">
@@ -65,7 +65,7 @@ export function PracticeView({
           </p>
           <div className="w-full h-2 mt-4 bg-gray-200 rounded-full">
             <div
-              className="h-2 transition-all duration-300 rounded-full bg-linear-to-r from-purple-500 to-pink-500"
+              className="h-2 transition-all duration-300 rounded-full bg-linear-to-r from-nordic-teal to-nordic-cloudberry"
               style={{
                 width: `${((currentPracticeIndex + 1) / practiceWords.length) * 100}%`,
               }}
@@ -92,16 +92,15 @@ export function PracticeView({
             <div className="mb-8">
               <div className="relative inline-block">
                 {isAudioPlaying && (
-                  <div className="absolute border-4 border-transparent rounded-full -inset-3 border-t-purple-500 border-r-purple-400 animate-spin"></div>
+                  <div className="absolute border-4 border-transparent rounded-full -inset-3 border-t-nordic-teal border-r-nordic-teal/80 animate-spin"></div>
                 )}
                 <button
                   onClick={onPlayAudio}
                   disabled={!hasAudio}
-                  className={`relative p-6 text-6xl transition-all duration-200 transform rounded-full shadow-lg ${
-                    hasAudio
-                      ? "text-white bg-linear-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-105"
+                  className={`relative p-6 text-6xl transition-all duration-200 transform rounded-full shadow-lg ${hasAudio
+                      ? "text-nordic-midnight bg-linear-to-r from-nordic-teal to-nordic-cloudberry hover:from-nordic-teal/90 hover:to-nordic-cloudberry/90 hover:shadow-xl hover:scale-105"
                       : "text-gray-400 bg-gray-200 cursor-not-allowed"
-                  }`}
+                    }`}
                   title={
                     hasAudio ? t("wordsets.clickToPlay") : t("wordsets.noAudio")
                   }
@@ -135,9 +134,8 @@ export function PracticeView({
               <div className="duration-300 animate-in fade-in-0 slide-in-from-bottom-2">
                 <button
                   onClick={() => onSetShowWord(!showPracticeWord)}
-                  className={`transition-all duration-500 cursor-pointer focus:outline-none focus:ring-4 focus:ring-purple-200 rounded-lg p-4 ${
-                    showPracticeWord ? "" : "hover:scale-105 hover:shadow-lg"
-                  }`}
+                  className={`transition-all duration-500 cursor-pointer focus:outline-none focus:ring-4 focus:ring-nordic-teal/30 rounded-lg p-4 ${showPracticeWord ? "" : "hover:scale-105 hover:shadow-lg"
+                    }`}
                   title={
                     showPracticeWord
                       ? t("wordsets.practice.clickToBlur")
@@ -145,9 +143,8 @@ export function PracticeView({
                   }
                 >
                   <h2
-                    className={`text-6xl font-bold text-gray-800 mb-4 transition-all duration-500 select-none ${
-                      showPracticeWord ? "filter-none" : "filter blur-xl"
-                    }`}
+                    className={`text-6xl font-bold text-gray-800 mb-4 transition-all duration-500 select-none ${showPracticeWord ? "filter-none" : "filter blur-xl"
+                      }`}
                     style={{
                       textShadow: showPracticeWord
                         ? "none"
@@ -198,7 +195,7 @@ export function PracticeView({
               </button>
               <button
                 onClick={onShuffle}
-                className="flex items-center px-4 py-2 font-medium text-white transition-colors bg-blue-500 rounded-lg hover:bg-blue-600"
+                className="flex items-center px-4 py-2 font-medium text-nordic-midnight transition-colors bg-nordic-sky rounded-lg hover:bg-nordic-sky/90"
               >
                 <svg
                   className="w-4 h-4 mr-2"
@@ -241,7 +238,7 @@ export function PracticeView({
             <div className="flex flex-wrap justify-center gap-4 mt-8">
               <button
                 onClick={() => onStartTest(practiceMode)}
-                className="flex items-center px-6 py-3 font-semibold text-white transition-all duration-200 rounded-lg shadow-lg bg-linear-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 hover:shadow-xl hover:scale-105"
+                className="flex items-center px-6 py-3 font-semibold text-nordic-midnight transition-all duration-200 rounded-lg shadow-lg bg-linear-to-r from-nordic-meadow to-nordic-sky hover:from-nordic-meadow/90 hover:to-nordic-sky/90 hover:shadow-xl hover:scale-105"
               >
                 <HeroPlayIcon className="w-5 h-5 mr-2" />
                 {t("wordsets.startTest")}
@@ -268,11 +265,10 @@ export function PracticeView({
                 <button
                   key={index}
                   onClick={() => onSetCurrentIndex(index)}
-                  className={`px-3 py-1 text-sm rounded transition-colors ${
-                    index === currentPracticeIndex
-                      ? "bg-purple-500 text-white"
+                  className={`px-3 py-1 text-sm rounded transition-colors ${index === currentPracticeIndex
+                      ? "bg-nordic-cloudberry text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
+                    }`}
                 >
                   {word}
                 </button>

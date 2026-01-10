@@ -259,7 +259,7 @@ export default function WordSetEditor({
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                    className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-nordic-teal sm:text-sm/6"
                     placeholder={t("wordsets.name.placeholder")}
                     required
                   />
@@ -279,7 +279,7 @@ export default function WordSetEditor({
                     onChange={(e) =>
                       setSelectedLanguage(e.target.value as Language)
                     }
-                    className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                    className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-nordic-teal sm:text-sm/6"
                   >
                     <option value="en">{t("common.english")}</option>
                     <option value="no">{t("common.norwegian")}</option>
@@ -338,7 +338,7 @@ export default function WordSetEditor({
                     </span>
                   </span>
                   <svg
-                    className={`h-5 w-5 ${defaultMode === "standard" ? "text-indigo-600" : "text-transparent"}`}
+                    className={`h-5 w-5 ${defaultMode === "standard" ? "text-nordic-teal" : "text-transparent"}`}
                     viewBox="0 0 20 20"
                     fill="currentColor"
                   >
@@ -382,7 +382,7 @@ export default function WordSetEditor({
                     </span>
                   </span>
                   <svg
-                    className={`h-5 w-5 ${defaultMode === "dictation" ? "text-indigo-600" : "text-transparent"}`}
+                    className={`h-5 w-5 ${defaultMode === "dictation" ? "text-nordic-teal" : "text-transparent"}`}
                     viewBox="0 0 20 20"
                     fill="currentColor"
                   >
@@ -426,7 +426,7 @@ export default function WordSetEditor({
                     </span>
                   </span>
                   <svg
-                    className={`h-5 w-5 ${defaultMode === "translation" ? "text-indigo-600" : "text-transparent"}`}
+                    className={`h-5 w-5 ${defaultMode === "translation" ? "text-nordic-teal" : "text-transparent"}`}
                     viewBox="0 0 20 20"
                     fill="currentColor"
                   >
@@ -455,7 +455,7 @@ export default function WordSetEditor({
                       onChange={(e) =>
                         setTargetLanguage(e.target.value as Language)
                       }
-                      className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                      className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-nordic-teal sm:text-sm/6"
                     >
                       <option value="en">{t("common.english")}</option>
                       <option value="no">{t("common.norwegian")}</option>
@@ -491,7 +491,7 @@ export default function WordSetEditor({
               </div>
 
               {/* Add Word Form - Always visible */}
-              <div className="p-4 mt-6 border border-blue-200 rounded-lg bg-blue-50">
+              <div className="p-4 mt-6 border border-nordic-sky/30 rounded-lg bg-nordic-sky/10">
                 <div className="grid grid-cols-1 gap-3 mb-3 md:grid-cols-2">
                   <div>
                     <input
@@ -499,7 +499,7 @@ export default function WordSetEditor({
                       type="text"
                       value={newWord}
                       onChange={(e) => setNewWord(e.target.value)}
-                      className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                      className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-nordic-teal sm:text-sm/6"
                       placeholder={
                         defaultMode === "translation"
                           ? `Source word (${selectedLanguage})`
@@ -522,7 +522,7 @@ export default function WordSetEditor({
                       type="text"
                       value={newDefinition}
                       onChange={(e) => setNewDefinition(e.target.value)}
-                      className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                      className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-nordic-teal sm:text-sm/6"
                       placeholder={t("wordsets.editor.definition.placeholder")}
                       onKeyPress={(e) => {
                         if (e.key === "Enter") {
@@ -548,7 +548,7 @@ export default function WordSetEditor({
                       type="text"
                       value={newTranslationText}
                       onChange={(e) => setNewTranslationText(e.target.value)}
-                      className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                      className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-nordic-teal sm:text-sm/6"
                       placeholder={`Translation (${targetLanguage}) - required for translation mode`}
                       onKeyPress={(e) => {
                         if (e.key === "Enter") {
@@ -569,7 +569,7 @@ export default function WordSetEditor({
                       (defaultMode === "translation" &&
                         !newTranslationText.trim())
                     }
-                    className="rounded-md bg-indigo-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-xs ring-1 ring-indigo-600 ring-inset hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="rounded-md bg-nordic-teal px-2.5 py-1.5 text-sm font-semibold text-nordic-midnight shadow-xs ring-1 ring-nordic-teal ring-inset hover:bg-nordic-teal/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nordic-teal disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <HeroPlusIcon className="inline w-4 h-4 mr-1" />
                     {t("wordsets.add")}
@@ -609,7 +609,7 @@ export default function WordSetEditor({
                                   e.target.value,
                                 )
                               }
-                              className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                              className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-nordic-teal sm:text-sm/6"
                               onKeyPress={(e) => {
                                 if (e.key === "Enter") {
                                   e.preventDefault();
@@ -631,7 +631,7 @@ export default function WordSetEditor({
                                   e.target.value,
                                 )
                               }
-                              className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                              className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-nordic-teal sm:text-sm/6"
                               placeholder={t(
                                 "wordsets.editor.definition.placeholderShort",
                               )}

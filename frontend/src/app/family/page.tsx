@@ -264,7 +264,7 @@ export default function FamilyPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
+      <div className="flex items-center justify-center min-h-screen bg-nordic-birch">
         <div className="text-center">
           <LoadingSpinner />
           <p className="mt-4 text-gray-600">{t("family.loading")}</p>
@@ -275,10 +275,10 @@ export default function FamilyPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-nordic-birch">
         <div className="container px-4 py-8 mx-auto">
           <div className="mb-8">
-            <h1 className="mb-4 text-4xl font-bold text-transparent bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text">
+            <h1 className="mb-4 text-4xl font-bold text-transparent bg-linear-to-r from-nordic-sky to-nordic-teal bg-clip-text">
               {t("family.title")}
             </h1>
             <p className="text-lg text-gray-600">{t("family.subtitle")}</p>
@@ -289,7 +289,7 @@ export default function FamilyPage() {
             <div className="grid gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
               <div className="p-6 bg-white rounded-lg shadow-lg">
                 <div className="flex items-center">
-                  <HeroUsersIcon className="w-8 h-8 text-blue-500" />
+                  <HeroUsersIcon className="w-8 h-8 text-nordic-sky" />
                   <div className="ml-4">
                     <p className="text-base md:text-lg font-medium text-gray-600">
                       {t("family.stats.members")}
@@ -303,7 +303,7 @@ export default function FamilyPage() {
 
               <div className="p-6 bg-white rounded-lg shadow-lg">
                 <div className="flex items-center">
-                  <HeroUserIcon className="w-8 h-8 text-green-500" />
+                  <HeroUserIcon className="w-8 h-8 text-nordic-meadow" />
                   <div className="ml-4">
                     <p className="text-base md:text-lg font-medium text-gray-600">
                       {t("family.stats.children")}
@@ -317,7 +317,7 @@ export default function FamilyPage() {
 
               <div className="p-6 bg-white rounded-lg shadow-lg">
                 <div className="flex items-center">
-                  <HeroChartBarIcon className="w-8 h-8 text-purple-500" />
+                  <HeroChartBarIcon className="w-8 h-8 text-nordic-teal" />
                   <div className="ml-4">
                     <p className="text-base md:text-lg font-medium text-gray-600">
                       {t("family.stats.testsCompleted")}
@@ -331,7 +331,7 @@ export default function FamilyPage() {
 
               <div className="p-6 bg-white rounded-lg shadow-lg">
                 <div className="flex items-center">
-                  <HeroChartBarIcon className="w-8 h-8 text-orange-500" />
+                  <HeroChartBarIcon className="w-8 h-8 text-nordic-cloudberry" />
                   <div className="ml-4">
                     <p className="text-base md:text-lg font-medium text-gray-600">
                       {t("family.stats.averageScore")}
@@ -349,7 +349,7 @@ export default function FamilyPage() {
           <div className="mb-8">
             <button
               onClick={() => setShowAddMemberModal(true)}
-              className="flex items-center px-6 py-3 font-semibold text-white transition-all duration-200 rounded-lg shadow-lg bg-linear-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 hover:shadow-xl hover:scale-105"
+              className="flex items-center px-6 py-3 font-semibold text-nordic-midnight transition-all duration-200 rounded-lg shadow-lg bg-linear-to-r from-nordic-meadow to-nordic-sky hover:from-nordic-meadow/90 hover:to-nordic-sky/90 hover:shadow-xl hover:scale-105"
             >
               <HeroUserPlusIcon className="w-5 h-5 mr-2" />
               {t("family.addMember.button")}
@@ -375,7 +375,7 @@ export default function FamilyPage() {
                       onClick={() => setSelectedRole("child")}
                       className={`px-4 py-3 font-medium rounded-lg transition-all ${
                         selectedRole === "child"
-                          ? "bg-blue-600 text-white shadow-md"
+                          ? "bg-nordic-sky text-nordic-midnight shadow-md"
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       }`}
                     >
@@ -386,7 +386,7 @@ export default function FamilyPage() {
                       onClick={() => setSelectedRole("parent")}
                       className={`px-4 py-3 font-medium rounded-lg transition-all ${
                         selectedRole === "parent"
-                          ? "bg-blue-600 text-white shadow-md"
+                          ? "bg-nordic-sky text-nordic-midnight shadow-md"
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       }`}
                     >
@@ -440,7 +440,7 @@ export default function FamilyPage() {
                             displayName: e.target.value,
                           })
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-nordic-teal focus:border-transparent"
                         placeholder={t("family.child.displayName.placeholder")}
                         required
                       />
@@ -460,7 +460,7 @@ export default function FamilyPage() {
                           email: e.target.value,
                         })
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-nordic-teal focus:border-transparent"
                       placeholder={
                         selectedRole === "child"
                           ? t("family.child.email.placeholder")
@@ -486,7 +486,7 @@ export default function FamilyPage() {
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="flex items-center justify-center flex-1 px-6 py-3 font-semibold text-white transition-all duration-200 bg-green-600 rounded-lg hover:bg-green-700 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center justify-center flex-1 px-6 py-3 font-semibold text-nordic-midnight transition-all duration-200 bg-nordic-meadow rounded-lg hover:bg-nordic-meadow/90 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {submitting ? (
                         <>
@@ -595,12 +595,12 @@ export default function FamilyPage() {
                                 type="text"
                                 value={editingName}
                                 onChange={(e) => setEditingName(e.target.value)}
-                                className="flex-1 px-3 py-1 text-lg font-semibold border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="flex-1 px-3 py-1 text-lg font-semibold border border-gray-300 rounded focus:ring-2 focus:ring-nordic-teal focus:border-transparent"
                                 autoFocus
                               />
                               <button
                                 onClick={() => handleEditChildName(child.id)}
-                                className="px-3 py-1 text-sm text-white bg-green-600 rounded hover:bg-green-700"
+                                className="px-3 py-1 text-sm text-nordic-midnight bg-nordic-meadow rounded hover:bg-nordic-meadow/90"
                               >
                                 {t("family.child.editName.save")}
                               </button>
@@ -624,7 +624,7 @@ export default function FamilyPage() {
                                   setEditingChildId(child.id);
                                   setEditingName(child.displayName);
                                 }}
-                                className="p-2 text-blue-600 hover:text-blue-800 min-h-11 min-w-11 flex items-center justify-center rounded-lg hover:bg-blue-50"
+                                className="p-2 text-nordic-sky hover:text-nordic-sky/80 min-h-11 min-w-11 flex items-center justify-center rounded-lg hover:bg-nordic-sky/10"
                                 title={t("family.child.editName")}
                                 aria-label={t("aria.editChild")}
                               >
@@ -643,7 +643,7 @@ export default function FamilyPage() {
                         <span
                           className={`px-2.5 py-1 text-sm font-semibold rounded-full ${
                             child.isActive
-                              ? "bg-green-100 text-green-800"
+                              ? "bg-nordic-meadow/20 text-nordic-midnight"
                               : "bg-red-100 text-red-800"
                           }`}
                         >
@@ -686,7 +686,7 @@ export default function FamilyPage() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => viewChildProgress(child.id)}
-                          className="flex items-center justify-center flex-1 px-4 py-2 font-medium text-white transition-all duration-200 bg-blue-500 rounded-lg hover:bg-blue-600 hover:shadow-md"
+                          className="flex items-center justify-center flex-1 px-4 py-2 font-medium text-nordic-midnight transition-all duration-200 bg-nordic-sky rounded-lg hover:bg-nordic-sky/90 hover:shadow-md"
                         >
                           <HeroEyeIcon className="w-4 h-4 mr-2" />
                           {t("family.child.viewProgress")}

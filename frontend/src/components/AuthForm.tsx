@@ -78,11 +78,11 @@ export default function AuthForm() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen px-4 bg-linear-to-br from-blue-50 via-white to-purple-50">
+    <div className="flex items-center justify-center min-h-screen px-4 bg-nordic-birch">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <div className="flex items-center justify-center mb-6">
-            <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-linear-to-br from-blue-500 to-purple-600">
+            <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-linear-to-br from-nordic-sky to-nordic-teal">
               <span className="text-2xl font-bold text-white">D</span>
             </div>
           </div>
@@ -122,7 +122,7 @@ export default function AuthForm() {
             type="button"
             onClick={handleOIDCLogin}
             disabled={isSubmitting}
-            className="flex items-center justify-center w-full gap-3 px-4 py-3 text-sm font-medium text-white transition-all duration-200 border border-transparent rounded-md shadow-sm bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center w-full gap-3 px-4 py-3 text-sm font-medium text-nordic-midnight transition-all duration-200 border border-transparent rounded-md shadow-sm bg-nordic-sky hover:bg-nordic-sky/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nordic-teal disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <LoadingSpinner size="sm" />

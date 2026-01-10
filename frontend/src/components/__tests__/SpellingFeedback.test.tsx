@@ -202,7 +202,10 @@ describe("SpellingFeedback", () => {
         <SpellingFeedback {...propsSecondAttempt} />,
         "no",
       );
-      expect(container.querySelector(".bg-blue-50")).toBeInTheDocument();
+      // Hint box should have nordic-sky background (bg-nordic-sky/10 compiles to bg-nordic-sky/10)
+      expect(
+        container.querySelector(".bg-nordic-sky\\/10"),
+      ).toBeInTheDocument();
     });
   });
 

@@ -133,7 +133,7 @@ export function HeroStarIcon({
 }
 
 export function HeroTargetIcon({
-  className = "w-6 h-6 text-blue-500",
+  className = "w-6 h-6 text-nordic-sky",
 }: {
   className?: string;
 }) {
@@ -141,7 +141,7 @@ export function HeroTargetIcon({
 }
 
 export function HeroDumbbellIcon({
-  className = "w-6 h-6 text-purple-500",
+  className = "w-6 h-6 text-nordic-teal",
 }: {
   className?: string;
 }) {
@@ -149,7 +149,7 @@ export function HeroDumbbellIcon({
 }
 
 export function HeroVolumeIcon({
-  className = "w-5 h-5 text-blue-600",
+  className = "w-6 h-6 text-nordic-sky",
 }: {
   className?: string;
 }) {
@@ -165,7 +165,7 @@ export function HeroChartIcon({
 }
 
 export function HeroBookIcon({
-  className = "w-6 h-6 text-indigo-500",
+  className = "w-6 h-6 text-nordic-teal",
 }: {
   className?: string;
 }) {
@@ -221,7 +221,7 @@ export function HeroSettingsIcon({
 }
 
 export function HeroUsersIcon({
-  className = "w-6 h-6 text-blue-500",
+  className = "w-6 h-6 text-nordic-sky",
 }: {
   className?: string;
 }) {
@@ -253,7 +253,7 @@ export function HeroEyeIcon({
 }
 
 export function HeroChartBarIcon({
-  className = "w-6 h-6 text-purple-500",
+  className = "w-6 h-6 text-nordic-sky",
 }: {
   className?: string;
 }) {
@@ -285,7 +285,7 @@ export function HeroPlusIcon({
 }
 
 export function HeroDevicePhoneMobileIcon({
-  className = "w-5 h-5 text-blue-600",
+  className = "w-6 h-6 text-nordic-sky",
 }: {
   className?: string;
 }) {
@@ -330,5 +330,5 @@ export function ScoreIcon({
   if (score >= 70) {
     return <HeroStarIcon className={`${className} text-yellow-400`} />;
   }
-  return <HeroDumbbellIcon className={`${className} text-purple-500`} />;
+  return <HeroDumbbellIcon className={`${className} text-nordic-teal`} />;
 }

@@ -68,10 +68,10 @@ export default function SettingsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-nordic-birch">
         <div className="container max-w-4xl px-4 py-8 mx-auto">
           <div className="mb-8">
-            <h1 className="mb-4 text-4xl font-bold text-transparent bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text">
+            <h1 className="mb-4 text-4xl font-bold text-transparent bg-linear-to-r from-nordic-sky to-nordic-teal bg-clip-text">
               {t("profile.settings.title")}
             </h1>
             <p className="text-lg text-gray-600">
@@ -94,7 +94,7 @@ export default function SettingsPage() {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder={t("profile.settings.displayName.placeholder")}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-lg focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 transition-colors"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-lg focus:border-nordic-teal focus:outline-none focus:ring-2 focus:ring-nordic-teal/30 transition-colors"
                   maxLength={100}
                   disabled={isSaving}
                 />
@@ -116,7 +116,7 @@ export default function SettingsPage() {
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="px-6 py-3 text-white transition-colors bg-blue-500 rounded-lg hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="px-6 py-3 text-nordic-midnight transition-colors bg-nordic-sky rounded-lg hover:bg-nordic-sky/90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isSaving
                     ? t("profile.settings.saving")
