@@ -80,10 +80,10 @@ export function ChildWordSetCard({
       )}
 
       {/* Header - Big friendly name */}
-      <div className="flex items-start gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-4">
         <FlagIcon
           language={wordSet.language as "no" | "en"}
-          className="w-8 h-8 shrink-0 mt-1"
+          className="w-8 h-8 shrink-0 -ml-2"
         />
         <div className="flex-1 min-w-0">
           <h3 className="text-xl font-bold text-nordic-midnight leading-tight">
