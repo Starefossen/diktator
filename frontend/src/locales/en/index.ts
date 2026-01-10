@@ -21,14 +21,6 @@ export const en = {
   "home.welcome": "Welcome to Diktator!",
   "home.subtitle":
     "A fun and interactive spelling practice app designed especially for children",
-  "home.wordsets.title": "Word Sets",
-  "home.wordsets.desc":
-    "Create and manage custom word sets, then take spelling tests to track your progress!",
-  "home.wordsets.button": "Explore Word Sets",
-  "home.about.title": "Learn More",
-  "home.about.desc":
-    "Discover how Diktator can help children develop better spelling skills.",
-  "home.about.button": "About Us",
 
   // Home features section
   "home.features.title": "Ready to Practice!",
@@ -68,25 +60,10 @@ export const en = {
   "home.pwa.subtitle":
     "Add to your home screen for quick access and offline practice",
   "home.pwa.feature1.title": "Home Screen Access",
-  "home.pwa.feature1.desc": "Launch from your home screen",
   "home.pwa.feature2.title": "Offline Mode",
-  "home.pwa.feature2.desc": "Practice without internet connection",
   "home.pwa.feature3.title": "App Interface",
-  "home.pwa.feature3.desc": "Full-screen app experience",
   "home.pwa.footer":
     "Available on iOS, Android, and desktop • No app store required",
-
-  "home.start.title": "Start Learning",
-  "home.start.desc":
-    "Practice spelling with audio pronunciation and progress tracking",
-  "home.start.feature1": "Audio pronunciation for every word",
-  "home.start.feature2": "Instant feedback and scoring",
-  "home.start.feature3": "Progress tracking and analytics",
-  "home.start.button": "Get Started",
-
-  "home.about.tech1": "Modern PWA technology",
-  "home.about.tech2": "Norwegian & English support",
-  "home.about.tech3": "Family-friendly design",
 
   "home.cta.title": "Start Practicing Spelling",
   "home.cta.subtitle": "Create word sets and practice with audio pronunciation",

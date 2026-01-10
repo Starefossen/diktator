@@ -11,6 +11,7 @@ import {
   HeroBookIcon,
   HeroCheckIcon,
   HeroVolumeIcon,
+  HeroUsersIcon,
 } from "@/components/Icons";
 
 export default function HomePage() {
@@ -37,8 +38,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-nordic-birch">
       {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-linear-to-r from-nordic-sky/10 to-nordic-teal/10"></div>
+      <div className="relative overflow-hidden bg-linear-to-br from-nordic-midnight to-nordic-midnight/90">
         <div className="relative py-16 text-center">
           <div className="mb-6">
             <h1 className="mb-4 text-5xl font-bold text-transparent md:text-6xl bg-linear-to-r from-nordic-sky to-nordic-teal bg-clip-text">
@@ -46,9 +46,20 @@ export default function HomePage() {
             </h1>
             <div className="w-24 h-1 mx-auto rounded-full bg-linear-to-r from-nordic-sky to-nordic-teal"></div>
           </div>
-          <p className="max-w-2xl mx-auto mb-8 text-xl text-gray-700 md:text-2xl">
+          <p className="max-w-2xl mx-auto mb-8 text-xl text-gray-300 md:text-2xl">
             {t("home.subtitle")}
           </p>
+        </div>
+        {/* CSS Wave divider */}
+        <div className="relative h-18 w-full bg-nordic-midnight">
+          <div
+            className="absolute w-[55%] bg-nordic-birch right-[-1.5%] top-[60%] h-[109%]"
+            style={{ borderRadius: "100% 50%" }}
+          />
+          <div
+            className="absolute w-[55%] bg-nordic-midnight left-[-1.5%] top-[40%] h-full"
+            style={{ borderRadius: "100% 50%" }}
+          />
         </div>
       </div>
 
@@ -264,7 +275,7 @@ export default function HomePage() {
             {/* For Families */}
             <div className="p-8 bg-linear-to-br from-nordic-teal/10 to-nordic-teal/20 rounded-2xl">
               <div className="mb-6">
-                <Icons.user className="w-12 h-12 text-nordic-teal" />
+                <HeroUsersIcon className="w-12 h-12 text-nordic-teal" />
               </div>
               <h3 className="mb-4 text-xl font-bold text-nordic-midnight">
                 {t("home.benefits.family.title")}
@@ -287,220 +298,76 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* PWA Installation Section */}
-        <div className="max-w-4xl mx-auto mb-16">
-          <div className="p-8 text-center text-nordic-midnight bg-linear-to-r from-nordic-sky to-nordic-teal rounded-3xl lg:p-12">
-            <div className="mb-6">
-              <Icons.home className="w-16 h-16 mx-auto mb-4 text-white" />
-              <h2 className="mb-4 text-3xl font-bold">{t("home.pwa.title")}</h2>
-              <p className="mb-6 text-xl text-nordic-midnight/80">
-                {t("home.pwa.subtitle")}
-              </p>
-            </div>
-
-            <div className="grid gap-6 mb-8 md:grid-cols-3">
-              <div className="text-center">
-                <div className="flex items-center justify-center w-12 h-12 mx-auto mb-3 bg-white rounded-full">
-                  <Icons.clock className="w-6 h-6 text-nordic-midnight" />
+        {/* Combined PWA + CTA Section */}
+        <div className="max-w-5xl mx-auto">
+          <div className="p-8 text-white bg-linear-to-r from-nordic-sky to-nordic-teal rounded-3xl lg:p-12">
+            <div className="grid items-center gap-8 lg:grid-cols-2">
+              {/* PWA Features */}
+              <div>
+                <div className="flex items-center mb-4">
+                  <Icons.home className="w-10 h-10 mr-3" />
+                  <h2 className="text-2xl font-bold lg:text-3xl">
+                    {t("home.pwa.title")}
+                  </h2>
                 </div>
-                <h3 className="mb-2 font-semibold">
-                  {t("home.pwa.feature1.title")}
+                <p className="mb-6 text-white/90">{t("home.pwa.subtitle")}</p>
+
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="text-center">
+                    <div className="flex items-center justify-center w-10 h-10 mx-auto mb-2 bg-white/20 rounded-full">
+                      <Icons.clock className="w-5 h-5" />
+                    </div>
+                    <p className="text-xs">{t("home.pwa.feature1.title")}</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="flex items-center justify-center w-10 h-10 mx-auto mb-2 bg-white/20 rounded-full">
+                      <Icons.zap className="w-5 h-5" />
+                    </div>
+                    <p className="text-xs">{t("home.pwa.feature2.title")}</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="flex items-center justify-center w-10 h-10 mx-auto mb-2 bg-white/20 rounded-full">
+                      <Icons.sparkles className="w-5 h-5" />
+                    </div>
+                    <p className="text-xs">{t("home.pwa.feature3.title")}</p>
+                  </div>
+                </div>
+
+                <p className="text-xs text-white/70">{t("home.pwa.footer")}</p>
+              </div>
+
+              {/* CTA */}
+              <div className="p-6 text-center bg-white rounded-2xl lg:p-8">
+                <h3 className="mb-2 text-xl font-bold text-gray-900 lg:text-2xl">
+                  {t("home.cta.title")}
                 </h3>
-                <p className="text-sm text-nordic-midnight/80">
-                  {t("home.pwa.feature1.desc")}
-                </p>
-              </div>
+                <p className="mb-6 text-gray-600">{t("home.cta.subtitle")}</p>
 
-              <div className="text-center">
-                <div className="flex items-center justify-center w-12 h-12 mx-auto mb-3 bg-white rounded-full">
-                  <Icons.zap className="w-6 h-6 text-nordic-sunrise" />
-                </div>
-                <h3 className="mb-2 font-semibold">
-                  {t("home.pwa.feature2.title")}
-                </h3>
-                <p className="text-sm text-nordic-midnight/80">
-                  {t("home.pwa.feature2.desc")}
-                </p>
-              </div>
-
-              <div className="text-center">
-                <div className="flex items-center justify-center w-12 h-12 mx-auto mb-3 bg-white rounded-full">
-                  <Icons.sparkles className="w-6 h-6 text-nordic-teal" />
-                </div>
-                <h3 className="mb-2 font-semibold">
-                  {t("home.pwa.feature3.title")}
-                </h3>
-                <p className="text-sm text-nordic-midnight/80">
-                  {t("home.pwa.feature3.desc")}
-                </p>
-              </div>
-            </div>
-
-            <div className="text-sm text-nordic-midnight/80">
-              {t("home.pwa.footer")}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid max-w-6xl grid-cols-1 gap-8 mx-auto md:grid-cols-2">
-          {/* Start Learning Card */}
-          <div className="relative overflow-hidden transition-all duration-300 transform bg-white shadow-lg group rounded-2xl hover:shadow-xl hover:-translate-y-1">
-            <div className="absolute top-0 right-0 w-32 h-32 translate-x-16 -translate-y-16 rounded-full bg-linear-to-br from-nordic-sky/20 to-nordic-sky/40"></div>
-            <div className="relative p-8">
-              <div className="mb-4">
-                <HeroRocketIcon className="w-12 h-12 text-nordic-sky" />
-              </div>
-              <h2 className="mb-4 text-2xl font-bold text-gray-900">
-                {user ? t("home.wordsets.title") : t("home.start.title")}
-              </h2>
-              <p className="mb-6 leading-relaxed text-gray-600">
-                {user ? t("home.wordsets.desc") : t("home.start.desc")}
-              </p>
-
-              {/* Feature highlights */}
-              <div className="mb-6 space-y-2">
-                <div className="flex items-center text-sm text-gray-600">
-                  <HeroCheckIcon className="w-4 h-4 mr-2 text-nordic-meadow" />
-                  {t("home.start.feature1")}
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <HeroCheckIcon className="w-4 h-4 mr-2 text-nordic-meadow" />
-                  {t("home.start.feature2")}
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <HeroCheckIcon className="w-4 h-4 mr-2 text-nordic-meadow" />
-                  {t("home.start.feature3")}
-                </div>
-              </div>
-
-              {user ? (
-                <Link
-                  href="/wordsets/"
-                  className="inline-flex items-center px-6 py-3 font-semibold text-nordic-midnight transition-all duration-200 shadow-md bg-linear-to-r from-nordic-sky to-nordic-teal rounded-xl hover:from-nordic-sky/90 hover:to-nordic-teal/90 hover:shadow-lg group"
-                >
-                  {t("home.wordsets.button")}
-                  <svg
-                    className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 7l5 5m0 0l-5 5m5-5H6"
-                    />
-                  </svg>
-                </Link>
-              ) : (
-                <div className="space-y-3">
-                  <Link
-                    href="/auth/"
-                    className="inline-flex items-center justify-center w-full px-6 py-3 font-semibold text-nordic-midnight transition-all duration-200 shadow-md bg-linear-to-r from-nordic-sky to-nordic-teal rounded-xl hover:from-nordic-sky/90 hover:to-nordic-teal/90 hover:shadow-lg group"
-                  >
-                    {t("home.start.button")}
-                    <svg
-                      className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                {!user ? (
+                  <div className="space-y-3">
+                    <Link
+                      href="/auth/"
+                      className="inline-flex items-center justify-center w-full px-6 py-4 text-lg font-semibold text-white transition-all duration-200 shadow-lg bg-nordic-midnight rounded-xl hover:bg-nordic-midnight/90"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 7l5 5m0 0l-5 5m5-5H6"
-                      />
-                    </svg>
+                      {t("home.cta.button")}
+                      <HeroRocketIcon className="w-5 h-5 ml-2 text-white" />
+                    </Link>
+                    <p className="text-xs text-gray-500">
+                      {t("home.cta.footer")}
+                    </p>
+                  </div>
+                ) : (
+                  <Link
+                    href="/wordsets/"
+                    className="inline-flex items-center justify-center w-full px-6 py-4 text-lg font-semibold text-white transition-all duration-200 shadow-lg bg-nordic-midnight rounded-xl hover:bg-nordic-midnight/90"
+                  >
+                    {t("home.cta.continue")}
+                    <HeroRocketIcon className="w-5 h-5 ml-2 text-white" />
                   </Link>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
-
-          {/* Learn More Card */}
-          <div className="relative overflow-hidden transition-all duration-300 transform bg-white shadow-lg group rounded-2xl hover:shadow-xl hover:-translate-y-1">
-            <div className="absolute top-0 right-0 w-32 h-32 translate-x-16 -translate-y-16 rounded-full bg-linear-to-br from-nordic-meadow/20 to-nordic-meadow/40"></div>
-            <div className="relative p-8">
-              <div className="mb-4">
-                <HeroBookIcon className="w-12 h-12 text-nordic-meadow" />
-              </div>
-              <h2 className="mb-4 text-2xl font-bold text-gray-900">
-                {t("home.about.title")}
-              </h2>
-              <p className="mb-6 leading-relaxed text-gray-600">
-                {t("home.about.desc")}
-              </p>
-
-              {/* Technology highlights */}
-              <div className="mb-6 space-y-2">
-                <div className="flex items-center text-sm text-gray-600">
-                  <HeroCheckIcon className="w-4 h-4 mr-2 text-nordic-meadow" />
-                  {t("home.about.tech1")}
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <HeroCheckIcon className="w-4 h-4 mr-2 text-nordic-meadow" />
-                  {t("home.about.tech2")}
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <HeroCheckIcon className="w-4 h-4 mr-2 text-nordic-meadow" />
-                  {t("home.about.tech3")}
-                </div>
-              </div>
-
-              <Link
-                href="/about/"
-                className="inline-flex items-center px-6 py-3 font-semibold text-nordic-midnight transition-all duration-200 shadow-md bg-linear-to-r from-nordic-meadow to-nordic-teal rounded-xl hover:from-nordic-meadow/90 hover:to-nordic-teal/90 hover:shadow-lg group"
-              >
-                {t("home.about.button")}
-                <svg
-                  className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 7l5 5m0 0l-5 5m5-5H6"
-                  />
-                </svg>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Final CTA Section */}
-      <div className="py-16 bg-gray-50">
-        <div className="max-w-4xl px-4 mx-auto text-center">
-          <h2 className="mb-4 text-3xl font-bold text-gray-900">
-            {t("home.cta.title")}
-          </h2>
-          <p className="mb-8 text-xl text-gray-600">{t("home.cta.subtitle")}</p>
-
-          {!user ? (
-            <div className="space-y-4">
-              <Link
-                href="/auth/"
-                className="inline-flex items-center px-8 py-4 text-lg font-semibold text-nordic-midnight transition-all duration-200 transform shadow-lg bg-linear-to-r from-nordic-sky to-nordic-teal rounded-xl hover:from-nordic-sky/90 hover:to-nordic-teal/90 hover:shadow-xl hover:-translate-y-1"
-              >
-                {t("home.cta.button")}
-                <HeroRocketIcon className="w-5 h-5 ml-2" />
-              </Link>
-              <p className="text-sm text-gray-500">{t("home.cta.footer")}</p>
-            </div>
-          ) : (
-            <Link
-              href="/wordsets/"
-              className="inline-flex items-center px-8 py-4 text-lg font-semibold text-nordic-midnight transition-all duration-200 transform shadow-lg bg-linear-to-r from-nordic-sky to-nordic-teal rounded-xl hover:from-nordic-sky/90 hover:to-nordic-teal/90 hover:shadow-xl hover:-translate-y-1"
-            >
-              {t("home.cta.continue")}
-              <HeroRocketIcon className="w-5 h-5 ml-2" />
-            </Link>
-          )}
         </div>
       </div>
     </div>

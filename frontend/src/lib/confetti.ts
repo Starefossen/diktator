@@ -46,15 +46,3 @@ export function celebrateExcellentScore(): void {
     colors: ["#FBBF24", "#4ADE80", "#38BDF8"],
   });
 }
-
-export function subtleCelebration(): void {
-  if (prefersReducedMotion()) return;
-
-  confetti({
-    particleCount: 30,
-    spread: 50,
-    origin: { y: 0.7 },
-    colors: ["#4ADE80", "#38BDF8"],
-    scalar: 0.8,
-  });
-}

@@ -56,7 +56,7 @@ function getScoreColors(score: number) {
 
 function formatRelativeDate(
   dateString: string,
-  t: (key: TranslationKey) => string
+  t: (key: TranslationKey) => string,
 ): string {
   const date = new Date(dateString);
   const now = new Date();
@@ -144,9 +144,8 @@ export default function ChildResultCard({
     router.push(`/wordsets?view=test&id=${result.wordSetId}&mode=standard`);
   };
 
-  const wordsNeedingAttention = result.words?.filter(
-    (w) => !w.correct || w.attempts > 1
-  ) || [];
+  const wordsNeedingAttention =
+    result.words?.filter((w) => !w.correct || w.attempts > 1) || [];
 
   const getScoreLabel = () => {
     if (result.score >= 90) return t("results.child.amazing");
@@ -209,10 +208,11 @@ export default function ChildResultCard({
               {wordsNeedingAttention.map((wordResult, idx) => (
                 <div
                   key={idx}
-                  className={`p-3 rounded-xl border ${wordResult.correct
+                  className={`p-3 rounded-xl border ${
+                    wordResult.correct
                       ? "bg-nordic-sunrise/10 border-nordic-sunrise/30"
                       : "bg-nordic-cloudberry/10 border-nordic-cloudberry/30"
-                    }`}
+                  }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-base font-medium text-nordic-midnight">
@@ -220,9 +220,15 @@ export default function ChildResultCard({
                     </span>
                     <div className="flex items-center gap-2">
                       {wordResult.correct ? (
-                        <CheckCircleIcon className="w-5 h-5 text-nordic-sunrise" aria-hidden="true" />
+                        <CheckCircleIcon
+                          className="w-5 h-5 text-nordic-sunrise"
+                          aria-hidden="true"
+                        />
                       ) : (
-                        <XCircleIcon className="w-5 h-5 text-nordic-cloudberry" aria-hidden="true" />
+                        <XCircleIcon
+                          className="w-5 h-5 text-nordic-cloudberry"
+                          aria-hidden="true"
+                        />
                       )}
                       {wordResult.attempts > 1 && (
                         <span className="text-sm text-gray-600">
@@ -232,28 +238,36 @@ export default function ChildResultCard({
                     </div>
                   </div>
 
-                  {wordResult.userAnswers && wordResult.userAnswers.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {wordResult.userAnswers.map((answer, ansIdx) => (
-                        <span
-                          key={ansIdx}
-                          className={`px-3 py-1 text-sm rounded-full ${answer.toLowerCase().trim() === wordResult.word.toLowerCase()
-                              ? "bg-nordic-meadow/20 text-nordic-meadow"
-                              : "bg-gray-200 text-gray-700"
+                  {wordResult.userAnswers &&
+                    wordResult.userAnswers.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {wordResult.userAnswers.map((answer, ansIdx) => (
+                          <span
+                            key={ansIdx}
+                            className={`px-3 py-1 text-sm rounded-full ${
+                              answer.toLowerCase().trim() ===
+                              wordResult.word.toLowerCase()
+                                ? "bg-nordic-meadow/20 text-nordic-meadow"
+                                : "bg-gray-200 text-gray-700"
                             }`}
-                        >
-                          {answer || t("results.words.empty")}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                          >
+                            {answer || t("results.words.empty")}
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
-                  {wordResult.audioPlayCount && wordResult.audioPlayCount > 0 && (
-                    <div className="mt-2 flex items-center gap-1 text-sm text-gray-600">
-                      <SpeakerWaveIcon className="w-4 h-4" aria-hidden="true" />
-                      {t("results.words.audioPlayed")} {wordResult.audioPlayCount}x
-                    </div>
-                  )}
+                  {wordResult.audioPlayCount &&
+                    wordResult.audioPlayCount > 0 && (
+                      <div className="mt-2 flex items-center gap-1 text-sm text-gray-600">
+                        <SpeakerWaveIcon
+                          className="w-4 h-4"
+                          aria-hidden="true"
+                        />
+                        {t("results.words.audioPlayed")}{" "}
+                        {wordResult.audioPlayCount}x
+                      </div>
+                    )}
                 </div>
               ))}
             </div>

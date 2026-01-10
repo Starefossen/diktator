@@ -177,6 +177,7 @@ const SKIP_ATTRIBUTES = new Set([
   "rel",
   // SVG attributes
   "viewBox",
+  "preserveAspectRatio",
   "fill",
   "stroke",
   "strokeWidth",

@@ -260,8 +260,8 @@ function FamilyProgressPageContent() {
                         <p className="font-bold">
                           {member.totalWords > 0
                             ? Math.round(
-                              (member.correctWords / member.totalWords) * 100,
-                            )
+                                (member.correctWords / member.totalWords) * 100,
+                              )
                             : 0}
                           %
                         </p>

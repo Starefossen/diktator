@@ -67,13 +67,15 @@ export default function TestResultsList({
     }
     if (score >= 70) {
       return {
-        color: "text-nordic-sunrise bg-nordic-sunrise/20 border-nordic-sunrise/40",
+        color:
+          "text-nordic-sunrise bg-nordic-sunrise/20 border-nordic-sunrise/40",
         icon: <HandThumbUpIcon className="w-4 h-4" />,
         label: t("results.performance.good"),
       };
     }
     return {
-      color: "text-nordic-cloudberry bg-nordic-cloudberry/20 border-nordic-cloudberry/40",
+      color:
+        "text-nordic-cloudberry bg-nordic-cloudberry/20 border-nordic-cloudberry/40",
       icon: <ExclamationTriangleIcon className="w-4 h-4" />,
       label: t("results.performance.needsWork"),
     };
@@ -128,8 +130,9 @@ export default function TestResultsList({
                   {getWordSetName(result.wordSetId)}
                 </h4>
                 <div
-                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border font-semibold text-sm ${getScoreInfo(result.score).color
-                    }`}
+                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border font-semibold text-sm ${
+                    getScoreInfo(result.score).color
+                  }`}
                 >
                   {getScoreInfo(result.score).icon}
                   {result.score}% - {getScoreInfo(result.score).label}
@@ -221,10 +224,11 @@ export default function TestResultsList({
                             <div className="flex items-center space-x-2">
                               {wordResult.correct ? (
                                 <span
-                                  className={`px-2 py-1 text-sm font-medium rounded-full flex items-center gap-1 ${isCorrectMultipleAttempts
-                                    ? "text-nordic-sunrise bg-nordic-sunrise/20"
-                                    : "text-nordic-meadow bg-nordic-meadow/20"
-                                    }`}
+                                  className={`px-2 py-1 text-sm font-medium rounded-full flex items-center gap-1 ${
+                                    isCorrectMultipleAttempts
+                                      ? "text-nordic-sunrise bg-nordic-sunrise/20"
+                                      : "text-nordic-meadow bg-nordic-meadow/20"
+                                  }`}
                                 >
                                   <CheckCircleIcon className="w-4 h-4" />
                                   {isCorrectMultipleAttempts
@@ -258,11 +262,12 @@ export default function TestResultsList({
                                     (answer, answerIndex) => (
                                       <span
                                         key={answerIndex}
-                                        className={`px-2 py-1 text-sm rounded ${answer.toLowerCase().trim() ===
+                                        className={`px-2 py-1 text-sm rounded ${
+                                          answer.toLowerCase().trim() ===
                                           wordResult.word.toLowerCase()
-                                          ? "bg-nordic-meadow/20 text-nordic-meadow"
-                                          : "bg-gray-100 text-gray-700"
-                                          }`}
+                                            ? "bg-nordic-meadow/20 text-nordic-meadow"
+                                            : "bg-gray-100 text-gray-700"
+                                        }`}
                                       >
                                         {answer || t("results.words.empty")}
                                       </span>

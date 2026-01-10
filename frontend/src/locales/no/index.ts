@@ -21,14 +21,6 @@ export const no = {
   "home.welcome": "Velkommen til Diktator!",
   "home.subtitle":
     "En morsom og interaktiv stavepraksis-app designet spesielt for barn",
-  "home.wordsets.title": "Ordsett",
-  "home.wordsets.desc":
-    "Opprett og administrer tilpassede ordsett, og ta staveprøver for å følge fremgangen din!",
-  "home.wordsets.button": "Utforsk ordsett",
-  "home.about.title": "Lær mer",
-  "home.about.desc":
-    "Oppdag hvordan Diktator kan hjelpe barn med å utvikle bedre staveferdigheter.",
-  "home.about.button": "Om oss",
 
   // Home features section
   "home.features.title": "Klar for øving!",
@@ -67,24 +59,10 @@ export const no = {
   "home.pwa.subtitle":
     "Legg til på hjemskjermen for rask tilgang og frakoblet øving",
   "home.pwa.feature1.title": "Hjemskjermtilgang",
-  "home.pwa.feature1.desc": "Start fra hjemskjermen din",
   "home.pwa.feature2.title": "Frakoblet modus",
-  "home.pwa.feature2.desc": "Øv uten internettforbindelse",
   "home.pwa.feature3.title": "App-grensesnitt",
-  "home.pwa.feature3.desc": "Fullskjerm app-opplevelse",
   "home.pwa.footer":
     "Tilgjengelig på iOS, Android og desktop • Ingen appbutikk nødvendig",
-
-  "home.start.title": "Start læring",
-  "home.start.desc": "Øv på staving med lyduttale og fremgangssporing",
-  "home.start.feature1": "Lyduttale for hvert ord",
-  "home.start.feature2": "Umiddelbar tilbakemelding og poenggiving",
-  "home.start.feature3": "Fremgangssporing og analyse",
-  "home.start.button": "Kom i gang",
-
-  "home.about.tech1": "Moderne PWA-teknologi",
-  "home.about.tech2": "Norsk og engelsk støtte",
-  "home.about.tech3": "Familievennlig design",
 
   "home.cta.title": "Start stavingsøving",
   "home.cta.subtitle": "Opprett ordsett og øv med lyduttale",
