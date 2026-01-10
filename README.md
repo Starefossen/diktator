@@ -1,6 +1,6 @@
 # Diktator
 
-![App Preview](./docs/diktator-preview.png)
+![App Preview](./docs/diktator-preview-v2.png)
 
 Diktator is a Norwegian vocabulary learning app for children featuring gamified spelling tests, practice modes, and real-time feedback. Built with Next.js, TypeScript, Go, and PostgreSQL.
 
