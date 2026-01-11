@@ -38,6 +38,9 @@
 //	@tag.name		results
 //	@tag.description	Test result operations
 //
+//	@tag.name		dictionary
+//	@tag.description	Norwegian dictionary lookup and validation (ord.uib.no proxy)
+//
 //	@schemes	http https
 package main
 
@@ -137,6 +140,14 @@ func main() {
 
 	// On-demand streaming for word audio (public, cached by browser, no auth required)
 	r.GET("/api/wordsets/:id/words/:word/audio", handlers.StreamWordAudio)
+
+	// Dictionary lookup endpoints (public, no auth required for word validation)
+	dictionary := r.Group("/api/dictionary")
+	{
+		dictionary.GET("/validate", handlers.ValidateDictionaryWord)
+		dictionary.GET("/suggest", handlers.SuggestDictionaryWords)
+		dictionary.GET("/stats", handlers.GetDictionaryStats)
+	}
 
 	// API routes
 	api := r.Group("/api")

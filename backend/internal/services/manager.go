@@ -10,6 +10,7 @@ import (
 	"github.com/starefossen/diktator/backend/internal/models"
 	"github.com/starefossen/diktator/backend/internal/services/auth"
 	"github.com/starefossen/diktator/backend/internal/services/db"
+	"github.com/starefossen/diktator/backend/internal/services/dictionary"
 	"github.com/starefossen/diktator/backend/internal/services/tts"
 )
 
@@ -18,6 +19,7 @@ type Manager struct {
 	DB            db.Repository // PostgreSQL database repository
 	TTS           tts.TTSService
 	AuthValidator auth.SessionValidator
+	Dictionary    *dictionary.Service // Norwegian dictionary proxy service
 }
 
 // NewManager creates a new service manager for OIDC/PostgreSQL
@@ -68,11 +70,16 @@ func NewManager() (*Manager, error) {
 	}
 	log.Println("✅ TTS service initialized")
 
+	// Initialize Dictionary service (Norwegian dictionary proxy)
+	dictService := dictionary.NewService(dictionary.DefaultConfig())
+	log.Println("✅ Dictionary service initialized")
+
 	log.Println("🚀 All services initialized successfully")
 	return &Manager{
 		DB:            repository,
 		TTS:           ttsService,
 		AuthValidator: authValidator,
+		Dictionary:    dictService,
 	}, nil
 }
 
@@ -90,6 +97,12 @@ func (m *Manager) Close() error {
 
 	if err := m.AuthValidator.Close(); err != nil {
 		errs = append(errs, fmt.Errorf("auth validator close error: %v", err))
+	}
+
+	if m.Dictionary != nil {
+		if err := m.Dictionary.Close(); err != nil {
+			errs = append(errs, fmt.Errorf("dictionary close error: %v", err))
+		}
 	}
 
 	if len(errs) > 0 {

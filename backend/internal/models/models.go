@@ -19,8 +19,43 @@ type User struct {
 	ParentID     *string   `json:"parentId,omitempty" db:"parent_id"` // Only for child accounts
 	Children     []string  `json:"children,omitempty" db:"-"`         // Only for parent accounts (computed)
 	IsActive     bool      `json:"isActive" db:"is_active"`
+	BirthYear    *int      `json:"birthYear,omitempty" db:"birth_year"` // Optional birth year for age-adaptive features
 	CreatedAt    time.Time `json:"createdAt" db:"created_at"`
 	LastActiveAt time.Time `json:"lastActiveAt" db:"last_active_at"`
+}
+
+// WordMastery tracks progressive challenge unlocking per word per user
+type WordMastery struct {
+	ID                 string    `json:"id" db:"id"`
+	UserID             string    `json:"userId" db:"user_id"`
+	WordSetID          string    `json:"wordSetId" db:"word_set_id"`
+	Word               string    `json:"word" db:"word"`
+	LetterTilesCorrect int       `json:"letterTilesCorrect" db:"letter_tiles_correct"`
+	WordBankCorrect    int       `json:"wordBankCorrect" db:"word_bank_correct"`
+	KeyboardCorrect    int       `json:"keyboardCorrect" db:"keyboard_correct"`
+	CreatedAt          time.Time `json:"createdAt" db:"created_at"`
+	UpdatedAt          time.Time `json:"updatedAt" db:"updated_at"`
+}
+
+// InputMethod represents the challenge input method
+type InputMethod string
+
+const (
+	InputMethodKeyboard    InputMethod = "keyboard"
+	InputMethodWordBank    InputMethod = "wordBank"
+	InputMethodLetterTiles InputMethod = "letterTiles"
+	InputMethodAuto        InputMethod = "auto"
+)
+
+// GetCurrentChallengeMode returns the appropriate input method based on mastery
+func (m *WordMastery) GetCurrentChallengeMode(letterTilesRequired, wordBankRequired int) InputMethod {
+	if m.LetterTilesCorrect < letterTilesRequired {
+		return InputMethodLetterTiles
+	}
+	if m.WordBankCorrect < wordBankRequired {
+		return InputMethodWordBank
+	}
+	return InputMethodKeyboard
 }
 
 // WordAudio represents audio information for a word

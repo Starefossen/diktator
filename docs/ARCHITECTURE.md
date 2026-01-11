@@ -12,11 +12,12 @@ Diktator helps children learn vocabulary through audio-based spelling tests. Par
 │  (Next.js/SSG)  │     │    (Go/Gin)     │     │   (Cloud SQL)   │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
          │                      │
-         │                      ▼
-         │               ┌─────────────────┐
-         │               │   TTS API       │
-         │               │   (on-demand)   │
-         │               └─────────────────┘
+         │                      ├────────────────┐
+         │                      ▼                ▼
+         │               ┌─────────────┐  ┌─────────────┐
+         │               │   TTS API   │  │ ord.uib.no  │
+         │               │ (on-demand) │  │ (dictionary)│
+         │               └─────────────┘  └─────────────┘
          ▼
   ┌─────────────────┐
   │  OIDC Provider  │
@@ -24,13 +25,14 @@ Diktator helps children learn vocabulary through audio-based spelling tests. Par
   └─────────────────┘
 ```
 
-| Component | Technology           | Hosting   | Purpose                             |
-| --------- | -------------------- | --------- | ----------------------------------- |
-| Frontend  | Next.js + TypeScript | Knative   | Static UI served as container       |
-| Backend   | Go + Gin             | Knative   | API, business logic, TTS generation |
-| Database  | PostgreSQL           | Cloud SQL | User data, word sets, results       |
-| TTS       | Cloud TTS API        | GCP (JIT) | Generate audio on-demand            |
-| Auth      | OIDC (Zitadel)       | External  | User authentication                 |
+| Component  | Technology           | Hosting   | Purpose                                   |
+| ---------- | -------------------- | --------- | ----------------------------------------- |
+| Frontend   | Next.js + TypeScript | Knative   | Static UI served as container             |
+| Backend    | Go + Gin             | Knative   | API, business logic, TTS generation       |
+| Database   | PostgreSQL           | Cloud SQL | User data, word sets, results             |
+| TTS        | Cloud TTS API        | GCP (JIT) | Generate audio on-demand                  |
+| Auth       | OIDC (Zitadel)       | External  | User authentication                       |
+| Dictionary | ord.uib.no           | External  | Norwegian word validation and inflections |
 
 ## Data Model
 

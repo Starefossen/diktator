@@ -1,5 +1,38 @@
 // src/types/index.ts - Shared type definitions
 
+import type {
+  InputMethod,
+  DifficultyLevel,
+  GradeLevel,
+  SpellingFocusCategory,
+} from "@/lib/sentenceConfig";
+
+// Re-export sentence config types for convenience
+export type { InputMethod, DifficultyLevel, GradeLevel, SpellingFocusCategory };
+
+// ======================
+// Dictionary Types (ord.uib.no proxy)
+// ======================
+
+// Simplified dictionary word entry from ord.uib.no
+export interface DictionaryWord {
+  lemma: string; // Base form of the word
+  wordClass: string; // NOUN, VERB, ADJ, ADV, etc.
+  inflections: string[]; // All inflected forms (e.g., katt, katten, katter, kattene)
+  definition: string; // Primary definition only
+  articleId: number; // For linking to ordbokene.no (e.g., https://ordbokene.no/bm/{articleId})
+}
+
+// Autocomplete suggestion from the dictionary
+export interface DictionarySuggestion {
+  word: string;
+  articleId: number;
+}
+
+// ======================
+// Family Types
+// ======================
+
 // Family Invitation Type
 export interface FamilyInvitation {
   id: string;
@@ -22,8 +55,22 @@ export interface ChildAccount {
   parentId: string; // The parent who created this child account
   role: "child";
   isActive: boolean; // Parents can deactivate child accounts
+  birthYear?: number; // Optional birth year for age-adaptive features
   createdAt: string;
   lastActiveAt: string;
+}
+
+// Word Mastery for progressive challenge unlocking
+export interface WordMastery {
+  id: string;
+  userId: string;
+  wordSetId: string;
+  word: string;
+  letterTilesCorrect: number;
+  wordBankCorrect: number;
+  keyboardCorrect: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Progress tracking for family members
@@ -71,6 +118,7 @@ export interface WordSet {
   id: string;
   name: string;
   words: WordItem[]; // Array of word objects instead of strings
+  sentences?: SentenceItem[]; // Optional array of sentences for sentence dictation
   familyId?: string; // Optional for global word sets (null when isGlobal is true)
   createdBy: string;
   language: "en" | "no";
@@ -78,8 +126,22 @@ export interface WordSet {
   createdAt: string;
   updatedAt: string;
   isGlobal?: boolean; // True for system-created curated word sets
+  // Curated content metadata
+  targetGrade?: GradeLevel; // Norwegian school grade level (1-2, 3-4, 5-7)
+  spellingFocus?: SpellingFocusCategory[]; // Spelling challenge categories
+  difficulty?: DifficultyLevel; // Overall difficulty level
   // Test configuration for this wordset
   testConfiguration?: TestConfiguration;
+}
+
+// Sentence item for sentence dictation mode
+export interface SentenceItem {
+  sentence: string; // Full sentence text
+  translation?: string; // Optional translation
+  focusWords?: string[]; // Words being specifically tested in this sentence
+  difficulty: DifficultyLevel; // beginner, intermediate, advanced
+  pattern?: string; // Sentence pattern e.g., "S+V+O", "subordinate clause"
+  audio?: WordAudio; // Audio info for the full sentence
 }
 
 export interface WordItem {
@@ -144,6 +206,9 @@ export interface TestConfiguration {
   almostCorrectThreshold?: number; // Levenshtein distance to consider "almost correct" (default: 2)
   showHintOnAttempt?: number; // Which attempt to show specific hints (default: 2 = progressive)
   enableKeyboardProximity?: boolean; // Detect QWERTY keyboard typos (default: true)
+  // Progressive challenge configuration (sentence dictation)
+  inputMethod?: InputMethod; // Input method for tests: keyboard, wordBank, letterTiles, or auto (default: auto)
+  allowReplay?: boolean; // Allow practicing easier modes after unlocking harder ones (default: true)
 }
 
 // Default test configuration
@@ -155,6 +220,8 @@ export const DEFAULT_TEST_CONFIG: TestConfiguration = {
   shuffleWords: false,
   enableAutocorrect: false,
   translationDirection: "toTarget",
+  inputMethod: "auto",
+  allowReplay: true,
 };
 
 // Helper functions for test configuration
