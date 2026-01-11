@@ -566,14 +566,17 @@ func (db *Postgres) GetWordSet(id string) (*models.WordSet, error) {
 
 	// Get word set basic info
 	query := `
-		SELECT id, name, family_id, is_global, created_by, language, test_configuration, created_at, updated_at
+		SELECT id, name, family_id, is_global, created_by, language, test_configuration,
+		       target_grade, spelling_focus, difficulty, sentences, created_at, updated_at
 		FROM word_sets WHERE id = $1`
 
 	var ws models.WordSet
-	var testConfigJSON []byte
+	var testConfigJSON, spellingFocusJSON, sentencesJSON []byte
+	var targetGrade, difficulty *string
 	err := db.pool.QueryRow(ctx, query, id).Scan(
 		&ws.ID, &ws.Name, &ws.FamilyID, &ws.IsGlobal, &ws.CreatedBy, &ws.Language,
-		&testConfigJSON, &ws.CreatedAt, &ws.UpdatedAt,
+		&testConfigJSON, &targetGrade, &spellingFocusJSON, &difficulty, &sentencesJSON,
+		&ws.CreatedAt, &ws.UpdatedAt,
 	)
 	if err == pgx.ErrNoRows {
 		return nil, ErrWordSetNotFound
@@ -588,6 +591,30 @@ func (db *Postgres) GetWordSet(id string) (*models.WordSet, error) {
 			return nil, fmt.Errorf("failed to unmarshal test config: %w", err)
 		}
 		ws.TestConfiguration = &testConfig
+	}
+
+	// Handle curated content fields
+	if targetGrade != nil {
+		g := models.GradeLevel(*targetGrade)
+		ws.TargetGrade = &g
+	}
+	if difficulty != nil {
+		d := models.DifficultyLevel(*difficulty)
+		ws.Difficulty = &d
+	}
+	if len(spellingFocusJSON) > 0 {
+		var focus []models.SpellingFocusCategory
+		if err := json.Unmarshal(spellingFocusJSON, &focus); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal spelling focus: %w", err)
+		}
+		ws.SpellingFocus = focus
+	}
+	if len(sentencesJSON) > 0 {
+		var sentences []models.SentenceItem
+		if err := json.Unmarshal(sentencesJSON, &sentences); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal sentences: %w", err)
+		}
+		ws.Sentences = sentences
 	}
 
 	// Get words
@@ -653,7 +680,8 @@ func (db *Postgres) GetWordSet(id string) (*models.WordSet, error) {
 func (db *Postgres) GetWordSets(familyID string) ([]models.WordSet, error) {
 	ctx := context.Background()
 	query := `
-		SELECT id, name, family_id, is_global, created_by, language, test_configuration, created_at, updated_at
+		SELECT id, name, family_id, is_global, created_by, language, test_configuration,
+		       target_grade, spelling_focus, difficulty, sentences, created_at, updated_at
 		FROM word_sets WHERE family_id = $1 ORDER BY created_at DESC`
 
 	rows, err := db.pool.Query(ctx, query, familyID)
@@ -665,10 +693,12 @@ func (db *Postgres) GetWordSets(familyID string) ([]models.WordSet, error) {
 	var wordSets []models.WordSet
 	for rows.Next() {
 		var ws models.WordSet
-		var testConfigJSON []byte
+		var testConfigJSON, spellingFocusJSON, sentencesJSON []byte
+		var targetGrade, difficulty *string
 		err := rows.Scan(
 			&ws.ID, &ws.Name, &ws.FamilyID, &ws.IsGlobal, &ws.CreatedBy, &ws.Language,
-			&testConfigJSON, &ws.CreatedAt, &ws.UpdatedAt,
+			&testConfigJSON, &targetGrade, &spellingFocusJSON, &difficulty, &sentencesJSON,
+			&ws.CreatedAt, &ws.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan word set: %w", err)
@@ -680,6 +710,30 @@ func (db *Postgres) GetWordSets(familyID string) ([]models.WordSet, error) {
 				return nil, fmt.Errorf("failed to unmarshal test config: %w", err)
 			}
 			ws.TestConfiguration = &testConfig
+		}
+
+		// Handle curated content fields
+		if targetGrade != nil {
+			g := models.GradeLevel(*targetGrade)
+			ws.TargetGrade = &g
+		}
+		if difficulty != nil {
+			d := models.DifficultyLevel(*difficulty)
+			ws.Difficulty = &d
+		}
+		if len(spellingFocusJSON) > 0 {
+			var focus []models.SpellingFocusCategory
+			if err := json.Unmarshal(spellingFocusJSON, &focus); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal spelling focus: %w", err)
+			}
+			ws.SpellingFocus = focus
+		}
+		if len(sentencesJSON) > 0 {
+			var sentences []models.SentenceItem
+			if err := json.Unmarshal(sentencesJSON, &sentences); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal sentences: %w", err)
+			}
+			ws.Sentences = sentences
 		}
 
 		// Get assigned user IDs for this word set
@@ -770,7 +824,8 @@ func (db *Postgres) GetWordSets(familyID string) ([]models.WordSet, error) {
 func (db *Postgres) GetGlobalWordSets() ([]models.WordSet, error) {
 	ctx := context.Background()
 	query := `
-		SELECT id, name, family_id, is_global, created_by, language, test_configuration, created_at, updated_at
+		SELECT id, name, family_id, is_global, created_by, language, test_configuration,
+		       target_grade, spelling_focus, difficulty, sentences, created_at, updated_at
 		FROM word_sets WHERE is_global = true ORDER BY name ASC`
 
 	rows, err := db.pool.Query(ctx, query)
@@ -782,10 +837,12 @@ func (db *Postgres) GetGlobalWordSets() ([]models.WordSet, error) {
 	var wordSets []models.WordSet
 	for rows.Next() {
 		var ws models.WordSet
-		var testConfigJSON []byte
+		var testConfigJSON, spellingFocusJSON, sentencesJSON []byte
+		var targetGrade, difficultyStr *string
 		err := rows.Scan(
 			&ws.ID, &ws.Name, &ws.FamilyID, &ws.IsGlobal, &ws.CreatedBy, &ws.Language,
-			&testConfigJSON, &ws.CreatedAt, &ws.UpdatedAt,
+			&testConfigJSON, &targetGrade, &spellingFocusJSON, &difficultyStr, &sentencesJSON,
+			&ws.CreatedAt, &ws.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan word set: %w", err)
@@ -797,6 +854,30 @@ func (db *Postgres) GetGlobalWordSets() ([]models.WordSet, error) {
 				return nil, fmt.Errorf("failed to unmarshal test config: %w", err)
 			}
 			ws.TestConfiguration = &testConfig
+		}
+
+		// Handle curated content fields
+		if targetGrade != nil {
+			g := models.GradeLevel(*targetGrade)
+			ws.TargetGrade = &g
+		}
+		if difficultyStr != nil {
+			d := models.DifficultyLevel(*difficultyStr)
+			ws.Difficulty = &d
+		}
+		if len(spellingFocusJSON) > 0 {
+			var focus []models.SpellingFocusCategory
+			if err := json.Unmarshal(spellingFocusJSON, &focus); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal spelling focus: %w", err)
+			}
+			ws.SpellingFocus = focus
+		}
+		if len(sentencesJSON) > 0 {
+			var sentences []models.SentenceItem
+			if err := json.Unmarshal(sentencesJSON, &sentences); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal sentences: %w", err)
+			}
+			ws.Sentences = sentences
 		}
 
 		// Get words for this word set
@@ -1777,4 +1858,105 @@ func (db *Postgres) GetWordSetAssignments(wordSetID string) ([]string, error) {
 	}
 
 	return userIDs, nil
+}
+
+// ============================================================================
+// Word Mastery Operations
+// ============================================================================
+
+// GetWordMastery retrieves mastery for a specific word
+func (db *Postgres) GetWordMastery(userID, wordSetID, word string) (*models.WordMastery, error) {
+	ctx := context.Background()
+	query := `
+		SELECT id, user_id, word_set_id, word, letter_tiles_correct, word_bank_correct,
+		       keyboard_correct, created_at, updated_at
+		FROM word_mastery
+		WHERE user_id = $1 AND word_set_id = $2 AND word = $3`
+
+	var m models.WordMastery
+	err := db.pool.QueryRow(ctx, query, userID, wordSetID, word).Scan(
+		&m.ID, &m.UserID, &m.WordSetID, &m.Word,
+		&m.LetterTilesCorrect, &m.WordBankCorrect, &m.KeyboardCorrect,
+		&m.CreatedAt, &m.UpdatedAt,
+	)
+	if err == pgx.ErrNoRows {
+		return nil, nil // No mastery record yet, not an error
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get word mastery: %w", err)
+	}
+
+	return &m, nil
+}
+
+// GetWordSetMastery retrieves all mastery records for a user's word set
+func (db *Postgres) GetWordSetMastery(userID, wordSetID string) ([]models.WordMastery, error) {
+	ctx := context.Background()
+	query := `
+		SELECT id, user_id, word_set_id, word, letter_tiles_correct, word_bank_correct,
+		       keyboard_correct, created_at, updated_at
+		FROM word_mastery
+		WHERE user_id = $1 AND word_set_id = $2
+		ORDER BY word`
+
+	rows, err := db.pool.Query(ctx, query, userID, wordSetID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get word set mastery: %w", err)
+	}
+	defer rows.Close()
+
+	var mastery []models.WordMastery
+	for rows.Next() {
+		var m models.WordMastery
+		if err := rows.Scan(
+			&m.ID, &m.UserID, &m.WordSetID, &m.Word,
+			&m.LetterTilesCorrect, &m.WordBankCorrect, &m.KeyboardCorrect,
+			&m.CreatedAt, &m.UpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("failed to scan word mastery: %w", err)
+		}
+		mastery = append(mastery, m)
+	}
+
+	return mastery, nil
+}
+
+// IncrementMastery increments the mastery counter for a specific input mode
+func (db *Postgres) IncrementMastery(userID, wordSetID, word string, mode models.InputMethod) (*models.WordMastery, error) {
+	ctx := context.Background()
+
+	// Determine which column to increment
+	var column string
+	switch mode {
+	case models.InputMethodLetterTiles:
+		column = "letter_tiles_correct"
+	case models.InputMethodWordBank:
+		column = "word_bank_correct"
+	case models.InputMethodKeyboard:
+		column = "keyboard_correct"
+	default:
+		return nil, fmt.Errorf("invalid input method: %s", mode)
+	}
+
+	// Upsert with increment
+	query := fmt.Sprintf(`
+		INSERT INTO word_mastery (id, user_id, word_set_id, word, %s, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, 1, NOW(), NOW())
+		ON CONFLICT (user_id, word_set_id, word)
+		DO UPDATE SET %s = word_mastery.%s + 1, updated_at = NOW()
+		RETURNING id, user_id, word_set_id, word, letter_tiles_correct, word_bank_correct,
+		          keyboard_correct, created_at, updated_at`,
+		column, column, column)
+
+	var m models.WordMastery
+	err := db.pool.QueryRow(ctx, query, uuid.New().String(), userID, wordSetID, word).Scan(
+		&m.ID, &m.UserID, &m.WordSetID, &m.Word,
+		&m.LetterTilesCorrect, &m.WordBankCorrect, &m.KeyboardCorrect,
+		&m.CreatedAt, &m.UpdatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to increment mastery: %w", err)
+	}
+
+	return &m, nil
 }

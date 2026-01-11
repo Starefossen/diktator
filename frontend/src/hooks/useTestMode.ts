@@ -6,7 +6,7 @@ import {
   playWordAudio as playWordAudioHelper,
   stopAudio,
   initializeAudioForIOS,
-  requiresUserInteractionForAudio,
+  isAudioUnlocked,
 } from "@/lib/audioPlayer";
 import {
   playSuccessTone,
@@ -95,58 +95,60 @@ export function useTestMode(): UseTestModeReturn {
     processedWordsRef.current = processedWords;
   }, [processedWords]);
 
-  const playTestWordAudio = useCallback((word: string, autoDelay = 0) => {
-    if (isPlayingAudioRef.current) return;
+  const playTestWordAudio = useCallback(
+    (word: string, autoDelay = 0, isAutoPlay = false) => {
+      if (isPlayingAudioRef.current) return;
 
-    const currentWordSet = activeTestRef.current;
-    if (!currentWordSet) return;
+      const currentWordSet = activeTestRef.current;
+      if (!currentWordSet) return;
 
-    setCurrentWordAudioPlays((prev) => prev + 1);
+      setCurrentWordAudioPlays((prev) => prev + 1);
 
-    const needsUserInteraction =
-      requiresUserInteractionForAudio() && autoDelay > 0;
+      // Safety timeout to reset audio state in case callbacks don't fire
+      const safetyTimeout = setTimeout(() => {
+        if (isPlayingAudioRef.current) {
+          console.warn("Audio playback timeout - resetting state");
+          isPlayingAudioRef.current = false;
+          setIsAudioPlaying(false);
+        }
+      }, TIMING.AUDIO_SAFETY_TIMEOUT_MS);
 
-    // Safety timeout to reset audio state in case callbacks don't fire
-    const safetyTimeout = setTimeout(() => {
-      if (isPlayingAudioRef.current) {
-        console.warn("Audio playback timeout - resetting state");
-        isPlayingAudioRef.current = false;
-        setIsAudioPlaying(false);
-      }
-    }, TIMING.AUDIO_SAFETY_TIMEOUT_MS);
-
-    playWordAudioHelper(word, currentWordSet, {
-      onStart: () => {
-        isPlayingAudioRef.current = true;
-        setIsAudioPlaying(true);
-      },
-      onEnd: () => {
-        clearTimeout(safetyTimeout);
-        isPlayingAudioRef.current = false;
-        setIsAudioPlaying(false);
-      },
-      onError: (error: Error) => {
-        console.error("Audio playback error:", error);
-        clearTimeout(safetyTimeout);
-        isPlayingAudioRef.current = false;
-        setIsAudioPlaying(false);
-      },
-      autoDelay: needsUserInteraction ? 0 : autoDelay,
-      speechRate: 0.8,
-      requireUserInteraction: needsUserInteraction,
-      preloadNext: true,
-    });
-  }, []);
+      playWordAudioHelper(word, currentWordSet, {
+        onStart: () => {
+          isPlayingAudioRef.current = true;
+          setIsAudioPlaying(true);
+        },
+        onEnd: () => {
+          clearTimeout(safetyTimeout);
+          isPlayingAudioRef.current = false;
+          setIsAudioPlaying(false);
+        },
+        onError: (error: Error) => {
+          console.error("Audio playback error:", error);
+          clearTimeout(safetyTimeout);
+          isPlayingAudioRef.current = false;
+          setIsAudioPlaying(false);
+        },
+        autoDelay,
+        speechRate: 0.8,
+        isAutoPlay,
+        preloadNext: true,
+      });
+    },
+    [],
+  );
 
   const playCurrentWord = useCallback(() => {
     const words = processedWordsRef.current;
     if (words.length > currentWordIndex) {
-      playTestWordAudio(words[currentWordIndex]);
+      // Manual click - not autoplay
+      playTestWordAudio(words[currentWordIndex], 0, false);
     }
   }, [playTestWordAudio, currentWordIndex]);
 
   const startTest = useCallback(
     (wordSet: WordSet, mode?: "standard" | "dictation" | "translation") => {
+      // Mark user interaction (but don't waste gesture token on silent audio)
       initializeAudioForIOS();
 
       const selectedMode =
@@ -194,6 +196,39 @@ export function useTestMode(): UseTestModeReturn {
       isPlayingAudioRef.current = false;
       lastAutoPlayIndexRef.current = -1;
       stopAudio();
+
+      // CRITICAL: Play first word audio SYNCHRONOUSLY in the click handler!
+      // This is the only way to ensure we have the user gesture token for autoplay.
+      // The browser's transient user activation expires after a few seconds or after
+      // being consumed by another audio play attempt.
+      if (config?.autoPlayAudio && words.length > 0) {
+        lastAutoPlayIndexRef.current = 0;
+        if (process.env.NODE_ENV === "development") {
+          console.log(
+            "[useTestMode] Playing first word SYNCHRONOUSLY in click handler",
+          );
+        }
+        // Play directly - this happens in the user gesture context!
+        playWordAudioHelper(words[0], wordSet, {
+          onStart: () => {
+            isPlayingAudioRef.current = true;
+            setIsAudioPlaying(true);
+          },
+          onEnd: () => {
+            isPlayingAudioRef.current = false;
+            setIsAudioPlaying(false);
+          },
+          onError: (error: Error) => {
+            console.error("[useTestMode] First word audio error:", error);
+            isPlayingAudioRef.current = false;
+            setIsAudioPlaying(false);
+          },
+          autoDelay: TIMING.TEST_START_AUDIO_DELAY_MS,
+          speechRate: 0.8,
+          isAutoPlay: false, // It's triggered by user click, so NOT autoplay!
+          preloadNext: true,
+        });
+      }
     },
     [],
   );
@@ -384,9 +419,8 @@ export function useTestMode(): UseTestModeReturn {
         }
       } else {
         setUserAnswer("");
-        if (!requiresUserInteractionForAudio()) {
-          playTestWordAudio(currentWord, TIMING.AUDIO_REPLAY_DELAY_MS);
-        }
+        // Auto-replay after wrong answer - mark as autoplay
+        playTestWordAudio(currentWord, TIMING.AUDIO_REPLAY_DELAY_MS, true);
       }
     }, TIMING.FEEDBACK_DISPLAY_MS);
   }, [
@@ -406,25 +440,13 @@ export function useTestMode(): UseTestModeReturn {
     wordDirections,
   ]);
 
-  // Initialize test and handle auto-play
+  // Initialize test - first word audio is now played in startTest
   useEffect(() => {
     if (activeTest && processedWords.length > 0 && !testInitialized) {
+      // Mark as initialized after state is set
       setTimeout(() => setTestInitialized(true), 0);
-
-      const testConfig = getEffectiveTestConfig(activeTest);
-      if (testConfig?.autoPlayAudio && !requiresUserInteractionForAudio()) {
-        lastAutoPlayIndexRef.current = 0;
-        setTimeout(
-          () =>
-            playTestWordAudio(
-              processedWords[0],
-              TIMING.TEST_START_AUDIO_DELAY_MS,
-            ),
-          0,
-        );
-      }
     }
-  }, [activeTest, processedWords, testInitialized, playTestWordAudio]);
+  }, [activeTest, processedWords, testInitialized]);
 
   // Auto-play when moving to next word
   useEffect(() => {
@@ -437,13 +459,13 @@ export function useTestMode(): UseTestModeReturn {
       currentWordIndex > 0 &&
       currentConfig?.autoPlayAudio &&
       processedWordsRef.current.length > currentWordIndex &&
-      lastAutoPlayIndexRef.current !== currentWordIndex &&
-      !requiresUserInteractionForAudio()
+      lastAutoPlayIndexRef.current !== currentWordIndex
     ) {
       lastAutoPlayIndexRef.current = currentWordIndex;
       playTestWordAudio(
         processedWordsRef.current[currentWordIndex],
         TIMING.TEST_START_AUDIO_DELAY_MS,
+        true, // isAutoPlay
       );
     }
   }, [currentWordIndex, testInitialized, playTestWordAudio]);

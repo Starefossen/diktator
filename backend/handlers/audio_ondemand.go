@@ -7,15 +7,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/starefossen/diktator/backend/internal/models"
+	"github.com/starefossen/diktator/backend/internal/services/tts"
 )
 
-// @Summary		Stream Audio for Word
-// @Description	Stream TTS audio for a specific word in a word set (generates on-demand, cached by browser)
+// @Summary		Stream Audio for Word or Sentence
+// @Description	Stream TTS audio for a specific word or sentence in a word set (generates on-demand, cached by browser). Automatically uses appropriate speaking rate for single words (0.8x) vs sentences (0.9x).
 // @Tags			wordsets
 // @Accept			json
 // @Produce		audio/ogg
 // @Param			id		path		string	true	"Word Set ID"
-// @Param			word	path		string	true	"Word to generate audio for"
+// @Param			word	path		string	true	"Word or sentence to generate audio for"
 // @Success		200		{file}		audio	"Audio file content (OGG Opus)"
 // @Failure		400		{object}	models.APIResponse	"Invalid request"
 // @Failure		404		{object}	models.APIResponse	"Word set not found"
@@ -38,6 +39,17 @@ func StreamWordAudio(c *gin.Context) {
 			Error: "Word parameter is required",
 		})
 		return
+	}
+
+	// Validate sentence length if it's a sentence
+	if tts.IsSentence(word) {
+		wordCount := tts.GetWordCount(word)
+		if wordCount > tts.MaxSentenceWords {
+			c.JSON(http.StatusBadRequest, models.APIResponse{
+				Error: fmt.Sprintf("Sentence exceeds maximum word limit of %d (has %d words)", tts.MaxSentenceWords, wordCount),
+			})
+			return
+		}
 	}
 
 	// Check if serviceManager is properly initialized
@@ -80,19 +92,24 @@ func StreamWordAudio(c *gin.Context) {
 		language = wordSet.Language
 	}
 
-	log.Printf("StreamWordAudio: Generating audio for word '%s' in language '%s'", word, language)
+	isSentence := tts.IsSentence(word)
+	if isSentence {
+		log.Printf("StreamWordAudio: Generating sentence audio (%d words) in language '%s'", tts.GetWordCount(word), language)
+	} else {
+		log.Printf("StreamWordAudio: Generating word audio for '%s' in language '%s'", word, language)
+	}
 
-	// Generate audio using TTS service (with caching)
-	audioData, audioFile, err := sm.TTS.GenerateAudio(word, language)
+	// Generate audio using TTS service - automatically detects sentence vs word
+	audioData, audioFile, err := sm.TTS.GenerateTextAudio(word, language)
 	if err != nil {
-		log.Printf("StreamWordAudio: Error generating audio for word '%s': %v", word, err)
+		log.Printf("StreamWordAudio: Error generating audio: %v", err)
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: fmt.Sprintf("Failed to generate audio: %v", err),
 		})
 		return
 	}
 
-	log.Printf("StreamWordAudio: Successfully generated audio for word '%s', size: %d bytes", word, len(audioData))
+	log.Printf("StreamWordAudio: Successfully generated audio, size: %d bytes", len(audioData))
 
 	// Set aggressive caching headers - browser will cache this for the session
 	c.Header("Content-Type", "audio/ogg; codecs=opus")
@@ -100,6 +117,7 @@ func StreamWordAudio(c *gin.Context) {
 	c.Header("ETag", fmt.Sprintf(`"%s-%s-%s"`, wordSetID, word, language))
 	c.Header("Content-Disposition", fmt.Sprintf("inline; filename=\"%s\"", audioFile.ID))
 	c.Header("X-Generated-On-Demand", "true")
+	c.Header("X-Is-Sentence", fmt.Sprintf("%t", isSentence))
 	c.Header("Accept-Ranges", "bytes")           // Enable range requests for better browser compatibility
 	c.Header("Access-Control-Allow-Origin", "*") // CORS for audio playback
 

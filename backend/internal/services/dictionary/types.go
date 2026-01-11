@@ -45,7 +45,7 @@ type articleMeta struct {
 
 // article represents a single dictionary article from /{dict}/article/{id}.json
 type article struct {
-	ArticleID int     `json:"article_id"`
+	ArticleID int      `json:"article_id"`
 	Suggest   []string `json:"suggest"` // Suggested search terms for this article
 	Lemmas    []lemma  `json:"lemmas"`
 	Body      body     `json:"body"`
@@ -60,8 +60,8 @@ type lemma struct {
 
 // paradigmInfo represents word inflection patterns and grammatical info
 type paradigmInfo struct {
-	Tags        []string     `json:"tags"`        // Word class tags (e.g., "NOUN", "Masc")
-	Inflection  []inflection `json:"inflection"`  // Inflected forms
+	Tags       []string     `json:"tags"`       // Word class tags (e.g., "NOUN", "Masc")
+	Inflection []inflection `json:"inflection"` // Inflected forms
 }
 
 // inflection represents a single inflected form of a word
@@ -72,7 +72,7 @@ type inflection struct {
 
 // body represents the article body with definitions
 type body struct {
-	Definitions []definition `json:"definitions"`
+	Definitions []definition  `json:"definitions"`
 	Etymology   []interface{} `json:"etymology"` // Etymology information (complex structure)
 }
 

@@ -6,6 +6,7 @@ import { profile } from "./profile";
 import { results } from "./results";
 import { test } from "./test";
 import { aria } from "./aria";
+import { mastery } from "./mastery";
 
 export const en = {
   ...auth,
@@ -16,6 +17,7 @@ export const en = {
   ...results,
   ...test,
   ...aria,
+  ...mastery,
 
   // Home page
   "home.welcome": "Welcome to Diktator!",

@@ -318,6 +318,166 @@ func (s *Service) GenerateAudioWithSSML(ssml, language string) ([]byte, error) {
 	return resp.AudioContent, nil
 }
 
+// Sentence TTS configuration constants
+const (
+	// MaxSentenceWords is the maximum number of words allowed in a sentence for TTS
+	MaxSentenceWords = 15
+	// SentenceSpeakingRate is the speaking rate for sentences (slightly faster than single words)
+	SentenceSpeakingRate = 0.9
+	// SingleWordSpeakingRate is the speaking rate for single words
+	SingleWordSpeakingRate = 0.8
+)
+
+// IsSentence determines if text contains multiple words (is a sentence)
+func IsSentence(text string) bool {
+	return GetWordCount(text) > 1
+}
+
+// GetWordCount returns the number of words in the text
+func GetWordCount(text string) int {
+	words := strings.Fields(strings.TrimSpace(text))
+	return len(words)
+}
+
+// GenerateSentenceAudio generates audio for a sentence using SSML with appropriate prosody
+// Uses a slightly faster speaking rate (0.9x) than single words (0.8x) for natural flow
+func (s *Service) GenerateSentenceAudio(sentence, language string) ([]byte, *models.AudioFile, error) {
+	if s.client == nil {
+		return nil, nil, fmt.Errorf("TTS service is disabled")
+	}
+
+	// Validate sentence length
+	wordCount := GetWordCount(sentence)
+	if wordCount > MaxSentenceWords {
+		return nil, nil, fmt.Errorf("sentence exceeds maximum word limit of %d (has %d words)", MaxSentenceWords, wordCount)
+	}
+
+	// Normalize language code and get voice configuration
+	voiceConfig := s.getOptimalVoiceConfig(language)
+
+	// Generate cache key with "sentence:" prefix to distinguish from single words
+	hash := md5.Sum([]byte(sentence))
+	cacheKey := fmt.Sprintf("sentence:%x:%s:%s", hash, language, voiceConfig.VoiceName)
+
+	// Check cache first
+	if cachedAudio, found := s.cache.Get(cacheKey); found {
+		log.Printf("Cache HIT for sentence in language '%s' (%d words)", language, wordCount)
+
+		filename := s.generateSentenceFilename(sentence, language, voiceConfig.VoiceName)
+		audioFile := &models.AudioFile{
+			ID:       filename,
+			Word:     sentence,
+			Language: language,
+			VoiceID:  voiceConfig.VoiceName,
+			URL:      "",
+		}
+
+		return cachedAudio, audioFile, nil
+	}
+
+	log.Printf("Cache MISS - Generating audio for sentence in language '%s' (%d words)", language, wordCount)
+
+	// Normalize the sentence for TTS
+	normalizedSentence := s.normalizeTextForTTS(sentence)
+
+	// Build SSML with prosody for sentence-appropriate speaking rate
+	ssml := fmt.Sprintf(`<speak><prosody rate="%.1f">%s</prosody></speak>`, SentenceSpeakingRate, normalizedSentence)
+
+	input := &texttospeechpb.SynthesisInput{
+		InputSource: &texttospeechpb.SynthesisInput_Ssml{
+			Ssml: ssml,
+		},
+	}
+
+	voice := &texttospeechpb.VoiceSelectionParams{
+		LanguageCode: voiceConfig.LanguageCode,
+		Name:         voiceConfig.VoiceName,
+		SsmlGender:   voiceConfig.Gender,
+	}
+
+	// Use base speaking rate of 1.0 since prosody handles the rate adjustment
+	audioConfig := &texttospeechpb.AudioConfig{
+		AudioEncoding:   texttospeechpb.AudioEncoding_OGG_OPUS,
+		SpeakingRate:    1.0, // Prosody rate is relative to this
+		Pitch:           voiceConfig.Pitch,
+		VolumeGainDb:    2.0,
+		SampleRateHertz: 22050,
+	}
+
+	req := &texttospeechpb.SynthesizeSpeechRequest{
+		Input:       input,
+		Voice:       voice,
+		AudioConfig: audioConfig,
+	}
+
+	resp, err := s.client.SynthesizeSpeech(s.ctx, req)
+	if err != nil {
+		// Try fallback voice
+		fallbackConfig := s.getFallbackVoiceConfig(language)
+		if fallbackConfig.VoiceName != voiceConfig.VoiceName {
+			log.Printf("Primary voice failed for sentence, trying fallback: %s", fallbackConfig.VoiceName)
+			voice.Name = fallbackConfig.VoiceName
+			voice.LanguageCode = fallbackConfig.LanguageCode
+			req.Voice = voice
+
+			resp, err = s.client.SynthesizeSpeech(s.ctx, req)
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to synthesize sentence with both primary and fallback voices: %v", err)
+			}
+			voiceConfig = fallbackConfig
+		} else {
+			return nil, nil, fmt.Errorf("failed to synthesize sentence: %v", err)
+		}
+	}
+
+	filename := s.generateSentenceFilename(sentence, language, voiceConfig.VoiceName)
+	audioFile := &models.AudioFile{
+		ID:       filename,
+		Word:     sentence,
+		Language: language,
+		VoiceID:  voiceConfig.VoiceName,
+		URL:      "",
+	}
+
+	// Store in cache
+	s.cache.Put(cacheKey, resp.AudioContent)
+
+	items, bytes, maxBytes := s.cache.Stats()
+	log.Printf("Generated audio for sentence (%d words) in language '%s' | Cache: %d items, %.2f MB / %.2f MB",
+		wordCount, language, items, float64(bytes)/(1024*1024), float64(maxBytes)/(1024*1024))
+
+	return resp.AudioContent, audioFile, nil
+}
+
+// GenerateTextAudio generates audio for any text, automatically detecting if it's a sentence
+// and using the appropriate generation method
+func (s *Service) GenerateTextAudio(text, language string) ([]byte, *models.AudioFile, error) {
+	if IsSentence(text) {
+		return s.GenerateSentenceAudio(text, language)
+	}
+	return s.GenerateAudio(text, language)
+}
+
+// generateSentenceFilename creates a unique filename for sentence audio
+func (s *Service) generateSentenceFilename(sentence, language, voiceID string) string {
+	hash := md5.Sum([]byte(fmt.Sprintf("%s-%s-%s", sentence, language, voiceID)))
+	hashStr := fmt.Sprintf("%x", hash)
+
+	// Use first few words for a readable prefix, truncated
+	words := strings.Fields(sentence)
+	prefix := strings.Join(words, "_")
+	if len(prefix) > 30 {
+		prefix = prefix[:30]
+	}
+	prefix = strings.ToLower(prefix)
+	prefix = strings.ReplaceAll(prefix, ".", "")
+	prefix = strings.ReplaceAll(prefix, ",", "")
+	prefix = strings.ReplaceAll(prefix, "?", "")
+	prefix = strings.ReplaceAll(prefix, "!", "")
+
+	return fmt.Sprintf("sentence_%s_%s_%s.ogg", prefix, language, hashStr[:8])
+}
+
 // generateFilename creates a unique filename for the audio file
 func (s *Service) generateFilename(word, language, voiceID string) string {
 	// Create a hash to ensure uniqueness and avoid conflicts

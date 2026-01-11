@@ -76,6 +76,50 @@ type Translation struct {
 	VoiceID  *string `json:"voiceId,omitempty"`
 }
 
+// GradeLevel represents Norwegian school grade levels (LK20 curriculum)
+type GradeLevel string
+
+const (
+	GradeLevel12 GradeLevel = "1-2" // Ages 5-7, basic spelling
+	GradeLevel34 GradeLevel = "3-4" // Ages 8-9, compounds and inflection
+	GradeLevel57 GradeLevel = "5-7" // Ages 10-12, advanced spelling rules
+)
+
+// DifficultyLevel represents content difficulty for progressive challenges
+type DifficultyLevel string
+
+const (
+	DifficultyBeginner     DifficultyLevel = "beginner"
+	DifficultyIntermediate DifficultyLevel = "intermediate"
+	DifficultyAdvanced     DifficultyLevel = "advanced"
+)
+
+// SpellingFocusCategory represents spelling challenge categories
+// Uses camelCase to match frontend JSON conventions
+type SpellingFocusCategory string
+
+const (
+	SpellingFocusDoubleConsonant SpellingFocusCategory = "doubleConsonant" // Dobbelt konsonant
+	SpellingFocusSilentLetter    SpellingFocusCategory = "silentLetter"    // Stumme bokstaver (hj-, gj-, kj-, hv-)
+	SpellingFocusCompoundWord    SpellingFocusCategory = "compoundWord"    // Sammensatte ord
+	SpellingFocusDiphthong       SpellingFocusCategory = "diphthong"       // Diftonger (ei, øy, au)
+	SpellingFocusSkjSound        SpellingFocusCategory = "skjSound"        // Skj-lyden
+	SpellingFocusSpecialChars    SpellingFocusCategory = "norwegianChars"  // Æ, Ø, Å
+	SpellingFocusNgNk            SpellingFocusCategory = "ngNk"            // Ng og Nk sounds
+	SpellingFocusSilentD         SpellingFocusCategory = "silentD"         // Stum D
+	SpellingFocusVowelLength     SpellingFocusCategory = "vowelLength"     // Vokalforlengelse (tak/takk)
+)
+
+// SentenceItem represents a sentence for sentence dictation mode
+type SentenceItem struct {
+	Sentence    string          `json:"sentence"`              // Full sentence text
+	Translation string          `json:"translation,omitempty"` // Optional translation
+	FocusWords  []string        `json:"focusWords,omitempty"`  // Words being specifically tested
+	Difficulty  DifficultyLevel `json:"difficulty"`            // beginner, intermediate, advanced
+	Pattern     string          `json:"pattern,omitempty"`     // e.g., "S+V+O", "subordinate clause"
+	Audio       *WordAudio      `json:"audio,omitempty"`       // Audio info for the full sentence
+}
+
 // WordSet represents a collection of words for spelling tests
 type WordSet struct {
 	ID    string `json:"id"`
@@ -86,14 +130,20 @@ type WordSet struct {
 		Definition   string        `json:"definition,omitempty"`   // Optional definition for the word
 		Translations []Translation `json:"translations,omitempty"` // Optional translations to other languages
 	} `json:"words"`
+	Description       *string                 `json:"description,omitempty"`     // Optional description for curated word sets
+	Sentences         []SentenceItem          `json:"sentences,omitempty"`       // Sentences for sentence dictation mode
 	FamilyID          *string                 `json:"familyId,omitempty"`        // NULL for global word sets
 	IsGlobal          bool                    `json:"isGlobal"`                  // True for curated word sets available to all users
 	CreatedBy         string                  `json:"createdBy"`                 // SystemUserID for curated sets
 	Language          string                  `json:"language"`                  // 'en' or 'no'
 	AssignedUserIDs   []string                `json:"assignedUserIds,omitempty"` // IDs of child users assigned to this wordset
 	TestConfiguration *map[string]interface{} `json:"testConfiguration,omitempty"`
-	CreatedAt         time.Time               `json:"createdAt"`
-	UpdatedAt         time.Time               `json:"updatedAt"`
+	// Curated content metadata
+	TargetGrade   *GradeLevel             `json:"targetGrade,omitempty"`   // Norwegian school grade level
+	SpellingFocus []SpellingFocusCategory `json:"spellingFocus,omitempty"` // Spelling challenge categories
+	Difficulty    *DifficultyLevel        `json:"difficulty,omitempty"`    // Overall difficulty level
+	CreatedAt     time.Time               `json:"createdAt"`
+	UpdatedAt     time.Time               `json:"updatedAt"`
 }
 
 // WordTestResult represents detailed information about a word in a test

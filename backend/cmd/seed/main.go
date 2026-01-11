@@ -10,86 +10,6 @@ import (
 	"github.com/starefossen/diktator/backend/internal/services"
 )
 
-// Global/curated word sets - challenging Norwegian words for language learners
-var globalWordSets = map[string][]struct {
-	word        string
-	definition  string
-	translation string
-}{
-	"Dobbelt konsonant": {
-		{"takk", "Høflighetsord man sier når man får noe", "thanks"},
-		{"katt", "Et lite kjæledyr som sier mjau", "cat"},
-		{"redd", "Følelse når noe er skummelt", "scared"},
-		{"gutt", "Et mannlig barn", "boy"},
-		{"blikk", "Når du ser på noe", "gaze"},
-		{"stopp", "Når noe må slutte å bevege seg", "stop"},
-		{"hopp", "Når du løfter deg opp fra bakken", "jump"},
-		{"troll", "Et eventyrfigur fra norske folkeeventyr", "troll"},
-		{"gress", "Grønne planter på bakken", "grass"},
-		{"klaff", "Del av noe som åpnes og lukkes", "flap"},
-	},
-	"Stumme bokstaver": {
-		{"hjerte", "Organet som pumper blod i kroppen", "heart"},
-		{"gjerne", "Når du vil gjøre noe med glede", "gladly"},
-		{"kjøre", "Å styre en bil eller sykkel", "drive"},
-		{"hvit", "Fargen på snø og melk", "white"},
-		{"hvem", "Spørreord om en person", "who"},
-		{"hjelp", "Støtte fra noen som hjelper deg", "help"},
-		{"gjøre", "Å utføre en handling", "do"},
-		{"kjenne", "Å føle eller vite om noe", "know/feel"},
-		{"hvor", "Spørreord om et sted", "where"},
-		{"hvordan", "Spørreord om måte", "how"},
-	},
-	"Sammensatte ord": {
-		{"sommerfugl", "Et vakkert insekt med fargerike vinger", "butterfly"},
-		{"badedrakt", "Klær du har på når du bader", "swimsuit"},
-		{"frokostbord", "Bordet der familien spiser frokost", "breakfast table"},
-		{"sjokoladekake", "En søt kake laget med sjokolade", "chocolate cake"},
-		{"isbjørn", "Et stort hvitt dyr som bor i Arktis", "polar bear"},
-		{"solbriller", "Briller som beskytter mot solen", "sunglasses"},
-		{"fotballkamp", "En sportskonkurranse med fotball", "football match"},
-		{"melkekartong", "Beholder man kjøper melk i", "milk carton"},
-		{"barnehage", "Sted hvor små barn er mens foreldrene jobber", "kindergarten"},
-		{"lekeplass", "Sted med husker og sklier for barn", "playground"},
-	},
-	"Diftonger": {
-		{"hei", "Hilsen man sier når man møter noen", "hi"},
-		{"nei", "Det motsatte av ja", "no"},
-		{"vei", "Sted man kjører eller går på", "road"},
-		{"øye", "Kroppsdel man ser med", "eye"},
-		{"øy", "Land omgitt av vann", "island"},
-		{"høy", "Det motsatte av lav", "tall"},
-		{"sau", "Et dyr med ull som sier bæ", "sheep"},
-		{"tau", "Tykk snor man kan klatre i", "rope"},
-		{"blei", "Noe babyer har på rumpa", "diaper"},
-		{"røyk", "Grå sky som kommer fra ild", "smoke"},
-	},
-	"Skj-lyden": {
-		{"skjorte", "Plagg med knapper man har på overkroppen", "shirt"},
-		{"skje", "Bestikk man spiser suppe med", "spoon"},
-		{"skjære", "Å dele noe med kniv", "to cut"},
-		{"ski", "Utstyr man bruker på snø om vinteren", "ski"},
-		{"skinn", "Det ytterste laget på kroppen", "skin/leather"},
-		{"sjø", "Stort vann med saltvann", "sea"},
-		{"sjel", "Den indre delen av et menneske", "soul"},
-		{"sjokolade", "Brun godteri laget av kakao", "chocolate"},
-		{"skjerm", "Flate på TV eller datamaskin", "screen"},
-		{"sjiraff", "Høyt dyr med lang hals fra Afrika", "giraffe"},
-	},
-	"Æ, Ø og Å": {
-		{"bær", "Små frukter som jordbær og blåbær", "berry"},
-		{"ørn", "Stor fugl som spiser fisk", "eagle"},
-		{"lære", "Å få ny kunnskap", "to learn"},
-		{"søt", "Smak som sukker og godteri", "sweet"},
-		{"grønn", "Fargen på gress og blader", "green"},
-		{"brød", "Mat man baker av mel", "bread"},
-		{"båt", "Fartøy som flyter på vann", "boat"},
-		{"blå", "Fargen på himmelen", "blue"},
-		{"måne", "Lyser på himmelen om natten", "moon"},
-		{"våt", "Når noe er dekket av vann", "wet"},
-	},
-}
-
 var norwegianWords = map[string][]struct {
 	word        string
 	definition  string
@@ -725,99 +645,13 @@ func main() {
 		}
 	}
 
-	// Create system user for global word sets (if it doesn't exist)
-	log.Println("🤖 Creating system user for global content...")
-	systemUser := &models.User{
-		ID:           models.SystemUserID,
-		AuthID:       models.SystemUserID,
-		Email:        "system@diktator.app",
-		DisplayName:  "System",
-		FamilyID:     "", // System user has no family
-		Role:         "system",
-		IsActive:     true,
-		CreatedAt:    time.Now(),
-		LastActiveAt: time.Now(),
-	}
-
-	if err := serviceManager.DB.CreateUser(systemUser); err != nil {
-		log.Printf("  Note: System user already exists or failed to create: %v", err)
-	} else {
-		log.Println("  ✓ Created system user")
-	}
-
-	// Create global/curated word sets for all users
-	log.Println("🌍 Creating global curated word sets...")
-	globalWordSetCount := 0
-
-	for category, words := range globalWordSets {
-		wordSetID := fmt.Sprintf("global-wordset-%s", category)
-
-		// Build words array for the word set
-		wordsArray := make([]struct {
-			Word         string               `json:"word"`
-			Audio        models.WordAudio     `json:"audio,omitempty"`
-			Definition   string               `json:"definition,omitempty"`
-			Translations []models.Translation `json:"translations,omitempty"`
-		}, len(words))
-
-		for pos, wordData := range words {
-			translations := []models.Translation{
-				{
-					Language: "en",
-					Text:     wordData.translation,
-				},
-			}
-
-			wordsArray[pos] = struct {
-				Word         string               `json:"word"`
-				Audio        models.WordAudio     `json:"audio,omitempty"`
-				Definition   string               `json:"definition,omitempty"`
-				Translations []models.Translation `json:"translations,omitempty"`
-			}{
-				Word:         wordData.word,
-				Definition:   wordData.definition,
-				Translations: translations,
-			}
-		}
-
-		// Create test configuration - dictation mode is best for spelling practice
-		testConfig := map[string]interface{}{
-			"defaultMode":   "dictation",
-			"maxAttempts":   3,
-			"autoPlayAudio": true,
-		}
-
-		wordSet := &models.WordSet{
-			ID:                wordSetID,
-			Name:              category,
-			Words:             wordsArray,
-			FamilyID:          nil, // NULL for global word sets
-			IsGlobal:          true,
-			CreatedBy:         models.SystemUserID, // "system"
-			Language:          "no",
-			TestConfiguration: &testConfig,
-			CreatedAt:         time.Now(),
-			UpdatedAt:         time.Now(),
-		}
-
-		if err := serviceManager.DB.CreateWordSet(wordSet); err != nil {
-			log.Printf("  Warning: Failed to create global word set %s: %v", wordSet.Name, err)
-			continue
-		}
-
-		log.Printf("  ✓ Created global word set: %s (%d words)", wordSet.Name, len(words))
-		globalWordSetCount++
-	}
-
-	log.Printf("  Total global word sets created: %d", globalWordSetCount)
-
 	log.Println("✅ Database seeding completed successfully!")
 	log.Println("")
 	log.Println("📊 Summary:")
 	log.Println("  - 4 families total (3 with realistic data + 1 development family)")
 	log.Println("  - 8 children across all families")
 	log.Println("  - 17 family word sets (5 categories × 3 families + 2 for dev family)")
-	log.Printf("  - %d global curated word sets (available to all users)", globalWordSetCount)
+	log.Println("  - Curated word sets are created by database migrations (not seed)")
 	log.Println("  - Realistic test results showing improvement over time")
 	log.Println("")
 	log.Println("🔧 Development User:")

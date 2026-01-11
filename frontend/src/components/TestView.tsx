@@ -1,4 +1,10 @@
-import React, { useRef, useEffect, useMemo } from "react";
+import React, {
+  useRef,
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+} from "react";
 import { WordSet, TestAnswer, getEffectiveTestConfig } from "@/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { requiresUserInteractionForAudio } from "@/lib/audioPlayer";
@@ -14,6 +20,13 @@ import {
 } from "@/components/SpellingFeedback";
 import { TIMING } from "@/lib/timingConfig";
 import { Button } from "@/components/Button";
+import { LetterTileInput } from "@/components/LetterTileInput";
+import { WordBankInput } from "@/components/WordBankInput";
+import { SentenceFeedback } from "@/components/SentenceFeedback";
+import { generateLetterTiles, generateWordBank } from "@/lib/challenges";
+import { isSentence } from "@/lib/sentenceConfig";
+import { scoreSentence } from "@/lib/sentenceScoring";
+import type { InputMethod } from "@/lib/sentenceConfig";
 
 interface TestViewProps {
   activeTest: WordSet;
@@ -28,6 +41,7 @@ interface TestViewProps {
   testMode: "standard" | "dictation" | "translation";
   wordDirections: ("toTarget" | "toSource")[];
   lastUserAnswer?: string; // The most recent answer submitted (for spelling feedback)
+  inputMethod?: InputMethod; // Progressive input mode
   onUserAnswerChange: (answer: string) => void;
   onSubmitAnswer: () => void;
   onPlayCurrentWord: () => void;
@@ -47,6 +61,7 @@ export function TestView({
   testMode,
   wordDirections,
   lastUserAnswer,
+  inputMethod = "keyboard",
   onUserAnswerChange,
   onSubmitAnswer,
   onPlayCurrentWord,
@@ -124,6 +139,71 @@ export function TestView({
       testConfig?.enableKeyboardProximity,
     ],
   );
+
+  // Check if current content is a sentence (for sentence-specific feedback)
+  const isCurrentSentence = useMemo(
+    () => isSentence(expectedAnswer),
+    [expectedAnswer],
+  );
+
+  // Compute sentence scoring when showing feedback for sentence answers
+  const sentenceScoringResult = useMemo(() => {
+    if (!showFeedback || !isCurrentSentence || !lastUserAnswer) {
+      return null;
+    }
+    return scoreSentence(expectedAnswer, lastUserAnswer, currentTries);
+  }, [
+    showFeedback,
+    isCurrentSentence,
+    lastUserAnswer,
+    expectedAnswer,
+    currentTries,
+  ]);
+
+  // Key for regenerating tiles/word bank when word changes
+  const [tileKey, setTileKey] = useState(0);
+
+  // Reset tile key when word changes
+  useEffect(() => {
+    setTileKey((prev) => prev + 1);
+  }, [currentWordIndex]);
+
+  // Generate letter tiles for the current word (memoized with key)
+  const letterTiles = useMemo(() => {
+    if (inputMethod !== "letterTiles") return [];
+    return generateLetterTiles(expectedAnswer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expectedAnswer, inputMethod, tileKey]);
+
+  // Generate word bank items for sentence mode
+  const wordBankItems = useMemo(() => {
+    if (inputMethod !== "wordBank") return [];
+    return generateWordBank(expectedAnswer, activeTest);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expectedAnswer, inputMethod, activeTest, tileKey]);
+
+  // Handle submission from LetterTileInput or WordBankInput
+  const handleTileOrBankSubmit = useCallback(
+    (_isCorrect: boolean, answer: string) => {
+      onUserAnswerChange(answer);
+      // Use setTimeout to ensure state update before submit
+      setTimeout(() => {
+        onSubmitAnswer();
+      }, 0);
+    },
+    [onUserAnswerChange, onSubmitAnswer],
+  );
+
+  // Determine effective input method (auto-select based on content type)
+  const effectiveInputMethod = useMemo(() => {
+    if (inputMethod === "auto") {
+      // For sentences (contains spaces), prefer keyboard
+      // For single words, prefer letterTiles for younger users
+      const isSentence = expectedAnswer.includes(" ");
+      return isSentence ? "keyboard" : "letterTiles";
+    }
+    return inputMethod;
+  }, [inputMethod, expectedAnswer]);
 
   return (
     <div className="bg-nordic-birch">
@@ -223,7 +303,21 @@ export function TestView({
               {showFeedback ? (
                 lastAnswerCorrect ? (
                   <CorrectFeedback />
+                ) : isCurrentSentence && sentenceScoringResult ? (
+                  // Sentence feedback with word-by-word analysis
+                  <SentenceFeedback
+                    result={sentenceScoringResult}
+                    currentAttempt={currentTries}
+                    maxAttempts={testConfig?.maxAttempts ?? 3}
+                    showCorrectAnswer={
+                      currentTries >= (testConfig?.maxAttempts ?? 3) &&
+                      testConfig?.showCorrectAnswer
+                    }
+                    expectedSentence={expectedAnswer}
+                    timerDurationMs={TIMING.FEEDBACK_DISPLAY_MS}
+                  />
                 ) : spellingAnalysis && lastUserAnswer ? (
+                  // Single word spelling feedback
                   <SpellingFeedback
                     userAnswer={lastUserAnswer}
                     expectedWord={expectedAnswer}
@@ -246,6 +340,22 @@ export function TestView({
                     </p>
                   </div>
                 )
+              ) : effectiveInputMethod === "letterTiles" ? (
+                <LetterTileInput
+                  key={tileKey}
+                  tiles={letterTiles}
+                  expectedWord={expectedAnswer}
+                  onSubmit={handleTileOrBankSubmit}
+                  disabled={showFeedback}
+                />
+              ) : effectiveInputMethod === "wordBank" ? (
+                <WordBankInput
+                  key={tileKey}
+                  items={wordBankItems}
+                  expectedWordCount={expectedAnswer.split(/\s+/).length}
+                  onSubmit={handleTileOrBankSubmit}
+                  disabled={showFeedback}
+                />
               ) : (
                 <input
                   ref={inputRef}
@@ -268,8 +378,8 @@ export function TestView({
             </div>
 
             <div className="flex justify-center h-5 mb-8">
-              {/* Only show attempts remaining when NOT showing feedback (SpellingFeedback has its own display) */}
-              {!showFeedback && (
+              {/* Only show attempts remaining when NOT showing feedback and using keyboard input */}
+              {!showFeedback && effectiveInputMethod === "keyboard" && (
                 <p className="text-sm text-gray-500">
                   {t("test.attemptsRemaining")}:{" "}
                   {(testConfig?.maxAttempts ?? 3) - currentTries}
@@ -284,9 +394,11 @@ export function TestView({
                   variant="secondary-child"
                   onClick={() => {
                     onPlayCurrentWord();
-                    setTimeout(() => {
-                      inputRef.current?.focus();
-                    }, TIMING.INPUT_FOCUS_DELAY_MS);
+                    if (effectiveInputMethod === "keyboard") {
+                      setTimeout(() => {
+                        inputRef.current?.focus();
+                      }, TIMING.INPUT_FOCUS_DELAY_MS);
+                    }
                   }}
                   disabled={showFeedback}
                 >
@@ -297,23 +409,25 @@ export function TestView({
                 </Button>
               )}
 
-              {/* Next/Finish Button */}
-              <Button
-                variant="primary-child"
-                onClick={onSubmitAnswer}
-                disabled={!userAnswer.trim() || showFeedback}
-              >
-                <span className="sm:hidden">
-                  {currentWordIndex < processedWords.length - 1
-                    ? t("test.nextMobile")
-                    : t("test.finishMobile")}
-                </span>
-                <span className="hidden sm:inline">
-                  {currentWordIndex < processedWords.length - 1
-                    ? t("test.nextWord")
-                    : t("test.finishTest")}
-                </span>
-              </Button>
+              {/* Next/Finish Button - Only shown for keyboard input mode */}
+              {effectiveInputMethod === "keyboard" && (
+                <Button
+                  variant="primary-child"
+                  onClick={onSubmitAnswer}
+                  disabled={!userAnswer.trim() || showFeedback}
+                >
+                  <span className="sm:hidden">
+                    {currentWordIndex < processedWords.length - 1
+                      ? t("test.nextMobile")
+                      : t("test.finishMobile")}
+                  </span>
+                  <span className="hidden sm:inline">
+                    {currentWordIndex < processedWords.length - 1
+                      ? t("test.nextWord")
+                      : t("test.finishTest")}
+                  </span>
+                </Button>
+              )}
 
               {/* Back Button */}
               <Button variant="secondary-child" onClick={onExitTest}>

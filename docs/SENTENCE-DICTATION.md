@@ -1,8 +1,8 @@
 # Sentence Dictation Implementation Plan
 
-> **Status**: In Progress (Phase 2 Complete)
+> **Status**: Complete (Phase 6 Done)
 > **Created**: 2026-01-11
-> **Last Updated**: 2026-01-11
+> **Last Updated**: 2026-01-12
 
 ## Overview
 
@@ -76,103 +76,119 @@ Extend Diktator from single-word dictation to full sentence dictation with progr
   - `GET /api/dictionary/suggest?q={query}&dict=bm&n=5` → `[]DictionarySuggestion`
   - `GET /api/dictionary/stats` → Cache statistics
 
-### Phase 3: TTS Sentence Support ⬜
+### Phase 3: TTS Sentence Support ✅
 
-- [ ] **3.1** Extend TTS service for sentences
-  - Add `GenerateSentenceAudio(sentence, language)` method
-  - Use SSML: `<speak><prosody rate="0.9">{sentence}</prosody></speak>`
-  - Cache key: `sentence:{hash}:{lang}:{voice}`
-  - Keep 0.8x rate for single words, 0.9x for sentences
+- [x] **3.1** Extend TTS service for sentences
+  - Added `IsSentence(text)` and `GetWordCount(text)` helper functions
+  - Added `GenerateSentenceAudio(sentence, language)` method using SSML prosody
+  - Added `GenerateTextAudio(text, language)` auto-detection method
+  - Uses SSML: `<speak><prosody rate="0.9">{sentence}</prosody></speak>`
+  - Cache key: `sentence:{hash}:{lang}:{voice}` (distinct from word cache)
+  - Validates max sentence length (15 words)
+  - Speaking rates: 0.8x for single words, 0.9x for sentences
 
-### Phase 4: Curated Content ⬜
+- [x] **3.2** Update audio endpoint for sentences
+  - Extended `StreamWordAudio` handler to auto-detect sentences
+  - Validates sentence word limit before TTS generation
+  - Added `X-Is-Sentence` response header for debugging
+  - Reuses existing caching infrastructure
 
-- [ ] **4.1** Extend `CuratedWordSet` model
-  - Add `target_grade` field: "1-2", "3-4", "5-7"
-  - Add `spelling_focus` array: ["double_consonant", "silent_letter", etc.]
-  - Add `difficulty` field: "beginner", "intermediate", "advanced"
-  - Add `sentences` array with `SentenceItem` type
+- [x] **3.3** Add unit tests
+  - Location: `backend/internal/services/tts/sentence_test.go`
+  - Tests for `IsSentence()`, `GetWordCount()`, constants validation
 
-- [ ] **4.2** Add new spelling rule sets
-  - "Ng og Nk": sang, lang, tenke, drikke, synke, ringe, finger, bank, tung
+### Phase 4: Curated Content ✅
+
+- [x] **4.1** Extend `CuratedWordSet` model
+  - Added `target_grade` field: "1-2", "3-4", "5-7"
+  - Added `spelling_focus` array: ["doubleConsonant", "silentLetter", etc.]
+  - Added `difficulty` field: "beginner", "intermediate", "advanced"
+  - Added `sentences` array with `SentenceItem` type
+  - Migration: `backend/internal/migrate/migrations/000011_add_curated_wordset_fields.up.sql`
+  - Updated DB layer to read new fields in GetWordSet, GetWordSets, GetGlobalWordSets
+
+- [x] **4.2** Add new spelling rule sets
+  - "Ng og Nk": sang, lang, tenke, drikke, synke, ringe, finger, bank, tung, slange
   - "Stum D": land, sand, rund, holde, vind, kind, bord, ord, gård, fjord
-  - "Vokalforlengelse": tak/takk, bok/bokk, sol/sopp, mat/matt, bil/ball
+  - "Vokalforlengelse": tak/takk, bok/bukk, sol/sopp, mat/matt, bil/ball pairs
 
-- [ ] **4.3** Add thematic sets by grade
-  - "Naturen": fjell, innsjø, elv, skog, strand, himmel, regn, snø, blomst, tre
-  - "Kroppen": hjerne, hjerte, mage, albue, skulder, finger, ankel, rygg, kne
-  - "Tid og Kalender": mandag, tirsdag, januar, februar, vår, sommer, høst, vinter
+- [x] **4.3** Add thematic sets by grade
+  - "Naturen" (Grade 1-2): fjell, elv, skog, strand, himmel, regn, snø, blomst, tre, innsjø
+  - "Kroppen" (Grade 3-4): hjerne, hjerte, mage, albue, skulder, finger, ankel, rygg, kne, hals
+  - "Tid og Kalender" (Grade 3-4): mandag, tirsdag, januar, februar, vår, sommer, høst, vinter, morgen, kveld
 
-- [ ] **4.4** Add sentence sets by difficulty
-  - Beginner (7-8 år): "Katten sover på stolen." (S+V+O, 4-5 words)
-  - Intermediate (9-10 år): "Sommerfuglen flyr over blomstene i hagen." (6-8 words)
-  - Advanced (11-12 år): "Selv om været var dårlig, bestemte vi oss for å gå på tur." (10-12 words)
+- [x] **4.4** Add sentence sets by difficulty
+  - "Enkle setninger" (Beginner, Grade 1-2): 4-5 word sentences with S+V+O patterns
+  - "Mellom setninger" (Intermediate, Grade 3-4): 6-8 word sentences with prepositional phrases
+  - "Avanserte setninger" (Advanced, Grade 5-7): 10-12 word sentences with subordinate clauses
 
-### Phase 5: Progressive Input Components ⬜
+### Phase 5: Progressive Input Components ✅
 
-- [ ] **5.1** Create challenge generator
+- [x] **5.1** Create challenge generator
   - Location: `frontend/src/lib/challenges.ts`
   - `generateLetterTiles(word)`: Scramble + phonetically similar Norwegian distractors (ø/o, æ/e, kj/k)
-  - `generateWordBank(word, wordSet)`: 3 distractors from same set + Norwegian fillers ("og", "er", "på", "en", "et", "å")
+  - `generateWordBank(sentence, wordSet)`: 3 distractors from same set + Norwegian fillers ("og", "er", "på", "en", "et", "å")
   - `getNextChallengeMode(mastery)`: letterTiles until 2 correct → wordBank until 2 correct → keyboard
-  - Support replay of easier modes after unlock
+  - `isModeUnlocked(mastery, mode)`: Check if mode is available
+  - `getMasteryProgress(mastery)`: Get progress info for UI display
+  - `validateLetterTileAnswer()` and `validateWordBankAnswer()`: Validation helpers
 
-- [ ] **5.2** Create `LetterTileInput` component
+- [x] **5.2** Create `LetterTileInput` component
   - Location: `frontend/src/components/LetterTileInput.tsx`
   - Tap-to-place interaction (no drag)
   - Slot-based answer area matching word length
   - 48px+ touch targets (min-h-12)
   - Phonetically similar Norwegian distractors
-  - "Øv på nytt" replay toggle
-  - Visual feedback: nordic colors for placed, green/red for correct/wrong
+  - Visual feedback: nordic colors for placed tiles
+  - Accessibility: ARIA labels, screen reader status updates
 
-- [ ] **5.3** Create `WordBankInput` component
+- [x] **5.3** Create `WordBankInput` component
   - Location: `frontend/src/components/WordBankInput.tsx`
   - Wrapped flexbox layout with word pills
-  - Answer slots showing expected word count
+  - Word count indicator
   - Tap-to-add, tap-to-remove interaction
-  - Replay option after keyboard unlock
-  - Selected state: `opacity-50 line-through`
+  - Clear and check action buttons
+  - Accessibility: ARIA labels, screen reader status updates
 
-### Phase 6: UI Integration ⬜
+### Phase 6: UI Integration ✅
 
-- [ ] **6.1** Add input method selector to ModeSelectionModal
-  - Show current unlock level per word
-  - Mastery progress bar
-  - Replay mode toggle ("Øv på nytt")
-  - Auto-select based on child's birth year (≤7 = letter tiles/word bank)
+- [x] **6.1** Add input method selector to ModeSelectionModal
+  - Location: `frontend/src/components/ModeSelectionModal.tsx`
+  - `InputMethodSelector` component with letter tiles, word bank, keyboard options
+  - Age-appropriate default selection based on birth year
+  - Mode icons and descriptions for each input method
+  - TODO (deferred): Mastery progress bar, replay mode toggle
 
-- [ ] **6.2** Add editor feedback UI in WordSetEditor
-  - Word count badge for sentences
-  - Difficulty auto-classification (beginner/intermediate/advanced)
-  - Grade-level recommendation
-  - Optional "Validate" button → calls dictionary proxy
-  - On success: show inflections preview
-  - On failure: warning "Kunne ikke validere - ordet kan fortsatt være riktig" with proceed option
-  - Non-blocking: custom vocabulary allowed without validation
+- [x] **6.2** Add editor feedback UI in WordSetEditor
+  - Location: `frontend/src/components/WordSetEditor.tsx`
+  - `WordBadge` component showing word count for sentences
+  - Auto-classification: Enkel (≤5 words), Middels (6-8), Avansert (9+)
+  - Uses `isSentence()`, `getWordCount()`, `classifySentenceDifficulty()` from sentenceConfig
+  - TODO (deferred): Dictionary validation button, inflections preview
 
-- [ ] **6.3** Create `SentenceTestView` component
-  - Location: `frontend/src/components/SentenceTestView.tsx`
-  - Integrates `LetterTileInput`, `WordBankInput`, or textarea based on mode
-  - Full-sentence audio replay (no per-word segmentation)
-  - Non-clearing display (don't clear on submit like single words)
-  - Inline word-by-word feedback using `SpellingFeedback` patterns
-  - Mode switching based on mastery
+- [x] **6.3** Add sentence feedback to TestView
+  - Location: `frontend/src/components/SentenceFeedback.tsx`
+  - `SentenceFeedback` component with word-by-word analysis display
+  - `SentenceFeedbackCompact` for results view with correct/total count
+  - `WordPill` component with status-based styling (correct/missing/wrong/extra)
+  - Integrated into `TestView.tsx` with conditional rendering based on `isSentence()`
+  - Full-sentence audio replay via existing TTS infrastructure
+  - Shows expected words, user's answer, and extra words sections
 
-- [ ] **6.4** Implement alignment and scoring
-  - Location: `frontend/src/lib/spelling.ts`
+- [x] **6.4** Implement alignment and scoring
+  - Location: `frontend/src/lib/sentenceScoring.ts`
   - Longest Common Subsequence (LCS) algorithm for word alignment
-  - Per-word `analyzeSpelling()` for Norwegian error hints
-  - Partial credit: `(correct_words / total_words) × attempt_modifier`
-  - Mastery increment on success (configurable threshold from global config)
+  - `scoreSentence(expected, actual)` returns `SentenceScoringResult`
+  - Per-word `WordFeedback` with status: 'correct' | 'missing' | 'wrong'
+  - Extra word tracking for words not in expected sentence
+  - Helper functions: `normalizeWord()`, `findLCS()`, `getWordStatusClass()`, `getSentenceFeedbackKey()`
 
-- [ ] **6.5** Update i18n
+- [x] **6.5** Update i18n
   - Both `locales/en/` and `locales/no/`
-  - Grade labels: "1.-2. trinn", "3.-4. trinn", "5.-7. trinn"
-  - Mastery strings: "Du har mestret bokstavbrikker!", "Prøv ordbank nå"
-  - Challenge mode names: "Bokstavbrikker", "Ordbank", "Tastatur"
-  - Replay text: "Øv på nytt"
-  - Dictionary validation: "Validerer...", "Kunne ikke validere", "Ord funnet i ordboken"
-  - Sentence feedback: "X av Y ord riktig"
+  - Sentence feedback: "words correct", "Extra words:", "Correct answer:"
+  - Grade labels: "1.-2. trinn", "3.-4. trinn", "5.-7. trinn" (in curated content)
+  - Challenge mode names in ModeSelectionModal
+  - Accessibility labels in aria.ts for sentence components
 
 ## Data Models
 

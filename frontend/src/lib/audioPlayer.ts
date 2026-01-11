@@ -1,66 +1,166 @@
 /**
  * Audio player utilities for the Diktator app
  * Provides unified audio playback with fallback from generated audio to speech synthesis
+ *
+ * BROWSER AUTOPLAY POLICY:
+ * Modern browsers require a "user gesture" (click/touch) to play audio with sound.
+ * The gesture token is "transient" - it expires after a few seconds or after being used.
+ *
+ * Our strategy:
+ * 1. Mark when user has interacted (clicked Start button)
+ * 2. Play actual audio synchronously within the click handler - don't waste gesture on silent audio!
+ * 3. Once first audio plays successfully, mark as unlocked for subsequent autoplays
+ * 4. If streaming audio fails, fall back to browser TTS (SpeechSynthesis)
  */
 
 import { WordSet, WordItem } from "@/types";
 import { TIMING } from "@/lib/timingConfig";
 
-// Global audio pre-loader for iOS Safari compatibility
-let iOSAudioContext: AudioContext | null = null;
-let iOSAudioEnabled = false;
+// Global audio state for browser compatibility
+let audioContext: AudioContext | null = null;
+let userHasInteracted = false;
+let audioUnlocked = false;
 
 /**
- * Pre-initializes audio context for iOS Safari
- * Should be called from a user interaction (click/touch)
+ * Check if user has interacted with the page (enabling autoplay)
  */
-export const initializeAudioForIOS = (): void => {
-  if (typeof window === "undefined") return;
+const hasUserInteracted = (): boolean => userHasInteracted;
 
-  try {
-    // Initialize AudioContext for Web Audio API compatibility
-    const AudioContextConstructor =
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      window.AudioContext || (window as any).webkitAudioContext;
-    if (AudioContextConstructor && !iOSAudioContext) {
-      iOSAudioContext = new AudioContextConstructor();
-      // Resume context if suspended (required on iOS)
-      if (iOSAudioContext.state === "suspended") {
-        iOSAudioContext.resume();
-      }
+/**
+ * Check if audio has been unlocked (successfully played once)
+ */
+export const isAudioUnlocked = (): boolean => audioUnlocked;
+
+/**
+ * Mark audio as unlocked after successful playback
+ */
+const markAudioUnlocked = (): void => {
+  if (!audioUnlocked) {
+    audioUnlocked = true;
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        "[Audio] Marked as unlocked - streaming should work for future plays",
+      );
     }
-
-    // Pre-load a silent audio element to enable HTML5 audio
-    // Using OGG Opus format for better browser compatibility (especially Firefox)
-    const silentAudio = new Audio();
-    silentAudio.src =
-      "data:audio/ogg;base64,T2dnUwACAAAAAAAAAAAAAAAAAAAAAABW4AEAAAAAAKp0I0UBHgF2b3JiaXMAAAAAAUSsAAAAAAAAgLsAAAAAAAC4AU9nZ1MAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAC7pF06Az3///////////////+BA3ZvcmJpcysAAABYaXBoLk9yZyBsaWJWb3JiaXMgSSAyMDEyMDIwMyAoT21uaXByZXNlbnQpAAAAAAEFdm9yYmlzEkJDVgEAQAAAJHMYKkalcxaEEBpCUBnjHELOa+wZQkwRghwyTFvLJXOQIaSgQohbKIHQkFUAAEAAAIdBeBSEikEIIYQlPViSgyc9CCGEiDl4FIRpQQghhBBCCCGEEEIIIYRFOWiSgydBCB2E4zA4DIPlOPgchEU5WBCDJ0HoIIQPQriag6w5CCGEJDVIUIMGOegchMIsKIqCxDC4FoQENSiMguQwyNSDC0KImoNJNfgchGtBCCGEJEFoEoQovIHIMBiKgsQwuBaAKDkIkYMgNUiQgwZByBiERkFYkoMGObgUhMtBqBqEKjkHJem4RycAvgcAHgcAADhBhAkCzgJAggIYCIACUGEOLMgxp7CSIDYAGAAACPwHAAAAAAAQAIBA4CYAgMCBIxUCYAGAAAAAIAAAgAIHjoQDAAR/AAYAAICjCAAAIAAAEEAAcMABATAABgoIOCBA4KYBAgAAAAAABHgA";
-    silentAudio.preload = "auto";
-
-    // Try to play and immediately pause to unlock audio
-    const playPromise = silentAudio.play();
-    if (playPromise) {
-      playPromise
-        .then(() => {
-          silentAudio.pause();
-          silentAudio.currentTime = 0;
-          iOSAudioEnabled = true;
-        })
-        .catch(() => {
-          // Ignore errors - this is expected on some browsers
-        });
-    }
-  } catch (error) {
-    console.log("iOS audio initialization failed:", error);
   }
 };
 
 /**
- * Plays audio with iOS Safari compatibility handling and Firefox Blob URL support
+ * Mark that user has interacted - call this from click handlers
+ */
+const markUserInteracted = (): void => {
+  userHasInteracted = true;
+  if (process.env.NODE_ENV === "development") {
+    console.log("[Audio] User interaction registered");
+  }
+};
+
+/**
+ * Initialize AudioContext and mark user interaction.
+ * This should be called from a user gesture (click/touch handler).
+ *
+ * IMPORTANT: We intentionally do NOT try to play silent audio here!
+ * Playing silent audio consumes/wastes the "user gesture token" that browsers
+ * use to allow audio playback. Instead, we save the gesture token for the
+ * actual first audio playback.
+ */
+export const initializeAudioForIOS = (): void => {
+  if (typeof window === "undefined") return;
+
+  userHasInteracted = true;
+
+  if (process.env.NODE_ENV === "development") {
+    console.log("[Audio] initializeAudioForIOS: marking user interaction");
+  }
+
+  // Initialize AudioContext (but don't play anything - save the gesture token!)
+  try {
+    const AudioContextConstructor =
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      window.AudioContext || (window as any).webkitAudioContext;
+    if (AudioContextConstructor && !audioContext) {
+      audioContext = new AudioContextConstructor();
+      if (process.env.NODE_ENV === "development") {
+        console.log("[Audio] AudioContext created, state:", audioContext.state);
+      }
+    }
+
+    // Resume context if suspended (this doesn't consume the gesture token)
+    if (audioContext && audioContext.state === "suspended") {
+      audioContext.resume().catch(() => {
+        // Ignore - not critical
+      });
+    }
+  } catch (error) {
+    if (process.env.NODE_ENV === "development") {
+      console.log("[Audio] AudioContext init error:", error);
+    }
+  }
+};
+
+/**
+ * Plays audio directly from URL - MUST be called synchronously from user gesture.
+ * This is the only way to get audio to play on Safari/Firefox with strict autoplay policies.
+ *
+ * Key insight: audio.play() must be called synchronously in the user gesture context,
+ * BEFORE any async operations (fetch, setTimeout, Promise.then, etc.)
+ */
+const playAudioDirect = (
+  audioUrl: string,
+  onEnd?: () => void,
+): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const audio = new Audio();
+
+    const cleanup = () => {
+      audio.removeEventListener("ended", onEndHandler);
+      audio.removeEventListener("error", onErrorHandler);
+    };
+
+    const onEndHandler = () => {
+      markAudioUnlocked();
+      cleanup();
+      onEnd?.();
+      resolve();
+    };
+
+    const onErrorHandler = (event: Event) => {
+      cleanup();
+      const errorEvent = event as ErrorEvent;
+      reject(new Error(errorEvent.message || "Audio playback error"));
+    };
+
+    audio.addEventListener("ended", onEndHandler);
+    audio.addEventListener("error", onErrorHandler);
+
+    // Set source and call play() IMMEDIATELY - no async operations in between!
+    audio.src = audioUrl;
+
+    // Call play() synchronously - this captures the user gesture token
+    const playPromise = audio.play();
+    if (playPromise) {
+      playPromise
+        .then(() => {
+          markAudioUnlocked();
+          if (process.env.NODE_ENV === "development") {
+            console.log("[Audio] Direct play succeeded!");
+          }
+        })
+        .catch((err) => {
+          cleanup();
+          reject(err);
+        });
+    }
+  });
+};
+
+/**
+ * Plays audio with iOS Safari compatibility handling and Firefox Blob URL support.
+ * NOTE: This function uses fetch/blob which is async - call playAudioDirect() instead
+ * when you need to play from a user gesture context.
  */
 const playAudioWithiOSSupport = async (
   audioUrl: string,
-  requireUserInteraction: boolean,
   onEnd?: () => void,
 ): Promise<void> => {
   // Fetch the audio as a blob for better Firefox compatibility
@@ -91,6 +191,8 @@ const playAudioWithiOSSupport = async (
       };
 
       const onEndHandler = () => {
+        // Mark audio as unlocked on successful completion
+        markAudioUnlocked();
         cleanup();
         onEnd?.();
         resolve();
@@ -104,12 +206,9 @@ const playAudioWithiOSSupport = async (
       const onLoadedDataHandler = async () => {
         // Firefox-compatible: wait for loadeddata instead of canplaythrough
         try {
-          if (requireUserInteraction && !iOSAudioEnabled) {
-            throw new Error("User interaction required for audio playback");
-          }
-
           await audio.play();
-          // If we reach here, playback started successfully
+          // Mark as unlocked on successful play start
+          markAudioUnlocked();
         } catch (playError) {
           cleanup();
           reject(playError);
@@ -118,13 +217,9 @@ const playAudioWithiOSSupport = async (
 
       const onCanPlayHandler = async () => {
         try {
-          // Check if we need user interaction and haven't enabled audio yet
-          if (requireUserInteraction && !iOSAudioEnabled) {
-            throw new Error("User interaction required for audio playback");
-          }
-
           await audio.play();
-          // If we reach here, playback started successfully
+          // Mark as unlocked on successful play start
+          markAudioUnlocked();
         } catch (playError) {
           cleanup();
           reject(playError);
@@ -160,7 +255,7 @@ interface AudioPlayerOptions {
   onError?: (error: Error) => void;
   autoDelay?: number;
   speechRate?: number;
-  requireUserInteraction?: boolean; // Add flag to handle iOS autoplay restrictions
+  isAutoPlay?: boolean; // True if this is an automatic play (not user-initiated click)
   preloadNext?: boolean; // Whether to preload the next word in the sequence
 }
 
@@ -182,7 +277,7 @@ export const playWordAudio = async (
     onError,
     autoDelay = 0,
     speechRate = 0.8,
-    requireUserInteraction = false,
+    isAutoPlay = false,
     preloadNext = false,
   } = options;
 
@@ -190,44 +285,74 @@ export const playWordAudio = async (
     try {
       onStart?.();
 
+      if (process.env.NODE_ENV === "development") {
+        console.log("[Audio] playWordAudio:", {
+          word: word.substring(0, 30) + (word.length > 30 ? "..." : ""),
+          isAutoPlay,
+          audioUnlocked,
+          userHasInteracted,
+        });
+      }
+
       const apiBaseUrl =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
       // Use streaming endpoint with language parameter - browser will cache this
-      // Including language in URL avoids database lookup on backend
       const streamingUrl = `${apiBaseUrl}/api/wordsets/${wordSet.id}/words/${encodeURIComponent(word)}/audio?lang=${encodeURIComponent(wordSet.language)}`;
 
       try {
-        await playAudioWithiOSSupport(
-          streamingUrl,
-          requireUserInteraction,
-          onEnd,
-        );
+        // CRITICAL: If this is a direct user gesture (not autoplay), use playAudioDirect
+        // which calls audio.play() synchronously to capture the user gesture token.
+        // For autoplay (after audio is unlocked), we can use the blob-based approach.
+        if (!isAutoPlay) {
+          if (process.env.NODE_ENV === "development") {
+            console.log("[Audio] Using direct play (user gesture context)");
+          }
+          await playAudioDirect(streamingUrl, onEnd);
+        } else if (audioUnlocked) {
+          // Audio already unlocked, can use async blob approach
+          if (process.env.NODE_ENV === "development") {
+            console.log("[Audio] Using blob play (audio already unlocked)");
+          }
+          await playAudioWithiOSSupport(streamingUrl, onEnd);
+        } else {
+          // Autoplay but not unlocked - this will likely fail, but try anyway
+          if (process.env.NODE_ENV === "development") {
+            console.log("[Audio] Trying direct play for autoplay (may fail)");
+          }
+          await playAudioDirect(streamingUrl, onEnd);
+        }
 
         if (process.env.NODE_ENV === "development") {
-          console.log("Successfully played streaming audio for:", word);
+          console.log(
+            "[Audio] Streaming audio succeeded for:",
+            word.substring(0, 30),
+          );
         }
 
         // Opportunistically preload next word if requested
         if (preloadNext) {
           preloadNextWord(word, wordSet);
         }
+        return; // Success - don't fall back to TTS
       } catch (streamingError) {
         if (process.env.NODE_ENV === "development") {
           console.log(
-            "Streaming audio failed, falling back to browser TTS:",
-            streamingError,
+            "[Audio] Streaming failed, using browser TTS:",
+            streamingError instanceof Error
+              ? streamingError.message
+              : String(streamingError),
           );
         }
-
-        // Fall back to browser speech synthesis
-        await fallbackToSpeechSynthesis();
+        // Fall through to browser TTS
       }
+
+      // Fall back to browser speech synthesis
+      await fallbackToSpeechSynthesis();
     } catch (error) {
-      console.log(
-        "Audio playback failed, falling back to speech synthesis:",
-        error,
-      );
+      if (process.env.NODE_ENV === "development") {
+        console.log("[Audio] playWordAudio error, using browser TTS:", error);
+      }
       await fallbackToSpeechSynthesis();
     }
   };

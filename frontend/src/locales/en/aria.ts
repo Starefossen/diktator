@@ -107,4 +107,13 @@ export const aria = {
   // Child results
   "aria.toggleWordDetails": "Show or hide word details",
   "aria.tryAgain": "Try this word set again",
+
+  // Challenge mode inputs
+  "aria.letterTileInput": "Letter tile spelling input",
+  "aria.wordBankInput": "Word bank sentence input",
+  "aria.placedLetter": "Placed letter",
+  "aria.availableLetter": "Available letter",
+  "aria.selectedWord": "Selected word",
+  "aria.availableWord": "Available word",
+  "aria.clearAnswer": "Clear current answer",
 };

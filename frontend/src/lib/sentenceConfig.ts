@@ -13,7 +13,7 @@ export const MASTERY_CONFIG = {
   WORD_BANK_REQUIRED: 2,
 } as const;
 
-export const TTS_CONFIG = {
+const TTS_CONFIG = {
   /** Maximum number of words allowed in a sentence for TTS (hard limit) */
   MAX_SENTENCE_WORDS: 15,
 
@@ -57,7 +57,7 @@ export const CHALLENGE_CONFIG = {
   },
 } as const;
 
-export const DICTIONARY_CONFIG = {
+const DICTIONARY_CONFIG = {
   /** Minimum time between dictionary API requests (rate limiting) */
   RATE_LIMIT_MS: 500,
 
@@ -68,7 +68,7 @@ export const DICTIONARY_CONFIG = {
   BASE_URL: "/api/dictionary",
 } as const;
 
-export const AGE_CONFIG = {
+const AGE_CONFIG = {
   /** Minimum age for registration */
   MIN_AGE: 5,
 
@@ -97,7 +97,7 @@ export type GradeLevel = "1-2" | "3-4" | "5-7";
 /**
  * Maps grade level to age range for display
  */
-export const GRADE_AGE_MAP: Record<GradeLevel, string> = {
+const GRADE_AGE_MAP: Record<GradeLevel, string> = {
   "1-2": "5-7 år",
   "3-4": "8-9 år",
   "5-7": "10-12 år",
@@ -106,7 +106,7 @@ export const GRADE_AGE_MAP: Record<GradeLevel, string> = {
 /**
  * Maps grade level to difficulty
  */
-export const GRADE_DIFFICULTY_MAP: Record<GradeLevel, DifficultyLevel> = {
+const GRADE_DIFFICULTY_MAP: Record<GradeLevel, DifficultyLevel> = {
   "1-2": "beginner",
   "3-4": "intermediate",
   "5-7": "advanced",
@@ -115,7 +115,7 @@ export const GRADE_DIFFICULTY_MAP: Record<GradeLevel, DifficultyLevel> = {
 /**
  * Spelling focus categories for curated word sets
  */
-export const SPELLING_FOCUS_CATEGORIES = {
+const SPELLING_FOCUS_CATEGORIES = {
   doubleConsonant: "Dobbelt konsonant",
   silentLetter: "Stumme bokstaver",
   compoundWord: "Sammensatte ord",
@@ -132,7 +132,7 @@ export type SpellingFocusCategory = keyof typeof SPELLING_FOCUS_CATEGORIES;
 /**
  * Determines the recommended input method based on user's birth year
  */
-export function getRecommendedInputMethod(birthYear?: number): InputMethod {
+function getRecommendedInputMethod(birthYear?: number): InputMethod {
   if (!birthYear) return "auto";
 
   const currentYear = new Date().getFullYear();
@@ -177,7 +177,7 @@ export function classifySentenceDifficulty(
 /**
  * Checks if a sentence exceeds TTS limits
  */
-export function checkSentenceLength(text: string): {
+function checkSentenceLength(text: string): {
   wordCount: number;
   isOverLimit: boolean;
   isWarning: boolean;

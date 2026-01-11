@@ -55,6 +55,12 @@ function WordSetsPageContent() {
     | "dictation"
     | "translation"
     | null;
+  const inputMethodParam = searchParams.get("inputMethod") as
+    | "letterTiles"
+    | "wordBank"
+    | "keyboard"
+    | "auto"
+    | null;
 
   // Data management
   const {
@@ -351,6 +357,7 @@ function WordSetsPageContent() {
           testMode={testMode.testMode}
           wordDirections={testMode.wordDirections}
           lastUserAnswer={testMode.lastUserAnswer}
+          inputMethod={inputMethodParam ?? "keyboard"}
           onUserAnswerChange={testMode.setUserAnswer}
           onSubmitAnswer={testMode.handleSubmitAnswer}
           onPlayCurrentWord={testMode.playCurrentWord}
@@ -468,10 +475,20 @@ function WordSetsPageContent() {
           <ModeSelectionModal
             wordSet={selectedWordSetForTest}
             isOpen={modeSelectionOpen}
-            onSelectMode={(mode: "standard" | "dictation" | "translation") => {
-              router.push(
-                `/wordsets?view=test&id=${selectedWordSetForTest.id}&mode=${mode}`,
-              );
+            onSelectMode={(
+              mode: "standard" | "dictation" | "translation",
+              inputMethod,
+              replayMode,
+            ) => {
+              // Build URL with optional input method params
+              let url = `/wordsets?view=test&id=${selectedWordSetForTest.id}&mode=${mode}`;
+              if (inputMethod && inputMethod !== "auto") {
+                url += `&inputMethod=${inputMethod}`;
+              }
+              if (replayMode) {
+                url += `&replay=true`;
+              }
+              router.push(url);
               setModeSelectionOpen(false);
               setSelectedWordSetForTest(null);
             }}

@@ -100,6 +100,17 @@ func (stubRepo) UpdateChildDisplayName(childID, displayName string) error { retu
 func (stubRepo) GetGlobalWordSets() ([]models.WordSet, error)             { return nil, nil }
 func (stubRepo) IsGlobalWordSet(wordSetID string) (bool, error)           { return false, nil }
 
+// Word mastery operations
+func (stubRepo) GetWordMastery(userID, wordSetID, word string) (*models.WordMastery, error) {
+	return nil, nil
+}
+func (stubRepo) GetWordSetMastery(userID, wordSetID string) ([]models.WordMastery, error) {
+	return nil, nil
+}
+func (stubRepo) IncrementMastery(userID, wordSetID, word string, mode models.InputMethod) (*models.WordMastery, error) {
+	return nil, nil
+}
+
 func TestOIDCAuthMiddlewareRequiresRegistration(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()

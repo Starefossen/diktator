@@ -8,14 +8,12 @@ import type {
 } from "@/lib/sentenceConfig";
 
 // Re-export sentence config types for convenience
-export type { InputMethod, DifficultyLevel, GradeLevel, SpellingFocusCategory };
-
 // ======================
 // Dictionary Types (ord.uib.no proxy)
 // ======================
 
 // Simplified dictionary word entry from ord.uib.no
-export interface DictionaryWord {
+interface DictionaryWord {
   lemma: string; // Base form of the word
   wordClass: string; // NOUN, VERB, ADJ, ADV, etc.
   inflections: string[]; // All inflected forms (e.g., katt, katten, katter, kattene)
@@ -24,7 +22,7 @@ export interface DictionaryWord {
 }
 
 // Autocomplete suggestion from the dictionary
-export interface DictionarySuggestion {
+interface DictionarySuggestion {
   word: string;
   articleId: number;
 }
@@ -119,6 +117,7 @@ export interface WordSet {
   name: string;
   words: WordItem[]; // Array of word objects instead of strings
   sentences?: SentenceItem[]; // Optional array of sentences for sentence dictation
+  description?: string; // Optional description for curated word sets
   familyId?: string; // Optional for global word sets (null when isGlobal is true)
   createdBy: string;
   language: "en" | "no";

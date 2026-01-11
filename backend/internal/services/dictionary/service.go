@@ -17,18 +17,18 @@ import (
 
 // Service provides access to the Norwegian dictionary API (ord.uib.no)
 type Service struct {
-	client        *http.Client
-	cache         *cache.LRUCache
-	baseURL       string
-	rateLimiter   *rateLimiter
-	cacheEnabled  bool
+	client       *http.Client
+	cache        *cache.LRUCache
+	baseURL      string
+	rateLimiter  *rateLimiter
+	cacheEnabled bool
 }
 
 // rateLimiter implements a simple token bucket rate limiter
 type rateLimiter struct {
-	mu            sync.Mutex
-	lastRequest   time.Time
-	minInterval   time.Duration // Minimum time between requests
+	mu          sync.Mutex
+	lastRequest time.Time
+	minInterval time.Duration // Minimum time between requests
 }
 
 func newRateLimiter(requestsPerSecond float64) *rateLimiter {
@@ -51,18 +51,18 @@ func (r *rateLimiter) wait() {
 
 // Config holds configuration for the dictionary service
 type Config struct {
-	BaseURL           string        // Base URL for ord.uib.no API
-	RequestsPerSecond float64       // Rate limit for upstream requests
-	CacheSizeBytes    int64         // LRU cache size in bytes
-	CacheEnabled      bool          // Whether to enable caching
-	TimeoutSeconds    int           // HTTP client timeout
+	BaseURL           string  // Base URL for ord.uib.no API
+	RequestsPerSecond float64 // Rate limit for upstream requests
+	CacheSizeBytes    int64   // LRU cache size in bytes
+	CacheEnabled      bool    // Whether to enable caching
+	TimeoutSeconds    int     // HTTP client timeout
 }
 
 // DefaultConfig returns default configuration for the dictionary service
 func DefaultConfig() *Config {
 	return &Config{
 		BaseURL:           "https://ord.uib.no",
-		RequestsPerSecond: 2.0,           // Conservative rate limit
+		RequestsPerSecond: 2.0,             // Conservative rate limit
 		CacheSizeBytes:    5 * 1024 * 1024, // 5MB cache
 		CacheEnabled:      true,
 		TimeoutSeconds:    10,

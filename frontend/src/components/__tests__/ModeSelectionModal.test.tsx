@@ -5,6 +5,12 @@ import { ModeSelectionModal } from "../ModeSelectionModal";
 import { WordSet } from "@/types";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 
+// Mock useAuth to avoid requiring AuthProvider
+const mockUseAuth = vi.fn();
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => mockUseAuth(),
+}));
+
 // Mock the BaseModal components
 vi.mock("../modals/BaseModal", () => ({
   BaseModal: ({
@@ -93,6 +99,9 @@ describe("ModeSelectionModal", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseAuth.mockReturnValue({
+      userData: { role: "child", birthYear: 2015 },
+    });
   });
 
   const renderModal = (wordSet: WordSet | null, isOpen = true) => {
@@ -145,11 +154,25 @@ describe("ModeSelectionModal", () => {
     expect(mockOnSelectMode).toHaveBeenCalledWith("standard");
   });
 
-  it("calls onSelectMode with dictation when dictation button clicked", () => {
+  it("calls onSelectMode with dictation when dictation button clicked", async () => {
     renderModal(mockWordSetWithTranslations);
+    // Click dictation to expand the options panel
     const dictationButton = screen.getByText(/dictation/i);
     fireEvent.click(dictationButton);
-    expect(mockOnSelectMode).toHaveBeenCalledWith("dictation");
+
+    // Wait for expansion and find the start button (text is "Start" from translations)
+    // The button is inside the expanded dictation section
+    const buttons = screen.getAllByRole("button");
+    const startButton = buttons.find(
+      (btn) =>
+        btn.textContent?.toLowerCase().includes("start") &&
+        !btn.textContent?.toLowerCase().includes("standard"),
+    );
+
+    expect(startButton).toBeDefined();
+    if (startButton) fireEvent.click(startButton);
+
+    expect(mockOnSelectMode).toHaveBeenCalledWith("dictation", "auto", false);
   });
 
   it("calls onSelectMode with translation when translation button clicked", () => {

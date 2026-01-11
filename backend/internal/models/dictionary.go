@@ -18,13 +18,13 @@ type DictionarySuggestion struct {
 
 // ValidateDictionaryRequest represents the request to validate a word
 type ValidateDictionaryRequest struct {
-	Word       string `form:"w" binding:"required"`         // Word to validate
-	Dictionary string `form:"dict" binding:"omitempty"`     // Dictionary code: "bm" (bokmål), "nn" (nynorsk)
+	Word       string `form:"w" binding:"required"`     // Word to validate
+	Dictionary string `form:"dict" binding:"omitempty"` // Dictionary code: "bm" (bokmål), "nn" (nynorsk)
 }
 
 // SuggestDictionaryRequest represents the request to get word suggestions
 type SuggestDictionaryRequest struct {
-	Query      string `form:"q" binding:"required"`         // Query prefix for suggestions
-	Dictionary string `form:"dict" binding:"omitempty"`     // Dictionary code: "bm" (bokmål), "nn" (nynorsk)
+	Query      string `form:"q" binding:"required"`               // Query prefix for suggestions
+	Dictionary string `form:"dict" binding:"omitempty"`           // Dictionary code: "bm" (bokmål), "nn" (nynorsk)
 	Limit      int    `form:"n" binding:"omitempty,min=1,max=20"` // Number of suggestions (default 5, max 20)
 }

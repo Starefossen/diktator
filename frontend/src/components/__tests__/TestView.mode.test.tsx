@@ -323,4 +323,233 @@ describe("TestView - Mode-Specific Behavior", () => {
       expect(screen.getByText(/incorrect/i)).toBeInTheDocument();
     });
   });
+
+  describe("Input Method - Letter Tiles", () => {
+    it("renders LetterTileInput when inputMethod is letterTiles", () => {
+      const props = { ...baseProps, inputMethod: "letterTiles" as const };
+      renderTestView(baseWordSet, "standard", props);
+      // Should show available letters area
+      expect(
+        screen.getByRole("group", { name: /available/i }),
+      ).toBeInTheDocument();
+      // Should show answer slots area
+      expect(
+        screen.getByRole("group", { name: /answer/i }),
+      ).toBeInTheDocument();
+    });
+
+    it("does not show keyboard input when using letter tiles", () => {
+      const props = { ...baseProps, inputMethod: "letterTiles" as const };
+      renderTestView(baseWordSet, "standard", props);
+      expect(
+        screen.queryByPlaceholderText(/type.*word here/i),
+      ).not.toBeInTheDocument();
+    });
+
+    it("does not show next/finish button in letter tiles mode", () => {
+      const props = { ...baseProps, inputMethod: "letterTiles" as const };
+      renderTestView(baseWordSet, "standard", props);
+      expect(
+        screen.queryByText(/next.*word|finish.*test/i),
+      ).not.toBeInTheDocument();
+    });
+
+    it("hides attempts remaining message in letter tiles mode", () => {
+      const props = { ...baseProps, inputMethod: "letterTiles" as const };
+      renderTestView(baseWordSet, "standard", props);
+      expect(
+        screen.queryByText(/attempts.*remaining/i),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Input Method - Word Bank", () => {
+    const sentenceWordSet: WordSet = {
+      ...baseWordSet,
+      words: [{ word: "katten sover" }, { word: "hunden løper" }],
+    };
+
+    it("renders WordBankInput when inputMethod is wordBank", () => {
+      const props = {
+        ...baseProps,
+        inputMethod: "wordBank" as const,
+        processedWords: ["katten sover", "hunden løper"],
+      };
+      renderTestView(sentenceWordSet, "standard", props);
+      // Should show word bank area
+      expect(
+        screen.getByRole("group", { name: /available/i }),
+      ).toBeInTheDocument();
+    });
+
+    it("does not show keyboard input when using word bank", () => {
+      const props = {
+        ...baseProps,
+        inputMethod: "wordBank" as const,
+        processedWords: ["katten sover", "hunden løper"],
+      };
+      renderTestView(sentenceWordSet, "standard", props);
+      expect(
+        screen.queryByPlaceholderText(/type.*word here/i),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Input Method - Auto Selection", () => {
+    it("renders keyboard input by default for sentences when auto mode", () => {
+      const sentenceWordSet: WordSet = {
+        ...baseWordSet,
+        words: [{ word: "katten sover på sofaen" }],
+      };
+      const props = {
+        ...baseProps,
+        inputMethod: "auto" as const,
+        processedWords: ["katten sover på sofaen"],
+      };
+      renderTestView(sentenceWordSet, "standard", props);
+      // Should render keyboard input for sentences in auto mode
+      expect(
+        screen.getByPlaceholderText(/type.*word here/i),
+      ).toBeInTheDocument();
+    });
+
+    it("renders letter tiles for single words when auto mode", () => {
+      const props = {
+        ...baseProps,
+        inputMethod: "auto" as const,
+      };
+      renderTestView(baseWordSet, "standard", props);
+      // Should render letter tiles for single words in auto mode
+      expect(
+        screen.getByRole("group", { name: /available/i }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe("Sentence Feedback Integration", () => {
+    const sentenceWordSet: WordSet = {
+      ...baseWordSet,
+      words: [
+        { word: "Katten sover på sofaen" },
+        { word: "Hunden løper fort" },
+      ],
+    };
+
+    it("shows sentence feedback for sentence content when incorrect", () => {
+      const props = {
+        ...baseProps,
+        processedWords: ["Katten sover på sofaen", "Hunden løper fort"],
+        showFeedback: true,
+        lastAnswerCorrect: false,
+        currentTries: 1,
+        lastUserAnswer: "Katten sover",
+      };
+      renderTestView(sentenceWordSet, "standard", props);
+      // Should show word-level feedback for sentences
+      expect(screen.getByRole("alert")).toBeInTheDocument();
+    });
+
+    it("shows correct feedback for fully correct sentence", () => {
+      const props = {
+        ...baseProps,
+        processedWords: ["Katten sover på sofaen", "Hunden løper fort"],
+        showFeedback: true,
+        lastAnswerCorrect: true,
+        currentTries: 1,
+      };
+      renderTestView(sentenceWordSet, "standard", props);
+      expect(screen.getByText(/correct/i)).toBeInTheDocument();
+    });
+
+    it("shows word pills in sentence feedback", () => {
+      const props = {
+        ...baseProps,
+        processedWords: ["Katten sover på sofaen", "Hunden løper fort"],
+        showFeedback: true,
+        lastAnswerCorrect: false,
+        currentTries: 1,
+        lastUserAnswer: "katten sover",
+      };
+      renderTestView(sentenceWordSet, "standard", props);
+      // Should show word-level feedback with words visible
+      expect(screen.getByText("katten")).toBeInTheDocument();
+      expect(screen.getByText("sover")).toBeInTheDocument();
+    });
+
+    it("shows missing words in sentence feedback", () => {
+      const props = {
+        ...baseProps,
+        processedWords: ["Katten sover på sofaen", "Hunden løper fort"],
+        showFeedback: true,
+        lastAnswerCorrect: false,
+        currentTries: 1,
+        lastUserAnswer: "katten sover", // Missing "på sofaen"
+      };
+      renderTestView(sentenceWordSet, "standard", props);
+      // Missing words should be shown
+      expect(screen.getByText("på")).toBeInTheDocument();
+      expect(screen.getByText("sofaen")).toBeInTheDocument();
+    });
+
+    it("shows correct answer after max attempts for sentences", () => {
+      const props = {
+        ...baseProps,
+        processedWords: ["Katten sover på sofaen", "Hunden løper fort"],
+        showFeedback: true,
+        lastAnswerCorrect: false,
+        currentTries: 3, // Max attempts reached
+        lastUserAnswer: "katten sover",
+      };
+
+      // Create word set with showCorrectAnswer enabled
+      const wordSetWithConfig: WordSet = {
+        ...sentenceWordSet,
+        testConfiguration: {
+          ...sentenceWordSet.testConfiguration,
+          showCorrectAnswer: true,
+        },
+      };
+
+      renderTestView(wordSetWithConfig, "standard", props);
+      // Should show the correct sentence
+      expect(screen.getByText("Katten sover på sofaen")).toBeInTheDocument();
+    });
+  });
+
+  describe("Keyboard Input Mode", () => {
+    it("renders text input when inputMethod is keyboard", () => {
+      const props = { ...baseProps, inputMethod: "keyboard" as const };
+      renderTestView(baseWordSet, "standard", props);
+      expect(
+        screen.getByPlaceholderText(/type.*word here/i),
+      ).toBeInTheDocument();
+    });
+
+    it("shows next/finish button in keyboard mode", () => {
+      const props = {
+        ...baseProps,
+        inputMethod: "keyboard" as const,
+        userAnswer: "test",
+      };
+      renderTestView(baseWordSet, "standard", props);
+      expect(screen.getByText(/next.*word|finish.*test/i)).toBeInTheDocument();
+    });
+
+    it("shows attempts remaining in keyboard mode", () => {
+      const props = { ...baseProps, inputMethod: "keyboard" as const };
+      renderTestView(baseWordSet, "standard", props);
+      expect(screen.getByText(/attempts.*remaining/i)).toBeInTheDocument();
+    });
+
+    it("calls onUserAnswerChange when typing in keyboard mode", () => {
+      const props = {
+        ...baseProps,
+        inputMethod: "keyboard" as const,
+      };
+      renderTestView(baseWordSet, "standard", props);
+      const input = screen.getByPlaceholderText(/type.*word here/i);
+      fireEvent.change(input, { target: { value: "hello" } });
+      expect(mockOnUserAnswerChange).toHaveBeenCalledWith("hello");
+    });
+  });
 });

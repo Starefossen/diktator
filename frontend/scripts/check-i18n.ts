@@ -127,6 +127,17 @@ const DYNAMIC_USAGE_PREFIXES = [
   "test.",
   // Common
   "common.words",
+  // Challenge/mastery mode labels (some used as fallbacks)
+  "challenge.letterTiles",
+  "challenge.wordBank",
+  "challenge.keyboard",
+  "challenge.masteryProgress",
+  "challenge.practiceAgain",
+  "challenge.modeUnlocked",
+  "challenge.tryWordBank",
+  "challenge.tryKeyboard",
+  // Sentence difficulty (used dynamically via template literal)
+  "sentence.difficulty.",
 ];
 
 const ALLOWLISTED_UNUSED_PREFIXES = [

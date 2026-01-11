@@ -198,6 +198,14 @@ func main() {
 				users.GET("/results", handlers.GetResults)
 			}
 
+			// Word mastery tracking
+			mastery := protected.Group("/mastery")
+			{
+				mastery.GET("/:wordSetId", handlers.GetWordSetMastery)
+				mastery.GET("/:wordSetId/word/:word", handlers.GetWordMastery)
+				mastery.POST("/:wordSetId/increment", handlers.IncrementMastery)
+			}
+
 			// Family management - RESTRICTED: Parent access only for most endpoints
 			families := protected.Group("/families")
 			families.Use(middleware.RequireParentRole())

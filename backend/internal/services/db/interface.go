@@ -78,6 +78,11 @@ type Repository interface {
 	VerifyParentPermission(userID, familyID string) error
 	VerifyChildOwnership(parentID, childID string) error
 	VerifyWordSetAccess(familyID, wordSetID string) error
+
+	// Word mastery operations
+	GetWordMastery(userID, wordSetID, word string) (*models.WordMastery, error)
+	GetWordSetMastery(userID, wordSetID string) ([]models.WordMastery, error)
+	IncrementMastery(userID, wordSetID, word string, mode models.InputMethod) (*models.WordMastery, error)
 }
 
 // Config holds database configuration

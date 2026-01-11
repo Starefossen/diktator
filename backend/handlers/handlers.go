@@ -2145,6 +2145,214 @@ func ListVoices(c *gin.Context) {
 	})
 }
 
+// ============================================================================
+// Word Mastery Handlers
+// ============================================================================
+
+// GetWordSetMastery godoc
+// @Summary		Get mastery for word set
+// @Description	Get mastery progress for all words in a word set for the authenticated user
+// @Tags			mastery
+// @Accept			json
+// @Produce		json
+// @Param			wordSetId	path		string	true	"Word Set ID"
+// @Success		200			{object}	models.APIResponse{data=[]models.WordMastery}	"Mastery records"
+// @Failure		401			{object}	models.APIResponse								"User authentication required"
+// @Failure		500			{object}	models.APIResponse								"Failed to retrieve mastery"
+// @Security		BearerAuth
+// @Router			/api/mastery/{wordSetId} [get]
+func GetWordSetMastery(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "User authentication required",
+		})
+		return
+	}
+
+	wordSetID := c.Param("wordSetId")
+	if wordSetID == "" {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Word set ID is required",
+		})
+		return
+	}
+
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
+	mastery, err := serviceManager.DB.GetWordSetMastery(userID.(string), wordSetID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to retrieve mastery data",
+		})
+		return
+	}
+
+	// Return empty array instead of null if no records
+	if mastery == nil {
+		mastery = []models.WordMastery{}
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Data: mastery,
+	})
+}
+
+// GetWordMastery godoc
+// @Summary		Get mastery for specific word
+// @Description	Get mastery progress for a specific word in a word set
+// @Tags			mastery
+// @Accept			json
+// @Produce		json
+// @Param			wordSetId	path		string	true	"Word Set ID"
+// @Param			word		path		string	true	"Word text"
+// @Success		200			{object}	models.APIResponse{data=models.WordMastery}	"Mastery record"
+// @Failure		401			{object}	models.APIResponse							"User authentication required"
+// @Failure		500			{object}	models.APIResponse							"Failed to retrieve mastery"
+// @Security		BearerAuth
+// @Router			/api/mastery/{wordSetId}/word/{word} [get]
+func GetWordMastery(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "User authentication required",
+		})
+		return
+	}
+
+	wordSetID := c.Param("wordSetId")
+	word := c.Param("word")
+
+	if wordSetID == "" || word == "" {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Word set ID and word are required",
+		})
+		return
+	}
+
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
+	mastery, err := serviceManager.DB.GetWordMastery(userID.(string), wordSetID, word)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to retrieve mastery data",
+		})
+		return
+	}
+
+	// Return default mastery if no record exists
+	if mastery == nil {
+		mastery = &models.WordMastery{
+			UserID:             userID.(string),
+			WordSetID:          wordSetID,
+			Word:               word,
+			LetterTilesCorrect: 0,
+			WordBankCorrect:    0,
+			KeyboardCorrect:    0,
+		}
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Data: mastery,
+	})
+}
+
+// IncrementMasteryRequest represents the request body for incrementing mastery
+type IncrementMasteryRequest struct {
+	Word      string `json:"word" binding:"required"`
+	InputMode string `json:"inputMode" binding:"required"` // "letterTiles", "wordBank", or "keyboard"
+}
+
+// IncrementMastery godoc
+// @Summary		Increment mastery for a word
+// @Description	Increment the mastery counter for a specific word and input mode
+// @Tags			mastery
+// @Accept			json
+// @Produce		json
+// @Param			wordSetId	path		string						true	"Word Set ID"
+// @Param			body		body		IncrementMasteryRequest		true	"Increment request"
+// @Success		200			{object}	models.APIResponse{data=models.WordMastery}	"Updated mastery record"
+// @Failure		400			{object}	models.APIResponse							"Invalid request"
+// @Failure		401			{object}	models.APIResponse							"User authentication required"
+// @Failure		500			{object}	models.APIResponse							"Failed to increment mastery"
+// @Security		BearerAuth
+// @Router			/api/mastery/{wordSetId}/increment [post]
+func IncrementMastery(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "User authentication required",
+		})
+		return
+	}
+
+	wordSetID := c.Param("wordSetId")
+	if wordSetID == "" {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Word set ID is required",
+		})
+		return
+	}
+
+	var req IncrementMasteryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Invalid request data: word and inputMode are required",
+		})
+		return
+	}
+
+	// Convert input mode string to InputMethod type
+	var inputMode models.InputMethod
+	switch req.InputMode {
+	case "letterTiles":
+		inputMode = models.InputMethodLetterTiles
+	case "wordBank":
+		inputMode = models.InputMethodWordBank
+	case "keyboard":
+		inputMode = models.InputMethodKeyboard
+	default:
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Invalid inputMode: must be 'letterTiles', 'wordBank', or 'keyboard'",
+		})
+		return
+	}
+
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
+	mastery, err := serviceManager.DB.IncrementMastery(userID.(string), wordSetID, req.Word, inputMode)
+	if err != nil {
+		log.Printf("[IncrementMastery] Error: %v", err)
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to increment mastery",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Data:    mastery,
+		Message: "Mastery incremented successfully",
+	})
+}
+
 // @Summary		Stream Audio File by ID
 // @Description	Stream audio file for a specific audio ID within a wordset
 // @Tags			wordsets

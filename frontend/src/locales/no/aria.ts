@@ -107,4 +107,13 @@ export const aria = {
   // Child results
   "aria.toggleWordDetails": "Vis eller skjul orddetaljer",
   "aria.tryAgain": "Prøv dette ordsettet igjen",
+
+  // Challenge mode inputs
+  "aria.letterTileInput": "Bokstavbrikker staveinput",
+  "aria.wordBankInput": "Ordbank setningsinput",
+  "aria.placedLetter": "Plassert bokstav",
+  "aria.availableLetter": "Tilgjengelig bokstav",
+  "aria.selectedWord": "Valgt ord",
+  "aria.availableWord": "Tilgjengelig ord",
+  "aria.clearAnswer": "Tøm nåværende svar",
 };

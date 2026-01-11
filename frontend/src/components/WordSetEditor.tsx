@@ -29,6 +29,11 @@ import {
 } from "@/components/modals/BaseModal";
 import { ChildAssignmentSelector } from "@/components/ChildAssignmentSelector";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  isSentence,
+  getWordCount,
+  classifySentenceDifficulty,
+} from "@/lib/sentenceConfig";
 
 interface WordSetEditorProps {
   mode: "create" | "edit";
@@ -48,6 +53,45 @@ interface EditableWord {
   translations: Translation[];
   isEditing: boolean;
   showTranslations?: boolean;
+}
+
+/**
+ * Badge showing word count and difficulty for sentences
+ */
+function WordBadge({ text }: { text: string }) {
+  const { t } = useLanguage();
+  const isSentenceText = isSentence(text);
+
+  if (!isSentenceText) {
+    return null;
+  }
+
+  const wordCount = getWordCount(text);
+  const difficulty = classifySentenceDifficulty(wordCount);
+
+  // Should not happen since we already checked isSentence, but satisfy TypeScript
+  if (!difficulty) {
+    return null;
+  }
+
+  const difficultyColors = {
+    beginner: "bg-green-100 text-green-700",
+    intermediate: "bg-amber-100 text-amber-700",
+    advanced: "bg-red-100 text-red-700",
+  };
+
+  return (
+    <div className="flex items-center gap-1.5 ml-2">
+      <span className="inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-600">
+        {wordCount} {t("wordsets.words.count")}
+      </span>
+      <span
+        className={`inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded ${difficultyColors[difficulty]}`}
+      >
+        {t(`sentence.difficulty.${difficulty}`)}
+      </span>
+    </div>
+  );
 }
 
 export default function WordSetEditor({
@@ -685,8 +729,11 @@ export default function WordSetEditor({
                         // Display mode
                         <>
                           <div className="grid flex-1 grid-cols-1 gap-2 md:grid-cols-2">
-                            <div className="font-medium text-gray-900">
-                              {word.word}
+                            <div className="flex items-center">
+                              <span className="font-medium text-gray-900">
+                                {word.word}
+                              </span>
+                              <WordBadge text={word.word} />
                             </div>
                             <div className="text-sm text-gray-600">
                               {word.definition || (

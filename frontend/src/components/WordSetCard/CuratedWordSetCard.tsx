@@ -61,6 +61,10 @@ export function CuratedWordSetCard({
     ? getPerformanceLevel(latestResult.score)
     : null;
 
+  // Check if this is a sentence dictation set
+  const isSentenceSet =
+    wordSet.sentences && wordSet.sentences.length > 0 && wordSet.description;
+
   return (
     <div className="card-child relative flex flex-col h-full p-5 transition-all duration-300 hover:shadow-2xl hover:border-nordic-sunrise hover:bg-nordic-sunrise/5">
       <div className="absolute -top-2 -right-2 flex items-center gap-1 px-3 py-1.5 text-sm font-bold text-nordic-midnight bg-nordic-sunrise rounded-full shadow-md">
@@ -79,10 +83,9 @@ export function CuratedWordSetCard({
           </h3>
           <div className="flex items-center gap-3 mt-1">
             <span className="text-base text-gray-600">
-              {wordSet.words.length}{" "}
-              {wordSet.words.length === 1
-                ? t("results.word")
-                : t("wordsets.words.count")}
+              {isSentenceSet
+                ? `${wordSet.sentences!.length} ${wordSet.sentences!.length === 1 ? t("wordsets.sentence") : t("wordsets.sentences")}`
+                : `${wordSet.words.length} ${wordSet.words.length === 1 ? t("results.word") : t("wordsets.words.count")}`}
             </span>
             {performance ? (
               <div
@@ -102,34 +105,40 @@ export function CuratedWordSetCard({
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4 min-h-12 content-start items-center">
-        {wordSet.words.slice(0, 5).map((wordItem, index) => {
-          const hasAudio = hasAudioAvailable(wordItem);
-          const isPlaying = playingAudio === wordItem.word;
+        {isSentenceSet ? (
+          <p className="text-base text-gray-600">{wordSet.description}</p>
+        ) : (
+          <>
+            {wordSet.words.slice(0, 5).map((wordItem, index) => {
+              const hasAudio = hasAudioAvailable(wordItem);
+              const isPlaying = playingAudio === wordItem.word;
 
-          return hasAudio ? (
-            <button
-              key={`${wordItem.word}-${index}`}
-              onClick={() => onWordClick(wordItem.word, wordSet)}
-              className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-full transition-all duration-200 text-nordic-midnight bg-nordic-sunrise/15 hover:bg-nordic-sunrise/25 active:scale-95 ${isPlaying ? "ring-2 ring-nordic-sunrise bg-nordic-sunrise/30" : ""}`}
-              aria-label={`${t("aria.playAudio")} ${wordItem.word}`}
-              type="button"
-            >
-              <HeroVolumeIcon className="shrink-0 w-4 h-4 mr-1.5" />
-              <span>{wordItem.word}</span>
-            </button>
-          ) : (
-            <span
-              key={`${wordItem.word}-${index}`}
-              className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-full"
-            >
-              <span>{wordItem.word}</span>
-            </span>
-          );
-        })}
-        {wordSet.words.length > 5 && (
-          <span className="px-3 py-2 text-sm font-medium text-gray-500 bg-gray-100 rounded-full">
-            +{wordSet.words.length - 5}
-          </span>
+              return hasAudio ? (
+                <button
+                  key={`${wordItem.word}-${index}`}
+                  onClick={() => onWordClick(wordItem.word, wordSet)}
+                  className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-full transition-all duration-200 text-nordic-midnight bg-nordic-sunrise/15 hover:bg-nordic-sunrise/25 active:scale-95 ${isPlaying ? "ring-2 ring-nordic-sunrise bg-nordic-sunrise/30" : ""}`}
+                  aria-label={`${t("aria.playAudio")} ${wordItem.word}`}
+                  type="button"
+                >
+                  <HeroVolumeIcon className="shrink-0 w-4 h-4 mr-1.5" />
+                  <span>{wordItem.word}</span>
+                </button>
+              ) : (
+                <span
+                  key={`${wordItem.word}-${index}`}
+                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-full"
+                >
+                  <span>{wordItem.word}</span>
+                </span>
+              );
+            })}
+            {wordSet.words.length > 5 && (
+              <span className="px-3 py-2 text-sm font-medium text-gray-500 bg-gray-100 rounded-full">
+                +{wordSet.words.length - 5}
+              </span>
+            )}
+          </>
         )}
       </div>
 

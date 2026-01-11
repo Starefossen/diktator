@@ -34,6 +34,7 @@ import {
   PencilIcon,
   LightBulbIcon,
   ShieldCheckIcon,
+  LockClosedIcon,
 } from "@heroicons/react/24/outline";
 
 import { CheckIcon } from "@heroicons/react/24/solid";
@@ -339,6 +340,22 @@ export function HeroShieldCheckIcon({
   className?: string;
 }) {
   return <ShieldCheckIcon className={className} />;
+}
+
+export function HeroLockClosedIcon({
+  className = "w-5 h-5 text-gray-400",
+}: {
+  className?: string;
+}) {
+  return <LockClosedIcon className={className} />;
+}
+
+export function HeroCheckCircleIcon({
+  className = "w-5 h-5 text-green-500",
+}: {
+  className?: string;
+}) {
+  return <CheckCircleIcon className={className} />;
 }
 
 // Score-based icon component
