@@ -67,6 +67,12 @@ export function WordBankInput({
   function handleSubmit() {
     if (disabled) return;
     if (selectedItemIds.length === 0) return;
+    console.log("[WordBankInput] handleSubmit:", {
+      currentAnswer,
+      selectedItemIds,
+      selectedItems: selectedItems.map((i) => i.word),
+      expectedWordCount,
+    });
     onSubmit(true, currentAnswer);
   }
 

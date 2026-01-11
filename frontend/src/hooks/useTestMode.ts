@@ -18,6 +18,7 @@ import {
   DEFAULT_SPELLING_CONFIG,
   ErrorType,
 } from "@/lib/spellingAnalysis";
+import { normalizeText } from "@/lib/sentenceScoring";
 import { TIMING } from "@/lib/timingConfig";
 import { calculateScores } from "@/lib/scoreCalculator";
 
@@ -38,7 +39,7 @@ export interface UseTestModeReturn {
   currentWordAudioPlays: number;
   testMode: "standard" | "dictation" | "translation";
   wordDirections: ("toTarget" | "toSource")[]; // For translation mode only
-  lastUserAnswer: string | undefined; // Most recent answer submitted for spelling feedback
+  lastUserAnswer: string; // Most recent answer submitted for spelling feedback (empty string if none)
 
   // Actions
   startTest: (
@@ -48,7 +49,7 @@ export interface UseTestModeReturn {
   exitTest: () => void;
   restartTest: () => void;
   setUserAnswer: (answer: string) => void;
-  handleSubmitAnswer: () => void;
+  handleSubmitAnswer: (directAnswer?: string) => void;
   playCurrentWord: () => void;
   playTestWordAudio: (word: string, autoDelay?: number) => void;
 }
@@ -312,133 +313,154 @@ export function useTestMode(): UseTestModeReturn {
     [activeTest, startTime, testMode],
   );
 
-  const handleSubmitAnswer = useCallback(() => {
-    if (!activeTest || !wordStartTime || !processedWords.length) return;
+  const handleSubmitAnswer = useCallback(
+    (directAnswer?: string) => {
+      if (!activeTest || !wordStartTime || !processedWords.length) return;
 
-    const currentWord = processedWords[currentWordIndex];
+      // Use directAnswer if provided (for word bank/letter tiles), otherwise use state
+      const answerToSubmit =
+        directAnswer !== undefined ? directAnswer : userAnswer;
 
-    // Determine expected answer based on mode and direction
-    let expectedAnswer = currentWord;
-    if (
-      testMode === "translation" &&
-      wordDirections.length > currentWordIndex
-    ) {
-      const direction = wordDirections[currentWordIndex];
-      const targetLanguage = activeTest.testConfiguration?.targetLanguage;
-      const wordObj = activeTest.words.find((w) => w.word === currentWord);
-      const translation = wordObj?.translations?.find(
-        (tr) => tr.language === targetLanguage,
-      );
+      const currentWord = processedWords[currentWordIndex];
 
-      if (direction === "toTarget" && translation) {
-        expectedAnswer = translation.text;
-      } else if (direction === "toSource") {
-        expectedAnswer = currentWord;
-      }
-    }
-
-    const isCorrect =
-      userAnswer.toLowerCase().trim() === expectedAnswer.toLowerCase();
-    const newTries = currentTries + 1;
-    const newAnswers = [...currentWordAnswers, userAnswer.trim()];
-
-    // Analyze spelling for incorrect answers and collect error types
-    const newErrorTypes = [...currentWordErrorTypes];
-    if (!isCorrect) {
-      const spellingConfig = {
-        ...DEFAULT_SPELLING_CONFIG,
-        almostCorrectThreshold:
-          activeTest.testConfiguration?.almostCorrectThreshold ?? 2,
-        showHintOnAttempt: activeTest.testConfiguration?.showHintOnAttempt ?? 2,
-        enableKeyboardProximity:
-          activeTest.testConfiguration?.enableKeyboardProximity ?? true,
-      };
-      const analysis = analyzeSpelling(
-        userAnswer.trim(),
-        expectedAnswer,
-        spellingConfig,
-      );
-      // Add new error types (avoid duplicates)
-      for (const errorType of analysis.errorTypes) {
-        if (!newErrorTypes.includes(errorType)) {
-          newErrorTypes.push(errorType);
-        }
-      }
-      setCurrentWordErrorTypes(newErrorTypes);
-    }
-
-    setCurrentWordAnswers(newAnswers);
-    setLastAnswerCorrect(isCorrect);
-    setShowFeedback(true);
-    setCurrentTries(newTries);
-
-    if (isCorrect) {
-      playSuccessTone();
-    } else {
-      playErrorSound();
-    }
-
-    setTimeout(() => {
-      setShowFeedback(false);
-
-      const testConfig = getEffectiveTestConfig(activeTest);
-      const maxAttempts = testConfig?.maxAttempts ?? 3;
-
-      if (isCorrect || newTries >= maxAttempts) {
-        const timeSpent = Math.round(
-          (new Date().getTime() - wordStartTime.getTime()) / 1000,
+      // Determine expected answer based on mode and direction
+      let expectedAnswer = currentWord;
+      if (
+        testMode === "translation" &&
+        wordDirections.length > currentWordIndex
+      ) {
+        const direction = wordDirections[currentWordIndex];
+        const targetLanguage = activeTest.testConfiguration?.targetLanguage;
+        const wordObj = activeTest.words.find((w) => w.word === currentWord);
+        const translation = wordObj?.translations?.find(
+          (tr) => tr.language === targetLanguage,
         );
 
-        const answer: TestAnswer = {
-          word: currentWord,
-          userAnswers: newAnswers,
-          isCorrect,
-          timeSpent,
-          attempts: newTries,
-          finalAnswer: userAnswer.trim(),
-          audioPlayCount: currentWordAudioPlays,
-          errorTypes: newErrorTypes.length > 0 ? newErrorTypes : undefined,
-        };
-
-        const newAnswersList = [...answers, answer];
-        setAnswers(newAnswersList);
-
-        if (currentWordIndex < processedWords.length - 1) {
-          setCurrentWordIndex((prev) => prev + 1);
-          setUserAnswer("");
-          setWordStartTime(new Date());
-          setCurrentTries(0);
-          setCurrentWordAnswers([]);
-          setCurrentWordAudioPlays(0);
-          setCurrentWordErrorTypes([]);
-          // Reset audio state for next word to prevent stuck spinner
-          isPlayingAudioRef.current = false;
-          setIsAudioPlaying(false);
-        } else {
-          completeTest(newAnswersList);
+        if (direction === "toTarget" && translation) {
+          expectedAnswer = translation.text;
+        } else if (direction === "toSource") {
+          expectedAnswer = currentWord;
         }
-      } else {
-        setUserAnswer("");
-        // Auto-replay after wrong answer - mark as autoplay
-        playTestWordAudio(currentWord, TIMING.AUDIO_REPLAY_DELAY_MS, true);
       }
-    }, TIMING.FEEDBACK_DISPLAY_MS);
-  }, [
-    activeTest,
-    wordStartTime,
-    processedWords,
-    currentWordIndex,
-    userAnswer,
-    currentTries,
-    currentWordAnswers,
-    currentWordAudioPlays,
-    currentWordErrorTypes,
-    answers,
-    completeTest,
-    playTestWordAudio,
-    testMode,
-    wordDirections,
-  ]);
+
+      // Use normalized comparison that ignores punctuation and case
+      // This is especially important for sentences like "Katten sover." vs "katten sover"
+      const normalizedUserAnswer = normalizeText(answerToSubmit);
+      const normalizedExpected = normalizeText(expectedAnswer);
+      const isCorrect = normalizedUserAnswer === normalizedExpected;
+      const newTries = currentTries + 1;
+      const newAnswers = [...currentWordAnswers, answerToSubmit.trim()];
+
+      console.log("[useTestMode] handleSubmitAnswer:", {
+        answerToSubmit,
+        userAnswer,
+        expectedAnswer,
+        normalizedUserAnswer,
+        normalizedExpected,
+        isCorrect,
+        currentTries: newTries,
+      });
+
+      // Analyze spelling for incorrect answers and collect error types
+      const newErrorTypes = [...currentWordErrorTypes];
+      if (!isCorrect) {
+        const spellingConfig = {
+          ...DEFAULT_SPELLING_CONFIG,
+          almostCorrectThreshold:
+            activeTest.testConfiguration?.almostCorrectThreshold ?? 2,
+          showHintOnAttempt:
+            activeTest.testConfiguration?.showHintOnAttempt ?? 2,
+          enableKeyboardProximity:
+            activeTest.testConfiguration?.enableKeyboardProximity ?? true,
+        };
+        const analysis = analyzeSpelling(
+          answerToSubmit.trim(),
+          expectedAnswer,
+          spellingConfig,
+        );
+        // Add new error types (avoid duplicates)
+        for (const errorType of analysis.errorTypes) {
+          if (!newErrorTypes.includes(errorType)) {
+            newErrorTypes.push(errorType);
+          }
+        }
+        setCurrentWordErrorTypes(newErrorTypes);
+      }
+
+      setCurrentWordAnswers(newAnswers);
+      setLastAnswerCorrect(isCorrect);
+      setShowFeedback(true);
+      setCurrentTries(newTries);
+
+      if (isCorrect) {
+        playSuccessTone();
+      } else {
+        playErrorSound();
+      }
+
+      setTimeout(() => {
+        setShowFeedback(false);
+
+        const testConfig = getEffectiveTestConfig(activeTest);
+        const maxAttempts = testConfig?.maxAttempts ?? 3;
+
+        if (isCorrect || newTries >= maxAttempts) {
+          const timeSpent = Math.round(
+            (new Date().getTime() - wordStartTime.getTime()) / 1000,
+          );
+
+          const answer: TestAnswer = {
+            word: currentWord,
+            userAnswers: newAnswers,
+            isCorrect,
+            timeSpent,
+            attempts: newTries,
+            finalAnswer: answerToSubmit.trim(),
+            audioPlayCount: currentWordAudioPlays,
+            errorTypes: newErrorTypes.length > 0 ? newErrorTypes : undefined,
+          };
+
+          const newAnswersList = [...answers, answer];
+          setAnswers(newAnswersList);
+
+          if (currentWordIndex < processedWords.length - 1) {
+            setCurrentWordIndex((prev) => prev + 1);
+            setUserAnswer("");
+            setWordStartTime(new Date());
+            setCurrentTries(0);
+            setCurrentWordAnswers([]);
+            setCurrentWordAudioPlays(0);
+            setCurrentWordErrorTypes([]);
+            // Reset audio state for next word to prevent stuck spinner
+            isPlayingAudioRef.current = false;
+            setIsAudioPlaying(false);
+          } else {
+            completeTest(newAnswersList);
+          }
+        } else {
+          setUserAnswer("");
+          // Auto-replay after wrong answer - mark as autoplay
+          playTestWordAudio(currentWord, TIMING.AUDIO_REPLAY_DELAY_MS, true);
+        }
+      }, TIMING.FEEDBACK_DISPLAY_MS);
+    },
+    [
+      activeTest,
+      wordStartTime,
+      processedWords,
+      currentWordIndex,
+      userAnswer,
+      currentTries,
+      currentWordAnswers,
+      currentWordAudioPlays,
+      currentWordErrorTypes,
+      answers,
+      completeTest,
+      playTestWordAudio,
+      testMode,
+      wordDirections,
+    ],
+  );
 
   // Initialize test - first word audio is now played in startTest
   useEffect(() => {
@@ -490,7 +512,7 @@ export function useTestMode(): UseTestModeReturn {
     lastUserAnswer:
       currentWordAnswers.length > 0
         ? currentWordAnswers[currentWordAnswers.length - 1]
-        : undefined,
+        : "",
 
     // Actions
     startTest,

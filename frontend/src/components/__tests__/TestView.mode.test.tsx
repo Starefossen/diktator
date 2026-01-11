@@ -70,6 +70,8 @@ describe("TestView - Mode-Specific Behavior", () => {
     answers: [] as TestAnswer[],
     isAudioPlaying: false,
     wordDirections: ["toTarget", "toTarget"] as ("toTarget" | "toSource")[],
+    lastUserAnswer: "",
+    inputMethod: "keyboard" as const,
     onUserAnswerChange: mockOnUserAnswerChange,
     onSubmitAnswer: mockOnSubmitAnswer,
     onPlayCurrentWord: mockOnPlayCurrentWord,
@@ -396,7 +398,7 @@ describe("TestView - Mode-Specific Behavior", () => {
   });
 
   describe("Input Method - Auto Selection", () => {
-    it("renders keyboard input by default for sentences when auto mode", () => {
+    it("renders word bank input by default for sentences when auto mode", () => {
       const sentenceWordSet: WordSet = {
         ...baseWordSet,
         words: [{ word: "katten sover på sofaen" }],
@@ -407,9 +409,9 @@ describe("TestView - Mode-Specific Behavior", () => {
         processedWords: ["katten sover på sofaen"],
       };
       renderTestView(sentenceWordSet, "standard", props);
-      // Should render keyboard input for sentences in auto mode
+      // Should render word bank for sentences in auto mode
       expect(
-        screen.getByPlaceholderText(/type.*word here/i),
+        screen.getByRole("group", { name: /available words/i }),
       ).toBeInTheDocument();
     });
 

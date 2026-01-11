@@ -13,6 +13,7 @@ import {
 import { FlagIcon } from "@/components/FlagIcon";
 import { hasAudioAvailable } from "@/lib/audioPlayer";
 import { Button } from "@/components/Button";
+import { isSentence } from "@/lib/sentenceConfig";
 
 interface CuratedWordSetCardProps {
   wordSet: WordSet;
@@ -62,8 +63,39 @@ export function CuratedWordSetCard({
     : null;
 
   // Check if this is a sentence dictation set
-  const isSentenceSet =
-    wordSet.sentences && wordSet.sentences.length > 0 && wordSet.description;
+  // Can be determined by: explicit sentences array, OR words containing multi-word content
+  const hasSentencesArray = wordSet.sentences && wordSet.sentences.length > 0;
+  const wordsAreSentences =
+    wordSet.words.length > 0 && wordSet.words.some((w) => isSentence(w.word));
+  const isSentenceSet = hasSentencesArray || wordsAreSentences;
+
+  // Get difficulty styling
+  const getDifficultyStyle = (difficulty: string | undefined) => {
+    switch (difficulty) {
+      case "beginner":
+        return {
+          bg: "bg-emerald-100",
+          text: "text-emerald-700",
+          label: t("mastery.difficulty.beginner"),
+        };
+      case "intermediate":
+        return {
+          bg: "bg-amber-100",
+          text: "text-amber-700",
+          label: t("mastery.difficulty.intermediate"),
+        };
+      case "advanced":
+        return {
+          bg: "bg-rose-100",
+          text: "text-rose-700",
+          label: t("mastery.difficulty.advanced"),
+        };
+      default:
+        return null;
+    }
+  };
+
+  const difficultyStyle = getDifficultyStyle(wordSet.difficulty);
 
   return (
     <div className="card-child relative flex flex-col h-full p-5 transition-all duration-300 hover:shadow-2xl hover:border-nordic-sunrise hover:bg-nordic-sunrise/5">
@@ -84,7 +116,9 @@ export function CuratedWordSetCard({
           <div className="flex items-center gap-3 mt-1">
             <span className="text-base text-gray-600">
               {isSentenceSet
-                ? `${wordSet.sentences!.length} ${wordSet.sentences!.length === 1 ? t("wordsets.sentence") : t("wordsets.sentences")}`
+                ? hasSentencesArray
+                  ? `${wordSet.sentences!.length} ${wordSet.sentences!.length === 1 ? t("wordsets.sentence") : t("wordsets.sentences")}`
+                  : `${wordSet.words.length} ${wordSet.words.length === 1 ? t("wordsets.sentence") : t("wordsets.sentences")}`
                 : `${wordSet.words.length} ${wordSet.words.length === 1 ? t("results.word") : t("wordsets.words.count")}`}
             </span>
             {performance ? (
@@ -101,44 +135,68 @@ export function CuratedWordSetCard({
               </div>
             )}
           </div>
+          {/* Difficulty and grade level badges */}
+          <div className="flex flex-wrap items-center gap-2 mt-2">
+            {difficultyStyle && (
+              <span
+                className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-full ${difficultyStyle.bg} ${difficultyStyle.text}`}
+              >
+                {difficultyStyle.label}
+              </span>
+            )}
+            {wordSet.targetGrade && (
+              <span className="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                {wordSet.targetGrade}. {t("wordsets.grade")}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-4 min-h-12 content-start items-center">
-        {isSentenceSet ? (
-          <p className="text-base text-gray-600">{wordSet.description}</p>
-        ) : (
-          <>
+      <div className="flex flex-col gap-2 mb-4 min-h-12">
+        {wordSet.description && (
+          <p className="text-base text-gray-600 italic">
+            {wordSet.description}
+          </p>
+        )}
+        {/* Only show word/sentence pills when there is no description */}
+        {!wordSet.description && (
+          <div className="flex flex-col gap-2">
             {wordSet.words.slice(0, 5).map((wordItem, index) => {
               const hasAudio = hasAudioAvailable(wordItem);
               const isPlaying = playingAudio === wordItem.word;
+              const isItemSentence = isSentence(wordItem.word);
 
               return hasAudio ? (
                 <button
                   key={`${wordItem.word}-${index}`}
                   onClick={() => onWordClick(wordItem.word, wordSet)}
-                  className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-full transition-all duration-200 text-nordic-midnight bg-nordic-sunrise/15 hover:bg-nordic-sunrise/25 active:scale-95 ${isPlaying ? "ring-2 ring-nordic-sunrise bg-nordic-sunrise/30" : ""}`}
+                  className={`inline-flex items-center px-3 py-2 text-sm font-medium transition-all duration-200 text-nordic-midnight ${isItemSentence ? "rounded-2xl text-left bg-nordic-sunrise/10 hover:bg-nordic-sunrise/20" : "rounded-full bg-nordic-sunrise/15 hover:bg-nordic-sunrise/25"} active:scale-95 ${isPlaying ? "ring-2 ring-nordic-sunrise bg-nordic-sunrise/30" : ""}`}
                   aria-label={`${t("aria.playAudio")} ${wordItem.word}`}
                   type="button"
                 >
                   <HeroVolumeIcon className="shrink-0 w-4 h-4 mr-1.5" />
-                  <span>{wordItem.word}</span>
+                  <span className={isItemSentence ? "italic" : ""}>
+                    {wordItem.word}
+                  </span>
                 </button>
               ) : (
                 <span
                   key={`${wordItem.word}-${index}`}
-                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-full"
+                  className={`inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 bg-gray-100 ${isItemSentence ? "rounded-2xl" : "rounded-full"}`}
                 >
-                  <span>{wordItem.word}</span>
+                  <span className={isItemSentence ? "italic" : ""}>
+                    {wordItem.word}
+                  </span>
                 </span>
               );
             })}
             {wordSet.words.length > 5 && (
-              <span className="px-3 py-2 text-sm font-medium text-gray-500 bg-gray-100 rounded-full">
+              <span className="px-3 py-2 text-sm font-medium text-gray-500 bg-gray-100 rounded-full self-start">
                 +{wordSet.words.length - 5}
               </span>
             )}
-          </>
+          </div>
         )}
       </div>
 

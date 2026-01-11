@@ -40,10 +40,10 @@ interface TestViewProps {
   isAudioPlaying: boolean;
   testMode: "standard" | "dictation" | "translation";
   wordDirections: ("toTarget" | "toSource")[];
-  lastUserAnswer?: string; // The most recent answer submitted (for spelling feedback)
-  inputMethod?: InputMethod; // Progressive input mode
+  lastUserAnswer: string;
+  inputMethod: InputMethod;
   onUserAnswerChange: (answer: string) => void;
-  onSubmitAnswer: () => void;
+  onSubmitAnswer: (directAnswer?: string) => void;
   onPlayCurrentWord: () => void;
   onExitTest: () => void;
 }
@@ -61,16 +61,35 @@ export function TestView({
   testMode,
   wordDirections,
   lastUserAnswer,
-  inputMethod = "keyboard",
+  inputMethod,
   onUserAnswerChange,
   onSubmitAnswer,
   onPlayCurrentWord,
   onExitTest,
 }: TestViewProps) {
   const { t } = useLanguage();
+
+  // Runtime validation for required props
+  if (!activeTest?.words || activeTest.words.length === 0) {
+    throw new Error("TestView: activeTest must have at least one word");
+  }
+  if (currentWordIndex < 0 || currentWordIndex >= activeTest.words.length) {
+    throw new Error(
+      `TestView: currentWordIndex (${currentWordIndex}) out of bounds [0, ${activeTest.words.length - 1}]`,
+    );
+  }
+  if (!processedWords || processedWords.length === 0) {
+    throw new Error("TestView: processedWords must not be empty");
+  }
+
   const testConfig = getEffectiveTestConfig(activeTest);
   const currentWord = activeTest.words[currentWordIndex];
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Ensure currentWord exists after validation
+  if (!currentWord) {
+    throw new Error(`TestView: No word found at index ${currentWordIndex}`);
+  }
 
   // Focus input when feedback is hidden (ready for new input)
   useEffect(() => {
@@ -160,7 +179,7 @@ export function TestView({
     currentTries,
   ]);
 
-  // Key for regenerating tiles/word bank when word changes
+  // Key for regenerating tiles/word bank when word changes or after feedback
   const [tileKey, setTileKey] = useState(0);
 
   // Reset tile key when word changes
@@ -168,42 +187,54 @@ export function TestView({
     setTileKey((prev) => prev + 1);
   }, [currentWordIndex]);
 
+  // Also reset tile key when feedback is hidden (for retry attempts)
+  useEffect(() => {
+    if (!showFeedback) {
+      setTileKey((prev) => prev + 1);
+    }
+  }, [showFeedback]);
+
+  // Determine effective input method (auto-select based on content type)
+  // Must be computed BEFORE letterTiles/wordBankItems since they depend on it
+  const effectiveInputMethod = useMemo(() => {
+    if (inputMethod === "auto") {
+      // For sentences (contains spaces), prefer wordBank for progressive mastery
+      // For single words, prefer letterTiles for younger users
+      const isSentenceAnswer = expectedAnswer.includes(" ");
+      return isSentenceAnswer ? "wordBank" : "letterTiles";
+    }
+    return inputMethod;
+  }, [inputMethod, expectedAnswer]);
+
   // Generate letter tiles for the current word (memoized with key)
   const letterTiles = useMemo(() => {
-    if (inputMethod !== "letterTiles") return [];
+    if (effectiveInputMethod !== "letterTiles") return [];
     return generateLetterTiles(expectedAnswer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expectedAnswer, inputMethod, tileKey]);
+  }, [expectedAnswer, effectiveInputMethod, tileKey]);
 
   // Generate word bank items for sentence mode
   const wordBankItems = useMemo(() => {
-    if (inputMethod !== "wordBank") return [];
+    if (effectiveInputMethod !== "wordBank") return [];
     return generateWordBank(expectedAnswer, activeTest);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expectedAnswer, inputMethod, activeTest, tileKey]);
+  }, [expectedAnswer, effectiveInputMethod, activeTest, tileKey]);
 
   // Handle submission from LetterTileInput or WordBankInput
   const handleTileOrBankSubmit = useCallback(
     (_isCorrect: boolean, answer: string) => {
+      console.log("[TestView] handleTileOrBankSubmit called:", {
+        answer,
+        expectedAnswer,
+        effectiveInputMethod,
+      });
+      // Pass answer directly to avoid React state timing issues
       onUserAnswerChange(answer);
-      // Use setTimeout to ensure state update before submit
-      setTimeout(() => {
-        onSubmitAnswer();
-      }, 0);
+      console.log("[TestView] calling onSubmitAnswer with direct answer");
+      onSubmitAnswer(answer);
     },
-    [onUserAnswerChange, onSubmitAnswer],
+    [onUserAnswerChange, onSubmitAnswer, expectedAnswer, effectiveInputMethod],
   );
-
-  // Determine effective input method (auto-select based on content type)
-  const effectiveInputMethod = useMemo(() => {
-    if (inputMethod === "auto") {
-      // For sentences (contains spaces), prefer keyboard
-      // For single words, prefer letterTiles for younger users
-      const isSentence = expectedAnswer.includes(" ");
-      return isSentence ? "keyboard" : "letterTiles";
-    }
-    return inputMethod;
-  }, [inputMethod, expectedAnswer]);
 
   return (
     <div className="bg-nordic-birch">
@@ -300,6 +331,25 @@ export function TestView({
             </div>
 
             <div className="flex flex-col justify-center mb-6">
+              {(() => {
+                console.log("[TestView] Render state:", {
+                  showFeedback,
+                  lastAnswerCorrect,
+                  isCurrentSentence,
+                  sentenceScoringResult: sentenceScoringResult
+                    ? {
+                        isFullyCorrect: sentenceScoringResult.isFullyCorrect,
+                        correctCount: sentenceScoringResult.correctCount,
+                        totalExpected: sentenceScoringResult.totalExpected,
+                        score: sentenceScoringResult.score,
+                      }
+                    : null,
+                  lastUserAnswer,
+                  expectedAnswer,
+                  effectiveInputMethod,
+                });
+                return null;
+              })()}
               {showFeedback ? (
                 lastAnswerCorrect ? (
                   <CorrectFeedback />
@@ -413,7 +463,7 @@ export function TestView({
               {effectiveInputMethod === "keyboard" && (
                 <Button
                   variant="primary-child"
-                  onClick={onSubmitAnswer}
+                  onClick={() => onSubmitAnswer()}
                   disabled={!userAnswer.trim() || showFeedback}
                 >
                   <span className="sm:hidden">

@@ -101,6 +101,7 @@ export const wordsets = {
   "wordsets.go": "Start!",
   "wordsets.sentence": "sentence",
   "wordsets.sentences": "sentences",
+  "wordsets.grade": "grade",
   "wordsets.assignment.forYou": "For you!",
   "wordsets.time.today": "Today",
   "wordsets.time.dayAgo": "1 day ago",

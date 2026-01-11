@@ -95,7 +95,7 @@ describe("sentenceConfig", () => {
 
     it("exports CHALLENGE_CONFIG with correct values", () => {
       expect(CHALLENGE_CONFIG.LETTER_DISTRACTORS).toBe(4);
-      expect(CHALLENGE_CONFIG.WORD_DISTRACTORS).toBe(3);
+      expect(CHALLENGE_CONFIG.WORD_DISTRACTORS).toBe(6);
       expect(CHALLENGE_CONFIG.NORWEGIAN_FILLERS).toContain("og");
       expect(CHALLENGE_CONFIG.NORWEGIAN_FILLERS).toContain("er");
     });

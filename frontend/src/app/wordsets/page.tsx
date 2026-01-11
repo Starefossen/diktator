@@ -482,7 +482,7 @@ function WordSetsPageContent() {
             ) => {
               // Build URL with optional input method params
               let url = `/wordsets?view=test&id=${selectedWordSetForTest.id}&mode=${mode}`;
-              if (inputMethod && inputMethod !== "auto") {
+              if (inputMethod) {
                 url += `&inputMethod=${inputMethod}`;
               }
               if (replayMode) {

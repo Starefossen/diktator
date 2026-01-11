@@ -567,7 +567,7 @@ func (db *Postgres) GetWordSet(id string) (*models.WordSet, error) {
 	// Get word set basic info
 	query := `
 		SELECT id, name, family_id, is_global, created_by, language, test_configuration,
-		       target_grade, spelling_focus, difficulty, sentences, created_at, updated_at
+		       target_grade, spelling_focus, difficulty, sentences, description, created_at, updated_at
 		FROM word_sets WHERE id = $1`
 
 	var ws models.WordSet
@@ -576,7 +576,7 @@ func (db *Postgres) GetWordSet(id string) (*models.WordSet, error) {
 	err := db.pool.QueryRow(ctx, query, id).Scan(
 		&ws.ID, &ws.Name, &ws.FamilyID, &ws.IsGlobal, &ws.CreatedBy, &ws.Language,
 		&testConfigJSON, &targetGrade, &spellingFocusJSON, &difficulty, &sentencesJSON,
-		&ws.CreatedAt, &ws.UpdatedAt,
+		&ws.Description, &ws.CreatedAt, &ws.UpdatedAt,
 	)
 	if err == pgx.ErrNoRows {
 		return nil, ErrWordSetNotFound
@@ -681,7 +681,7 @@ func (db *Postgres) GetWordSets(familyID string) ([]models.WordSet, error) {
 	ctx := context.Background()
 	query := `
 		SELECT id, name, family_id, is_global, created_by, language, test_configuration,
-		       target_grade, spelling_focus, difficulty, sentences, created_at, updated_at
+		       target_grade, spelling_focus, difficulty, sentences, description, created_at, updated_at
 		FROM word_sets WHERE family_id = $1 ORDER BY created_at DESC`
 
 	rows, err := db.pool.Query(ctx, query, familyID)
@@ -698,7 +698,7 @@ func (db *Postgres) GetWordSets(familyID string) ([]models.WordSet, error) {
 		err := rows.Scan(
 			&ws.ID, &ws.Name, &ws.FamilyID, &ws.IsGlobal, &ws.CreatedBy, &ws.Language,
 			&testConfigJSON, &targetGrade, &spellingFocusJSON, &difficulty, &sentencesJSON,
-			&ws.CreatedAt, &ws.UpdatedAt,
+			&ws.Description, &ws.CreatedAt, &ws.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan word set: %w", err)
@@ -825,7 +825,7 @@ func (db *Postgres) GetGlobalWordSets() ([]models.WordSet, error) {
 	ctx := context.Background()
 	query := `
 		SELECT id, name, family_id, is_global, created_by, language, test_configuration,
-		       target_grade, spelling_focus, difficulty, sentences, created_at, updated_at
+		       target_grade, spelling_focus, difficulty, sentences, description, created_at, updated_at
 		FROM word_sets WHERE is_global = true ORDER BY name ASC`
 
 	rows, err := db.pool.Query(ctx, query)
@@ -842,7 +842,7 @@ func (db *Postgres) GetGlobalWordSets() ([]models.WordSet, error) {
 		err := rows.Scan(
 			&ws.ID, &ws.Name, &ws.FamilyID, &ws.IsGlobal, &ws.CreatedBy, &ws.Language,
 			&testConfigJSON, &targetGrade, &spellingFocusJSON, &difficultyStr, &sentencesJSON,
-			&ws.CreatedAt, &ws.UpdatedAt,
+			&ws.Description, &ws.CreatedAt, &ws.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan word set: %w", err)

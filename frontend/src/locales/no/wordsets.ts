@@ -102,6 +102,7 @@ export const wordsets = {
   "wordsets.go": "Start!",
   "wordsets.sentence": "setning",
   "wordsets.sentences": "setninger",
+  "wordsets.grade": "klasse",
   "wordsets.assignment.forYou": "Til deg!",
   "wordsets.time.today": "I dag",
   "wordsets.time.dayAgo": "1 dag siden",

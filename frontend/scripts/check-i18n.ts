@@ -45,6 +45,7 @@ const LOCALES_DIR = path.join(SRC_DIR, "locales");
 const KNOWN_DYNAMIC_PREFIXES = [
   "stavle.companion.", // Used with selectRandomVariant() for .1, .2, .3 suffixes
   "aria.stavle.", // ARIA labels for Stavle poses
+  "mastery.difficulty.", // Used dynamically in CuratedWordSetCard for difficulty badges
 ];
 
 // Keys that are intentionally defined but may not be directly used in code
@@ -138,6 +139,8 @@ const DYNAMIC_USAGE_PREFIXES = [
   "challenge.tryKeyboard",
   // Sentence difficulty (used dynamically via template literal)
   "sentence.difficulty.",
+  // Mastery difficulty (used dynamically via template literal for wordset cards)
+  "mastery.difficulty.",
 ];
 
 const ALLOWLISTED_UNUSED_PREFIXES = [

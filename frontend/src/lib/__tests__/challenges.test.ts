@@ -89,7 +89,7 @@ describe("challenges", () => {
       const distractorItems = items.filter((item) => item.isDistractor);
 
       expect(distractorItems.length).toBeGreaterThan(0);
-      expect(distractorItems.length).toBeLessThanOrEqual(3);
+      expect(distractorItems.length).toBeLessThanOrEqual(6);
     });
 
     it("generates unique IDs for each item", () => {
@@ -119,13 +119,16 @@ describe("challenges", () => {
       expect(sentenceItems).toHaveLength(2);
     });
 
-    it("handles punctuation attached to words", () => {
+    it("strips punctuation from words", () => {
       const items = generateWordBank("hei, verden!");
       const sentenceItems = items.filter((item) => !item.isDistractor);
       const words = sentenceItems.map((item) => item.word);
 
-      expect(words).toContain("hei,");
-      expect(words).toContain("verden!");
+      // Punctuation should be stripped for word bank items
+      expect(words).toContain("hei");
+      expect(words).toContain("verden");
+      expect(words).not.toContain("hei,");
+      expect(words).not.toContain("verden!");
     });
   });
 

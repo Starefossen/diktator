@@ -395,6 +395,14 @@ export function scoreSentence(
   const expectedWords = tokenize(expected, config);
   const actualWords = tokenize(actual, config);
 
+  console.log("[scoreSentence] Input:", {
+    expected,
+    actual,
+    expectedWords,
+    actualWords,
+    attempt,
+  });
+
   // Handle empty cases
   if (expectedWords.length === 0) {
     return {

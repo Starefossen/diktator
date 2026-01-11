@@ -169,10 +169,15 @@ export function generateWordBank(
   sentence: string,
   wordSet?: WordSet,
 ): WordBankItem[] {
-  // Split sentence into words, preserving punctuation attached to words
+  // Helper to strip punctuation from a word
+  const stripPunctuation = (word: string): string =>
+    word.replace(/[.,!?;:'"()[\]{}«»–—-]/g, "");
+
+  // Split sentence into words and strip punctuation
   const sentenceWords = sentence
     .toLowerCase()
     .split(/\s+/)
+    .map(stripPunctuation)
     .filter((w) => w.length > 0);
 
   // Create items for sentence words
@@ -185,10 +190,31 @@ export function generateWordBank(
   const sentenceWordSet = new Set(sentenceWords);
   const distractors: string[] = [];
 
-  // Add words from the word set as distractors (if available)
+  // First priority: Add confusable words that are similar to words in the sentence
+  // This makes the challenge harder by requiring careful reading
+  const confusableWords = CHALLENGE_CONFIG.CONFUSABLE_WORDS;
+  for (const word of sentenceWords) {
+    if (distractors.length >= CHALLENGE_CONFIG.WORD_DISTRACTORS) break;
+    const confusables = confusableWords[word];
+    if (confusables) {
+      for (const confusable of shuffleArray([...confusables])) {
+        if (distractors.length >= CHALLENGE_CONFIG.WORD_DISTRACTORS) break;
+        if (
+          !sentenceWordSet.has(confusable) &&
+          !distractors.includes(confusable)
+        ) {
+          distractors.push(confusable);
+        }
+      }
+    }
+  }
+
+  // Second priority: Add individual words from the word set as distractors
+  // Skip any entries that are sentences (contain spaces) - only use single words
   if (wordSet?.words) {
     const wordSetWords = wordSet.words
       .map((w) => w.word.toLowerCase())
+      .filter((w) => !w.includes(" ")) // Only single words, not sentences
       .filter((w) => !sentenceWordSet.has(w));
 
     const shuffledWordSetWords = shuffleArray(wordSetWords);
@@ -200,7 +226,7 @@ export function generateWordBank(
     }
   }
 
-  // Add Norwegian fillers if we need more distractors
+  // Third priority: Add Norwegian fillers if we need more distractors
   const shuffledFillers = shuffleArray([...CHALLENGE_CONFIG.NORWEGIAN_FILLERS]);
   for (const filler of shuffledFillers) {
     if (distractors.length >= CHALLENGE_CONFIG.WORD_DISTRACTORS) break;
