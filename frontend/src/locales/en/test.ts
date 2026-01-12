@@ -1,4 +1,52 @@
 export const test = {
+  // Test modes (unified) - child-friendly names
+  "modes.letterTiles": "Build It",
+  "modes.letterTiles.desc": "Arrange scrambled letters",
+  "modes.wordBank": "Pick Words",
+  "modes.wordBank.desc": "Tap words to build sentences",
+  "modes.keyboard": "Type It",
+  "modes.keyboard.desc": "Type the full spelling",
+  "modes.missingLetters": "Fill the Gap",
+  "modes.missingLetters.desc": "Complete the blanks",
+  "modes.flashcard": "Quick Look",
+  "modes.flashcard.desc": "See, countdown, self-check",
+  "modes.lookCoverWrite": "Memory Spell",
+  "modes.lookCoverWrite.desc": "Memorize then type",
+  "modes.translation": "Switch Languages",
+  "modes.translation.desc": "Type in other language",
+
+  // Mode selector
+  "modeSelector.title": "Choose how to practice",
+  "modeSelector.recommended": "Recommended",
+  "modeSelector.unavailable": "Not available",
+  "modeSelector.unavailable.noTranslations": "Add translations first",
+  "modeSelector.unavailable.singleWordOnly": "Single words only",
+  "modeSelector.unavailable.sentenceOnly": "Sentences only",
+
+  // Flashcard mode specific
+  "flashcard.show": "Look at the word...",
+  "flashcard.countdown": "Can you spell it?",
+  "flashcard.reveal": "Did you know it?",
+  "flashcard.yes": "Yes",
+  "flashcard.no": "No",
+  "flashcard.verify": "Type to verify",
+  "flashcard.verifyPlaceholder": "Type the word to confirm...",
+
+  // Look-Cover-Write mode specific
+  "lookCoverWrite.look": "Study the word...",
+  "lookCoverWrite.cover": "Can you remember it?",
+  "lookCoverWrite.ready": "Ready!",
+  "lookCoverWrite.write": "Type the word",
+  "lookCoverWrite.check": "Let's check!",
+  "lookCoverWrite.yourAnswer": "Your answer",
+  "lookCoverWrite.correct": "Correct",
+
+  // Missing letters mode specific
+  "missingLetters.instruction": "Fill in the missing letters",
+  "missingLetters.placeholder": "Type the missing letter(s)...",
+  "missingLetters.letterMissing": "letter missing",
+  "missingLetters.lettersMissing": "letters missing",
+
   // Test progress and navigation
   "test.progress": "Word",
   "test.complete": "Test Complete",

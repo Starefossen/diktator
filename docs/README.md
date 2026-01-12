@@ -4,10 +4,21 @@ This folder contains high-level documentation for the Diktator project. Implemen
 
 ## Documents
 
-| Document                           | Purpose                                                         |
-| ---------------------------------- | --------------------------------------------------------------- |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | System design, data model, security model, key decisions        |
-| [USER-STORIES.md](USER-STORIES.md) | Product specification, personas, user journeys, feature backlog |
+| Document                           | Purpose                                                             |
+| ---------------------------------- | ------------------------------------------------------------------- |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | System design, data model, security model, infrastructure decisions |
+| [USER-STORIES.md](USER-STORIES.md) | Product specification, personas, user journeys, feature backlog     |
+| [LEARNING.md](LEARNING.md)         | Pedagogical approach, teaching methodology, spelling science        |
+| [DESIGN.md](DESIGN.md)             | Visual design system, Stavle mascot, colors, typography, components |
+
+## Document Scope
+
+To avoid overlap, each document has a specific focus:
+
+- **ARCHITECTURE** answers "How is it built?" — technical implementation
+- **USER-STORIES** answers "What does it do?" — features and requirements
+- **LEARNING** answers "Why does it work?" — pedagogical principles
+- **DESIGN** answers "How does it look and feel?" — visual/UX implementation
 
 ## What's NOT Documented Here
 

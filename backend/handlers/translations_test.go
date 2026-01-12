@@ -99,13 +99,13 @@ func TestTestResultWithMode(t *testing.T) {
 		ID:        "1",
 		WordSetID: "wordset-1",
 		UserID:    "user-1",
-		Mode:      "dictation",
+		Mode:      "keyboard",
 		Score:     100.0,
 	}
 
 	assert.Equal(t, "1", result.ID)
 	assert.Equal(t, "wordset-1", result.WordSetID)
-	assert.Equal(t, "dictation", result.Mode)
+	assert.Equal(t, "keyboard", result.Mode)
 }
 
 // TestModeValidation tests mode validation logic
@@ -116,8 +116,9 @@ func TestModeValidation(t *testing.T) {
 		hasTranslations bool
 		shouldBeValid   bool
 	}{
-		{"standard mode always valid", "standard", false, true},
-		{"dictation mode always valid", "dictation", false, true},
+		{"letterTiles mode always valid", "letterTiles", false, true},
+		{"wordBank mode always valid", "wordBank", false, true},
+		{"keyboard mode always valid", "keyboard", false, true},
 		{"translation mode with translations", "translation", true, true},
 		{"translation mode without translations", "translation", false, false},
 	}

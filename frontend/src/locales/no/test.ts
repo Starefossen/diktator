@@ -1,4 +1,52 @@
 export const test = {
+  // Test modes (unified) - child-friendly names
+  "modes.letterTiles": "Bygg Ordet",
+  "modes.letterTiles.desc": "Sett sammen bokstavene",
+  "modes.wordBank": "Velg Ord",
+  "modes.wordBank.desc": "Trykk på ord for å bygge setninger",
+  "modes.keyboard": "Skriv Selv",
+  "modes.keyboard.desc": "Skriv hele stavemåten",
+  "modes.missingLetters": "Fyll Inn",
+  "modes.missingLetters.desc": "Fyll ut de manglende bokstavene",
+  "modes.flashcard": "Hurtigblikk",
+  "modes.flashcard.desc": "Se, nedtelling, selvsjekk",
+  "modes.lookCoverWrite": "Huskestaving",
+  "modes.lookCoverWrite.desc": "Husk og skriv",
+  "modes.translation": "Bytt Språk",
+  "modes.translation.desc": "Skriv på et annet språk",
+
+  // Mode selector
+  "modeSelector.title": "Velg hvordan du vil øve",
+  "modeSelector.recommended": "Anbefalt",
+  "modeSelector.unavailable": "Ikke tilgjengelig",
+  "modeSelector.unavailable.noTranslations": "Legg til oversettelser først",
+  "modeSelector.unavailable.singleWordOnly": "Bare enkeltord",
+  "modeSelector.unavailable.sentenceOnly": "Bare setninger",
+
+  // Flashcard mode specific
+  "flashcard.show": "Se på ordet...",
+  "flashcard.countdown": "Kan du stave det?",
+  "flashcard.reveal": "Visste du det?",
+  "flashcard.yes": "Ja",
+  "flashcard.no": "Nei",
+  "flashcard.verify": "Skriv for å bekrefte",
+  "flashcard.verifyPlaceholder": "Skriv ordet for å bekrefte...",
+
+  // Look-Cover-Write mode specific
+  "lookCoverWrite.look": "Studer ordet...",
+  "lookCoverWrite.cover": "Husker du det?",
+  "lookCoverWrite.ready": "Klar!",
+  "lookCoverWrite.write": "Skriv ordet",
+  "lookCoverWrite.check": "La oss sjekke!",
+  "lookCoverWrite.yourAnswer": "Ditt svar",
+  "lookCoverWrite.correct": "Riktig",
+
+  // Missing letters mode specific
+  "missingLetters.instruction": "Fyll inn de manglende bokstavene",
+  "missingLetters.placeholder": "Skriv de manglende bokstavene...",
+  "missingLetters.letterMissing": "bokstav mangler",
+  "missingLetters.lettersMissing": "bokstaver mangler",
+
   // Test progress and navigation
   "test.progress": "Ord",
   "test.complete": "Test fullført",

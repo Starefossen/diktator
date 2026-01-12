@@ -2424,15 +2424,16 @@ func IncrementMastery(c *gin.Context) {
 		return
 	}
 
-	// Convert input mode string to InputMethod type
-	var inputMode models.InputMethod
+	// Convert input mode string to TestMode type
+	// Only the three progressive input modes have mastery tracking
+	var inputMode models.TestMode
 	switch req.InputMode {
 	case "letterTiles":
-		inputMode = models.InputMethodLetterTiles
+		inputMode = models.TestModeLetterTiles
 	case "wordBank":
-		inputMode = models.InputMethodWordBank
+		inputMode = models.TestModeWordBank
 	case "keyboard":
-		inputMode = models.InputMethodKeyboard
+		inputMode = models.TestModeKeyboard
 	default:
 		c.JSON(http.StatusBadRequest, models.APIResponse{
 			Error: "Invalid inputMode: must be 'letterTiles', 'wordBank', or 'keyboard'",

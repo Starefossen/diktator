@@ -106,8 +106,12 @@ definitions:
         type: array
       mode:
         enum:
-        - standard
-        - dictation
+        - letterTiles
+        - wordBank
+        - keyboard
+        - missingLetters
+        - flashcard
+        - lookCoverWrite
         - translation
         type: string
       score:

@@ -70,23 +70,33 @@ Family (1) ──────┬──────── (*) FamilyMember ──
 
 **TestResult**: Record of a completed test with score, mode used, and per-word answers.
 
-### Progressive Input System
+### Test Modes
 
-The app supports three input methods that adapt to the child's skill level and content type:
+Three test modes determine what the child sees and types:
 
-| Input Method | Description                            | Best For                      |
-| ------------ | -------------------------------------- | ----------------------------- |
-| Letter Tiles | Tap-to-place scrambled letters         | Young children (5-7), words   |
-| Word Bank    | Tap-to-select words to build sentences | Sentences, ages 7-10          |
-| Keyboard     | Traditional text input                 | Older children (10+), mastery |
+| Test Mode   | Child Sees           | Child Types |
+| ----------- | -------------------- | ----------- |
+| Standard    | Word text + audio    | Same word   |
+| Dictation   | Audio only (no text) | Heard word  |
+| Translation | Word in source lang  | Translation |
 
-**Auto Mode**: When `inputMethod="auto"`, the system selects:
-- **Letter Tiles** for single words
-- **Word Bank** for sentences (text containing spaces)
+See [LEARNING.md](LEARNING.md) for pedagogical rationale behind each mode.
 
-**Progressive Unlocking** (future): Users can progress through modes based on mastery:
-- 2 correct answers in Letter Tiles → unlock Word Bank
-- 2 correct answers in Word Bank → unlock Keyboard
+### Input Methods
+
+Three input methods provide progressive scaffolding:
+
+| Input Method | Description                            | Age Range |
+| ------------ | -------------------------------------- | --------- |
+| Letter Tiles | Tap-to-place scrambled letters         | 5-8       |
+| Word Bank    | Tap-to-select words to build sentences | 7-10      |
+| Keyboard     | Traditional text input                 | 9+        |
+
+**Auto Mode**: Letter Tiles for single words, Word Bank for sentences.
+
+**Progressive Unlocking**: 2 correct answers unlocks the next input method.
+
+See [LEARNING.md](LEARNING.md) for detailed pedagogy and [DESIGN.md](DESIGN.md) for component specifications.
 
 ## Security Model
 
@@ -178,6 +188,7 @@ The TTS service supports both single words and full sentences:
 **Sentence Detection**: Content with spaces is automatically treated as a sentence.
 
 **SSML Prosody**: Sentences use SSML for natural pacing:
+
 ```xml
 <speak><prosody rate="0.9">{sentence}</prosody></speak>
 ```
@@ -192,7 +203,6 @@ The TTS service supports both single words and full sentences:
 ## Infrastructure
 
 See HOMELAB.md in the deploy/ directory for deployment architecture and instructions.
-
 
 ## Progressive Web App (PWA)
 
@@ -209,6 +219,8 @@ Cache headers ensure `sw.js` is never cached by browsers, allowing immediate upd
 ## For More Information
 
 - **User stories & features**: See [USER-STORIES.md](USER-STORIES.md)
+- **Learning methodology**: See [LEARNING.md](LEARNING.md)
+- **Visual design system**: See [DESIGN.md](DESIGN.md)
 - **Development setup**: See [README.md](../README.md)
 - **API documentation**: Run `mise run dev` then visit <http://localhost:8080/docs>
 - **Configuration**: Run `mise run --help` for available tasks

@@ -1,6 +1,8 @@
 # Diktator Design System
 
-A comprehensive design guide for Diktator—a Norwegian vocabulary learning app for children ages 7-14, featuring Stavle the Arctic Fox mascot and a warm Nordic spring aesthetic.
+A comprehensive design guide for Diktator—a Norwegian vocabulary learning app for children ages 5-12, featuring Stavle the Arctic Fox mascot and a warm Nordic spring aesthetic.
+
+> **Scope**: This document covers visual design, interaction patterns, and UI copy. For the pedagogical rationale behind these choices, see [LEARNING.md](LEARNING.md).
 
 ## Table of Contents
 
@@ -11,11 +13,12 @@ A comprehensive design guide for Diktator—a Norwegian vocabulary learning app 
 5. [Achievement & Badge System](#achievement--badge-system)
 6. [Typography](#typography)
 7. [Component Patterns](#component-patterns)
+   - [Mode Selector Grid](#mode-selector-grid)
    - [Progressive Input Components](#progressive-input-components)
 8. [Animation & Motion](#animation--motion)
 9. [AI Anti-Patterns to Avoid](#ai-anti-patterns-to-avoid)
 10. [Accessibility](#accessibility)
-11. [Implementation Checklist](#implementation-checklist)
+11. [Resources](#resources)
 
 ---
 
@@ -24,6 +27,8 @@ A comprehensive design guide for Diktator—a Norwegian vocabulary learning app 
 ### Core Principles
 
 These principles are grounded in research from Nielsen Norman Group, Smashing Magazine, and Toptal on designing educational apps for children.
+
+> **Cross-reference**: These UX design principles complement the educational research in [LEARNING.md](LEARNING.md). Design explains *how* we present things; Learning explains *why* they work pedagogically.
 
 #### 1. Immediate Feedback on Everything
 
@@ -160,7 +165,7 @@ Cold/Clinical ←————————•————————→ Gushing/
 ### Visual Description
 
 - **Species**: Arctic fox with fluffy white/cream fur
-- **Age vibe**: School-age kid (relatable to 7-14 year olds)
+- **Age vibe**: School-age kid (relatable to target audience ages 5-12)
 - **Accessories**: Small, slightly worn backpack/satchel (the dedicated student)
 - **Fur**: Slightly scruffy, not perfectly groomed (approachable, not precious)
 - **Expression**: Default is friendly curiosity with a hint of mischief
@@ -324,8 +329,10 @@ Stavle should appear at **emotionally significant moments** — not everywhere. 
 | **Head tilt**     | 200ms    | ease-in-out       | Thinking, encouraging              |
 | **Idle bob**      | 2000ms   | ease-in-out, loop | Subtle presence while waiting      |
 
+**Suggested CSS:**
+
 ```css
-/* Example: Stavle celebration entrance */
+/* Stavle celebration entrance */
 @keyframes stavle-celebrate-enter {
   0% {
     opacity: 0;
@@ -345,10 +352,10 @@ Stavle should appear at **emotionally significant moments** — not everywhere. 
 }
 ```
 
-### Implementation: Stavle Component
+### Suggested Component API
 
 ```tsx
-// Example usage with sprite sheet
+// Suggested Stavle component interface
 interface StavleProps {
   pose: 'celebrating' | 'encouraging' | 'waving' | 'thinking' | 'reading' | 'pointing' | 'idle';
   size?: 48 | 64 | 96 | 128 | 160 | 200;
@@ -356,10 +363,9 @@ interface StavleProps {
   className?: string;
 }
 
-// Stavle should be imported and used like:
+// Example usage:
 <Stavle pose="celebrating" size={64} animate />
 <Stavle pose="encouraging" size={128} />
-<Stavle pose="reading" size={48} className="opacity-70" />
 ```
 
 ### Size Specifications
@@ -608,7 +614,9 @@ Achievement badges and celebration screens use warm, celebratory colors:
 
 ### Design Philosophy
 
-Badges reward **genuine learning milestones**, not engagement metrics. Every badge should answer: "Does earning this mean the child learned something?" Avoid badges that reward time spent or clicks—focus on mastery and growth.
+Badges reward **genuine learning milestones**, not engagement metrics. Every badge should answer: "Does earning this mean the child learned something?"
+
+> **Cross-reference**: For the research on rewards, intrinsic motivation, and what to avoid (streaks, leaderboards), see [LEARNING.md](LEARNING.md#rewards--motivation). This section covers the **visual design** of badges.
 
 ### Badge Visual Design
 
@@ -664,6 +672,7 @@ Earned by practicing regularly. Encourages habit formation without punishing bre
 | **Learning Machine**   | ⚡    | 30-day streak | Gold   | "Incredible dedication!"    | "Utrolig dedikasjon!"   |
 
 **Streak rules:**
+
 - A "day" counts if the child completes at least one test
 - Streak resets after 48 hours of inactivity (gives grace period)
 - Weekends don't break streaks if Friday was active
@@ -755,7 +764,7 @@ Badges are displayed in a grid on the profile/achievements page:
 - **Progress badges**: Show progress bar (e.g., "15/25 tests")
 - **Tap to expand**: Shows full description and date earned
 
-### Badge Component Specifications
+### Suggested Badge Component API
 
 ```tsx
 interface BadgeProps {
@@ -780,11 +789,10 @@ interface BadgeProps {
 | Glow on hover | None                | Subtle `sky` glow | Warm `sunrise` glow |
 | Shadow        | `shadow-sm`         | `shadow-md`       | `shadow-lg`         |
 
-### Data Model Considerations
-
-Badges should be stored with:
+### Suggested Data Model
 
 ```typescript
+// Suggested badge storage structure
 interface UserBadge {
   badgeId: string;           // e.g., "perfect-speller"
   earnedAt: Date;
@@ -832,7 +840,7 @@ Dark mode is not planned for initial release. The warm cream backgrounds work we
 4. **Norwegian support** — Full æ, ø, å via `latin-ext` subset
 5. **Variable font** — Single file, all weights (100-900)
 
-### Installation (Next.js App Router)
+### Suggested Installation (Next.js App Router)
 
 #### 1. Update `frontend/src/app/layout.tsx`
 
@@ -972,6 +980,8 @@ Compare to ParentWordSetCard which includes:
 
 #### Child Interface Buttons
 
+**Suggested CSS:**
+
 ```css
 /* Primary action — "Start Test", "Next Word" */
 .btn-primary-child {
@@ -1004,6 +1014,8 @@ Compare to ParentWordSetCard which includes:
 
 #### Parent Interface Buttons
 
+**Suggested CSS:**
+
 ```css
 /* Primary — "Save", "Create" */
 .btn-primary {
@@ -1027,6 +1039,8 @@ Compare to ParentWordSetCard which includes:
 
 #### Word Set Card (Child View)
 
+**Suggested CSS:**
+
 ```css
 .card-wordset-child {
   background: #FAFAF9;
@@ -1044,6 +1058,8 @@ Compare to ParentWordSetCard which includes:
 
 #### Achievement Card
 
+**Suggested CSS:**
+
 ```css
 .card-achievement {
   background: linear-gradient(135deg, #FEFCE8, #FEF3C7);
@@ -1054,6 +1070,8 @@ Compare to ParentWordSetCard which includes:
 ```
 
 ### Input Fields
+
+**Suggested CSS:**
 
 ```css
 .input-child {
@@ -1074,6 +1092,8 @@ Compare to ParentWordSetCard which includes:
 
 ### Progress Indicators
 
+**Suggested CSS:**
+
 ```css
 /* Test progress bar */
 .progress-bar {
@@ -1091,11 +1111,88 @@ Compare to ParentWordSetCard which includes:
 
 ### Progressive Input Components
 
-For spelling tests, children can use three different input methods based on difficulty level and age:
+For spelling tests, children choose from **seven modes** presented as square tiles. See [LEARNING.md](LEARNING.md#modes-unified) for the pedagogical rationale.
+
+#### Mode Selector Grid
+
+The mode selector replaces the old modal with sub-menus. Children see a simple grid of square tiles—one tap starts the test.
+
+| Element                | Specification                                 |
+| ---------------------- | --------------------------------------------- |
+| **Layout**             | 2×4 grid (portrait), 4×2 (landscape)          |
+| **Tile size**          | 88-96px square, min-h-24                      |
+| **Tile spacing**       | 12px gap                                      |
+| **Tile content**       | Icon (32px) + label (14-16px)                 |
+| **Recommended badge**  | "⭐" top-right corner with subtle glow         |
+| **Unavailable state**  | Grayed out (opacity-40), no click             |
+| **Unavailable reason** | Shown only for parent role (tooltip)          |
+| **Touch feedback**     | Scale 0.97 on tap, ring on focus              |
+| **Colors**             | nordic-snow bg, nordic-sky border on selected |
+
+**Visual layout:**
+
+```text
+┌─────────────────────────────────────────────────┐
+│  Velg modus                              ✕      │
+│                                                 │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐      │
+│  │    🧩    │  │    📝    │  │    ⌨️    │      │
+│  │ Bygg     │  │ Velg     │  │ Skriv    │      │
+│  │ Ordet ⭐ │  │ Ord      │  │ Selv     │      │
+│  └──────────┘  └──────────┘  └──────────┘      │
+│                                                 │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐      │
+│  │    🔲    │  │    👀    │  │    🧠    │      │
+│  │ Fyll     │  │ Hurtig-  │  │ Huske-   │      │
+│  │ Inn      │  │ blikk    │  │ staving  │      │
+│  └──────────┘  └──────────┘  └──────────┘      │
+│                                                 │
+│  ┌──────────┐                                  │
+│  │   🌐     │  ← grayed if no translations     │
+│  │ Bytt     │                                  │
+│  │ Språk    │                                  │
+│  └──────────┘                                  │
+│                                                 │
+│                           [ Avbryt ]           │
+└─────────────────────────────────────────────────┘
+```
+
+**Mode names:**
+
+| Mode             | Icon | English          | Norwegian    |
+| ---------------- | ---- | ---------------- | ------------ |
+| Letter Tiles     | 🧩    | Build It         | Bygg Ordet   |
+| Word Bank        | 📝    | Pick Words       | Velg Ord     |
+| Keyboard         | ⌨️    | Type It          | Skriv Selv   |
+| Missing Letters  | 🔲    | Fill the Gap     | Fyll Inn     |
+| Flashcard        | 👀    | Quick Look       | Hurtigblikk  |
+| Look-Cover-Write | 🧠    | Memory Spell     | Huskestaving |
+| Translation      | 🌐    | Switch Languages | Bytt Språk   |
+
+**Recommended badge algorithm:**
+
+See [LEARNING.md](LEARNING.md#adaptive-mode-selection) for the recommendation logic. The badge appears on exactly one tile based on content type, mastery level, and recent success patterns.
+
+**Unavailable modes:**
+
+- **Translation**: Grayed when word set has no translations
+- **Word Bank**: Grayed for single-word content (nonsensical to use)
+- **Letter Tiles**: Grayed for sentence content (too many tiles)
+
+Parents see reason text on hover/tap; children see only the grayed state (no explanation to avoid confusion).
+
+**Responsive behavior:**
+
+| Orientation        | Grid | Tile size |
+| ------------------ | ---- | --------- |
+| Portrait (phone)   | 2×4  | 88px      |
+| Portrait (tablet)  | 2×4  | 96px      |
+| Landscape (phone)  | 4×2  | 80px      |
+| Landscape (tablet) | 4×2  | 96px      |
 
 #### Letter Tile Input (Single Words)
 
-Scrambled letter tiles that children tap to place in order. Ideal for younger children (ages 5-8) learning individual words.
+Scrambled letter tiles that children tap to place in order. See [LEARNING.md](LEARNING.md#input-methods) for when to use each input method.
 
 | Element              | Specification                                   |
 | -------------------- | ----------------------------------------------- |
@@ -1110,6 +1207,7 @@ Scrambled letter tiles that children tap to place in order. Ideal for younger ch
 | **Colors**           | nordic-snow tiles, nordic-sky filled slots      |
 
 **Distractor Strategy:**
+
 - Add Norwegian confusable letters: ø/o, æ/e, å/a
 - Include common double consonants: ll, nn, mm
 - Mix silent letters: hj-, gj-
@@ -1146,6 +1244,7 @@ Word pills that children tap to build sentences. Ideal for sentence dictation wh
 | **Progress hint**    | "3 of 5 words" counter                       |
 
 **Distractor Strategy:**
+
 - Include other words from the same word set
 - Add common Norwegian filler words (og, er, i, på, til)
 - Include confusable word pairs (han/hun, da/når, var/er)
@@ -1167,7 +1266,7 @@ Word pills that children tap to build sentences. Ideal for sentence dictation wh
 
 #### Keyboard Input (Traditional)
 
-Standard text input for older children (ages 9+) or those who have mastered tile-based input.
+Standard text input. Research shows children of all ages can use keyboards successfully (see [LEARNING.md](LEARNING.md#input-methods)).
 
 | Element          | Specification                  |
 | ---------------- | ------------------------------ |
@@ -1179,18 +1278,210 @@ Standard text input for older children (ages 9+) or those who have mastered tile
 | **Auto-correct** | Disabled (autoCorrect="off")   |
 | **Submit**       | Enter key or Check button      |
 
-#### Input Method Auto-Selection
+#### Missing Letters Input (Gap Fill)
 
-The "Auto" mode intelligently selects input method:
+Word displayed with strategic blanks; child types only the missing letters. Ideal for targeting specific Norwegian spelling challenges. See [LEARNING.md](LEARNING.md#missing-letters-gap-fill) for when to use.
 
-| Content Type        | Auto-Selected Method | Rationale                    |
-| ------------------- | -------------------- | ---------------------------- |
-| **Single word**     | Letter Tiles         | Teaches letter-by-letter     |
-| **Sentence**        | Word Bank            | Reduces typing complexity    |
-| **Child age 5-7**   | Letter Tiles/Bank    | Better for fine motor skills |
-| **Child age 8-10**  | Word Bank/Keyboard   | Transitional stage           |
-| **Child age 11+**   | Keyboard             | Full typing proficiency      |
-| **Mastery reached** | Keyboard unlock      | Progression reward           |
+| Element               | Specification                                   |
+| --------------------- | ----------------------------------------------- |
+| **Word display**      | Full word with blanks: `ma__` or `_jelpe`       |
+| **Blank indicator**   | Underline or box per missing letter             |
+| **Input position**    | Inline with word or separate input field        |
+| **Input size**        | Matches blank width (1-3 characters typically)  |
+| **Font**              | Same as word display (Lexend, 18px+)            |
+| **Focus**             | Auto-focus on first blank                       |
+| **Colors**            | Blanks: nordic-sky/20 bg, filled: nordic-sky bg |
+| **Feedback position** | Inline—show correct letters in place            |
+
+**Visual states:**
+
+```text
+┌─────────────────────────────────────────┐
+│  Fill in the missing letters:           │
+│                                         │
+│  🔊  m a [_][_]                         │  ← "mann" - double consonant
+│                                         │
+│  Type: [n][n]  ← child types here       │
+│                                         │
+│  [Skip]               [Check ✓]         │
+└─────────────────────────────────────────┘
+
+┌─────────────────────────────────────────┐
+│  Fill in the missing letters:           │
+│                                         │
+│  🔊  [_] j e l p e                      │  ← "hjelpe" - silent h
+│                                         │
+│  Type: [h]                              │
+│                                         │
+│  [Skip]               [Check ✓]         │
+└─────────────────────────────────────────┘
+```
+
+**Design considerations:**
+
+- Show audio button to hear complete word (helps with vowel choices)
+- Blank slots should visually indicate count (two slots for `nn`, one for `h`)
+- On correct: blanks fill with green, brief celebration
+- On incorrect: show correct answer inline, highlight difference
+
+#### Flashcard Mode UI
+
+Quick-look mode for building familiarity. Word appears briefly, then revealed for self-check. See [LEARNING.md](LEARNING.md#flashcard-mode) for when to use.
+
+| Phase          | UI State                           | Duration/Trigger |
+| -------------- | ---------------------------------- | ---------------- |
+| **Show**       | Word displayed large + audio plays | 2-3 seconds      |
+| **Countdown**  | Animated 3-2-1 overlay             | 3 seconds        |
+| **Reveal**     | Spelling shown with letter spacing | Immediate        |
+| **Self-check** | "Did you know it?" buttons         | Child taps       |
+
+**Visual flow:**
+
+```text
+┌─────────────────────────────────────────┐
+│  SHOW                                   │
+│                                         │
+│         🔊  s k o l e                   │  ← Large, clear display
+│                                         │
+│  ████████████████░░░░  2s               │  ← Progress bar
+│                                         │
+│  (Look at the word...)                  │
+└─────────────────────────────────────────┘
+           ↓ auto-transition
+┌─────────────────────────────────────────┐
+│                                         │
+│              ┌─────┐                    │
+│              │  3  │                    │
+│              └─────┘                    │
+│                                         │
+│  (Can you spell it?)                    │
+└─────────────────────────────────────────┘
+           ↓ countdown completes
+┌─────────────────────────────────────────┐
+│  REVEAL                                 │
+│                                         │
+│         🔊  s k o l e                   │
+│                                         │
+│  Did you know it?                       │
+│                                         │
+│  [ Yes ✓ ]           [ No ✗ ]          │
+│                                         │
+│  ○ Type to verify                       │  ← Optional toggle
+└─────────────────────────────────────────┘
+           ↓ if "Type to verify" toggled
+┌─────────────────────────────────────────┐
+│  VERIFY                                 │
+│                                         │
+│  Type the word:                         │
+│                                         │
+│  [________________]                     │
+│                                         │
+│         [ Check ✓ ]                     │
+└─────────────────────────────────────────┘
+```
+
+**Design considerations:**
+
+- "Show" phase: Large typography (28-32px), auto-play audio
+- Countdown: Large numbers (48-64px), subtle pulse animation
+- "Reveal" phase: Same typography, letter-spaced for clarity
+- Self-check buttons: Large, equal prominence (neither is "wrong")
+- "Type to verify" toggle: Small, optional, remembers preference
+- No judgment on self-check honesty—this is for confidence building
+
+**Suggested CSS for countdown:**
+
+```css
+@keyframes countdown-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+.countdown-number {
+  font-size: 64px;
+  font-weight: 700;
+  color: #1E3A5A;
+  animation: countdown-pulse 1s ease-in-out;
+}
+```
+
+#### Look-Cover-Write-Check Mode UI
+
+A multi-step test mode based on the evidence-based spelling method. More rigorous than Flashcard—requires typing from memory. See [LEARNING.md](LEARNING.md#look-cover-write-check-mode) for pedagogical details.
+
+| Phase     | UI State                                   | Duration/Trigger     |
+| --------- | ------------------------------------------ | -------------------- |
+| **Look**  | Word displayed large + audio plays         | 3-5 seconds (config) |
+| **Cover** | Word fades/slides away, "Ready?" prompt    | Tap to continue      |
+| **Write** | Blank input field, keyboard/tiles          | Child types          |
+| **Check** | Answer compared side-by-side with original | Auto after submit    |
+
+**Visual flow:**
+
+```text
+┌─────────────────────────────────────────┐
+│  LOOK                                   │
+│                                         │
+│         🔊  s k o l e                   │  ← Large, clear display
+│                                         │
+│  ████████████░░░░░░  3s                 │  ← Timer bar
+│                                         │
+│  (Study the word...)                    │
+└─────────────────────────────────────────┘
+           ↓ auto-transition
+┌─────────────────────────────────────────┐
+│  COVER                                  │
+│                                         │
+│         [Stavle thinking]               │
+│                                         │
+│  "Can you remember it?"                 │
+│                                         │
+│         [ Ready! ]                      │  ← Tap to continue
+└─────────────────────────────────────────┘
+           ↓ tap
+┌─────────────────────────────────────────┐
+│  WRITE                                  │
+│                                         │
+│  Type the word:                         │
+│                                         │
+│  [________________]                     │  ← Input field
+│                                         │
+│         [ Check ✓ ]                     │
+└─────────────────────────────────────────┘
+           ↓ submit
+┌─────────────────────────────────────────┐
+│  CHECK                                  │
+│                                         │
+│  Your answer:  s k o l e  ✓             │
+│  Correct:      s k o l e                │
+│                                         │
+│  [Stavle celebrating]                   │
+│                                         │
+│         [ Next Word → ]                 │
+└─────────────────────────────────────────┘
+```
+
+**Design considerations:**
+
+- "Look" phase: Large typography (28-32px), prominent audio button
+- Timer bar optional (some children may need more time)
+- "Cover" phase: Stavle `thinking` pose, gentle transition
+- "Check" phase: Side-by-side comparison highlights differences
+- Wrong letters shown in soft coral, correct in green
+
+#### Adaptive Mode Recommendation
+
+The "⭐ Recommended" badge appears on one mode tile based on **content type** and **mastery level**:
+
+| Context                             | Recommended Mode             | Rationale                |
+| ----------------------------------- | ---------------------------- | ------------------------ |
+| **Sentence content**                | Word Bank                    | Focuses on word order    |
+| **Single word, mastery < 50%**      | Letter Tiles                 | Most scaffolding support |
+| **Single word, mastery 50-80%**     | Flashcard or Missing Letters | Moderate challenge       |
+| **Single word, mastery > 80%**      | Keyboard                     | Full production test     |
+| **Recent success with harder mode** | That harder mode             | Builds on momentum       |
+
+> **Note**: The recommendation is guidance, not restriction. Children can always tap any available mode. See [LEARNING.md](LEARNING.md#adaptive-mode-selection) for the full algorithm.
 
 ---
 
@@ -1219,6 +1510,8 @@ The "Auto" mode intelligently selects input method:
 
 #### Correct Answer
 
+**Suggested CSS:**
+
 ```css
 @keyframes success-pop {
   0% { transform: scale(1); }
@@ -1234,6 +1527,8 @@ The "Auto" mode intelligently selects input method:
 
 #### Wrong Answer (Gentle)
 
+**Suggested CSS:**
+
 ```css
 @keyframes gentle-shake {
   0%, 100% { transform: translateX(0); }
@@ -1248,6 +1543,8 @@ The "Auto" mode intelligently selects input method:
 ```
 
 #### Stavle Celebration
+
+**Suggested CSS:**
 
 ```css
 @keyframes stavle-jump {
@@ -1333,251 +1630,18 @@ The app must meet accessibility standards, especially important for children who
 
 ---
 
-## Implementation Checklist
+## Status
 
-### Phase 1: Foundation ✅ COMPLETED
+The design system has been implemented with:
 
-- [x] Install Lexend font via `next/font/google`
-- [x] Update Tailwind config with new color palette
-- [x] Replace blue-purple gradients in global CSS (`.btn-primary`, `.text-gradient`, etc.)
-- [x] Update background colors (layout.tsx: `bg-nordic-birch`)
-- [x] Update Navigation component colors
-- [x] Update PWA manifest and SVG icons
-- [x] Add CSS custom properties for semantic colors
+- **Nordic spring color palette** — Warm, optimistic Scandinavian aesthetic
+- **Lexend typography** — Research-backed font for reading fluency and dyslexia support
+- **Button and card components** — Child-friendly (48-56px touch targets) and parent-focused variants
+- **Stavle mascot integration** — Supportive arctic fox guide appearing at meaningful moments
+- **Graduated feedback** — Nuanced responses based on performance, avoiding both false praise and harsh judgment
+- **Accessible design** — WCAG 2.1 AA compliance, `prefers-reduced-motion` support, screen reader friendly
 
-### Phase 2: Component Color Migration ✅ COMPLETED
-
-All old color classes (blue-500, purple-600, indigo-*) have been replaced with Nordic palette across all pages and components.
-
-#### Pages Updated
-
-- [x] `/app/page.tsx` - Home page
-- [x] `/app/about/page.tsx` - About page
-- [x] `/app/wordsets/page.tsx` - Word sets page
-- [x] `/app/family/page.tsx` - Family page
-- [x] `/app/results/page.tsx` - Results page
-- [x] `/app/profile/page.tsx` - Profile page
-- [x] `/app/settings/page.tsx` - Settings page
-- [x] `/app/family/progress/page.tsx` - Progress page
-- [x] `/app/auth/callback/page.tsx` - Auth callback page
-- [x] `/app/register/page.tsx` - Registration page
-- [x] `/app/not-found.tsx` - 404 page
-
-#### Core Components Updated
-
-- [x] `TestView.tsx` - Progress bar, buttons
-- [x] `PracticeView.tsx` - Nordic colors throughout
-- [x] `TestResultsView.tsx` - Buttons, backgrounds
-- [x] `SpellingFeedback.tsx` - Hint backgrounds
-- [x] `AuthForm.tsx` - Logo, buttons
-- [x] `WordSetEditor.tsx` - Nordic sky throughout
-- [x] `ModeSelectionModal.tsx` - Nordic sky
-- [x] `WordSetCard/ChildWordSetCard.tsx` - Nordic teal
-- [x] `WordSetCard/ParentWordSetCard.tsx` - Nordic palette
-- [x] `ChildAssignmentSelector.tsx` - Nordic sky
-- [x] `NavigationLanguageSwitcher.tsx` - Nordic sky
-- [x] `Icons.tsx` - Nordic colors
-- [x] `modals/BaseModal.tsx` - Nordic sky/teal buttons
-- [x] `modals/SettingsModal.tsx` - Nordic teal checkboxes/inputs
-- [x] `WordSetsListView.tsx` - Nordic teal empty state
-- [x] `TestResultsList.tsx` - Nordic sky username
-- [x] `LoadingSpinner.tsx` - Nordic sky spinner
-
-### Phase 3: Button & Card Redesign ✅ COMPLETED
-
-- [x] Created `Button` component (`/components/Button.tsx`)
-  - Variants: `primary-child`, `secondary-child`, `primary`, `secondary`, `success`, `practice`, `danger`
-  - Supports `as` prop for rendering as `<Link>` or `<a>`
-  - Loading state with spinner
-  - Disabled state styling
-  - Layout-only className overrides (w-full, mt-4, etc.)
-- [x] Created `IconButton` component (`/components/IconButton.tsx`)
-  - Variants: `default`, `primary`, `danger`
-  - 40px minimum touch target
-  - Required `aria-label` for accessibility
-- [x] Added comprehensive CSS classes in `globals.css`:
-  - `.btn-primary-child` - 56px, gradient, rounded-2xl
-  - `.btn-secondary-child` - 48px, nordic-snow bg
-  - `.btn-primary` / `.btn-secondary` - Standard 48px buttons
-  - `.btn-success` - Meadow green for positive actions
-  - `.btn-practice` - Cloudberry for practice mode
-  - `.btn-danger` - Coral red for destructive actions
-  - `.btn-icon` / `.btn-icon-primary` / `.btn-icon-danger` - 40px icon buttons
-  - `.card-child` - 20px radius, nordic-snow bg
-  - `.card-parent` - 12px radius, nordic-snow bg
-  - `.card-achievement` - Gradient border effect
-  - `.input-child` - 56px height for little fingers
-- [x] Migrated child components to use Button/IconButton:
-  - `ChildWordSetCard.tsx` - Fixed typo bug, applied card-child class
-  - `TestView.tsx` - All action buttons
-  - `TestResultsView.tsx` - Restart and exit buttons
-  - `PracticeView.tsx` - Navigation and action buttons
-- [x] Migrated parent components:
-  - `ParentWordSetCard.tsx` - Applied card-parent class, IconButtons
-- [x] Migrated page-level buttons:
-  - `not-found.tsx` - Using Button with `as="link"`
-
-#### Button Component Usage
-
-```tsx
-// Primary child button (large, gradient)
-<Button variant="primary-child" onClick={handleStart}>
-  Start Test
-</Button>
-
-// Secondary child button (softer)
-<Button variant="secondary-child" onClick={handleBack}>
-  Go Back
-</Button>
-
-// Button as Next.js Link
-<Button as="link" href="/wordsets" variant="primary">
-  View Word Sets
-</Button>
-
-// Icon button for actions
-<IconButton
-  variant="primary"
-  onClick={handlePlay}
-  aria-label={t('aria.playAudio')}
->
-  <PlayIcon className="w-4 h-4" />
-</IconButton>
-
-// With loading state
-<Button variant="primary" loading={isSubmitting}>
-  Save Changes
-</Button>
-
-// Layout overrides (only layout classes pass through)
-<Button variant="primary-child" className="w-full mt-4">
-  Full Width Button
-</Button>
-```
-
-### Phase 4: Tone of Voice ✅ COMPLETED
-
-- [x] Audit all i18n strings
-- [x] Rewrite error messages (softer tone)
-- [x] Add graduated success messages (score-tier based: 90%+ excellent, 80-89% great, 70-79% good, <70% keepGoing)
-- [x] Update empty state copy (inviting, encouraging language)
-- [x] Add personality to loading states
-- [x] Create TestResultsView tests (graduated message logic, accessibility)
-- [x] Create TestResultsList tests (empty state, results display)
-
-### Phase 5: Stavle Integration ✅ COMPLETED
-
-- [x] Stavle sprite component (`/components/Stavle.tsx`)
-  - 10 poses: listening, celebrating, encouraging, waving, thinking, reading, pointing, sleeping, idle, idle-resting
-  - 6 sizes: 48, 64, 96, 128, 160, 200px
-  - Pose-specific animations (bounce, nod, breathe, bob)
-  - Full ARIA support with EN/NO translations
-  - Respects `prefers-reduced-motion`
-- [x] Add Stavle to empty states
-  - `WordSetsListView.tsx`: pointing (128px) — guiding users to create content
-  - `TestResultsList.tsx`: encouraging (128px) — supportive when no history
-- [x] Add Stavle to test feedback
-  - `SpellingFeedback.tsx`: encouraging (48px) for wrong answers, thinking (48px) for "almost correct"
-  - `CorrectFeedback`: celebrating (64px) — immediate positive reinforcement
-  - Note: Stavle is NOT shown during active test input — keep focus on the task
-- [x] Add Stavle to celebration screens
-  - `TestResultsView.tsx`: Score-based poses via `getScorePose()`:
-    - 90%+: celebrating (160px) — big celebration
-    - 70-89%: encouraging (128px) — supportive
-    - <70%: reading (128px) — gentle, non-judgmental
-- [x] Create loading animation with Stavle
-  - `LoadingSpinner.tsx`: idle (96px) with bob animation
-
-#### Stavle Placement Principles
-
-**When to use Stavle:**
-- **Feedback moments** — Correct/incorrect answers, test results
-- **Empty states** — Guiding users when there's no content
-- **Celebrations** — Score reveals, achievements, milestones
-- **Waiting states** — Loading screens (brief, non-blocking)
-
-**When NOT to use Stavle:**
-- **During active tasks** — Don't distract from typing, reading, or primary actions
-- **Next to primary buttons** — Creates visual confusion about what to focus on
-- **In cramped spaces** — Stavle needs breathing room to feel natural
-- **Repetitively** — Overuse diminishes impact; save for meaningful moments
-
-**Size guidelines:**
-- **48px** — Inline feedback, tight spaces (minimum readable size)
-- **64px** — Brief celebrations, secondary feedback
-- **96-128px** — Empty states, results, medium emphasis
-- **160-200px** — Major celebrations, hero moments (use sparingly)
-
-**Placement rules:**
-- Give Stavle visual "breathing room" — don't crowd against other elements
-- Center Stavle above or below related content, not beside primary actions
-- On mobile, consider hiding decorative Stavle instances to save space
-- Stavle should feel like a supportive guide, not a distraction
-
-#### Stavle Usage Reference
-
-| Context                      | Pose        | Size  | Animation | Purpose                             |
-| ---------------------------- | ----------- | ----- | --------- | ----------------------------------- |
-| **Correct answer**           | celebrating | 64px  | bounce    | Brief celebration, not overwhelming |
-| **Wrong answer**             | encouraging | 48px  | nod       | Supportive, not discouraging        |
-| **Almost correct**           | thinking    | 48px  | nod       | Acknowledges effort                 |
-| **Excellent results (90%+)** | celebrating | 160px | bounce    | Big celebration earned              |
-| **Good results (70-89%)**    | encouraging | 128px | nod       | Acknowledges solid effort           |
-| **Needs practice (<70%)**    | reading     | 128px | bob       | Non-judgmental, study companion     |
-| **Empty word sets**          | pointing    | 128px | bob       | Guides toward action                |
-| **No test history**          | encouraging | 128px | nod       | Invites to start                    |
-| **Loading page**             | idle        | 96px  | bob       | Friendly waiting companion          |
-| **Companion (greeting)**     | waving      | 64px  | bob       | Welcome/context-aware greeting      |
-| **Companion (encouraging)**  | encouraging | 64px  | nod       | Progress acknowledgment             |
-| **Companion (celebrating)**  | celebrating | 64px  | bounce    | High performance recognition        |
-
-### Stavle Companion (Clippy-style Helper)
-
-The `StavleCompanion` component provides context-aware encouragement on the word sets page, adapting its message based on user state. It appears in the bottom-left corner like a helpful assistant.
-
-#### Companion States
-
-| User State                        | Pose        | Message (EN)                                         | Message (NO)                               |
-| --------------------------------- | ----------- | ---------------------------------------------------- | ------------------------------------------ |
-| **Child: New user**               | waving      | "Hey! Want to learn some new words with me?"         | "Hei! Skal vi lære noen nye ord sammen?"   |
-| **Child: Has sets, no tests**     | pointing    | "Pick one and let's go!"                             | "Velg et ordsett, så kjører vi!"           |
-| **Child: Returning (>7 days)**    | encouraging | "There you are! Ready to practice?"                  | "Der er du jo! Klar for å øve?"            |
-| **Child: Doing great (90%+)**     | celebrating | "Wow, you're really good at this!"                   | "Wow, du er skikkelig flink!"              |
-| **Child: Good progress (70-89%)** | encouraging | "Nice! You're getting better!"                       | "Bra jobba! Du blir bedre og bedre!"       |
-| **Child: Needs practice (<70%)**  | reading     | "Let's try a few more together!"                     | "Skal vi prøve noen flere sammen?"         |
-| **Parent: No word sets**          | pointing    | "Let's make some words to practice!"                 | "La oss lage noen ord å øve på!"           |
-| **Parent: Waiting for kids**      | encouraging | "All set! Now the kids can start practicing."        | "Alt klart! Nå kan barna begynne å øve."   |
-| **Parent: Family excelling**      | celebrating | "Your family is doing amazing!"                      | "Familien din er skikkelig flinke!"        |
-| **Parent: Family learning**       | reading     | "The kids are practicing — check how they're doing!" | "Barna øver flittig — se hvordan det går!" |
-
-#### Companion Behavior
-
-- **Appears after 500ms** — Doesn't compete with page load
-- **Dismissible** — Click × to hide for the session
-- **Non-blocking** — Fixed position, doesn't cover content
-- **Contextual** — Message changes based on user data
-- **Consistent placement** — Always bottom-left corner
-
-#### Implementation
-
-```tsx
-import { StavleCompanion } from "@/components/StavleCompanion";
-
-// In wordsets page
-<StavleCompanion
-  wordSets={wordSets}
-  userResults={userResults}
-  familyProgress={familyProgress}
-/>
-```
-
-### Phase 6: Animation & Polish
-
-- [ ] Add success/failure animations
-- [ ] Implement Stavle entrance animations
-- [ ] Add `prefers-reduced-motion` support
-- [ ] Final accessibility audit
-- [ ] Cross-browser testing
+See the source code in `/frontend/src/` for implementation details.
 
 ---
 

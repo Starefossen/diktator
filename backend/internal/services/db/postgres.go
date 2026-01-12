@@ -1961,21 +1961,23 @@ func (db *Postgres) GetWordSetMastery(userID, wordSetID string) ([]models.WordMa
 	return mastery, nil
 }
 
-// IncrementMastery increments the mastery counter for a specific input mode
-func (db *Postgres) IncrementMastery(userID, wordSetID, word string, mode models.InputMethod) (*models.WordMastery, error) {
+// IncrementMastery increments the mastery counter for a specific test mode
+// Only letterTiles, wordBank, and keyboard modes have mastery tracking
+func (db *Postgres) IncrementMastery(userID, wordSetID, word string, mode models.TestMode) (*models.WordMastery, error) {
 	ctx := context.Background()
 
-	// Determine which column to increment
+	// Determine which column to increment based on mode
+	// Only the three progressive input modes have mastery tracking
 	var column string
 	switch mode {
-	case models.InputMethodLetterTiles:
+	case models.TestModeLetterTiles:
 		column = "letter_tiles_correct"
-	case models.InputMethodWordBank:
+	case models.TestModeWordBank:
 		column = "word_bank_correct"
-	case models.InputMethodKeyboard:
+	case models.TestModeKeyboard:
 		column = "keyboard_correct"
 	default:
-		return nil, fmt.Errorf("invalid input method: %s", mode)
+		return nil, fmt.Errorf("mode %s does not have mastery tracking", mode)
 	}
 
 	// Upsert with increment

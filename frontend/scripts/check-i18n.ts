@@ -141,6 +141,17 @@ const DYNAMIC_USAGE_PREFIXES = [
   "sentence.difficulty.",
   // Mastery difficulty (used dynamically via template literal for wordset cards)
   "mastery.difficulty.",
+  // Test modes (accessed dynamically via TEST_MODE_INFO nameKey/descKey)
+  "modes.",
+  // Mode selector (accessed dynamically via reasonKey string)
+  "modeSelector.unavailable",
+  // Legacy mastery keys in test.ts (may be removed after full migration)
+  "mastery.keyboard",
+  "mastery.letterTiles",
+  "mastery.wordBank",
+  "mastery.recommended",
+  "mastery.replayMode",
+  "mastery.selectMethod",
 ];
 
 const ALLOWLISTED_UNUSED_PREFIXES = [
@@ -169,6 +180,8 @@ const SKIP_ATTRIBUTES = new Set([
   "src",
   "srcSet",
   "action",
+  // Media/audio attributes
+  "preload",
   // Form technical
   "type",
   "name",

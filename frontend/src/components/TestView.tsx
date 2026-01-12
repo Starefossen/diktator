@@ -10,6 +10,7 @@ import {
   TestAnswer,
   getEffectiveTestConfig,
   TestConfiguration,
+  TestMode,
 } from "@/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { requiresUserInteractionForAudio } from "@/lib/audioPlayer";
@@ -35,7 +36,12 @@ import { SentenceFeedback } from "@/components/SentenceFeedback";
 import { generateLetterTiles, generateWordBank } from "@/lib/challenges";
 import { isSentence } from "@/lib/sentenceConfig";
 import { scoreSentence, SentenceScoringResult } from "@/lib/sentenceScoring";
-import type { InputMethod } from "@/lib/sentenceConfig";
+import { FlashcardView } from "@/components/FlashcardView";
+import { LookCoverWriteView } from "@/components/LookCoverWriteView";
+import {
+  MissingLettersInput,
+  detectSpellingChallenge,
+} from "@/components/MissingLettersInput";
 
 // ============================================================================
 // Types
@@ -51,17 +57,21 @@ interface TestViewProps {
   currentTries: number;
   answers: TestAnswer[];
   isAudioPlaying: boolean;
-  testMode: "standard" | "dictation" | "translation";
+  testMode: TestMode;
   wordDirections: ("toTarget" | "toSource")[];
   lastUserAnswer: string;
-  inputMethod: InputMethod;
   onUserAnswerChange: (answer: string) => void;
   onSubmitAnswer: (directAnswer?: string) => void;
   onPlayCurrentWord: () => void;
   onExitTest: () => void;
 }
 
-type EffectiveInputMethod = Exclude<InputMethod, "auto">;
+/**
+ * Effective input type derived from TestMode
+ * letterTiles, wordBank, and keyboard are used for input
+ * Other modes (flashcard, lookCoverWrite, missingLetters) have their own components
+ */
+type EffectiveInputType = "letterTiles" | "wordBank" | "keyboard";
 
 interface FeedbackState {
   isCurrentSentence: boolean;
@@ -96,19 +106,18 @@ function useSpellingConfig(
 }
 
 /**
- * Resolves "auto" input method to concrete type based on content.
- * Sentences use word bank, single words use letter tiles.
+ * Derives the effective input type from TestMode.
+ * letterTiles, wordBank, keyboard modes use those input types directly.
+ * Other modes (translation, missingLetters, etc.) default to keyboard input.
  */
-function useEffectiveInputMethod(
-  inputMethod: InputMethod,
-  expectedAnswer: string,
-): EffectiveInputMethod {
+function useEffectiveInputType(testMode: TestMode): EffectiveInputType {
   return useMemo(() => {
-    if (inputMethod === "auto") {
-      return expectedAnswer.includes(" ") ? "wordBank" : "letterTiles";
-    }
-    return inputMethod;
-  }, [inputMethod, expectedAnswer]);
+    if (testMode === "letterTiles") return "letterTiles";
+    if (testMode === "wordBank") return "wordBank";
+    // All other modes (keyboard, flashcard, lookCoverWrite, missingLetters, translation)
+    // use keyboard input for text entry
+    return "keyboard";
+  }, [testMode]);
 }
 
 /**
@@ -321,7 +330,6 @@ export function TestView({
   testMode,
   wordDirections,
   lastUserAnswer,
-  inputMethod,
   onUserAnswerChange,
   onSubmitAnswer,
   onPlayCurrentWord,
@@ -367,10 +375,7 @@ export function TestView({
 
   // Custom hooks for derived state
   const spellingConfig = useSpellingConfig(testConfig);
-  const effectiveInputMethod = useEffectiveInputMethod(
-    inputMethod,
-    expectedAnswer,
-  );
+  const effectiveInputType = useEffectiveInputType(testMode);
   const tileKey = useTileResetKey(currentWordIndex, showFeedback);
   const feedbackState = useFeedbackState(
     showFeedback,
@@ -398,14 +403,14 @@ export function TestView({
 
   // Generate challenge items (memoized)
   const letterTiles = useMemo(() => {
-    if (effectiveInputMethod !== "letterTiles") return [];
+    if (effectiveInputType !== "letterTiles") return [];
     return generateLetterTiles(expectedAnswer);
-  }, [expectedAnswer, effectiveInputMethod, tileKey]);
+  }, [expectedAnswer, effectiveInputType, tileKey]);
 
   const wordBankItems = useMemo(() => {
-    if (effectiveInputMethod !== "wordBank") return [];
+    if (effectiveInputType !== "wordBank") return [];
     return generateWordBank(expectedAnswer, activeTest);
-  }, [expectedAnswer, effectiveInputMethod, activeTest, tileKey]);
+  }, [expectedAnswer, effectiveInputType, activeTest, tileKey]);
 
   // Event handlers (memoized)
   const handleTileOrBankSubmit = useCallback(
@@ -419,16 +424,78 @@ export function TestView({
 
   const handleAudioPlayWithFocus = useCallback(() => {
     onPlayCurrentWord();
-    if (effectiveInputMethod === "keyboard") {
+    if (effectiveInputType === "keyboard") {
       setTimeout(() => inputRef.current?.focus(), TIMING.INPUT_FOCUS_DELAY_MS);
     }
-  }, [onPlayCurrentWord, effectiveInputMethod]);
+  }, [onPlayCurrentWord, effectiveInputType]);
 
   // Computed values for rendering
   const progressPercent =
     ((currentWordIndex + 1) / processedWords.length) * 100;
   const isLastWord = currentWordIndex >= processedWords.length - 1;
   const correctCount = answers.filter((a) => a.isCorrect).length;
+
+  // Generate audio URL for specialized mode components
+  const audioUrl = useMemo(() => {
+    const apiBaseUrl =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    return `${apiBaseUrl}/api/wordsets/${activeTest.id}/words/${encodeURIComponent(expectedAnswer)}/audio?lang=${encodeURIComponent(activeTest.language)}`;
+  }, [activeTest.id, activeTest.language, expectedAnswer]);
+
+  // Generate blanked word data for missing letters mode
+  const missingLettersData = useMemo(() => {
+    if (testMode !== "missingLetters") return null;
+    const challenge = detectSpellingChallenge(expectedAnswer);
+    if (challenge) {
+      return challenge;
+    }
+    // Fallback: blank middle letters if no pattern detected
+    const midStart = Math.floor(expectedAnswer.length / 3);
+    const midEnd = Math.ceil((expectedAnswer.length * 2) / 3);
+    const blankedWord =
+      expectedAnswer.slice(0, midStart) +
+      "_".repeat(midEnd - midStart) +
+      expectedAnswer.slice(midEnd);
+    const missingLetters = expectedAnswer.slice(midStart, midEnd);
+    return { blankedWord, missingLetters, challengeType: "default" };
+  }, [testMode, expectedAnswer]);
+
+  // Handler for FlashcardView completion
+  const handleFlashcardComplete = useCallback(
+    (knewIt: boolean, verified?: boolean) => {
+      // If verified by typing, use that result; otherwise use self-report
+      const isCorrect = verified !== undefined ? verified : knewIt;
+      onUserAnswerChange(isCorrect ? expectedAnswer : "");
+      onSubmitAnswer(isCorrect ? expectedAnswer : "");
+    },
+    [expectedAnswer, onUserAnswerChange, onSubmitAnswer],
+  );
+
+  // Handler for LookCoverWriteView completion
+  const handleLookCoverWriteComplete = useCallback(
+    (answer: string, isCorrect: boolean) => {
+      onUserAnswerChange(answer);
+      onSubmitAnswer(answer);
+    },
+    [onUserAnswerChange, onSubmitAnswer],
+  );
+
+  // Handler for MissingLettersInput completion
+  const handleMissingLettersSubmit = useCallback(
+    (answer: string, isCorrect: boolean) => {
+      // For missing letters, construct the full word for tracking
+      const fullAnswer = isCorrect ? expectedAnswer : answer;
+      onUserAnswerChange(fullAnswer);
+      onSubmitAnswer(fullAnswer);
+    },
+    [expectedAnswer, onUserAnswerChange, onSubmitAnswer],
+  );
+
+  // Check if this is a specialized mode that has its own full-page UI
+  const isSpecializedMode =
+    testMode === "flashcard" ||
+    testMode === "lookCoverWrite" ||
+    testMode === "missingLetters";
 
   return (
     <div className="bg-nordic-birch">
@@ -485,164 +552,326 @@ export function TestView({
           </div>
         )}
 
-        {/* Test Area */}
-        <div className="mx-auto max-w-2xl">
-          <div className="rounded-lg bg-white p-4 text-center shadow-xl sm:p-8">
-            {/* Audio Play Button */}
-            <div className="mb-8">
-              <div className="flex items-center justify-center gap-4">
-                <div className="relative inline-block">
-                  {isAudioPlaying && (
-                    <div className="absolute -inset-3 animate-spin rounded-full border-4 border-transparent border-r-nordic-sky/80 border-t-nordic-sky" />
-                  )}
+        {/* Specialized Mode Views */}
+        {testMode === "flashcard" && !showFeedback && (
+          <div className="mx-auto max-w-2xl">
+            <div className="rounded-lg bg-white p-4 shadow-xl sm:p-8">
+              <FlashcardView
+                key={currentWordIndex}
+                word={expectedAnswer}
+                audioUrl={audioUrl}
+                onComplete={handleFlashcardComplete}
+                onSkip={onExitTest}
+                showDuration={testConfig?.flashcardShowDuration ?? 3000}
+                autoPlayAudio={testConfig?.autoPlayAudio ?? true}
+              />
+
+              {/* Exit Button */}
+              <div className="mt-6 flex justify-center">
+                <Button variant="secondary-child" onClick={onExitTest}>
+                  <span className="sm:hidden">{t("test.backMobile")}</span>
+                  <span className="hidden sm:inline">
+                    {t("test.backToWordSets")}
+                  </span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Score Summary */}
+            {answers.length > 0 && (
+              <div className="mt-8 text-center text-gray-600">
+                <p>
+                  {t("test.correctSoFar")}: {correctCount} / {answers.length}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {testMode === "lookCoverWrite" && !showFeedback && (
+          <div className="mx-auto max-w-2xl">
+            <div className="rounded-lg bg-white p-4 shadow-xl sm:p-8">
+              <LookCoverWriteView
+                key={currentWordIndex}
+                word={expectedAnswer}
+                audioUrl={audioUrl}
+                onComplete={handleLookCoverWriteComplete}
+                onSkip={onExitTest}
+                lookDuration={testConfig?.lookCoverWriteLookDuration ?? 4000}
+                autoPlayAudio={testConfig?.autoPlayAudio ?? true}
+              />
+
+              {/* Exit Button */}
+              <div className="mt-6 flex justify-center">
+                <Button variant="secondary-child" onClick={onExitTest}>
+                  <span className="sm:hidden">{t("test.backMobile")}</span>
+                  <span className="hidden sm:inline">
+                    {t("test.backToWordSets")}
+                  </span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Score Summary */}
+            {answers.length > 0 && (
+              <div className="mt-8 text-center text-gray-600">
+                <p>
+                  {t("test.correctSoFar")}: {correctCount} / {answers.length}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {testMode === "missingLetters" &&
+          !showFeedback &&
+          missingLettersData && (
+            <div className="mx-auto max-w-2xl">
+              <div className="rounded-lg bg-white p-4 shadow-xl sm:p-8">
+                {/* Audio button for missing letters mode */}
+                <div className="mb-6 flex justify-center">
                   <button
-                    onClick={handleAudioPlayWithFocus}
-                    className="relative transform rounded-full bg-linear-to-r from-nordic-meadow to-nordic-sky p-4 text-4xl text-nordic-midnight shadow-lg transition-all duration-200 hover:scale-105 hover:from-nordic-meadow/90 hover:to-nordic-sky/90 hover:shadow-xl sm:p-6 sm:text-6xl"
+                    onClick={onPlayCurrentWord}
+                    className="flex h-14 w-14 items-center justify-center rounded-full bg-sky-100 text-sky-600 hover:bg-sky-200"
+                    aria-label={t("test.listenToWord")}
                   >
-                    <HeroVolumeIcon className="h-12 w-12 text-nordic-midnight sm:h-16 sm:w-16" />
+                    🔊
                   </button>
+                </div>
+
+                <MissingLettersInput
+                  key={currentWordIndex}
+                  word={expectedAnswer}
+                  blankedWord={missingLettersData.blankedWord}
+                  missingLetters={missingLettersData.missingLetters}
+                  onSubmit={handleMissingLettersSubmit}
+                  onSkip={onExitTest}
+                />
+
+                {/* Exit Button */}
+                <div className="mt-6 flex justify-center">
+                  <Button variant="secondary-child" onClick={onExitTest}>
+                    <span className="sm:hidden">{t("test.backMobile")}</span>
+                    <span className="hidden sm:inline">
+                      {t("test.backToWordSets")}
+                    </span>
+                  </Button>
                 </div>
               </div>
 
-              {/* Instruction text */}
-              <p className="mt-4 text-gray-600">
-                <span className="sm:hidden">
-                  {t("test.listenToWordMobile")}
-                </span>
-                <span className="hidden sm:inline">
-                  {t("test.listenToWord")}
-                </span>
-              </p>
-
-              {/* Definition/context hint */}
-              {currentWord.definition && (
-                <div className="mx-auto mt-3 max-w-md rounded-lg border border-nordic-sky/30 bg-nordic-sky/10 px-4 py-2 text-sm">
-                  <p className="text-nordic-midnight">
-                    <span className="font-medium">{t("test.context")}</span>{" "}
-                    {currentWord.definition}
+              {/* Score Summary */}
+              {answers.length > 0 && (
+                <div className="mt-8 text-center text-gray-600">
+                  <p>
+                    {t("test.correctSoFar")}: {correctCount} / {answers.length}
                   </p>
                 </div>
               )}
             </div>
+          )}
 
-            {/* Input/Feedback Area */}
-            <div className="mb-6 flex flex-col justify-center">
-              {/* For letterTiles: always show the input, pass feedback state for inline display */}
-              {effectiveInputMethod === "letterTiles" ? (
-                <>
-                  {/* Show correct feedback above when answer is correct */}
-                  {showFeedback && lastAnswerCorrect && <CorrectFeedback />}
-                  {/* Show letter tile input with inline feedback when incorrect */}
-                  {(!showFeedback || !lastAnswerCorrect) && (
-                    <LetterTileInput
-                      key={tileKey}
-                      tiles={letterTiles}
-                      expectedWord={expectedAnswer}
-                      onSubmit={handleTileOrBankSubmit}
-                      disabled={showFeedback}
-                      feedbackState={tileFeedbackState}
-                    />
-                  )}
-                </>
-              ) : showFeedback ? (
-                <TestFeedbackDisplay
-                  lastAnswerCorrect={lastAnswerCorrect}
-                  feedbackState={feedbackState}
-                  lastUserAnswer={lastUserAnswer}
-                  expectedAnswer={expectedAnswer}
-                  currentTries={currentTries}
-                  maxAttempts={maxAttempts}
-                  showCorrectAnswer={testConfig?.showCorrectAnswer ?? false}
-                />
-              ) : effectiveInputMethod === "wordBank" ? (
-                <WordBankInput
-                  key={tileKey}
-                  items={wordBankItems}
-                  expectedWordCount={expectedAnswer.split(/\s+/).length}
-                  onSubmit={handleTileOrBankSubmit}
-                  disabled={showFeedback}
-                />
-              ) : (
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={userAnswer}
-                  onChange={(e) => onUserAnswerChange(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && onSubmitAnswer()}
-                  className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 text-center text-xl transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-nordic-teal sm:px-6 sm:py-4 sm:text-2xl"
-                  placeholder={
-                    testMode === "translation"
-                      ? t("test.typeTranslationHere")
-                      : t("test.typeWordHere")
-                  }
-                  autoFocus
-                  autoCorrect={testConfig?.enableAutocorrect ? "on" : "off"}
-                  autoCapitalize={testConfig?.enableAutocorrect ? "on" : "off"}
-                  spellCheck={testConfig?.enableAutocorrect}
-                />
-              )}
-            </div>
-
-            {/* Attempts remaining indicator */}
-            <div className="mb-8 flex h-5 justify-center">
-              {!showFeedback && effectiveInputMethod === "keyboard" && (
-                <p className="text-sm text-gray-500">
-                  {t("test.attemptsRemaining")}: {maxAttempts - currentTries}
-                </p>
-              )}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-wrap justify-center gap-2 sm:gap-4">
-              {/* Play Again Button - Hidden in dictation mode */}
-              {testMode !== "dictation" && (
-                <Button
-                  variant="secondary-child"
-                  onClick={handleAudioPlayWithFocus}
-                  disabled={showFeedback}
-                >
-                  <HeroVolumeIcon className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">
-                    {t("test.playAgain")}
-                  </span>
-                </Button>
-              )}
-
-              {/* Submit Button - Only for keyboard input */}
-              {effectiveInputMethod === "keyboard" && (
-                <Button
-                  variant="primary-child"
-                  onClick={() => onSubmitAnswer()}
-                  disabled={!userAnswer.trim() || showFeedback}
-                >
-                  <span className="sm:hidden">
-                    {isLastWord ? t("test.finishMobile") : t("test.nextMobile")}
-                  </span>
-                  <span className="hidden sm:inline">
-                    {isLastWord ? t("test.finishTest") : t("test.nextWord")}
-                  </span>
-                </Button>
-              )}
+        {/* Show feedback for specialized modes after submission */}
+        {isSpecializedMode && showFeedback && (
+          <div className="mx-auto max-w-2xl">
+            <div className="rounded-lg bg-white p-4 shadow-xl sm:p-8">
+              <TestFeedbackDisplay
+                lastAnswerCorrect={lastAnswerCorrect}
+                feedbackState={feedbackState}
+                lastUserAnswer={lastUserAnswer}
+                expectedAnswer={expectedAnswer}
+                currentTries={currentTries}
+                maxAttempts={maxAttempts}
+                showCorrectAnswer={testConfig?.showCorrectAnswer ?? false}
+              />
 
               {/* Exit Button */}
-              <Button variant="secondary-child" onClick={onExitTest}>
-                <span className="sm:hidden">{t("test.backMobile")}</span>
-                <span className="hidden sm:inline">
-                  {t("test.backToWordSets")}
-                </span>
-              </Button>
+              <div className="mt-6 flex justify-center">
+                <Button variant="secondary-child" onClick={onExitTest}>
+                  <span className="sm:hidden">{t("test.backMobile")}</span>
+                  <span className="hidden sm:inline">
+                    {t("test.backToWordSets")}
+                  </span>
+                </Button>
+              </div>
             </div>
-          </div>
 
-          {/* Score Summary */}
-          {answers.length > 0 && (
-            <div className="mt-8 text-center text-gray-600">
-              <p>
-                {t("test.correctSoFar")}: {correctCount} / {answers.length}
-              </p>
+            {/* Score Summary */}
+            {answers.length > 0 && (
+              <div className="mt-8 text-center text-gray-600">
+                <p>
+                  {t("test.correctSoFar")}: {correctCount} / {answers.length}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Standard Test Area - for letterTiles, wordBank, keyboard, translation modes */}
+        {!isSpecializedMode && (
+          <>
+            {/* Test Area */}
+            <div className="mx-auto max-w-2xl">
+              <div className="rounded-lg bg-white p-4 text-center shadow-xl sm:p-8">
+                {/* Audio Play Button */}
+                <div className="mb-8">
+                  <div className="flex items-center justify-center gap-4">
+                    <div className="relative inline-block">
+                      {isAudioPlaying && (
+                        <div className="absolute -inset-3 animate-spin rounded-full border-4 border-transparent border-r-nordic-sky/80 border-t-nordic-sky" />
+                      )}
+                      <button
+                        onClick={handleAudioPlayWithFocus}
+                        className="relative transform rounded-full bg-linear-to-r from-nordic-meadow to-nordic-sky p-4 text-4xl text-nordic-midnight shadow-lg transition-all duration-200 hover:scale-105 hover:from-nordic-meadow/90 hover:to-nordic-sky/90 hover:shadow-xl sm:p-6 sm:text-6xl"
+                      >
+                        <HeroVolumeIcon className="h-12 w-12 text-nordic-midnight sm:h-16 sm:w-16" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Instruction text */}
+                  <p className="mt-4 text-gray-600">
+                    <span className="sm:hidden">
+                      {t("test.listenToWordMobile")}
+                    </span>
+                    <span className="hidden sm:inline">
+                      {t("test.listenToWord")}
+                    </span>
+                  </p>
+
+                  {/* Definition/context hint */}
+                  {currentWord.definition && (
+                    <div className="mx-auto mt-3 max-w-md rounded-lg border border-nordic-sky/30 bg-nordic-sky/10 px-4 py-2 text-sm">
+                      <p className="text-nordic-midnight">
+                        <span className="font-medium">{t("test.context")}</span>{" "}
+                        {currentWord.definition}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Input/Feedback Area */}
+                <div className="mb-6 flex flex-col justify-center">
+                  {/* For letterTiles: always show the input, pass feedback state for inline display */}
+                  {effectiveInputType === "letterTiles" ? (
+                    <>
+                      {/* Show correct feedback above when answer is correct */}
+                      {showFeedback && lastAnswerCorrect && <CorrectFeedback />}
+                      {/* Show letter tile input with inline feedback when incorrect */}
+                      {(!showFeedback || !lastAnswerCorrect) && (
+                        <LetterTileInput
+                          key={tileKey}
+                          tiles={letterTiles}
+                          expectedWord={expectedAnswer}
+                          onSubmit={handleTileOrBankSubmit}
+                          disabled={showFeedback}
+                          feedbackState={tileFeedbackState}
+                        />
+                      )}
+                    </>
+                  ) : showFeedback ? (
+                    <TestFeedbackDisplay
+                      lastAnswerCorrect={lastAnswerCorrect}
+                      feedbackState={feedbackState}
+                      lastUserAnswer={lastUserAnswer}
+                      expectedAnswer={expectedAnswer}
+                      currentTries={currentTries}
+                      maxAttempts={maxAttempts}
+                      showCorrectAnswer={testConfig?.showCorrectAnswer ?? false}
+                    />
+                  ) : effectiveInputType === "wordBank" ? (
+                    <WordBankInput
+                      key={tileKey}
+                      items={wordBankItems}
+                      expectedWordCount={expectedAnswer.split(/\s+/).length}
+                      onSubmit={handleTileOrBankSubmit}
+                      disabled={showFeedback}
+                    />
+                  ) : (
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={userAnswer}
+                      onChange={(e) => onUserAnswerChange(e.target.value)}
+                      onKeyPress={(e) => e.key === "Enter" && onSubmitAnswer()}
+                      className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 text-center text-xl transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-nordic-teal sm:px-6 sm:py-4 sm:text-2xl"
+                      placeholder={
+                        testMode === "translation"
+                          ? t("test.typeTranslationHere")
+                          : t("test.typeWordHere")
+                      }
+                      autoFocus
+                      autoCorrect={testConfig?.enableAutocorrect ? "on" : "off"}
+                      autoCapitalize={
+                        testConfig?.enableAutocorrect ? "on" : "off"
+                      }
+                      spellCheck={testConfig?.enableAutocorrect}
+                    />
+                  )}
+                </div>
+
+                {/* Attempts remaining indicator */}
+                <div className="mb-8 flex h-5 justify-center">
+                  {!showFeedback && effectiveInputType === "keyboard" && (
+                    <p className="text-sm text-gray-500">
+                      {t("test.attemptsRemaining")}:{" "}
+                      {maxAttempts - currentTries}
+                    </p>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-wrap justify-center gap-2 sm:gap-4">
+                  {/* Play Again Button - Always shown for audio replay */}
+                  <Button
+                    variant="secondary-child"
+                    onClick={handleAudioPlayWithFocus}
+                    disabled={showFeedback}
+                  >
+                    <HeroVolumeIcon className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">
+                      {t("test.playAgain")}
+                    </span>
+                  </Button>
+
+                  {/* Submit Button - Only for keyboard input */}
+                  {effectiveInputType === "keyboard" && (
+                    <Button
+                      variant="primary-child"
+                      onClick={() => onSubmitAnswer()}
+                      disabled={!userAnswer.trim() || showFeedback}
+                    >
+                      <span className="sm:hidden">
+                        {isLastWord
+                          ? t("test.finishMobile")
+                          : t("test.nextMobile")}
+                      </span>
+                      <span className="hidden sm:inline">
+                        {isLastWord ? t("test.finishTest") : t("test.nextWord")}
+                      </span>
+                    </Button>
+                  )}
+
+                  {/* Exit Button */}
+                  <Button variant="secondary-child" onClick={onExitTest}>
+                    <span className="sm:hidden">{t("test.backMobile")}</span>
+                    <span className="hidden sm:inline">
+                      {t("test.backToWordSets")}
+                    </span>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Score Summary */}
+              {answers.length > 0 && (
+                <div className="mt-8 text-center text-gray-600">
+                  <p>
+                    {t("test.correctSoFar")}: {correctCount} / {answers.length}
+                  </p>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

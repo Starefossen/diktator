@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { WordSet, TestAnswer, getEffectiveTestConfig } from "@/types";
+import { WordSet, TestAnswer, getEffectiveTestConfig, TestMode } from "@/types";
 import type { ModelsSaveResultRequest as SaveResultRequest } from "@/generated";
 import { generatedApiClient } from "@/lib/api-generated";
 import {
@@ -37,15 +37,12 @@ export interface UseTestModeReturn {
   isAudioPlaying: boolean;
   currentWordAnswers: string[];
   currentWordAudioPlays: number;
-  testMode: "standard" | "dictation" | "translation";
+  testMode: TestMode;
   wordDirections: ("toTarget" | "toSource")[]; // For translation mode only
   lastUserAnswer: string; // Most recent answer submitted for spelling feedback (empty string if none)
 
   // Actions
-  startTest: (
-    wordSet: WordSet,
-    mode?: "standard" | "dictation" | "translation",
-  ) => void;
+  startTest: (wordSet: WordSet, mode?: TestMode) => void;
   exitTest: () => void;
   restartTest: () => void;
   setUserAnswer: (answer: string) => void;
@@ -57,9 +54,7 @@ export interface UseTestModeReturn {
 export function useTestMode(): UseTestModeReturn {
   // Test state
   const [activeTest, setActiveTest] = useState<WordSet | null>(null);
-  const [testMode, setTestMode] = useState<
-    "standard" | "dictation" | "translation"
-  >("standard");
+  const [testMode, setTestMode] = useState<TestMode>("keyboard");
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState("");
   const [answers, setAnswers] = useState<TestAnswer[]>([]);
@@ -147,92 +142,89 @@ export function useTestMode(): UseTestModeReturn {
     }
   }, [playTestWordAudio, currentWordIndex]);
 
-  const startTest = useCallback(
-    (wordSet: WordSet, mode?: "standard" | "dictation" | "translation") => {
-      // Mark user interaction (but don't waste gesture token on silent audio)
-      initializeAudioForIOS();
+  const startTest = useCallback((wordSet: WordSet, mode?: TestMode) => {
+    // Mark user interaction (but don't waste gesture token on silent audio)
+    initializeAudioForIOS();
 
-      const selectedMode =
-        mode || wordSet.testConfiguration?.defaultMode || "standard";
-      setTestMode(selectedMode);
-      setActiveTest(wordSet);
+    const selectedMode: TestMode =
+      mode || wordSet.testConfiguration?.defaultMode || "keyboard";
+    setTestMode(selectedMode);
+    setActiveTest(wordSet);
 
-      const config = getEffectiveTestConfig(wordSet);
-      const wordStrings = wordSet.words.map((w) => w.word);
-      const words = config.shuffleWords
-        ? [...wordStrings].sort(() => Math.random() - 0.5)
-        : wordStrings;
+    const config = getEffectiveTestConfig(wordSet);
+    const wordStrings = wordSet.words.map((w) => w.word);
+    const words = config.shuffleWords
+      ? [...wordStrings].sort(() => Math.random() - 0.5)
+      : wordStrings;
 
-      setProcessedWords(words);
+    setProcessedWords(words);
 
-      // For translation mode, generate direction for each word
-      if (selectedMode === "translation") {
-        const translationDirection =
-          wordSet.testConfiguration?.translationDirection || "toTarget";
-        const directions = words.map(() => {
-          if (translationDirection === "mixed") {
-            return Math.random() < 0.5 ? "toTarget" : "toSource";
-          }
-          return translationDirection as "toTarget" | "toSource";
-        });
-        setWordDirections(directions);
-      } else {
-        setWordDirections([]);
-      }
-
-      setCurrentWordIndex(0);
-      setUserAnswer("");
-      setAnswers([]);
-      setStartTime(new Date());
-      setWordStartTime(new Date());
-      setShowResult(false);
-      setCurrentTries(0);
-      setShowFeedback(false);
-      setTestInitialized(false);
-      setIsAudioPlaying(false);
-      setCurrentWordAnswers([]);
-      setCurrentWordAudioPlays(0);
-      setCurrentWordErrorTypes([]);
-
-      isPlayingAudioRef.current = false;
-      lastAutoPlayIndexRef.current = -1;
-      stopAudio();
-
-      // CRITICAL: Play first word audio SYNCHRONOUSLY in the click handler!
-      // This is the only way to ensure we have the user gesture token for autoplay.
-      // The browser's transient user activation expires after a few seconds or after
-      // being consumed by another audio play attempt.
-      if (config?.autoPlayAudio && words.length > 0) {
-        lastAutoPlayIndexRef.current = 0;
-        if (process.env.NODE_ENV === "development") {
-          console.log(
-            "[useTestMode] Playing first word SYNCHRONOUSLY in click handler",
-          );
+    // For translation mode, generate direction for each word
+    if (selectedMode === "translation") {
+      const translationDirection =
+        wordSet.testConfiguration?.translationDirection || "toTarget";
+      const directions = words.map(() => {
+        if (translationDirection === "mixed") {
+          return Math.random() < 0.5 ? "toTarget" : "toSource";
         }
-        // Play directly - this happens in the user gesture context!
-        playWordAudioHelper(words[0], wordSet, {
-          onStart: () => {
-            isPlayingAudioRef.current = true;
-            setIsAudioPlaying(true);
-          },
-          onEnd: () => {
-            isPlayingAudioRef.current = false;
-            setIsAudioPlaying(false);
-          },
-          onError: (error: Error) => {
-            console.error("[useTestMode] First word audio error:", error);
-            isPlayingAudioRef.current = false;
-            setIsAudioPlaying(false);
-          },
-          autoDelay: TIMING.TEST_START_AUDIO_DELAY_MS,
-          speechRate: 0.8,
-          isAutoPlay: false, // It's triggered by user click, so NOT autoplay!
-          preloadNext: true,
-        });
+        return translationDirection as "toTarget" | "toSource";
+      });
+      setWordDirections(directions);
+    } else {
+      setWordDirections([]);
+    }
+
+    setCurrentWordIndex(0);
+    setUserAnswer("");
+    setAnswers([]);
+    setStartTime(new Date());
+    setWordStartTime(new Date());
+    setShowResult(false);
+    setCurrentTries(0);
+    setShowFeedback(false);
+    setTestInitialized(false);
+    setIsAudioPlaying(false);
+    setCurrentWordAnswers([]);
+    setCurrentWordAudioPlays(0);
+    setCurrentWordErrorTypes([]);
+
+    isPlayingAudioRef.current = false;
+    lastAutoPlayIndexRef.current = -1;
+    stopAudio();
+
+    // CRITICAL: Play first word audio SYNCHRONOUSLY in the click handler!
+    // This is the only way to ensure we have the user gesture token for autoplay.
+    // The browser's transient user activation expires after a few seconds or after
+    // being consumed by another audio play attempt.
+    if (config?.autoPlayAudio && words.length > 0) {
+      lastAutoPlayIndexRef.current = 0;
+      if (process.env.NODE_ENV === "development") {
+        console.log(
+          "[useTestMode] Playing first word SYNCHRONOUSLY in click handler",
+        );
       }
-    },
-    [],
-  );
+      // Play directly - this happens in the user gesture context!
+      playWordAudioHelper(words[0], wordSet, {
+        onStart: () => {
+          isPlayingAudioRef.current = true;
+          setIsAudioPlaying(true);
+        },
+        onEnd: () => {
+          isPlayingAudioRef.current = false;
+          setIsAudioPlaying(false);
+        },
+        onError: (error: Error) => {
+          console.error("[useTestMode] First word audio error:", error);
+          isPlayingAudioRef.current = false;
+          setIsAudioPlaying(false);
+        },
+        autoDelay: TIMING.TEST_START_AUDIO_DELAY_MS,
+        speechRate: 0.8,
+        isAutoPlay: false, // It's triggered by user click, so NOT autoplay!
+        preloadNext: true,
+      });
+    }
+  }, []);
 
   const resetTestState = useCallback(() => {
     setCurrentWordIndex(0);

@@ -1,11 +1,117 @@
 // src/types/index.ts - Shared type definitions
 
 import type {
-  InputMethod,
   DifficultyLevel,
   GradeLevel,
   SpellingFocusCategory,
 } from "@/lib/sentenceConfig";
+
+// ======================
+// Test Mode Types (Unified)
+// ======================
+
+/**
+ * Unified test mode type - combines what were previously "test modes" and "input methods"
+ * See docs/LEARNING.md for detailed descriptions of each mode
+ */
+export type TestMode =
+  | "letterTiles" // Build It: arrange scrambled letters
+  | "wordBank" // Pick Words: tap words to build sentence
+  | "keyboard" // Type It: full spelling production
+  | "missingLetters" // Fill the Gap: complete the blanks
+  | "flashcard" // Quick Look: see word, countdown, self-check
+  | "lookCoverWrite" // Memory Spell: see, hide, type from memory
+  | "translation"; // Switch Languages: type in other language
+
+/**
+ * All valid test modes for iteration and validation
+ */
+export const TEST_MODES: TestMode[] = [
+  "letterTiles",
+  "wordBank",
+  "keyboard",
+  "missingLetters",
+  "flashcard",
+  "lookCoverWrite",
+  "translation",
+];
+
+/**
+ * Icon identifiers for test modes (mapped to Heroicons in components)
+ */
+export type ModeIconId =
+  | "puzzle"
+  | "documentText"
+  | "keyboard"
+  | "puzzleMissing"
+  | "eye"
+  | "lightBulb"
+  | "language";
+
+/**
+ * Mode metadata for UI display
+ */
+interface TestModeInfo {
+  mode: TestMode;
+  iconId: ModeIconId; // Icon identifier mapped to Heroicons
+  nameKey: string; // i18n key for child-friendly name
+  descKey: string; // i18n key for description
+  requiresSentence?: boolean; // Only available for sentences (wordBank)
+  requiresSingleWord?: boolean; // Only available for single words (letterTiles, missingLetters)
+  requiresTranslations?: boolean; // Only available when translations exist
+}
+
+/**
+ * Mode metadata lookup
+ */
+export const TEST_MODE_INFO: Record<TestMode, TestModeInfo> = {
+  letterTiles: {
+    mode: "letterTiles",
+    iconId: "puzzle",
+    nameKey: "modes.letterTiles",
+    descKey: "modes.letterTiles.desc",
+    requiresSingleWord: true,
+  },
+  wordBank: {
+    mode: "wordBank",
+    iconId: "documentText",
+    nameKey: "modes.wordBank",
+    descKey: "modes.wordBank.desc",
+    requiresSentence: true,
+  },
+  keyboard: {
+    mode: "keyboard",
+    iconId: "keyboard",
+    nameKey: "modes.keyboard",
+    descKey: "modes.keyboard.desc",
+  },
+  missingLetters: {
+    mode: "missingLetters",
+    iconId: "puzzleMissing",
+    nameKey: "modes.missingLetters",
+    descKey: "modes.missingLetters.desc",
+    requiresSingleWord: true,
+  },
+  flashcard: {
+    mode: "flashcard",
+    iconId: "eye",
+    nameKey: "modes.flashcard",
+    descKey: "modes.flashcard.desc",
+  },
+  lookCoverWrite: {
+    mode: "lookCoverWrite",
+    iconId: "lightBulb",
+    nameKey: "modes.lookCoverWrite",
+    descKey: "modes.lookCoverWrite.desc",
+  },
+  translation: {
+    mode: "translation",
+    iconId: "language",
+    nameKey: "modes.translation",
+    descKey: "modes.translation.desc",
+    requiresTranslations: true,
+  },
+};
 
 // Re-export sentence config types for convenience
 // ======================
@@ -182,7 +288,7 @@ export interface TestResult {
   score: number; // Percentage (0-100)
   totalWords: number;
   correctWords: number;
-  mode: "standard" | "dictation" | "translation"; // Test mode used
+  mode: TestMode; // Unified test mode
   incorrectWords?: string[] | null; // Deprecated: Use words field for detailed information
   words: WordTestResult[]; // Detailed information for each word in the test
   timeSpent: number; // Total time spent on test in seconds
@@ -211,16 +317,18 @@ export interface TestConfiguration {
   autoPlayAudio: boolean; // Auto-play word audio when starting/moving to next word (default: true)
   shuffleWords: boolean; // Randomize word order during test (default: false)
   enableAutocorrect: boolean; // Enable browser autocorrect/spellcheck in input field (default: false)
-  defaultMode?: "standard" | "dictation" | "translation"; // Default test mode (default: standard)
+  defaultMode?: TestMode; // Default test mode (default: keyboard)
   targetLanguage?: string; // Target language for translation mode
   translationDirection?: "toTarget" | "toSource" | "mixed"; // Direction for translation mode: toTarget (source→target), toSource (target→source), mixed (random)
   // Spelling feedback configuration
   almostCorrectThreshold?: number; // Levenshtein distance to consider "almost correct" (default: 2)
   showHintOnAttempt?: number; // Which attempt to show specific hints (default: 2 = progressive)
   enableKeyboardProximity?: boolean; // Detect QWERTY keyboard typos (default: true)
-  // Progressive challenge configuration (sentence dictation)
-  inputMethod?: InputMethod; // Input method for tests: keyboard, wordBank, letterTiles, or auto (default: auto)
+  // Progressive challenge configuration
   allowReplay?: boolean; // Allow practicing easier modes after unlocking harder ones (default: true)
+  // Specialized mode durations (in milliseconds)
+  flashcardShowDuration?: number; // How long to show word in flashcard mode before countdown (default: 3000)
+  lookCoverWriteLookDuration?: number; // How long to show word in look-cover-write mode (default: 4000)
 }
 
 // Default test configuration
@@ -232,7 +340,7 @@ export const DEFAULT_TEST_CONFIG: TestConfiguration = {
   shuffleWords: false,
   enableAutocorrect: false,
   translationDirection: "toTarget",
-  inputMethod: "auto",
+  defaultMode: "keyboard",
   allowReplay: true,
 };
 

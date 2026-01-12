@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { axe } from "vitest-axe";
 import { ModeSelectionModal } from "../ModeSelectionModal";
-import { WordSet } from "@/types";
+import { WordSet, TestMode, TEST_MODES } from "@/types";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 
 // Mock useAuth to avoid requiring AuthProvider
@@ -16,12 +16,19 @@ vi.mock("../modals/BaseModal", () => ({
   BaseModal: ({
     isOpen,
     onClose: _onClose,
+    title,
     children,
   }: {
     isOpen: boolean;
     onClose: () => void;
+    title?: string;
     children: React.ReactNode;
-  }) => (isOpen ? <div data-testid="base-modal">{children}</div> : null),
+  }) =>
+    isOpen ? (
+      <div data-testid="base-modal" aria-label={title}>
+        {children}
+      </div>
+    ) : null,
   ModalContent: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="modal-content">{children}</div>
   ),
@@ -45,23 +52,23 @@ vi.mock("../modals/BaseModal", () => ({
 
 const mockWordSetWithTranslations: WordSet = {
   id: "1",
-  name: "Spanish Words",
-  language: "en",
+  name: "Norwegian Words",
+  language: "no",
   familyId: "family-1",
   createdBy: "user-1",
   words: [
     {
-      word: "hello",
-      translations: [{ language: "es", text: "hola" }],
+      word: "hei",
+      translations: [{ language: "en", text: "hello" }],
     },
     {
-      word: "goodbye",
-      translations: [{ language: "es", text: "adiós" }],
+      word: "farvel",
+      translations: [{ language: "en", text: "goodbye" }],
     },
   ],
   testConfiguration: {
     defaultMode: "translation",
-    targetLanguage: "es",
+    targetLanguage: "en",
     maxAttempts: 3,
     autoPlayAudio: false,
     enableAutocorrect: false,
@@ -75,15 +82,41 @@ const mockWordSetWithTranslations: WordSet = {
 
 const mockWordSetWithoutTranslations: WordSet = {
   id: "2",
-  name: "Dictation Practice",
-  language: "en",
+  name: "Spelling Practice",
+  language: "no",
   familyId: "family-1",
   createdBy: "user-1",
-  words: [{ word: "practice" }, { word: "spelling" }],
+  words: [{ word: "skole" }, { word: "lese" }],
   testConfiguration: {
-    defaultMode: "dictation",
+    defaultMode: "keyboard",
     autoPlayAudio: true,
-    maxAttempts: 999,
+    maxAttempts: 3,
+    enableAutocorrect: false,
+    showCorrectAnswer: true,
+    autoAdvance: false,
+    shuffleWords: false,
+  },
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
+const mockWordSetWithSentences: WordSet = {
+  id: "3",
+  name: "Sentence Practice",
+  language: "no",
+  familyId: "family-1",
+  createdBy: "user-1",
+  words: [{ word: "Jeg liker å lese bøker." }],
+  sentences: [
+    {
+      sentence: "Jeg liker å lese bøker.",
+      difficulty: "beginner",
+    },
+  ],
+  testConfiguration: {
+    defaultMode: "wordBank",
+    maxAttempts: 3,
+    autoPlayAudio: false,
     enableAutocorrect: false,
     showCorrectAnswer: true,
     autoAdvance: false,
@@ -132,77 +165,77 @@ describe("ModeSelectionModal", () => {
     expect(screen.queryByTestId("base-modal")).not.toBeInTheDocument();
   });
 
-  it("shows all three mode buttons", () => {
+  it("shows all seven mode tiles", () => {
     renderModal(mockWordSetWithTranslations);
-    expect(screen.getByText(/standard/i)).toBeInTheDocument();
-    expect(screen.getByText(/dictation/i)).toBeInTheDocument();
-    expect(screen.getByText(/translation/i)).toBeInTheDocument();
+    expect(screen.getByText(/Build It/i)).toBeInTheDocument();
+    expect(screen.getByText(/Pick Words/i)).toBeInTheDocument();
+    expect(screen.getByText(/Type It/i)).toBeInTheDocument();
+    expect(screen.getByText(/Fill the Gap/i)).toBeInTheDocument();
+    expect(screen.getByText(/Quick Look/i)).toBeInTheDocument();
+    expect(screen.getByText(/Memory Spell/i)).toBeInTheDocument();
+    expect(screen.getByText(/Switch Languages/i)).toBeInTheDocument();
   });
 
-  it("marks default mode as recommended", () => {
+  it("calls onSelectMode with keyboard when Type It clicked", () => {
+    renderModal(mockWordSetWithTranslations);
+    const keyboardButton = screen.getByText(/Type It/i).closest("button");
+    if (keyboardButton) fireEvent.click(keyboardButton);
+    expect(mockOnSelectMode).toHaveBeenCalledWith("keyboard");
+  });
+
+  it("calls onSelectMode with flashcard when Quick Look clicked", () => {
+    renderModal(mockWordSetWithTranslations);
+    const flashcardButton = screen.getByText(/Quick Look/i).closest("button");
+    if (flashcardButton) fireEvent.click(flashcardButton);
+    expect(mockOnSelectMode).toHaveBeenCalledWith("flashcard");
+  });
+
+  it("calls onSelectMode with translation when Switch Languages clicked", () => {
     renderModal(mockWordSetWithTranslations);
     const translationButton = screen
-      .getByText(/translation/i)
+      .getByText(/Switch Languages/i)
       .closest("button");
-    expect(translationButton?.textContent).toContain("Recommended");
-  });
-
-  it("calls onSelectMode with standard when standard button clicked", () => {
-    renderModal(mockWordSetWithTranslations);
-    const standardButton = screen.getByText(/^standard/i);
-    fireEvent.click(standardButton);
-    expect(mockOnSelectMode).toHaveBeenCalledWith("standard");
-  });
-
-  it("calls onSelectMode with dictation when dictation button clicked", async () => {
-    renderModal(mockWordSetWithTranslations);
-    // Click dictation to expand the options panel
-    const dictationButton = screen.getByText(/dictation/i);
-    fireEvent.click(dictationButton);
-
-    // Wait for expansion and find the start button (text is "Start" from translations)
-    // The button is inside the expanded dictation section
-    const buttons = screen.getAllByRole("button");
-    const startButton = buttons.find(
-      (btn) =>
-        btn.textContent?.toLowerCase().includes("start") &&
-        !btn.textContent?.toLowerCase().includes("standard"),
-    );
-
-    expect(startButton).toBeDefined();
-    if (startButton) fireEvent.click(startButton);
-
-    expect(mockOnSelectMode).toHaveBeenCalledWith("dictation", "auto", false);
-  });
-
-  it("calls onSelectMode with translation when translation button clicked", () => {
-    renderModal(mockWordSetWithTranslations);
-    const translationButton = screen.getByText(/translation/i);
-    fireEvent.click(translationButton);
+    if (translationButton) fireEvent.click(translationButton);
     expect(mockOnSelectMode).toHaveBeenCalledWith("translation");
   });
 
   it("disables translation button when wordset has no translations", () => {
     renderModal(mockWordSetWithoutTranslations);
-    const buttons = screen.getAllByText(/translation/i);
-    const translationButton = buttons
-      .find((el) => el.closest("button"))
-      ?.closest("button");
+    const translationButton = screen
+      .getByText(/Switch Languages/i)
+      .closest("button");
     expect(translationButton).toBeDisabled();
   });
 
   it("enables translation button when wordset has translations", () => {
     renderModal(mockWordSetWithTranslations);
     const translationButton = screen
-      .getByText(/translation/i)
+      .getByText(/Switch Languages/i)
       .closest("button");
     expect(translationButton).not.toBeDisabled();
   });
 
-  it("shows recommended badge for dictation mode when it is default", () => {
+  it("disables wordBank button when wordset has no sentences", () => {
     renderModal(mockWordSetWithoutTranslations);
-    const dictationButton = screen.getByText(/dictation/i).closest("button");
-    expect(dictationButton?.textContent).toContain("Recommended");
+    const wordBankButton = screen.getByText(/Pick Words/i).closest("button");
+    expect(wordBankButton).toBeDisabled();
+  });
+
+  it("enables wordBank button when wordset has sentences", () => {
+    renderModal(mockWordSetWithSentences);
+    const wordBankButton = screen.getByText(/Pick Words/i).closest("button");
+    expect(wordBankButton).not.toBeDisabled();
+  });
+
+  it("disables letterTiles for sentence-only wordsets", () => {
+    // Create a word set with only sentences (no single words)
+    const sentenceOnlyWordSet: WordSet = {
+      ...mockWordSetWithSentences,
+      words: [{ word: "Jeg liker å lese bøker." }], // This is a sentence
+    };
+    renderModal(sentenceOnlyWordSet);
+    const letterTilesButton = screen.getByText(/Build It/i).closest("button");
+    expect(letterTilesButton).toBeDisabled();
   });
 
   it("calls onClose when cancel button clicked", () => {
@@ -214,20 +247,40 @@ describe("ModeSelectionModal", () => {
 
   it("shows mode descriptions", () => {
     renderModal(mockWordSetWithTranslations);
-    expect(
-      screen.getByText(/spell words after hearing them/i),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/listen and type the spelling/i),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/translate words between languages/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Arrange scrambled letters/i)).toBeInTheDocument();
+    expect(screen.getByText(/Tap words to build/i)).toBeInTheDocument();
+    expect(screen.getByText(/Type the full spelling/i)).toBeInTheDocument();
+    expect(screen.getByText(/Complete the blanks/i)).toBeInTheDocument();
+    expect(screen.getByText(/See, countdown, self-check/i)).toBeInTheDocument();
+    expect(screen.getByText(/Memorize then type/i)).toBeInTheDocument();
+    expect(screen.getByText(/Type in other language/i)).toBeInTheDocument();
   });
 
   it("has no accessibility violations", async () => {
     const { container } = renderModal(mockWordSetWithTranslations);
     const results = await axe(container);
     expect(results).toHaveNoViolations();
+  });
+
+  it("does not call onSelectMode for disabled modes", () => {
+    renderModal(mockWordSetWithoutTranslations);
+    const translationButton = screen
+      .getByText(/Switch Languages/i)
+      .closest("button");
+    if (translationButton) fireEvent.click(translationButton);
+    expect(mockOnSelectMode).not.toHaveBeenCalled();
+  });
+
+  it("always enables keyboard, flashcard, and lookCoverWrite modes", () => {
+    renderModal(mockWordSetWithoutTranslations);
+    const keyboardButton = screen.getByText(/Type It/i).closest("button");
+    const flashcardButton = screen.getByText(/Quick Look/i).closest("button");
+    const lookCoverWriteButton = screen
+      .getByText(/Memory Spell/i)
+      .closest("button");
+
+    expect(keyboardButton).not.toBeDisabled();
+    expect(flashcardButton).not.toBeDisabled();
+    expect(lookCoverWriteButton).not.toBeDisabled();
   });
 });

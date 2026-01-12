@@ -8,6 +8,9 @@ import {
   TestConfiguration,
   DEFAULT_TEST_CONFIG,
   Translation,
+  TestMode,
+  TEST_MODES,
+  TEST_MODE_INFO,
 } from "@/types";
 import {
   ModelsUpdateWordSetRequest,
@@ -110,9 +113,9 @@ export default function WordSetEditor({
   const [selectedLanguage, setSelectedLanguage] = useState<Language>(
     (initialData?.language as Language) || (language as Language),
   );
-  const [defaultMode, setDefaultMode] = useState<
-    "standard" | "dictation" | "translation"
-  >(initialData?.testConfiguration?.defaultMode || "standard");
+  const [defaultMode, setDefaultMode] = useState<TestMode>(
+    initialData?.testConfiguration?.defaultMode || "keyboard",
+  );
   const [targetLanguage, setTargetLanguage] = useState<Language>(
     (initialData?.testConfiguration?.targetLanguage as Language) || "en",
   );
@@ -346,141 +349,41 @@ export default function WordSetEditor({
 
             {/* Default Mode Selection */}
             <div>
-              <div className="block mb-3 font-medium text-gray-900 text-sm/6">
+              <label
+                htmlFor="default-mode"
+                className="block mb-3 font-medium text-gray-900 text-sm/6"
+              >
                 {t("wordsets.editor.defaultTestMode")}
-              </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                <label
-                  htmlFor="mode-standard"
-                  className="relative flex p-4 bg-white border rounded-lg shadow-sm cursor-pointer focus:outline-none"
+              </label>
+              <div className="grid grid-cols-1 mt-2">
+                <select
+                  id="default-mode"
+                  value={defaultMode}
+                  onChange={(e) => setDefaultMode(e.target.value as TestMode)}
+                  className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-2.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-nordic-teal sm:text-sm/6"
                 >
-                  <input
-                    id="mode-standard"
-                    type="radio"
-                    name="default-mode"
-                    value="standard"
-                    checked={defaultMode === "standard"}
-                    onChange={(e) =>
-                      setDefaultMode(
-                        e.target.value as
-                          | "standard"
-                          | "dictation"
-                          | "translation",
-                      )
-                    }
-                    className="sr-only"
-                  />
-                  <span className="flex flex-1">
-                    <span className="flex flex-col">
-                      <span className="block text-sm font-medium text-gray-900">
-                        {t("wordsets.editor.mode.standard")}
-                      </span>
-                      <span className="flex items-center mt-1 text-sm text-gray-500">
-                        {t("wordsets.editor.mode.standard.description")}
-                      </span>
-                    </span>
-                  </span>
-                  <svg
-                    className={`h-5 w-5 ${defaultMode === "standard" ? "text-nordic-teal" : "text-transparent"}`}
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </label>
-
-                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                <label
-                  htmlFor="mode-dictation"
-                  className="relative flex p-4 bg-white border rounded-lg shadow-sm cursor-pointer focus:outline-none"
+                  {TEST_MODES.map((mode) => {
+                    const info = TEST_MODE_INFO[mode];
+                    return (
+                      <option key={mode} value={mode}>
+                        {t(info.nameKey as Parameters<typeof t>[0])} -{" "}
+                        {t(info.descKey as Parameters<typeof t>[0])}
+                      </option>
+                    );
+                  })}
+                </select>
+                <svg
+                  className="self-center col-start-1 row-start-1 mr-2 text-gray-500 pointer-events-none size-5 justify-self-end sm:size-4"
+                  viewBox="0 0 16 16"
+                  fill="currentColor"
+                  aria-hidden="true"
                 >
-                  <input
-                    id="mode-dictation"
-                    type="radio"
-                    name="default-mode"
-                    value="dictation"
-                    checked={defaultMode === "dictation"}
-                    onChange={(e) =>
-                      setDefaultMode(
-                        e.target.value as
-                          | "standard"
-                          | "dictation"
-                          | "translation",
-                      )
-                    }
-                    className="sr-only"
+                  <path
+                    fillRule="evenodd"
+                    d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z"
+                    clipRule="evenodd"
                   />
-                  <span className="flex flex-1">
-                    <span className="flex flex-col">
-                      <span className="block text-sm font-medium text-gray-900">
-                        {t("wordsets.editor.mode.dictation")}
-                      </span>
-                      <span className="flex items-center mt-1 text-sm text-gray-500">
-                        {t("wordsets.editor.mode.dictation.description")}
-                      </span>
-                    </span>
-                  </span>
-                  <svg
-                    className={`h-5 w-5 ${defaultMode === "dictation" ? "text-nordic-teal" : "text-transparent"}`}
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </label>
-
-                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                <label
-                  htmlFor="mode-translation"
-                  className="relative flex p-4 bg-white border rounded-lg shadow-sm cursor-pointer focus:outline-none"
-                >
-                  <input
-                    id="mode-translation"
-                    type="radio"
-                    name="default-mode"
-                    value="translation"
-                    checked={defaultMode === "translation"}
-                    onChange={(e) =>
-                      setDefaultMode(
-                        e.target.value as
-                          | "standard"
-                          | "dictation"
-                          | "translation",
-                      )
-                    }
-                    className="sr-only"
-                  />
-                  <span className="flex flex-1">
-                    <span className="flex flex-col">
-                      <span className="block text-sm font-medium text-gray-900">
-                        {t("wordsets.editor.mode.translation")}
-                      </span>
-                      <span className="flex items-center mt-1 text-sm text-gray-500">
-                        {t("wordsets.editor.mode.translation.description")}
-                      </span>
-                    </span>
-                  </span>
-                  <svg
-                    className={`h-5 w-5 ${defaultMode === "translation" ? "text-nordic-teal" : "text-transparent"}`}
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </label>
+                </svg>
               </div>
 
               {/* Target Language for Translation Mode */}

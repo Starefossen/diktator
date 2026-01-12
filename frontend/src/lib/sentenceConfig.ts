@@ -141,15 +141,7 @@ const AGE_CONFIG = {
 
   /** Maximum age for child accounts */
   MAX_AGE: 12,
-
-  /** Age threshold for auto-selecting word bank/letter tiles vs keyboard */
-  WORD_BANK_AGE_THRESHOLD: 7,
 } as const;
-
-/**
- * Input method types for test configuration
- */
-export type InputMethod = "keyboard" | "wordBank" | "letterTiles" | "auto";
 
 /**
  * Difficulty levels for curated content
@@ -195,22 +187,6 @@ const SPELLING_FOCUS_CATEGORIES = {
 } as const;
 
 export type SpellingFocusCategory = keyof typeof SPELLING_FOCUS_CATEGORIES;
-
-/**
- * Determines the recommended input method based on user's birth year
- */
-function getRecommendedInputMethod(birthYear?: number): InputMethod {
-  if (!birthYear) return "auto";
-
-  const currentYear = new Date().getFullYear();
-  const age = currentYear - birthYear;
-
-  if (age <= AGE_CONFIG.WORD_BANK_AGE_THRESHOLD) {
-    return "letterTiles";
-  }
-
-  return "keyboard";
-}
 
 /**
  * Determines if content is a sentence (more than one word)

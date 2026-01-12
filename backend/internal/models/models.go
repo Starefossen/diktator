@@ -37,25 +37,53 @@ type WordMastery struct {
 	UpdatedAt          time.Time `json:"updatedAt" db:"updated_at"`
 }
 
-// InputMethod represents the challenge input method
-type InputMethod string
+// TestMode represents the unified test/input mode
+// These modes combine what were previously separate "test modes" and "input methods"
+type TestMode string
 
 const (
-	InputMethodKeyboard    InputMethod = "keyboard"
-	InputMethodWordBank    InputMethod = "wordBank"
-	InputMethodLetterTiles InputMethod = "letterTiles"
-	InputMethodAuto        InputMethod = "auto"
+	TestModeLetterTiles    TestMode = "letterTiles"    // Build It: arrange scrambled letters
+	TestModeWordBank       TestMode = "wordBank"       // Pick Words: tap words to build sentence
+	TestModeKeyboard       TestMode = "keyboard"       // Type It: full spelling production
+	TestModeMissingLetters TestMode = "missingLetters" // Fill the Gap: complete the blanks
+	TestModeFlashcard      TestMode = "flashcard"      // Quick Look: see word, countdown, self-check
+	TestModeLookCoverWrite TestMode = "lookCoverWrite" // Memory Spell: see, hide, type from memory
+	TestModeTranslation    TestMode = "translation"    // Switch Languages: type in other language
 )
 
-// GetCurrentChallengeMode returns the appropriate input method based on mastery
-func (m *WordMastery) GetCurrentChallengeMode(letterTilesRequired, wordBankRequired int) InputMethod {
+// ValidTestModes returns all valid test mode values for validation
+func ValidTestModes() []TestMode {
+	return []TestMode{
+		TestModeLetterTiles,
+		TestModeWordBank,
+		TestModeKeyboard,
+		TestModeMissingLetters,
+		TestModeFlashcard,
+		TestModeLookCoverWrite,
+		TestModeTranslation,
+	}
+}
+
+// IsValidTestMode checks if a string is a valid test mode
+func IsValidTestMode(mode string) bool {
+	for _, m := range ValidTestModes() {
+		if string(m) == mode {
+			return true
+		}
+	}
+	return false
+}
+
+// GetCurrentChallengeMode returns the appropriate test mode based on mastery
+// Returns letterTiles for beginners, wordBank after mastering tiles, keyboard after mastering both
+func (m *WordMastery) GetCurrentChallengeMode(letterTilesRequired, wordBankRequired int) TestMode {
 	if m.LetterTilesCorrect < letterTilesRequired {
-		return InputMethodLetterTiles
+		return TestModeLetterTiles
 	}
 	if m.WordBankCorrect < wordBankRequired {
-		return InputMethodWordBank
+		return TestModeWordBank
 	}
-	return InputMethodKeyboard
+	return TestModeKeyboard
 }
 
 // WordAudio represents audio information for a word
@@ -167,7 +195,7 @@ type TestResult struct {
 	Score          float64          `json:"score"` // Percentage (0-100)
 	TotalWords     int              `json:"totalWords"`
 	CorrectWords   int              `json:"correctWords"`
-	Mode           string           `json:"mode"`                     // "standard", "dictation", "translation"
+	Mode           string           `json:"mode"`                     // Test mode: letterTiles, wordBank, keyboard, missingLetters, flashcard, lookCoverWrite, translation
 	IncorrectWords []string         `json:"incorrectWords,omitempty"` // Deprecated: Use Words field for detailed information
 	Words          []WordTestResult `json:"words"`                    // Detailed information for each word in the test
 	TimeSpent      int              `json:"timeSpent"`                // Total time spent on test in seconds
@@ -214,7 +242,7 @@ type SaveResultRequest struct {
 	Score          float64          `json:"score" binding:"required"`
 	TotalWords     int              `json:"totalWords" binding:"required"`
 	CorrectWords   int              `json:"correctWords" binding:"required"`
-	Mode           string           `json:"mode" binding:"required,oneof=standard dictation translation"`
+	Mode           string           `json:"mode" binding:"required,oneof=letterTiles wordBank keyboard missingLetters flashcard lookCoverWrite translation"`
 	IncorrectWords []string         `json:"incorrectWords,omitempty"` // Deprecated: Use Words field for detailed information
 	Words          []WordTestResult `json:"words"`                    // Detailed information for each word in the test
 	TimeSpent      int              `json:"timeSpent"`

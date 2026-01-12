@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { WordSet, TestResult } from "@/types";
+import { WordSet, TestResult, TestMode } from "@/types";
 import { generatedApiClient } from "@/lib/api-generated";
 import { playWordAudio as playWordAudioHelper } from "@/lib/audioPlayer";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -27,17 +27,7 @@ function CuratedPageContent() {
 
   const view = searchParams.get("view");
   const wordSetId = searchParams.get("id");
-  const mode = searchParams.get("mode") as
-    | "standard"
-    | "dictation"
-    | "translation"
-    | null;
-  const inputMethodParam = searchParams.get("inputMethod") as
-    | "letterTiles"
-    | "wordBank"
-    | "keyboard"
-    | "auto"
-    | null;
+  const mode = searchParams.get("mode") as TestMode | null;
 
   const [curatedWordSets, setCuratedWordSets] = useState<WordSet[]>([]);
   const [userResults, setUserResults] = useState<TestResult[]>([]);
@@ -238,7 +228,6 @@ function CuratedPageContent() {
           testMode={testMode.testMode}
           wordDirections={testMode.wordDirections}
           lastUserAnswer={testMode.lastUserAnswer}
-          inputMethod={inputMethodParam ?? "keyboard"}
           onUserAnswerChange={testMode.setUserAnswer}
           onSubmitAnswer={testMode.handleSubmitAnswer}
           onPlayCurrentWord={testMode.playCurrentWord}
@@ -317,19 +306,8 @@ function CuratedPageContent() {
           <ModeSelectionModal
             wordSet={selectedWordSetForTest}
             isOpen={modeSelectionOpen}
-            onSelectMode={(
-              mode: "standard" | "dictation" | "translation",
-              inputMethod,
-              replayMode,
-            ) => {
-              // Build URL with optional input method params
-              let url = `/wordsets/curated?view=test&id=${selectedWordSetForTest.id}&mode=${mode}`;
-              if (inputMethod) {
-                url += `&inputMethod=${inputMethod}`;
-              }
-              if (replayMode) {
-                url += `&replay=true`;
-              }
+            onSelectMode={(mode: TestMode) => {
+              const url = `/wordsets/curated?view=test&id=${selectedWordSetForTest.id}&mode=${mode}`;
               router.push(url);
               setModeSelectionOpen(false);
               setSelectedWordSetForTest(null);

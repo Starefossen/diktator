@@ -108,7 +108,7 @@ func (stubRepo) GetWordMastery(userID, wordSetID, word string) (*models.WordMast
 func (stubRepo) GetWordSetMastery(userID, wordSetID string) ([]models.WordMastery, error) {
 	return nil, nil
 }
-func (stubRepo) IncrementMastery(userID, wordSetID, word string, mode models.InputMethod) (*models.WordMastery, error) {
+func (stubRepo) IncrementMastery(userID, wordSetID, word string, mode models.TestMode) (*models.WordMastery, error) {
 	return nil, nil
 }
 

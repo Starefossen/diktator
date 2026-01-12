@@ -1,0 +1,301 @@
+"use client";
+
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
+
+type LCWPhase = "look" | "cover" | "write" | "check";
+
+interface LookCoverWriteViewProps {
+  word: string;
+  audioUrl?: string;
+  onComplete: (answer: string, isCorrect: boolean) => void;
+  onSkip?: () => void;
+  lookDuration?: number; // Duration to show word in ms (default: 4000)
+  autoPlayAudio?: boolean; // Auto-play audio when word shows (default: true)
+}
+
+/**
+ * LookCoverWriteView - Memory Spell mode based on Look-Say-Cover-Write-Check method
+ *
+ * Flow: Look (see word + audio) → Cover (hide word) → Write (type from memory) → Check (compare)
+ *
+ * This is a more rigorous mode than Flashcard - requires actually typing the word
+ * from memory. Based on the evidence-based "Look, Say, Cover, Write, Check" method
+ * widely used in schools.
+ *
+ * @example
+ * <LookCoverWriteView
+ *   word="skole"
+ *   audioUrl="/api/audio/skole"
+ *   onComplete={(answer, correct) => handleResult(answer, correct)}
+ * />
+ */
+export function LookCoverWriteView({
+  word,
+  audioUrl,
+  onComplete,
+  onSkip,
+  lookDuration = 4000,
+  autoPlayAudio = true,
+}: LookCoverWriteViewProps) {
+  const { t } = useLanguage();
+  const [phase, setPhase] = useState<LCWPhase>("look");
+  const [userInput, setUserInput] = useState("");
+  const [progress, setProgress] = useState(100);
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Play audio
+  const playAudio = useCallback(() => {
+    if (audioUrl && audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => {
+        // Audio play failed
+      });
+    }
+  }, [audioUrl]);
+
+  // Auto-play audio on look phase
+  useEffect(() => {
+    if (phase === "look" && autoPlayAudio) {
+      playAudio();
+    }
+  }, [phase, autoPlayAudio, playAudio]);
+
+  // Look phase timer with progress bar
+  useEffect(() => {
+    if (phase !== "look") return;
+
+    const startTime = Date.now();
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, 100 - (elapsed / lookDuration) * 100);
+      setProgress(remaining);
+
+      if (elapsed >= lookDuration) {
+        clearInterval(interval);
+        setPhase("cover");
+      }
+    }, 50);
+
+    return () => clearInterval(interval);
+  }, [phase, lookDuration]);
+
+  // Focus input when entering write phase
+  useEffect(() => {
+    if (phase === "write" && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [phase]);
+
+  // Reset when word changes
+  useEffect(() => {
+    setPhase("look");
+    setUserInput("");
+    setProgress(100);
+    setIsCorrect(null);
+  }, [word]);
+
+  const handleReady = () => {
+    setPhase("write");
+  };
+
+  const handleSubmit = () => {
+    if (!userInput.trim()) return;
+
+    const correct =
+      userInput.toLowerCase().trim() === word.toLowerCase().trim();
+    setIsCorrect(correct);
+    setPhase("check");
+    onComplete(userInput, correct);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
+  // Helper to display word with letter spacing
+  const spacedWord = (w: string) => w.split("").join(" ");
+
+  return (
+    <div className="flex min-h-96 flex-col items-center justify-center gap-8">
+      {/* Audio element */}
+      {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" />}
+
+      {/* LOOK PHASE - Show the word */}
+      {phase === "look" && (
+        <>
+          <div className="rounded-xl bg-sky-50 px-6 py-2 text-sm font-medium uppercase tracking-wider text-sky-600">
+            {t("lookCoverWrite.look")}
+          </div>
+
+          {/* Word display with audio button */}
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={playAudio}
+              className="flex h-14 w-14 items-center justify-center rounded-full bg-sky-100 text-sky-600 hover:bg-sky-200"
+              aria-label={t("test.listenToWord")}
+            >
+              🔊
+            </button>
+            <span className="text-4xl font-bold tracking-wider text-gray-800">
+              {spacedWord(word)}
+            </span>
+          </div>
+
+          {/* Progress bar */}
+          <div className="h-3 w-64 overflow-hidden rounded-full bg-gray-200">
+            <div
+              className="h-full rounded-full bg-sky-400 transition-all duration-100"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+
+          <p className="text-sm text-gray-500">{t("lookCoverWrite.look")}</p>
+        </>
+      )}
+
+      {/* COVER PHASE - Word hidden, ready prompt */}
+      {phase === "cover" && (
+        <>
+          <div className="rounded-xl bg-amber-50 px-6 py-2 text-sm font-medium uppercase tracking-wider text-amber-600">
+            {t("lookCoverWrite.cover")}
+          </div>
+
+          {/* Thinking illustration placeholder */}
+          <div className="flex h-32 w-32 items-center justify-center rounded-full bg-gray-100 text-6xl">
+            🤔
+          </div>
+
+          <p className="text-xl font-medium text-gray-700">
+            {t("lookCoverWrite.cover")}
+          </p>
+
+          <button
+            type="button"
+            onClick={handleReady}
+            className="min-h-14 rounded-2xl bg-sky-500 px-12 py-4 text-xl font-semibold text-white shadow-lg hover:bg-sky-600"
+          >
+            {t("lookCoverWrite.ready")}
+          </button>
+        </>
+      )}
+
+      {/* WRITE PHASE - Type the word from memory */}
+      {phase === "write" && (
+        <>
+          <div className="rounded-xl bg-green-50 px-6 py-2 text-sm font-medium uppercase tracking-wider text-green-600">
+            {t("lookCoverWrite.write")}
+          </div>
+
+          <p className="text-xl font-medium text-gray-700">
+            {t("lookCoverWrite.write")}
+          </p>
+
+          <input
+            ref={inputRef}
+            type="text"
+            value={userInput}
+            onChange={(e) => setUserInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={t("test.typeWordHere")}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            className="min-h-14 w-72 rounded-xl border-2 border-gray-200 px-4 py-3 text-center text-2xl focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-200"
+          />
+
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!userInput.trim()}
+            className="min-h-12 rounded-xl bg-sky-500 px-8 py-3 font-semibold text-white hover:bg-sky-600 disabled:opacity-50"
+          >
+            {t("challenge.check")} ✓
+          </button>
+        </>
+      )}
+
+      {/* CHECK PHASE - Compare answers */}
+      {phase === "check" && (
+        <>
+          <div
+            className={`rounded-xl px-6 py-2 text-sm font-medium uppercase tracking-wider ${
+              isCorrect
+                ? "bg-green-50 text-green-600"
+                : "bg-amber-50 text-amber-600"
+            }`}
+          >
+            {t("lookCoverWrite.check")}
+          </div>
+
+          {/* Side-by-side comparison */}
+          <div className="flex flex-col gap-4 rounded-2xl bg-gray-50 p-6">
+            <div className="flex items-center gap-4">
+              <span className="w-28 text-right text-sm text-gray-500">
+                {t("lookCoverWrite.yourAnswer")}:
+              </span>
+              <span
+                className={`text-2xl font-semibold tracking-wider ${
+                  isCorrect ? "text-green-600" : "text-red-500"
+                }`}
+              >
+                {spacedWord(userInput)}
+              </span>
+              {isCorrect ? (
+                <span className="text-2xl">✓</span>
+              ) : (
+                <span className="text-2xl">✗</span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-4">
+              <span className="w-28 text-right text-sm text-gray-500">
+                {t("lookCoverWrite.correct")}:
+              </span>
+              <span className="text-2xl font-semibold tracking-wider text-gray-800">
+                {spacedWord(word)}
+              </span>
+              <button
+                type="button"
+                onClick={playAudio}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 text-sky-600 hover:bg-sky-200"
+                aria-label={t("test.listenToWord")}
+              >
+                🔊
+              </button>
+            </div>
+          </div>
+
+          {/* Feedback message */}
+          <p
+            className={`text-lg font-medium ${
+              isCorrect ? "text-green-600" : "text-amber-600"
+            }`}
+          >
+            {isCorrect
+              ? t("test.feedback.correct")
+              : t("test.feedback.almostThere")}
+          </p>
+        </>
+      )}
+
+      {/* Skip button (not in check phase) */}
+      {onSkip && phase !== "check" && (
+        <button
+          type="button"
+          onClick={onSkip}
+          className="mt-4 text-sm text-gray-400 hover:text-gray-600"
+        >
+          {t("challenge.clear")}
+        </button>
+      )}
+    </div>
+  );
+}

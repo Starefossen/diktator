@@ -119,36 +119,19 @@ export const wordsets = {
   "wordsets.moreChildren": "flere barn",
   "wordsets.created": "Opprettet",
 
-  // Mode selection
-  "wordsets.mode.title": "Testmodus",
-  "wordsets.mode.select": "Velg testmodus",
+  // Mode selection (updated for unified modes)
+  "wordsets.mode.title": "Velg modus",
+  "wordsets.mode.select": "Velg hvordan du vil øve",
   "wordsets.mode.description": "Velg hvordan du vil øve med dette ordsettet",
-  "wordsets.mode.standard": "Standard",
-  "wordsets.mode.standard.desc": "Stav ord etter å ha hørt dem",
-  "wordsets.mode.dictation": "Diktat",
-  "wordsets.mode.dictation.desc":
-    "Lytt og skriv stavemåten - ubegrensede gjentakelser",
-  "wordsets.mode.translation": "Oversettelse",
-  "wordsets.mode.translation.desc": "Oversett ord mellom språk",
-  "wordsets.mode.translation.unavailable":
-    "Legg til oversettelser i ordene for å aktivere oversettelsesmodus",
-  "wordsets.mode.translation.noTranslations":
-    "Ingen oversettelser tilgjengelig. Rediger ordsettet for å legge til oversettelser.",
   "wordsets.mode.recommended": "Anbefalt",
-  "wordsets.mode.unavailable": "Ikke tilgjengelig (ingen oversettelser)",
+  "wordsets.mode.unavailable": "Ikke tilgjengelig",
   "wordsets.mode.defaultMode": "Standardmodus",
   "wordsets.mode.targetLanguage": "Målspråk",
   "wordsets.mode.translationFor": "Oversettelse for",
   "wordsets.mode.addTranslation": "Legg til oversettelse",
 
-  // Word Set Editor
+  // Word Set Editor (updated for unified modes)
   "wordsets.editor.defaultTestMode": "Standard testmodus",
-  "wordsets.editor.mode.standard": "Standard",
-  "wordsets.editor.mode.standard.description": "Se ord, skriv stavemåten",
-  "wordsets.editor.mode.dictation": "Diktat",
-  "wordsets.editor.mode.dictation.description": "Lytt og stav",
-  "wordsets.editor.mode.translation": "Oversettelse",
-  "wordsets.editor.mode.translation.description": "Oversett ord",
   "wordsets.editor.targetLanguage": "Målspråk",
   "wordsets.editor.translationDirection":
     "Brukere vil oversette fra {source} til {target}",

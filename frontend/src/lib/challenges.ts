@@ -5,12 +5,8 @@
  * and word banks with contextual distractors for sentence challenges.
  */
 
-import {
-  CHALLENGE_CONFIG,
-  MASTERY_CONFIG,
-  InputMethod,
-} from "@/lib/sentenceConfig";
-import type { WordMastery, WordSet } from "@/types";
+import { CHALLENGE_CONFIG, MASTERY_CONFIG } from "@/lib/sentenceConfig";
+import type { WordMastery, WordSet, TestMode } from "@/types";
 
 /**
  * Represents a letter tile in the letter tiles challenge mode
@@ -255,7 +251,7 @@ export function generateWordBank(
  * 3. Keyboard (final mode)
  *
  * @param mastery - The user's mastery record for this word
- * @returns The recommended input method
+ * @returns The recommended test mode
  *
  * @example
  * getNextChallengeMode({ letterTilesCorrect: 0, ... }) // "letterTiles"
@@ -264,7 +260,7 @@ export function generateWordBank(
  */
 export function getNextChallengeMode(
   mastery: WordMastery | null | undefined,
-): InputMethod {
+): TestMode {
   if (!mastery) {
     return "letterTiles";
   }
@@ -292,7 +288,7 @@ export function getNextChallengeMode(
  */
 export function isModeUnlocked(
   mastery: WordMastery | null | undefined,
-  mode: InputMethod,
+  mode: TestMode,
 ): boolean {
   if (mode === "letterTiles") {
     // Letter tiles is always available

@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import WordSetEditor from "../WordSetEditor";
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import { WordSet } from "@/types";
+import { WordSet, TEST_MODES } from "@/types";
 
 // Mock useAuth hook
 vi.mock("@/contexts/AuthContext", () => ({
@@ -52,37 +52,44 @@ describe("WordSetEditor - Mode Selection", () => {
     );
   };
 
-  it("shows mode selection radio buttons", () => {
+  it("shows mode selection dropdown with all 7 modes", () => {
     renderEditor("create");
-    expect(screen.getByLabelText(/standard/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/dictation/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/translation/i)).toBeInTheDocument();
+    const modeSelect = screen.getByLabelText(
+      /default test mode/i,
+    ) as HTMLSelectElement;
+    expect(modeSelect).toBeInTheDocument();
+
+    // Verify all 7 modes are present as options by checking option values
+    expect(modeSelect.options).toHaveLength(7);
+
+    // Get all option values
+    const optionValues = Array.from(modeSelect.options).map((opt) => opt.value);
+    TEST_MODES.forEach((mode) => {
+      expect(optionValues).toContain(mode);
+    });
   });
 
-  it("defaults to standard mode", () => {
+  it("defaults to keyboard mode", () => {
     renderEditor("create");
-    const standardRadio = screen.getByLabelText(
-      /standard/i,
-    ) as HTMLInputElement;
-    expect(standardRadio.checked).toBe(true);
+    const modeSelect = screen.getByLabelText(
+      /default test mode/i,
+    ) as HTMLSelectElement;
+    expect(modeSelect.value).toBe("keyboard");
   });
 
-  it("allows selecting dictation mode", () => {
+  it("allows selecting different modes", () => {
     renderEditor("create");
-    const dictationRadio = screen.getByLabelText(
-      /dictation/i,
-    ) as HTMLInputElement;
-    fireEvent.click(dictationRadio);
-    expect(dictationRadio.checked).toBe(true);
-  });
+    const modeSelect = screen.getByLabelText(
+      /default test mode/i,
+    ) as HTMLSelectElement;
 
-  it("allows selecting translation mode", () => {
-    renderEditor("create");
-    const translationRadio = screen.getByLabelText(
-      /translation/i,
-    ) as HTMLInputElement;
-    fireEvent.click(translationRadio);
-    expect(translationRadio.checked).toBe(true);
+    // Select letterTiles mode
+    fireEvent.change(modeSelect, { target: { value: "letterTiles" } });
+    expect(modeSelect.value).toBe("letterTiles");
+
+    // Select translation mode
+    fireEvent.change(modeSelect, { target: { value: "translation" } });
+    expect(modeSelect.value).toBe("translation");
   });
 
   it("shows target language selector when translation mode is selected", () => {
@@ -92,8 +99,10 @@ describe("WordSetEditor - Mode Selection", () => {
     expect(screen.queryByLabelText(/target language/i)).not.toBeInTheDocument();
 
     // Select translation mode
-    const translationRadio = screen.getByLabelText(/translation/i);
-    fireEvent.click(translationRadio);
+    const modeSelect = screen.getByLabelText(
+      /default test mode/i,
+    ) as HTMLSelectElement;
+    fireEvent.change(modeSelect, { target: { value: "translation" } });
 
     // Now target language should be visible
     expect(screen.getByLabelText(/target language/i)).toBeInTheDocument();
@@ -103,8 +112,10 @@ describe("WordSetEditor - Mode Selection", () => {
     renderEditor("create");
 
     // Select translation mode
-    const translationRadio = screen.getByLabelText(/translation/i);
-    fireEvent.click(translationRadio);
+    const modeSelect = screen.getByLabelText(
+      /default test mode/i,
+    ) as HTMLSelectElement;
+    fireEvent.change(modeSelect, { target: { value: "translation" } });
 
     // The placeholder changes in translation mode - look for "Source word"
     await waitFor(() => {
@@ -112,42 +123,28 @@ describe("WordSetEditor - Mode Selection", () => {
     });
   });
 
-  it("hides target language selector in standard mode", () => {
+  it("hides target language selector in non-translation modes", () => {
     renderEditor("create");
+    const modeSelect = screen.getByLabelText(
+      /default test mode/i,
+    ) as HTMLSelectElement;
 
     // Select translation mode first
-    const translationRadio = screen.getByLabelText(/translation/i);
-    fireEvent.click(translationRadio);
+    fireEvent.change(modeSelect, { target: { value: "translation" } });
     expect(screen.getByLabelText(/target language/i)).toBeInTheDocument();
 
-    // Switch back to standard mode
-    const standardRadio = screen.getByLabelText(/standard/i);
-    fireEvent.click(standardRadio);
+    // Switch to keyboard mode
+    fireEvent.change(modeSelect, { target: { value: "keyboard" } });
     expect(screen.queryByLabelText(/target language/i)).not.toBeInTheDocument();
   });
 
-  it("hides target language selector in dictation mode", () => {
+  it("saves wordset with keyboard mode configuration", async () => {
     renderEditor("create");
 
-    // Select translation mode first
-    const translationRadio = screen.getByLabelText(/translation/i);
-    fireEvent.click(translationRadio);
-    expect(screen.getByLabelText(/target language/i)).toBeInTheDocument();
-
-    // Switch to dictation mode
-    const dictationRadio = screen.getByLabelText(/dictation/i);
-    fireEvent.click(dictationRadio);
-    expect(screen.queryByLabelText(/target language/i)).not.toBeInTheDocument();
-  });
-
-  it("saves wordset with standard mode configuration", async () => {
-    renderEditor("create");
-
-    // Standard mode should be selected by default
-    const standardRadio = screen.getByLabelText(
-      /standard/i,
-    ) as HTMLInputElement;
-    expect(standardRadio.checked).toBe(true);
+    const modeSelect = screen.getByLabelText(
+      /default test mode/i,
+    ) as HTMLSelectElement;
+    expect(modeSelect.value).toBe("keyboard");
 
     // Fill in basic info
     const nameInput = screen.getByLabelText(/name/i);
@@ -159,23 +156,23 @@ describe("WordSetEditor - Mode Selection", () => {
     const addButton = screen.getByText(/add word/i);
     fireEvent.click(addButton);
 
-    // Verify the standard mode is still selected
-    expect(standardRadio.checked).toBe(true);
+    // Verify the keyboard mode is still selected
+    expect(modeSelect.value).toBe("keyboard");
   });
 
-  it("saves wordset with dictation mode configuration", async () => {
+  it("saves wordset with letterTiles mode configuration", async () => {
     renderEditor("create");
 
-    // Select dictation mode
-    const dictationRadio = screen.getByLabelText(
-      /dictation/i,
-    ) as HTMLInputElement;
-    fireEvent.click(dictationRadio);
-    expect(dictationRadio.checked).toBe(true);
+    // Select letterTiles mode
+    const modeSelect = screen.getByLabelText(
+      /default test mode/i,
+    ) as HTMLSelectElement;
+    fireEvent.change(modeSelect, { target: { value: "letterTiles" } });
+    expect(modeSelect.value).toBe("letterTiles");
 
     // Fill in basic info
     const nameInput = screen.getByLabelText(/name/i);
-    fireEvent.change(nameInput, { target: { value: "Dictation Practice" } });
+    fireEvent.change(nameInput, { target: { value: "Letter Tiles Practice" } });
 
     // Add a word
     const wordInput = screen.getByPlaceholderText(/add a new word/i);
@@ -183,19 +180,19 @@ describe("WordSetEditor - Mode Selection", () => {
     const addButton = screen.getByText(/add word/i);
     fireEvent.click(addButton);
 
-    // Verify dictation mode is still selected
-    expect(dictationRadio.checked).toBe(true);
+    // Verify letterTiles mode is still selected
+    expect(modeSelect.value).toBe("letterTiles");
   });
 
   it("saves wordset with translation mode and target language", async () => {
     renderEditor("create");
 
     // Select translation mode
-    const translationRadio = screen.getByLabelText(
-      /translation/i,
-    ) as HTMLInputElement;
-    fireEvent.click(translationRadio);
-    expect(translationRadio.checked).toBe(true);
+    const modeSelect = screen.getByLabelText(
+      /default test mode/i,
+    ) as HTMLSelectElement;
+    fireEvent.change(modeSelect, { target: { value: "translation" } });
+    expect(modeSelect.value).toBe("translation");
 
     // Select target language - verify the field exists and is interactable
     const languageSelect = screen.getByLabelText(
@@ -215,7 +212,7 @@ describe("WordSetEditor - Mode Selection", () => {
     fireEvent.click(addButton);
 
     // Verify translation mode is still selected
-    expect(translationRadio.checked).toBe(true);
+    expect(modeSelect.value).toBe("translation");
   });
 
   it("preserves mode when editing existing wordset", () => {
@@ -247,21 +244,23 @@ describe("WordSetEditor - Mode Selection", () => {
 
     renderEditor("edit", existingWordSet);
 
-    const translationRadio = screen.getByLabelText(
-      /translation/i,
-    ) as HTMLInputElement;
-    expect(translationRadio.checked).toBe(true);
-
-    // Just verify the translation radio is checked - the target language field
-    // is part of the form state and will be in the saved data
-    expect(translationRadio.checked).toBe(true);
+    const modeSelect = screen.getByLabelText(
+      /default test mode/i,
+    ) as HTMLSelectElement;
+    expect(modeSelect.value).toBe("translation");
   });
 
-  it("shows mode descriptions", () => {
+  it("shows all 7 mode options in the dropdown", () => {
     renderEditor("create");
-    // Check that mode options are present with their labels
-    expect(screen.getByLabelText(/standard/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/dictation/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/translation/i)).toBeInTheDocument();
+    const modeSelect = screen.getByLabelText(
+      /default test mode/i,
+    ) as HTMLSelectElement;
+    expect(modeSelect).toBeInTheDocument();
+
+    // Check that all mode options are present
+    const options = screen.getAllByRole("option");
+    // Filter to mode options (the select for default-mode)
+    const modeOptions = Array.from(modeSelect.options);
+    expect(modeOptions).toHaveLength(7);
   });
 });

@@ -202,12 +202,12 @@ export function Navigation() {
                 </div>
                 <MenuItems
                   transition
-                  className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 transition focus:outline-none data-[closed]:scale-95 data-[closed]:transform data-[closed]:opacity-0 data-[enter]:duration-200 data-[enter]:ease-out data-[leave]:duration-75 data-[leave]:ease-in"
+                  className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 transition focus:outline-none data-closed:scale-95 data-closed:transform data-closed:opacity-0ata-[enter]:duration-200 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
                 >
                   <MenuItem>
                     <Link
                       href="/profile/"
-                      className="block px-4 py-3 text-base text-gray-700 data-[focus]:bg-gray-100"
+                      className="block px-4 py-3 text-base text-gray-700 data-focus:bg-gray-100"
                     >
                       <div className="flex items-center">
                         <svg
@@ -230,7 +230,7 @@ export function Navigation() {
                   <MenuItem>
                     <Link
                       href="/settings/"
-                      className="block px-4 py-3 text-base text-gray-700 data-[focus]:bg-gray-100"
+                      className="block px-4 py-3 text-base text-gray-700 data-focus:bg-gray-100"
                     >
                       <div className="flex items-center">
                         <svg
@@ -259,7 +259,7 @@ export function Navigation() {
                   <MenuItem>
                     <button
                       onClick={handleLogout}
-                      className="flex items-center w-full px-4 py-3 text-base text-gray-700 data-[focus]:bg-gray-100"
+                      className="flex items-center w-full px-4 py-3 text-base text-gray-700 data-focus:bg-gray-100"
                     >
                       <svg
                         className="w-4 h-4 mr-3"
@@ -289,11 +289,11 @@ export function Navigation() {
               <span className="sr-only">{t("aria.openMainMenu")}</span>
               <Bars3Icon
                 aria-hidden="true"
-                className="block h-6 w-6 group-data-[open]:hidden"
+                className="block h-6 w-6 group-data-open:hidden"
               />
               <XMarkIcon
                 aria-hidden="true"
-                className="hidden h-6 w-6 group-data-[open]:block"
+                className="hidden h-6 w-6 group-data-open:block"
               />
             </DisclosureButton>
           </div>

@@ -199,13 +199,13 @@ func TestCuratedWordSets_CanBeUsedForTests_Integration(t *testing.T) {
 
 	curatedWordSet := curatedResponse.Data[0]
 
-	t.Run("StandardMode", func(t *testing.T) {
+	t.Run("KeyboardMode", func(t *testing.T) {
 		resultPayload := map[string]interface{}{
 			"wordSetId":    curatedWordSet.ID,
 			"score":        80.0,
 			"totalWords":   10,
 			"correctWords": 8,
-			"mode":         "standard",
+			"mode":         "keyboard",
 			"timeSpent":    120,
 			"words": []map[string]interface{}{
 				{
@@ -222,16 +222,16 @@ func TestCuratedWordSets_CanBeUsedForTests_Integration(t *testing.T) {
 
 		resp := makeRequest(env.Router, "POST", "/api/users/results", resultPayload, nil)
 		assert.Equal(t, http.StatusCreated, resp.Code,
-			"Should be able to save standard mode result for curated word set: %s", resp.Body.String())
+			"Should be able to save keyboard mode result for curated word set: %s", resp.Body.String())
 	})
 
-	t.Run("DictationMode", func(t *testing.T) {
+	t.Run("LetterTilesMode", func(t *testing.T) {
 		resultPayload := map[string]interface{}{
 			"wordSetId":    curatedWordSet.ID,
 			"score":        90.0,
 			"totalWords":   10,
 			"correctWords": 9,
-			"mode":         "dictation",
+			"mode":         "letterTiles",
 			"timeSpent":    150,
 			"words": []map[string]interface{}{
 				{
@@ -249,7 +249,7 @@ func TestCuratedWordSets_CanBeUsedForTests_Integration(t *testing.T) {
 
 		resp := makeRequest(env.Router, "POST", "/api/users/results", resultPayload, nil)
 		assert.Equal(t, http.StatusCreated, resp.Code,
-			"Should be able to save dictation mode result for curated word set: %s", resp.Body.String())
+			"Should be able to save letterTiles mode result for curated word set: %s", resp.Body.String())
 	})
 
 	t.Run("TranslationMode", func(t *testing.T) {

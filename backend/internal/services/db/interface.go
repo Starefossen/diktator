@@ -83,7 +83,7 @@ type Repository interface {
 	// Word mastery operations
 	GetWordMastery(userID, wordSetID, word string) (*models.WordMastery, error)
 	GetWordSetMastery(userID, wordSetID string) ([]models.WordMastery, error)
-	IncrementMastery(userID, wordSetID, word string, mode models.InputMethod) (*models.WordMastery, error)
+	IncrementMastery(userID, wordSetID, word string, mode models.TestMode) (*models.WordMastery, error)
 }
 
 // Config holds database configuration

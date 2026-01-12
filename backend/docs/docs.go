@@ -2125,8 +2125,12 @@ const docTemplate = `{
                 "mode": {
                     "type": "string",
                     "enum": [
-                        "standard",
-                        "dictation",
+                        "letterTiles",
+                        "wordBank",
+                        "keyboard",
+                        "missingLetters",
+                        "flashcard",
+                        "lookCoverWrite",
                         "translation"
                     ]
                 },

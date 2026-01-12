@@ -427,17 +427,17 @@ func main() {
 					// All children get letter tiles mastery to show progress
 					if childData.age >= models.WordBankUnlockAge {
 						// Age 6+: Full mastery to unlock word bank
-						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodLetterTiles)
-						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodLetterTiles)
+						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.TestModeLetterTiles)
+						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.TestModeLetterTiles)
 					} else {
 						// Under 6: Partial mastery (shows progress but doesn't unlock)
-						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodLetterTiles)
+						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.TestModeLetterTiles)
 					}
 
 					// Age 7+: Also unlock keyboard mode
 					if childData.age >= models.KeyboardUnlockAge {
-						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodWordBank)
-						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodWordBank)
+						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.TestModeWordBank)
+						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.TestModeWordBank)
 					}
 				}
 
@@ -766,15 +766,15 @@ func main() {
 						}
 
 						if rand.Intn(100) < masteryChance {
-							serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodLetterTiles)
-							serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodLetterTiles)
+							serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.TestModeLetterTiles)
+							serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.TestModeLetterTiles)
 						} else {
 							// Partial progress (1 mastery point)
-							serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodLetterTiles)
+							serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.TestModeLetterTiles)
 						}
 					} else {
 						// Under 6: Always partial mastery
-						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodLetterTiles)
+						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.TestModeLetterTiles)
 					}
 
 					// Word bank - age 7+, vary mastery
@@ -787,8 +787,8 @@ func main() {
 						}
 
 						if rand.Intn(100) < wordBankChance {
-							serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodWordBank)
-							serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodWordBank)
+							serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.TestModeWordBank)
+							serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.TestModeWordBank)
 						}
 					}
 
@@ -796,8 +796,8 @@ func main() {
 					if childAge >= 12 {
 						// Sam: 40% mastery on keyboard (hardest mode)
 						if rand.Intn(100) < 40 {
-							serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodKeyboard)
-							serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodKeyboard)
+							serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.TestModeKeyboard)
+							serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.TestModeKeyboard)
 						}
 					}
 				}
