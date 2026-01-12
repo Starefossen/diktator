@@ -12,12 +12,12 @@ Diktator helps children learn vocabulary through audio-based spelling tests. Par
 │  (Next.js/SSG)  │     │    (Go/Gin)     │     │   (Cloud SQL)   │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
          │                      │
-         │                      ├────────────────┐
-         │                      ▼                ▼
-         │               ┌─────────────┐  ┌─────────────┐
-         │               │   TTS API   │  │ ord.uib.no  │
-         │               │ (on-demand) │  │ (dictionary)│
-         │               └─────────────┘  └─────────────┘
+         │                      ├────────────────┬────────────────┐
+         │                      ▼                ▼                ▼
+         │               ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+         │               │   TTS API   │  │ ord.uib.no  │  │   Storage   │
+         │               │ (on-demand) │  │ (dictionary)│  │  (GCS/R2)   │
+         │               └─────────────┘  └─────────────┘  └─────────────┘
          ▼
   ┌─────────────────┐
   │  OIDC Provider  │
@@ -25,14 +25,15 @@ Diktator helps children learn vocabulary through audio-based spelling tests. Par
   └─────────────────┘
 ```
 
-| Component  | Technology           | Hosting   | Purpose                                   |
-| ---------- | -------------------- | --------- | ----------------------------------------- |
-| Frontend   | Next.js + TypeScript | Knative   | Static UI served as container             |
-| Backend    | Go + Gin             | Knative   | API, business logic, TTS generation       |
-| Database   | PostgreSQL           | Cloud SQL | User data, word sets, results             |
-| TTS        | Cloud TTS API        | GCP (JIT) | Generate audio on-demand                  |
-| Auth       | OIDC (Zitadel)       | External  | User authentication                       |
-| Dictionary | ord.uib.no           | External  | Norwegian word validation and inflections |
+| Component  | Technology           | Hosting   | Purpose                                      |
+| ---------- | -------------------- | --------- | -------------------------------------------- |
+| Frontend   | Next.js + TypeScript | Knative   | Static UI served as container                |
+| Backend    | Go + Gin             | Knative   | API, business logic, TTS generation          |
+| Database   | PostgreSQL           | Cloud SQL | User data, word sets, results                |
+| TTS        | Cloud TTS API        | GCP (JIT) | Generate audio on-demand (words & sentences) |
+| Auth       | OIDC (Zitadel)       | External  | User authentication                          |
+| Dictionary | ord.uib.no           | External  | Norwegian word validation and inflections    |
+| Storage    | GCS/R2               | Cloud     | Audio file caching                           |
 
 ## Data Model
 
@@ -68,6 +69,24 @@ Family (1) ──────┬──────── (*) FamilyMember ──
 **WordSetAssignment**: Junction table linking word sets to child users. Parents can assign specific word sets to children for targeted practice. Children see all family word sets but assigned ones are prioritized in the UI. Only children can be assigned (enforced by database constraint).
 
 **TestResult**: Record of a completed test with score, mode used, and per-word answers.
+
+### Progressive Input System
+
+The app supports three input methods that adapt to the child's skill level and content type:
+
+| Input Method | Description                            | Best For                      |
+| ------------ | -------------------------------------- | ----------------------------- |
+| Letter Tiles | Tap-to-place scrambled letters         | Young children (5-7), words   |
+| Word Bank    | Tap-to-select words to build sentences | Sentences, ages 7-10          |
+| Keyboard     | Traditional text input                 | Older children (10+), mastery |
+
+**Auto Mode**: When `inputMethod="auto"`, the system selects:
+- **Letter Tiles** for single words
+- **Word Bank** for sentences (text containing spaces)
+
+**Progressive Unlocking** (future): Users can progress through modes based on mastery:
+- 2 correct answers in Letter Tiles → unlock Word Bank
+- 2 correct answers in Word Bank → unlock Keyboard
 
 ## Security Model
 
@@ -146,6 +165,22 @@ Families support multiple parent accounts with equal permissions. Parents can:
 - Industry standard, battle-tested security
 - Separates auth concerns from application
 - Supports multiple identity providers
+
+### Text-to-Speech (TTS)
+
+The TTS service supports both single words and full sentences:
+
+| Content Type | Speaking Rate | Cache Key Format                 | Max Length |
+| ------------ | ------------- | -------------------------------- | ---------- |
+| Single Word  | 0.8x (slower) | `word:{hash}:{lang}:{voice}`     | N/A        |
+| Sentence     | 0.9x (faster) | `sentence:{hash}:{lang}:{voice}` | 15 words   |
+
+**Sentence Detection**: Content with spaces is automatically treated as a sentence.
+
+**SSML Prosody**: Sentences use SSML for natural pacing:
+```xml
+<speak><prosody rate="0.9">{sentence}</prosody></speak>
+```
 
 ## API Design Principles
 

@@ -5,14 +5,19 @@ import React, {
   useState,
   useCallback,
 } from "react";
-import { WordSet, TestAnswer, getEffectiveTestConfig } from "@/types";
+import {
+  WordSet,
+  TestAnswer,
+  getEffectiveTestConfig,
+  TestConfiguration,
+} from "@/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { requiresUserInteractionForAudio } from "@/lib/audioPlayer";
 import { HeroVolumeIcon, HeroDevicePhoneMobileIcon } from "@/components/Icons";
 import {
   analyzeSpelling,
-  SpellingAnalysisResult,
   DEFAULT_SPELLING_CONFIG,
+  SpellingFeedbackConfig,
 } from "@/lib/spellingAnalysis";
 import {
   SpellingFeedback,
@@ -25,8 +30,12 @@ import { WordBankInput } from "@/components/WordBankInput";
 import { SentenceFeedback } from "@/components/SentenceFeedback";
 import { generateLetterTiles, generateWordBank } from "@/lib/challenges";
 import { isSentence } from "@/lib/sentenceConfig";
-import { scoreSentence } from "@/lib/sentenceScoring";
+import { scoreSentence, SentenceScoringResult } from "@/lib/sentenceScoring";
 import type { InputMethod } from "@/lib/sentenceConfig";
+
+// ============================================================================
+// Types
+// ============================================================================
 
 interface TestViewProps {
   activeTest: WordSet;
@@ -48,6 +57,210 @@ interface TestViewProps {
   onExitTest: () => void;
 }
 
+type EffectiveInputMethod = Exclude<InputMethod, "auto">;
+
+interface FeedbackState {
+  isCurrentSentence: boolean;
+  sentenceScoringResult: SentenceScoringResult | null;
+  spellingConfig: SpellingFeedbackConfig;
+}
+
+// ============================================================================
+// Custom Hooks
+// ============================================================================
+
+/**
+ * Creates a memoized spelling config from test configuration.
+ * Consolidates config creation to avoid duplicate objects.
+ */
+function useSpellingConfig(
+  testConfig: TestConfiguration | undefined,
+): SpellingFeedbackConfig {
+  return useMemo(
+    () => ({
+      ...DEFAULT_SPELLING_CONFIG,
+      almostCorrectThreshold: testConfig?.almostCorrectThreshold ?? 2,
+      showHintOnAttempt: testConfig?.showHintOnAttempt ?? 2,
+      enableKeyboardProximity: testConfig?.enableKeyboardProximity ?? true,
+    }),
+    [
+      testConfig?.almostCorrectThreshold,
+      testConfig?.showHintOnAttempt,
+      testConfig?.enableKeyboardProximity,
+    ],
+  );
+}
+
+/**
+ * Resolves "auto" input method to concrete type based on content.
+ * Sentences use word bank, single words use letter tiles.
+ */
+function useEffectiveInputMethod(
+  inputMethod: InputMethod,
+  expectedAnswer: string,
+): EffectiveInputMethod {
+  return useMemo(() => {
+    if (inputMethod === "auto") {
+      return expectedAnswer.includes(" ") ? "wordBank" : "letterTiles";
+    }
+    return inputMethod;
+  }, [inputMethod, expectedAnswer]);
+}
+
+/**
+ * Generates a key that increments when tiles/word bank should reset.
+ * Consolidates two separate effects into one unified trigger.
+ */
+function useTileResetKey(
+  currentWordIndex: number,
+  showFeedback: boolean,
+): number {
+  const [tileKey, setTileKey] = useState(0);
+
+  useEffect(() => {
+    // Reset when word changes OR when feedback is hidden (retry attempt)
+    if (!showFeedback) {
+      setTileKey((prev) => prev + 1);
+    }
+  }, [currentWordIndex, showFeedback]);
+
+  return tileKey;
+}
+
+/**
+ * Computes feedback state for current answer.
+ * Handles both sentence scoring and single word analysis.
+ */
+function useFeedbackState(
+  showFeedback: boolean,
+  lastUserAnswer: string,
+  expectedAnswer: string,
+  currentTries: number,
+  spellingConfig: SpellingFeedbackConfig,
+): FeedbackState {
+  const isCurrentSentence = useMemo(
+    () => isSentence(expectedAnswer),
+    [expectedAnswer],
+  );
+
+  const sentenceScoringResult = useMemo(() => {
+    if (!showFeedback || !isCurrentSentence || !lastUserAnswer) {
+      return null;
+    }
+    return scoreSentence(expectedAnswer, lastUserAnswer, currentTries);
+  }, [
+    showFeedback,
+    isCurrentSentence,
+    lastUserAnswer,
+    expectedAnswer,
+    currentTries,
+  ]);
+
+  return { isCurrentSentence, sentenceScoringResult, spellingConfig };
+}
+
+// ============================================================================
+// Validation
+// ============================================================================
+
+function validateProps(
+  activeTest: WordSet,
+  currentWordIndex: number,
+  processedWords: string[],
+): void {
+  if (!activeTest?.words || activeTest.words.length === 0) {
+    throw new Error("TestView: activeTest must have at least one word");
+  }
+  if (currentWordIndex < 0 || currentWordIndex >= activeTest.words.length) {
+    throw new Error(
+      `TestView: currentWordIndex (${currentWordIndex}) out of bounds [0, ${activeTest.words.length - 1}]`,
+    );
+  }
+  if (!processedWords || processedWords.length === 0) {
+    throw new Error("TestView: processedWords must not be empty");
+  }
+}
+
+// ============================================================================
+// Sub-components (Feedback Display)
+// ============================================================================
+
+interface TestFeedbackDisplayProps {
+  lastAnswerCorrect: boolean;
+  feedbackState: FeedbackState;
+  lastUserAnswer: string;
+  expectedAnswer: string;
+  currentTries: number;
+  maxAttempts: number;
+  showCorrectAnswer: boolean;
+}
+
+function TestFeedbackDisplay({
+  lastAnswerCorrect,
+  feedbackState,
+  lastUserAnswer,
+  expectedAnswer,
+  currentTries,
+  maxAttempts,
+  showCorrectAnswer,
+}: TestFeedbackDisplayProps) {
+  const { t } = useLanguage();
+  const { isCurrentSentence, sentenceScoringResult, spellingConfig } =
+    feedbackState;
+
+  if (lastAnswerCorrect) {
+    return <CorrectFeedback />;
+  }
+
+  if (isCurrentSentence && sentenceScoringResult) {
+    return (
+      <SentenceFeedback
+        result={sentenceScoringResult}
+        currentAttempt={currentTries}
+        maxAttempts={maxAttempts}
+        showCorrectAnswer={currentTries >= maxAttempts && showCorrectAnswer}
+        expectedSentence={expectedAnswer}
+        timerDurationMs={TIMING.FEEDBACK_DISPLAY_MS}
+      />
+    );
+  }
+
+  // Compute spelling analysis only when needed (inside feedback component)
+  const spellingAnalysis =
+    lastUserAnswer && !lastAnswerCorrect
+      ? analyzeSpelling(lastUserAnswer, expectedAnswer, spellingConfig)
+      : null;
+
+  if (spellingAnalysis && lastUserAnswer) {
+    return (
+      <SpellingFeedback
+        userAnswer={lastUserAnswer}
+        expectedWord={expectedAnswer}
+        analysis={spellingAnalysis}
+        currentAttempt={currentTries}
+        maxAttempts={maxAttempts}
+        config={spellingConfig}
+        showCorrectAnswer={currentTries >= maxAttempts && showCorrectAnswer}
+        timerDurationMs={TIMING.FEEDBACK_DISPLAY_MS}
+      />
+    );
+  }
+
+  // Fallback to simple feedback if no analysis available
+  return (
+    <div className="animate-in fade-in-0 slide-in-from-top-2 rounded-lg border border-red-300 bg-red-100 p-4 duration-300">
+      <p className="text-lg font-semibold text-red-800">
+        {t("test.incorrect")} - {t("test.tryAgain")} ({currentTries}/
+        {maxAttempts})
+      </p>
+    </div>
+  );
+}
+
+// ============================================================================
+// Main Component
+// ============================================================================
+
 export function TestView({
   activeTest,
   currentWordIndex,
@@ -68,37 +281,21 @@ export function TestView({
   onExitTest,
 }: TestViewProps) {
   const { t } = useLanguage();
-
-  // Runtime validation for required props
-  if (!activeTest?.words || activeTest.words.length === 0) {
-    throw new Error("TestView: activeTest must have at least one word");
-  }
-  if (currentWordIndex < 0 || currentWordIndex >= activeTest.words.length) {
-    throw new Error(
-      `TestView: currentWordIndex (${currentWordIndex}) out of bounds [0, ${activeTest.words.length - 1}]`,
-    );
-  }
-  if (!processedWords || processedWords.length === 0) {
-    throw new Error("TestView: processedWords must not be empty");
-  }
-
-  const testConfig = getEffectiveTestConfig(activeTest);
-  const currentWord = activeTest.words[currentWordIndex];
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Ensure currentWord exists after validation
+  // Validation (throws on invalid props)
+  validateProps(activeTest, currentWordIndex, processedWords);
+
+  // Derived configuration
+  const testConfig = getEffectiveTestConfig(activeTest);
+  const maxAttempts = testConfig?.maxAttempts ?? 3;
+  const currentWord = activeTest.words[currentWordIndex];
+
   if (!currentWord) {
     throw new Error(`TestView: No word found at index ${currentWordIndex}`);
   }
 
-  // Focus input when feedback is hidden (ready for new input)
-  useEffect(() => {
-    if (!showFeedback && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [showFeedback]);
-
-  // For translation mode, get direction from the hook
+  // Translation mode state
   const targetLanguage = activeTest.testConfiguration?.targetLanguage;
   const wordDirection =
     wordDirections.length > currentWordIndex
@@ -110,11 +307,10 @@ export function TestView({
       ? currentWord?.translations?.find((tr) => tr.language === targetLanguage)
       : undefined;
 
-  // Determine what to show based on direction
   const showWord =
     wordDirection === "toTarget" ? currentWord.word : translation?.text;
 
-  // Get the expected answer for spelling analysis
+  // Expected answer computation
   const expectedAnswer = useMemo(() => {
     if (testMode === "translation" && translation) {
       return wordDirection === "toTarget" ? translation.text : currentWord.word;
@@ -122,128 +318,72 @@ export function TestView({
     return currentWord.word;
   }, [testMode, translation, wordDirection, currentWord.word]);
 
-  // Compute spelling analysis when showing feedback for incorrect answer
-  const spellingAnalysis: SpellingAnalysisResult | null = useMemo(() => {
-    if (!showFeedback || lastAnswerCorrect || !lastUserAnswer) {
-      return null;
-    }
-    const config = {
-      ...DEFAULT_SPELLING_CONFIG,
-      almostCorrectThreshold: testConfig?.almostCorrectThreshold ?? 2,
-      showHintOnAttempt: testConfig?.showHintOnAttempt ?? 2,
-      enableKeyboardProximity: testConfig?.enableKeyboardProximity ?? true,
-    };
-    return analyzeSpelling(lastUserAnswer, expectedAnswer, config);
-  }, [
-    showFeedback,
-    lastAnswerCorrect,
-    lastUserAnswer,
+  // Custom hooks for derived state
+  const spellingConfig = useSpellingConfig(testConfig);
+  const effectiveInputMethod = useEffectiveInputMethod(
+    inputMethod,
     expectedAnswer,
-    testConfig?.almostCorrectThreshold,
-    testConfig?.showHintOnAttempt,
-    testConfig?.enableKeyboardProximity,
-  ]);
-
-  // Spelling feedback config from test configuration
-  const spellingConfig = useMemo(
-    () => ({
-      ...DEFAULT_SPELLING_CONFIG,
-      almostCorrectThreshold: testConfig?.almostCorrectThreshold ?? 2,
-      showHintOnAttempt: testConfig?.showHintOnAttempt ?? 2,
-      enableKeyboardProximity: testConfig?.enableKeyboardProximity ?? true,
-    }),
-    [
-      testConfig?.almostCorrectThreshold,
-      testConfig?.showHintOnAttempt,
-      testConfig?.enableKeyboardProximity,
-    ],
   );
-
-  // Check if current content is a sentence (for sentence-specific feedback)
-  const isCurrentSentence = useMemo(
-    () => isSentence(expectedAnswer),
-    [expectedAnswer],
-  );
-
-  // Compute sentence scoring when showing feedback for sentence answers
-  const sentenceScoringResult = useMemo(() => {
-    if (!showFeedback || !isCurrentSentence || !lastUserAnswer) {
-      return null;
-    }
-    return scoreSentence(expectedAnswer, lastUserAnswer, currentTries);
-  }, [
+  const tileKey = useTileResetKey(currentWordIndex, showFeedback);
+  const feedbackState = useFeedbackState(
     showFeedback,
-    isCurrentSentence,
     lastUserAnswer,
     expectedAnswer,
     currentTries,
-  ]);
+    spellingConfig,
+  );
 
-  // Key for regenerating tiles/word bank when word changes or after feedback
-  const [tileKey, setTileKey] = useState(0);
-
-  // Reset tile key when word changes
+  // Focus input when feedback is hidden (ready for new input)
   useEffect(() => {
-    setTileKey((prev) => prev + 1);
-  }, [currentWordIndex]);
-
-  // Also reset tile key when feedback is hidden (for retry attempts)
-  useEffect(() => {
-    if (!showFeedback) {
-      setTileKey((prev) => prev + 1);
+    if (!showFeedback && inputRef.current) {
+      inputRef.current.focus();
     }
   }, [showFeedback]);
 
-  // Determine effective input method (auto-select based on content type)
-  // Must be computed BEFORE letterTiles/wordBankItems since they depend on it
-  const effectiveInputMethod = useMemo(() => {
-    if (inputMethod === "auto") {
-      // For sentences (contains spaces), prefer wordBank for progressive mastery
-      // For single words, prefer letterTiles for younger users
-      const isSentenceAnswer = expectedAnswer.includes(" ");
-      return isSentenceAnswer ? "wordBank" : "letterTiles";
-    }
-    return inputMethod;
-  }, [inputMethod, expectedAnswer]);
-
-  // Generate letter tiles for the current word (memoized with key)
+  // Generate challenge items (memoized)
   const letterTiles = useMemo(() => {
     if (effectiveInputMethod !== "letterTiles") return [];
     return generateLetterTiles(expectedAnswer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expectedAnswer, effectiveInputMethod, tileKey]);
 
-  // Generate word bank items for sentence mode
   const wordBankItems = useMemo(() => {
     if (effectiveInputMethod !== "wordBank") return [];
     return generateWordBank(expectedAnswer, activeTest);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expectedAnswer, effectiveInputMethod, activeTest, tileKey]);
 
-  // Handle submission from LetterTileInput or WordBankInput
+  // Event handlers (memoized)
   const handleTileOrBankSubmit = useCallback(
     (_isCorrect: boolean, answer: string) => {
-      console.log("[TestView] handleTileOrBankSubmit called:", {
-        answer,
-        expectedAnswer,
-        effectiveInputMethod,
-      });
       // Pass answer directly to avoid React state timing issues
       onUserAnswerChange(answer);
-      console.log("[TestView] calling onSubmitAnswer with direct answer");
       onSubmitAnswer(answer);
     },
-    [onUserAnswerChange, onSubmitAnswer, expectedAnswer, effectiveInputMethod],
+    [onUserAnswerChange, onSubmitAnswer],
   );
+
+  const handleAudioPlayWithFocus = useCallback(() => {
+    onPlayCurrentWord();
+    if (effectiveInputMethod === "keyboard") {
+      setTimeout(() => inputRef.current?.focus(), TIMING.INPUT_FOCUS_DELAY_MS);
+    }
+  }, [onPlayCurrentWord, effectiveInputMethod]);
+
+  // Computed values for rendering
+  const progressPercent =
+    ((currentWordIndex + 1) / processedWords.length) * 100;
+  const isLastWord = currentWordIndex >= processedWords.length - 1;
+  const correctCount = answers.filter((a) => a.isCorrect).length;
 
   return (
     <div className="bg-nordic-birch">
-      <div className="container px-4 py-8 mx-auto">
-        {/* Header */}
+      <div className="container mx-auto px-4 py-8">
+        {/* Header with Progress */}
         <div className="mb-8 text-center">
           <h1 className="mb-2 text-3xl font-bold text-gray-800">
             {activeTest.name}
           </h1>
+
+          {/* Translation mode instruction */}
           {testMode === "translation" && translation && (
             <p className="mt-2 text-xl text-gray-700">
               {wordDirection === "toTarget" ? (
@@ -261,26 +401,28 @@ export function TestView({
               )}
             </p>
           )}
+
+          {/* Progress text */}
           <p className="text-gray-600">
             {t("test.progress")} {currentWordIndex + 1} {t("common.of")}{" "}
             {processedWords.length}
           </p>
-          <div className="w-full h-2 mt-4 bg-gray-200 rounded-full">
+
+          {/* Progress bar */}
+          <div className="mt-4 h-2 w-full rounded-full bg-gray-200">
             <div
-              className="h-2 transition-all duration-300 rounded-full bg-linear-to-r from-nordic-sky to-nordic-teal"
-              style={{
-                width: `${((currentWordIndex + 1) / processedWords.length) * 100}%`,
-              }}
-            ></div>
+              className="h-2 rounded-full bg-linear-to-r from-nordic-sky to-nordic-teal transition-all duration-300"
+              style={{ width: `${progressPercent}%` }}
+            />
           </div>
         </div>
 
         {/* Safari Auto-play Notice */}
         {requiresUserInteractionForAudio() && testConfig?.autoPlayAudio && (
-          <div className="max-w-2xl mx-auto mb-4">
-            <div className="p-3 text-sm border rounded-lg text-amber-700 bg-amber-50 border-amber-200">
+          <div className="mx-auto mb-4 max-w-2xl">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
               <div className="flex items-center">
-                <HeroDevicePhoneMobileIcon className="w-5 h-5 mr-2 text-amber-600" />
+                <HeroDevicePhoneMobileIcon className="mr-2 h-5 w-5 text-amber-600" />
                 <span>{t("wordsets.safari.autoplayLimited")}</span>
               </div>
             </div>
@@ -288,28 +430,25 @@ export function TestView({
         )}
 
         {/* Test Area */}
-        <div className="max-w-2xl mx-auto">
-          <div className="p-4 text-center bg-white rounded-lg shadow-xl sm:p-8">
+        <div className="mx-auto max-w-2xl">
+          <div className="rounded-lg bg-white p-4 text-center shadow-xl sm:p-8">
+            {/* Audio Play Button */}
             <div className="mb-8">
               <div className="flex items-center justify-center gap-4">
                 <div className="relative inline-block">
                   {isAudioPlaying && (
-                    <div className="absolute border-4 border-transparent rounded-full -inset-3 border-t-nordic-sky border-r-nordic-sky/80 animate-spin"></div>
+                    <div className="absolute -inset-3 animate-spin rounded-full border-4 border-transparent border-r-nordic-sky/80 border-t-nordic-sky" />
                   )}
                   <button
-                    onClick={() => {
-                      onPlayCurrentWord();
-                      // Return focus to input after clicking audio
-                      setTimeout(() => {
-                        inputRef.current?.focus();
-                      }, TIMING.INPUT_FOCUS_DELAY_MS);
-                    }}
-                    className="relative p-4 text-4xl text-nordic-midnight transition-all duration-200 transform rounded-full shadow-lg sm:p-6 sm:text-6xl bg-linear-to-r from-nordic-meadow to-nordic-sky hover:from-nordic-meadow/90 hover:to-nordic-sky/90 hover:shadow-xl hover:scale-105"
+                    onClick={handleAudioPlayWithFocus}
+                    className="relative transform rounded-full bg-linear-to-r from-nordic-meadow to-nordic-sky p-4 text-4xl text-nordic-midnight shadow-lg transition-all duration-200 hover:scale-105 hover:from-nordic-meadow/90 hover:to-nordic-sky/90 hover:shadow-xl sm:p-6 sm:text-6xl"
                   >
-                    <HeroVolumeIcon className="w-12 h-12 text-nordic-midnight sm:w-16 sm:h-16" />
+                    <HeroVolumeIcon className="h-12 w-12 text-nordic-midnight sm:h-16 sm:w-16" />
                   </button>
                 </div>
               </div>
+
+              {/* Instruction text */}
               <p className="mt-4 text-gray-600">
                 <span className="sm:hidden">
                   {t("test.listenToWordMobile")}
@@ -319,77 +458,29 @@ export function TestView({
                 </span>
               </p>
 
-              {/* Show definition/context if available for current word */}
-              {activeTest.words[currentWordIndex]?.definition && (
-                <div className="max-w-md px-4 py-2 mx-auto mt-3 text-sm border border-nordic-sky/30 rounded-lg bg-nordic-sky/10">
+              {/* Definition/context hint */}
+              {currentWord.definition && (
+                <div className="mx-auto mt-3 max-w-md rounded-lg border border-nordic-sky/30 bg-nordic-sky/10 px-4 py-2 text-sm">
                   <p className="text-nordic-midnight">
                     <span className="font-medium">{t("test.context")}</span>{" "}
-                    {activeTest.words[currentWordIndex].definition}
+                    {currentWord.definition}
                   </p>
                 </div>
               )}
             </div>
 
-            <div className="flex flex-col justify-center mb-6">
-              {(() => {
-                console.log("[TestView] Render state:", {
-                  showFeedback,
-                  lastAnswerCorrect,
-                  isCurrentSentence,
-                  sentenceScoringResult: sentenceScoringResult
-                    ? {
-                        isFullyCorrect: sentenceScoringResult.isFullyCorrect,
-                        correctCount: sentenceScoringResult.correctCount,
-                        totalExpected: sentenceScoringResult.totalExpected,
-                        score: sentenceScoringResult.score,
-                      }
-                    : null,
-                  lastUserAnswer,
-                  expectedAnswer,
-                  effectiveInputMethod,
-                });
-                return null;
-              })()}
+            {/* Input/Feedback Area */}
+            <div className="mb-6 flex flex-col justify-center">
               {showFeedback ? (
-                lastAnswerCorrect ? (
-                  <CorrectFeedback />
-                ) : isCurrentSentence && sentenceScoringResult ? (
-                  // Sentence feedback with word-by-word analysis
-                  <SentenceFeedback
-                    result={sentenceScoringResult}
-                    currentAttempt={currentTries}
-                    maxAttempts={testConfig?.maxAttempts ?? 3}
-                    showCorrectAnswer={
-                      currentTries >= (testConfig?.maxAttempts ?? 3) &&
-                      testConfig?.showCorrectAnswer
-                    }
-                    expectedSentence={expectedAnswer}
-                    timerDurationMs={TIMING.FEEDBACK_DISPLAY_MS}
-                  />
-                ) : spellingAnalysis && lastUserAnswer ? (
-                  // Single word spelling feedback
-                  <SpellingFeedback
-                    userAnswer={lastUserAnswer}
-                    expectedWord={expectedAnswer}
-                    analysis={spellingAnalysis}
-                    currentAttempt={currentTries}
-                    maxAttempts={testConfig?.maxAttempts ?? 3}
-                    config={spellingConfig}
-                    showCorrectAnswer={
-                      currentTries >= (testConfig?.maxAttempts ?? 3) &&
-                      testConfig?.showCorrectAnswer
-                    }
-                    timerDurationMs={TIMING.FEEDBACK_DISPLAY_MS}
-                  />
-                ) : (
-                  // Fallback to simple feedback if no analysis available
-                  <div className="p-4 rounded-lg animate-in fade-in-0 slide-in-from-top-2 duration-300 bg-red-100 border border-red-300">
-                    <p className="font-semibold text-lg text-red-800">
-                      {t("test.incorrect")} - {t("test.tryAgain")} (
-                      {currentTries}/{testConfig?.maxAttempts ?? 3})
-                    </p>
-                  </div>
-                )
+                <TestFeedbackDisplay
+                  lastAnswerCorrect={lastAnswerCorrect}
+                  feedbackState={feedbackState}
+                  lastUserAnswer={lastUserAnswer}
+                  expectedAnswer={expectedAnswer}
+                  currentTries={currentTries}
+                  maxAttempts={maxAttempts}
+                  showCorrectAnswer={testConfig?.showCorrectAnswer ?? false}
+                />
               ) : effectiveInputMethod === "letterTiles" ? (
                 <LetterTileInput
                   key={tileKey}
@@ -413,7 +504,7 @@ export function TestView({
                   value={userAnswer}
                   onChange={(e) => onUserAnswerChange(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && onSubmitAnswer()}
-                  className="w-full px-4 py-3 text-xl text-center transition-all duration-200 border-2 border-gray-300 rounded-lg sm:px-6 sm:py-4 sm:text-2xl focus:ring-2 focus:ring-nordic-teal focus:border-transparent"
+                  className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 text-center text-xl transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-nordic-teal sm:px-6 sm:py-4 sm:text-2xl"
                   placeholder={
                     testMode === "translation"
                       ? t("test.typeTranslationHere")
@@ -427,39 +518,32 @@ export function TestView({
               )}
             </div>
 
-            <div className="flex justify-center h-5 mb-8">
-              {/* Only show attempts remaining when NOT showing feedback and using keyboard input */}
+            {/* Attempts remaining indicator */}
+            <div className="mb-8 flex h-5 justify-center">
               {!showFeedback && effectiveInputMethod === "keyboard" && (
                 <p className="text-sm text-gray-500">
-                  {t("test.attemptsRemaining")}:{" "}
-                  {(testConfig?.maxAttempts ?? 3) - currentTries}
+                  {t("test.attemptsRemaining")}: {maxAttempts - currentTries}
                 </p>
               )}
             </div>
 
+            {/* Action Buttons */}
             <div className="flex flex-wrap justify-center gap-2 sm:gap-4">
-              {/* Play Again Button - Hidden in dictation mode since it auto-plays */}
+              {/* Play Again Button - Hidden in dictation mode */}
               {testMode !== "dictation" && (
                 <Button
                   variant="secondary-child"
-                  onClick={() => {
-                    onPlayCurrentWord();
-                    if (effectiveInputMethod === "keyboard") {
-                      setTimeout(() => {
-                        inputRef.current?.focus();
-                      }, TIMING.INPUT_FOCUS_DELAY_MS);
-                    }
-                  }}
+                  onClick={handleAudioPlayWithFocus}
                   disabled={showFeedback}
                 >
-                  <HeroVolumeIcon className="w-4 h-4 sm:mr-2" />
+                  <HeroVolumeIcon className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">
                     {t("test.playAgain")}
                   </span>
                 </Button>
               )}
 
-              {/* Next/Finish Button - Only shown for keyboard input mode */}
+              {/* Submit Button - Only for keyboard input */}
               {effectiveInputMethod === "keyboard" && (
                 <Button
                   variant="primary-child"
@@ -467,19 +551,15 @@ export function TestView({
                   disabled={!userAnswer.trim() || showFeedback}
                 >
                   <span className="sm:hidden">
-                    {currentWordIndex < processedWords.length - 1
-                      ? t("test.nextMobile")
-                      : t("test.finishMobile")}
+                    {isLastWord ? t("test.finishMobile") : t("test.nextMobile")}
                   </span>
                   <span className="hidden sm:inline">
-                    {currentWordIndex < processedWords.length - 1
-                      ? t("test.nextWord")
-                      : t("test.finishTest")}
+                    {isLastWord ? t("test.finishTest") : t("test.nextWord")}
                   </span>
                 </Button>
               )}
 
-              {/* Back Button */}
+              {/* Exit Button */}
               <Button variant="secondary-child" onClick={onExitTest}>
                 <span className="sm:hidden">{t("test.backMobile")}</span>
                 <span className="hidden sm:inline">
@@ -489,14 +569,14 @@ export function TestView({
             </div>
           </div>
 
-          <div className="mt-8 text-center text-gray-600">
-            {answers.length > 0 && (
+          {/* Score Summary */}
+          {answers.length > 0 && (
+            <div className="mt-8 text-center text-gray-600">
               <p>
-                {t("test.correctSoFar")}:{" "}
-                {answers.filter((a) => a.isCorrect).length} / {answers.length}
+                {t("test.correctSoFar")}: {correctCount} / {answers.length}
               </p>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -351,16 +351,6 @@ export function useTestMode(): UseTestModeReturn {
       const newTries = currentTries + 1;
       const newAnswers = [...currentWordAnswers, answerToSubmit.trim()];
 
-      console.log("[useTestMode] handleSubmitAnswer:", {
-        answerToSubmit,
-        userAnswer,
-        expectedAnswer,
-        normalizedUserAnswer,
-        normalizedExpected,
-        isCorrect,
-        currentTries: newTries,
-      });
-
       // Analyze spelling for incorrect answers and collect error types
       const newErrorTypes = [...currentWordErrorTypes];
       if (!isCorrect) {

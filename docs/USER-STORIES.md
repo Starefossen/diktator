@@ -58,6 +58,9 @@ Diktator is a family-oriented web application for children to learn Norwegian vo
 - Needs immediate feedback
 - Large buttons and visual feedback
 - Replays audio multiple times
+- Uses **letter tiles** for single words (tap to place)
+- Uses **word bank** for sentences (tap to build)
+- Prefers visual/touch interaction over keyboard
 
 ---
 
@@ -77,6 +80,8 @@ Diktator is a family-oriented web application for children to learn Norwegian vo
 - Self-motivated
 - Reviews incorrect answers
 - Wants detailed statistics
+- Uses **keyboard** input (traditional typing)
+- Can choose to replay with letter tiles/word bank for extra practice
 
 ---
 
@@ -112,13 +117,16 @@ Diktator is a family-oriented web application for children to learn Norwegian vo
 
 1. Login → View family word sets
 2. Click "Start Test" → Select mode (Standard/Dictation/Translation)
-3. For each word:
+3. Select input method (Letter Tiles/Word Bank/Keyboard/Auto)
+4. For each word/sentence:
    - Audio plays automatically
-   - Type answer
-   - Submit → Immediate feedback
+   - **Letter Tiles**: Tap scrambled letters to spell word
+   - **Word Bank**: Tap words to build sentence
+   - **Keyboard**: Type answer
+   - Submit → Immediate feedback (word-by-word for sentences)
    - Retry if incorrect (up to max attempts)
    - Auto-advance
-4. Complete test → View score and review mistakes
+5. Complete test → View score and review mistakes
 
 **Success**: Completion rate > 90%, return within 7 days > 70%
 
@@ -247,6 +255,49 @@ Diktator is a family-oriented web application for children to learn Norwegian vo
 - Audio playback
 - Navigation and shuffle
 - No scoring
+
+---
+
+### Progressive Input & Sentence Dictation
+
+**US-3.6: Letter Tile Input** ✅ (P1, 8 pts)
+
+- Tap-to-place scrambled letter tiles
+- Phonetically similar Norwegian distractors (ø/o, æ/e, kj/k)
+- Slot-based answer area matching word length
+- 48px+ touch targets for children
+- Visual feedback with nordic colors
+- Clear and submit buttons
+
+**US-3.7: Word Bank Input** ✅ (P1, 8 pts)
+
+- Tap-to-select word pills to build sentences
+- Distractor words from same word set + Norwegian fillers
+- Confusable word pairs for challenge (da/når, han/hun, var/er)
+- Word count indicator showing progress
+- Tap selected word to remove
+- Clear all and check buttons
+
+**US-3.8: Input Method Selection** ✅ (P1, 5 pts)
+
+- Select input method in mode selection modal
+- Options: Letter Tiles, Word Bank, Keyboard, Auto
+- Auto mode: Letter tiles for words, word bank for sentences
+- Age-appropriate default based on child profile
+
+**US-3.9: Sentence TTS Support** ✅ (P1, 5 pts)
+
+- Full sentence audio playback
+- Slower rate for single words (0.8x)
+- Natural rate for sentences (0.9x)
+- Maximum 15 words per sentence
+
+**US-3.10: Sentence Feedback** ✅ (P1, 8 pts)
+
+- Word-by-word analysis using LCS algorithm
+- Visual status: correct (green), missing (yellow), wrong (red)
+- Extra words section for words not in expected sentence
+- Show correct answer option after max attempts
 
 ---
 

@@ -11,6 +11,7 @@ A comprehensive design guide for Diktator—a Norwegian vocabulary learning app 
 5. [Achievement & Badge System](#achievement--badge-system)
 6. [Typography](#typography)
 7. [Component Patterns](#component-patterns)
+   - [Progressive Input Components](#progressive-input-components)
 8. [Animation & Motion](#animation--motion)
 9. [AI Anti-Patterns to Avoid](#ai-anti-patterns-to-avoid)
 10. [Accessibility](#accessibility)
@@ -1001,6 +1002,109 @@ Compare to ParentWordSetCard which includes:
   transition: width 0.3s ease-out;
 }
 ```
+
+### Progressive Input Components
+
+For spelling tests, children can use three different input methods based on difficulty level and age:
+
+#### Letter Tile Input (Single Words)
+
+Scrambled letter tiles that children tap to place in order. Ideal for younger children (ages 5-8) learning individual words.
+
+| Element              | Specification                                   |
+| -------------------- | ----------------------------------------------- |
+| **Tile size**        | 48px minimum (min-h-12), larger for fewer tiles |
+| **Tile spacing**     | 8px gap between tiles                           |
+| **Bank layout**      | Wrapped flex row, centered                      |
+| **Answer slots**     | Fixed width matching expected word length       |
+| **Slot indicator**   | Dashed border until filled                      |
+| **Filled slot**      | Solid nordic-sky background                     |
+| **Distractor tiles** | Include phonetically similar Norwegian letters  |
+| **Touch feedback**   | Scale 0.95 on tap, subtle shadow                |
+| **Colors**           | nordic-snow tiles, nordic-sky filled slots      |
+
+**Distractor Strategy:**
+- Add Norwegian confusable letters: ø/o, æ/e, å/a
+- Include common double consonants: ll, nn, mm
+- Mix silent letters: hj-, gj-
+- Total tiles: word length + 3-5 distractors
+
+```text
+┌─────────────────────────────────────────┐
+│  Spell: "skole"                         │
+│                                         │
+│  Answer: [s][k][o][l][e]  ← filled      │
+│          └──────────────┘               │
+│                                         │
+│  Tiles:  [ø] [k] [e] [s] [l] [o] [å]   │
+│          └── scrambled + distractors    │
+│                                         │
+│  [Clear]              [Check ✓]         │
+└─────────────────────────────────────────┘
+```
+
+#### Word Bank Input (Sentences)
+
+Word pills that children tap to build sentences. Ideal for sentence dictation where typing is too complex.
+
+| Element              | Specification                                |
+| -------------------- | -------------------------------------------- |
+| **Word pill size**   | 48px minimum height, auto-width              |
+| **Pill spacing**     | 8px gap                                      |
+| **Bank layout**      | Wrapped flex row, centered                   |
+| **Answer area**      | Horizontal row with placeholder text         |
+| **Word order**       | Tapped words appear in sequence              |
+| **Remove word**      | Tap selected word to return to bank          |
+| **Distractor words** | Words from same set + Norwegian filler words |
+| **Confusable pairs** | da/når, han/hun, var/er, i/på                |
+| **Progress hint**    | "3 of 5 words" counter                       |
+
+**Distractor Strategy:**
+- Include other words from the same word set
+- Add common Norwegian filler words (og, er, i, på, til)
+- Include confusable word pairs (han/hun, da/når, var/er)
+- Total words: expected count + 4-6 distractors
+
+```text
+┌─────────────────────────────────────────┐
+│  Build the sentence:                    │
+│                                         │
+│  Your sentence: [Jeg] [liker] [å] [___] │
+│                 └─── 3 of 5 words       │
+│                                         │
+│  Words: [spise] [lese] [og] [hun] [han] │
+│         └── remaining + distractors     │
+│                                         │
+│  [Clear All]          [Check ✓]         │
+└─────────────────────────────────────────┘
+```
+
+#### Keyboard Input (Traditional)
+
+Standard text input for older children (ages 9+) or those who have mastered tile-based input.
+
+| Element          | Specification                  |
+| ---------------- | ------------------------------ |
+| **Input height** | 56px minimum (min-h-14)        |
+| **Font size**    | 18px (text-lg)                 |
+| **Placeholder**  | "Type your answer..."          |
+| **Auto-focus**   | Focus on input when word loads |
+| **Spell check**  | Disabled (spellCheck={false})  |
+| **Auto-correct** | Disabled (autoCorrect="off")   |
+| **Submit**       | Enter key or Check button      |
+
+#### Input Method Auto-Selection
+
+The "Auto" mode intelligently selects input method:
+
+| Content Type        | Auto-Selected Method | Rationale                    |
+| ------------------- | -------------------- | ---------------------------- |
+| **Single word**     | Letter Tiles         | Teaches letter-by-letter     |
+| **Sentence**        | Word Bank            | Reduces typing complexity    |
+| **Child age 5-7**   | Letter Tiles/Bank    | Better for fine motor skills |
+| **Child age 8-10**  | Word Bank/Keyboard   | Transitional stage           |
+| **Child age 11+**   | Keyboard             | Full typing proficiency      |
+| **Mastery reached** | Keyboard unlock      | Progression reward           |
 
 ---
 
