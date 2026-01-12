@@ -1,20 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { TranslationKey } from "@/locales";
 
 export type StavlePose =
-  | "listening"
   | "celebrating"
   | "encouraging"
   | "waving"
   | "thinking"
   | "reading"
   | "pointing"
-  | "sleeping"
-  | "idle"
-  | "idle-resting";
+  | "idle";
 
 export type StavleSize = 48 | 64 | 96 | 128 | 160 | 200;
 
@@ -26,57 +24,20 @@ export interface StavleProps {
   "aria-hidden"?: boolean;
 }
 
-interface SpriteFrame {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
-
-interface SpriteData {
-  frames: Record<string, SpriteFrame>;
-  meta: {
-    size: { w: number; h: number };
-  };
-}
-
-export const SPRITE_DATA: SpriteData = {
-  frames: {
-    "stavle-listening": { x: 0, y: 44, w: 309, h: 385 },
-    "stavle-celebrating": { x: 308, y: 50, w: 353, h: 386 },
-    "stavle-encouraging": { x: 660, y: 44, w: 320, h: 384 },
-    "stavle-waving": { x: 11, y: 447, w: 341, h: 384 },
-    "stavle-thinking": { x: 349, y: 465, w: 341, h: 384 },
-    "stavle-reading": { x: 691, y: 465, w: 337, h: 384 },
-    "stavle-pointing": { x: 0, y: 841, w: 341, h: 384 },
-    "stavle-sleeping": { x: 340, y: 847, w: 352, h: 295 },
-    "stavle-idle": { x: 693, y: 850, w: 342, h: 384 },
-    "stavle-idle-resting": { x: 310, y: 1143, w: 443, h: 267 },
-  },
-  meta: {
-    size: { w: 1024, h: 1536 },
-  },
-};
-
 const POSE_TO_ARIA_KEY: Record<StavlePose, TranslationKey> = {
-  listening: "aria.stavle.listening",
   celebrating: "aria.stavle.celebrating",
   encouraging: "aria.stavle.encouraging",
   waving: "aria.stavle.waving",
   thinking: "aria.stavle.thinking",
   reading: "aria.stavle.reading",
   pointing: "aria.stavle.pointing",
-  sleeping: "aria.stavle.sleeping",
   idle: "aria.stavle.idle",
-  "idle-resting": "aria.stavle.idleResting",
 };
 
 const ANIMATION_CLASSES: Partial<Record<StavlePose, string>> = {
   celebrating: "animate-stavle-bounce",
   encouraging: "animate-stavle-nod",
-  sleeping: "animate-stavle-breathe",
   idle: "animate-stavle-bob",
-  "idle-resting": "animate-stavle-bob",
 };
 
 export default function Stavle({
@@ -101,51 +62,27 @@ export default function Stavle({
     return () => mediaQuery.removeEventListener("change", handler);
   }, []);
 
-  const frameKey = `stavle-${pose}`;
-  const frame = SPRITE_DATA.frames[frameKey];
-
-  if (!frame) {
-    console.warn(`Stavle: Unknown pose "${pose}"`);
-    return null;
-  }
-
-  const { w: sheetWidth, h: sheetHeight } = SPRITE_DATA.meta.size;
-  const { x, y, w: frameWidth, h: frameHeight } = frame;
-
-  const aspectRatio = frameHeight / frameWidth;
-  const displayWidth = size;
-  const displayHeight = Math.round(size * aspectRatio);
-
-  const scaleX = displayWidth / frameWidth;
-  const scaleY = displayHeight / frameHeight;
-
-  const bgWidth = sheetWidth * scaleX;
-  const bgHeight = sheetHeight * scaleY;
-
-  const bgPosX = -x * scaleX;
-  const bgPosY = -y * scaleY;
-
   const shouldAnimate = animate && !prefersReducedMotion;
   const animationClass = shouldAnimate ? ANIMATION_CLASSES[pose] || "" : "";
-
   const ariaLabel = t(POSE_TO_ARIA_KEY[pose]);
+  const imageSrc = `/stavle/stavle-${pose}.png`;
 
   return (
     <div
-      role={ariaHidden ? undefined : "img"}
-      aria-label={ariaHidden ? undefined : ariaLabel}
-      aria-hidden={ariaHidden}
       className={`inline-block ${animationClass} ${className}`.trim()}
-      style={{
-        width: displayWidth,
-        height: displayHeight,
-        backgroundImage: "url(/stavle-sprite.png)",
-        backgroundSize: `${bgWidth}px ${bgHeight}px`,
-        backgroundPosition: `${bgPosX}px ${bgPosY}px`,
-        backgroundRepeat: "no-repeat",
-      }}
       data-testid={`stavle-${pose}`}
-    />
+      style={{ height: size }}
+    >
+      <Image
+        src={imageSrc}
+        alt={ariaHidden ? "" : ariaLabel}
+        width={size}
+        height={size}
+        aria-hidden={ariaHidden}
+        className="h-full w-auto object-contain"
+        priority={size >= 128}
+      />
+    </div>
   );
 }
 

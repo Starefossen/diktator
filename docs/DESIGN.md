@@ -173,22 +173,113 @@ Cold/Clinical ←————————•————————→ Gushing/
 3. **Consistent across contexts** — Same character whether celebrating or encouraging
 4. **Norwegian sensibility** — Understated charm, not American-cartoon energy
 
-### Sprite Sheet Reference
+### Pose Assets
 
-All Stavle poses are available in a single sprite sheet at `public/stavle-sprite.png` with coordinates defined in `public/stavle-sprite.json`.
+Individual Stavle pose images are stored in `public/stavle/` as PNG files. Vector versions (SVG) are planned for future optimization.
 
-| Sprite Name           | Position (x, y) | Size    | Description                               |
-| --------------------- | --------------- | ------- | ----------------------------------------- |
-| `stavle-listening`    | (0, 0)          | 256×256 | Ears perked, attentive, waiting for input |
-| `stavle-celebrating`  | (256, 0)        | 256×256 | Small jump, tail wagging, big smile       |
-| `stavle-encouraging`  | (512, 0)        | 256×256 | Soft smile, "you got this" gesture        |
-| `stavle-waving`       | (0, 256)        | 256×256 | Friendly wave, welcoming posture          |
-| `stavle-thinking`     | (256, 256)      | 256×256 | Paw on chin, looking up thoughtfully      |
-| `stavle-reading`      | (512, 256)      | 256×256 | Holding a book, focused but happy         |
-| `stavle-pointing`     | (0, 512)        | 256×256 | Gesturing toward something, guide pose    |
-| `stavle-sleeping`     | (256, 512)      | 256×256 | Curled up, peaceful, zzz                  |
-| `stavle-idle`         | (512, 512)      | 256×256 | Relaxed stance, pleasant default          |
-| `stavle-idle-resting` | (0, 768)        | 256×256 | Relaxed, slightly tired but content       |
+| File                     | Description                            | Usage                                           |
+| ------------------------ | -------------------------------------- | ----------------------------------------------- |
+| `stavle-celebrating.png` | Small jump, tail wagging, big smile    | Correct answers, high scores (≥90%), success    |
+| `stavle-encouraging.png` | Soft smile, "you got this" gesture     | Wrong answers, moderate scores (70-89%), errors |
+| `stavle-waving.png`      | Friendly wave, welcoming posture       | Welcome screen, onboarding, returning users     |
+| `stavle-thinking.png`    | Paw on chin, looking up thoughtfully   | Almost correct answers, hints                   |
+| `stavle-reading.png`     | Holding a book, focused but happy      | Low scores (<70%), practice mode, learning      |
+| `stavle-pointing.png`    | Gesturing toward something, guide pose | Empty states, guiding to CTAs                   |
+| `stavle-idle.png`        | Relaxed stance, pleasant default       | Loading states, neutral presence                |
+
+### Illustration Style Guide
+
+When creating new Stavle poses or updating existing ones, follow these visual specifications to ensure consistency:
+
+#### Character Design
+
+| Element             | Specification                                                                |
+| ------------------- | ---------------------------------------------------------------------------- |
+| **Species**         | Arctic fox (fjellrev) — fluffy, not sleek                                    |
+| **Fur color**       | Warm white/cream (#F5F5F0 to #FFFFFF), not pure cold white                   |
+| **Fur texture**     | Soft, slightly scruffy, visible brush strokes — not perfect or flat          |
+| **Ear tips**        | Orange-peach gradient (#FFB88C to #FF9966), consistent across all poses      |
+| **Eye style**       | Large, round, bright blue (#4A90D9), with white highlight reflection         |
+| **Expression**      | Always friendly — open mouth smile shows small pink tongue, never aggressive |
+| **Body proportion** | Chibi-inspired: large head (~40% of body), compact rounded body              |
+
+#### Clothing & Accessories
+
+| Element              | Specification                                                               |
+| -------------------- | --------------------------------------------------------------------------- |
+| **Backpack**         | Teal/turquoise (#2DD4BF to #14B8A6), slightly worn, school-style            |
+| **Backpack straps**  | Visible over shoulders in front-facing poses                                |
+| **Backpack details** | Orange-brown buckles/patches for contrast (#D97706)                         |
+| **Consistency**      | Backpack appears in all poses except `celebrating` (paws up, hidden behind) |
+
+#### Line Work & Rendering
+
+| Element           | Specification                                                    |
+| ----------------- | ---------------------------------------------------------------- |
+| **Outline style** | Soft dark gray (#374151), not pure black — 2-3px at 400px canvas |
+| **Line weight**   | Varies organically — thicker on outer edges, thinner on details  |
+| **Shading**       | Subtle, soft shadows — no harsh cel-shading or dramatic lighting |
+| **Highlights**    | White/cream highlights on fur, especially cheeks and forehead    |
+| **Anti-aliasing** | Smooth edges, no pixelation — export at 2x for retina displays   |
+
+#### Pose Composition
+
+| Element              | Specification                                                         |
+| -------------------- | --------------------------------------------------------------------- |
+| **Canvas ratio**     | Approximately 1:1.2 (width:height) — fox is slightly taller than wide |
+| **Character fill**   | Fox should fill 85-90% of canvas height                               |
+| **Ground line**      | Implied sitting/standing position at bottom — no floating             |
+| **Clear silhouette** | Each pose should be recognizable from silhouette alone                |
+| **Gesture clarity**  | Key gesture (waving hand, pointing paw) should be unambiguous         |
+
+#### Decorative Elements
+
+| Element           | Specification                                                               |
+| ----------------- | --------------------------------------------------------------------------- |
+| **Sparkles**      | Small diamond/star shapes in pastel colors for `celebrating`, `encouraging` |
+| **Question mark** | Yellow-orange (#FBBF24) for `thinking` pose                                 |
+| **Book**          | Teal matching backpack (#2DD4BF) for `reading` pose                         |
+| **Confetti**      | Pastel multi-color dots for `celebrating` — blue, green, yellow, pink       |
+| **Placement**     | Decorative elements float near relevant gesture, never obscure the fox      |
+
+#### Export Specifications
+
+| Property        | Specification                                         |
+| --------------- | ----------------------------------------------------- |
+| **Format**      | PNG with transparency                                 |
+| **Canvas size** | 400×480px source (1:1.2 ratio), export at actual size |
+| **Resolution**  | 72 PPI for web, provide @2x versions for retina       |
+| **Compression** | Lossless PNG, optimize with tools like TinyPNG        |
+| **Naming**      | `stavle-{pose}.png` — lowercase, hyphen-separated     |
+
+#### Color Palette Reference
+
+```
+Fur (base):        #F5F5F0 (warm white)
+Fur (shadow):      #E8E4D9 (warm gray)
+Ear tips:          #FFB88C → #FF9966 (gradient)
+Eyes:              #4A90D9 (bright blue)
+Eye highlight:     #FFFFFF
+Nose:              #1F2937 (dark gray)
+Inner ear/tongue:  #FDA4AF (soft pink)
+Backpack:          #2DD4BF (nordic teal)
+Backpack accent:   #D97706 (orange-brown)
+Outline:           #374151 (gray-700)
+Sparkles:          #7DD3FC, #4ADE80, #FBBF24, #F472B6
+```
+
+#### Quality Checklist for New Poses
+
+- [ ] Character fills 85-90% of canvas height
+- [ ] Warm white fur (not cold/blue white)
+- [ ] Orange ear tips match existing poses
+- [ ] Teal backpack visible (unless pose hides it)
+- [ ] Bright blue eyes with white highlight
+- [ ] Soft gray outlines (not pure black)
+- [ ] Clear, unambiguous gesture
+- [ ] Transparent background
+- [ ] No pixelation at 200px display size
+- [ ] Expression matches intended emotion
 
 ### When to Show Stavle
 
@@ -201,17 +292,14 @@ Stavle should appear at **emotionally significant moments** — not everywhere. 
 | **Welcome/Onboarding**     | `waving`      | 160-200px | Center of empty state    | First visit, new user       |
 | **Empty Word Sets**        | `pointing`    | 128px     | Above "Create" CTA       | No word sets exist          |
 | **Empty Results**          | `encouraging` | 128px     | Center of empty state    | No tests taken yet          |
-| **Test Start**             | `listening`   | 64px      | Corner of test card      | Test begins                 |
 | **Correct Answer**         | `celebrating` | 64px      | Next to feedback         | Immediate, animate in       |
-| **Wrong Answer**           | `encouraging` | 64px      | Next to feedback         | Gentle, no harsh transition |
-| **Hint Requested**         | `thinking`    | 48px      | Next to hint text        | User asks for hint          |
+| **Wrong Answer**           | `encouraging` | 48px      | Next to feedback         | Gentle, no harsh transition |
+| **Almost Correct**         | `thinking`    | 48px      | Next to feedback         | Close but not quite right   |
 | **Test Complete (90%+)**   | `celebrating` | 160px     | Hero position on results | Score revealed              |
 | **Test Complete (70-89%)** | `encouraging` | 128px     | Above score              | Score revealed              |
 | **Test Complete (<70%)**   | `reading`     | 128px     | With "Practice more" CTA | Gentle, not disappointed    |
 | **Achievement Unlocked**   | `celebrating` | 128px     | Behind/beside badge      | Achievement popup           |
-| **Practice Mode Active**   | `reading`     | 48px      | Corner, subtle presence  | While practicing            |
-| **Audio Playing**          | `listening`   | 48px      | Near audio button        | Word audio plays            |
-| **Long Loading (>3s)**     | `sleeping`    | 96px      | Center of loading state  | Rare, adds personality      |
+| **Loading State**          | `idle`        | 96px      | Center of loading state  | Page loading                |
 | **Error State**            | `encouraging` | 96px      | Above error message      | Something went wrong        |
 
 #### ❌ DON'T Show Stavle
@@ -228,14 +316,13 @@ Stavle should appear at **emotionally significant moments** — not everywhere. 
 
 ### Animation Guidelines for Stavle
 
-| Animation Type      | Duration | Easing            | Usage                              |
-| ------------------- | -------- | ----------------- | ---------------------------------- |
-| **Fade in**         | 300ms    | ease-out          | Appearing on screen                |
-| **Slide up**        | 400ms    | ease-out          | Entering from below (celebrations) |
-| **Gentle bounce**   | 500ms    | spring            | Celebrating correct answer         |
-| **Head tilt**       | 200ms    | ease-in-out       | Thinking, encouraging              |
-| **Idle bob**        | 2000ms   | ease-in-out, loop | Subtle presence while waiting      |
-| **Sleep breathing** | 3000ms   | ease-in-out, loop | Sleeping pose only                 |
+| Animation Type    | Duration | Easing            | Usage                              |
+| ----------------- | -------- | ----------------- | ---------------------------------- |
+| **Fade in**       | 300ms    | ease-out          | Appearing on screen                |
+| **Slide up**      | 400ms    | ease-out          | Entering from below (celebrations) |
+| **Gentle bounce** | 500ms    | spring            | Celebrating correct answer         |
+| **Head tilt**     | 200ms    | ease-in-out       | Thinking, encouraging              |
+| **Idle bob**      | 2000ms   | ease-in-out, loop | Subtle presence while waiting      |
 
 ```css
 /* Example: Stavle celebration entrance */
@@ -263,8 +350,7 @@ Stavle should appear at **emotionally significant moments** — not everywhere. 
 ```tsx
 // Example usage with sprite sheet
 interface StavleProps {
-  pose: 'listening' | 'celebrating' | 'encouraging' | 'waving' |
-        'thinking' | 'reading' | 'pointing' | 'sleeping' | 'idle' | 'idle-resting';
+  pose: 'celebrating' | 'encouraging' | 'waving' | 'thinking' | 'reading' | 'pointing' | 'idle';
   size?: 48 | 64 | 96 | 128 | 160 | 200;
   animate?: boolean;
   className?: string;

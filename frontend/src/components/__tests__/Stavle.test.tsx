@@ -34,30 +34,48 @@ describe("Stavle Component", () => {
     vi.restoreAllMocks();
   });
   describe("rendering", () => {
-    it("renders with default size of 128px", () => {
+    it("renders with correct test id", () => {
       renderWithLanguage(<Stavle pose="idle" />);
       const stavle = screen.getByTestId("stavle-idle");
       expect(stavle).toBeInTheDocument();
-      expect(stavle).toHaveStyle({ width: "128px" });
     });
 
     it("renders all poses correctly", () => {
       const poses: StavlePose[] = [
-        "listening",
         "celebrating",
         "encouraging",
         "waving",
         "thinking",
         "reading",
         "pointing",
-        "sleeping",
         "idle",
-        "idle-resting",
       ];
 
       poses.forEach((pose) => {
         const { unmount } = renderWithLanguage(<Stavle pose={pose} />);
         expect(screen.getByTestId(`stavle-${pose}`)).toBeInTheDocument();
+        unmount();
+      });
+    });
+
+    it("renders image with correct src for each pose", () => {
+      const poses: StavlePose[] = [
+        "celebrating",
+        "encouraging",
+        "waving",
+        "thinking",
+        "reading",
+        "pointing",
+        "idle",
+      ];
+
+      poses.forEach((pose) => {
+        const { unmount } = renderWithLanguage(<Stavle pose={pose} />);
+        const img = screen.getByRole("img");
+        expect(img).toHaveAttribute(
+          "src",
+          expect.stringContaining(`stavle-${pose}.png`),
+        );
         unmount();
       });
     });
@@ -69,8 +87,9 @@ describe("Stavle Component", () => {
         const { unmount } = renderWithLanguage(
           <Stavle pose="idle" size={size} />,
         );
-        const stavle = screen.getByTestId("stavle-idle");
-        expect(stavle).toHaveStyle({ width: `${size}px` });
+        const img = screen.getByRole("img");
+        expect(img).toHaveAttribute("width", String(size));
+        expect(img).toHaveAttribute("height", String(size));
         unmount();
       });
     });
@@ -80,39 +99,27 @@ describe("Stavle Component", () => {
       const stavle = screen.getByTestId("stavle-idle");
       expect(stavle).toHaveClass("my-custom-class");
     });
-
-    it("sets background-image to sprite sheet", () => {
-      renderWithLanguage(<Stavle pose="idle" />);
-      const stavle = screen.getByTestId("stavle-idle");
-      expect(stavle).toHaveStyle({
-        backgroundImage: "url(/stavle-sprite.png)",
-      });
-    });
   });
 
   describe("accessibility", () => {
-    it("has role=img and aria-label by default", () => {
+    it("has alt text by default", () => {
       renderWithLanguage(<Stavle pose="celebrating" />);
-      const stavle = screen.getByTestId("stavle-celebrating");
-      expect(stavle).toHaveAttribute("role", "img");
-      expect(stavle).toHaveAttribute(
-        "aria-label",
-        "Stavle the fox is celebrating",
-      );
+      const img = screen.getByRole("img");
+      expect(img).toHaveAttribute("alt", "Stavle the fox is celebrating");
     });
 
-    it("uses Norwegian aria-label when language is Norwegian", () => {
+    it("uses Norwegian alt text when language is Norwegian", () => {
       renderWithLanguage(<Stavle pose="celebrating" />, "no");
-      const stavle = screen.getByTestId("stavle-celebrating");
-      expect(stavle).toHaveAttribute("aria-label", "Stavle reven feirer");
+      const img = screen.getByRole("img");
+      expect(img).toHaveAttribute("alt", "Stavle reven feirer");
     });
 
     it("can be hidden from screen readers with aria-hidden", () => {
       renderWithLanguage(<Stavle pose="idle" aria-hidden={true} />);
       const stavle = screen.getByTestId("stavle-idle");
-      expect(stavle).toHaveAttribute("aria-hidden", "true");
-      expect(stavle).not.toHaveAttribute("role");
-      expect(stavle).not.toHaveAttribute("aria-label");
+      const img = stavle.querySelector("img");
+      expect(img).toHaveAttribute("aria-hidden", "true");
+      expect(img).toHaveAttribute("alt", "");
     });
 
     it("has no accessibility violations", async () => {
@@ -121,26 +128,23 @@ describe("Stavle Component", () => {
       expect(results).toHaveNoViolations();
     });
 
-    it("has correct aria-label for each pose", () => {
+    it("has correct alt text for each pose", () => {
       const poseLabels: Record<StavlePose, string> = {
-        listening: "Stavle the fox is listening attentively",
         celebrating: "Stavle the fox is celebrating",
         encouraging: "Stavle the fox is encouraging you",
         waving: "Stavle the fox is waving hello",
         thinking: "Stavle the fox is thinking",
         reading: "Stavle the fox is reading",
         pointing: "Stavle the fox is pointing",
-        sleeping: "Stavle the fox is sleeping",
         idle: "Stavle the fox",
-        "idle-resting": "Stavle the fox is resting",
       };
 
       Object.entries(poseLabels).forEach(([pose, expectedLabel]) => {
         const { unmount } = renderWithLanguage(
           <Stavle pose={pose as StavlePose} />,
         );
-        const stavle = screen.getByTestId(`stavle-${pose}`);
-        expect(stavle).toHaveAttribute("aria-label", expectedLabel);
+        const img = screen.getByRole("img");
+        expect(img).toHaveAttribute("alt", expectedLabel);
         unmount();
       });
     });
@@ -184,9 +188,7 @@ describe("Stavle Component", () => {
       const animatedPoses: Record<string, string> = {
         celebrating: "animate-stavle-bounce",
         encouraging: "animate-stavle-nod",
-        sleeping: "animate-stavle-breathe",
         idle: "animate-stavle-bob",
-        "idle-resting": "animate-stavle-bob",
       };
 
       Object.entries(animatedPoses).forEach(([pose, animationClass]) => {
@@ -287,7 +289,8 @@ describe("StavleWithMessage Component", () => {
       />,
     );
     const stavle = screen.getByTestId("stavle-celebrating");
-    expect(stavle).toHaveStyle({ width: "64px" });
+    const img = stavle.querySelector("img");
+    expect(img).toHaveAttribute("width", "64");
     expect(stavle).toHaveClass("animate-stavle-bounce");
   });
 

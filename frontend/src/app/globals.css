@@ -414,21 +414,6 @@ textarea:focus-visible {
   animation: stavle-nod 0.5s ease-in-out;
 }
 
-/* Breathing animation for sleeping */
-@keyframes stavle-breathe {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.02);
-  }
-}
-
-.animate-stavle-breathe {
-  animation: stavle-breathe 3s ease-in-out infinite;
-}
-
 /* Gentle bob animation for idle states */
 @keyframes stavle-bob {
   0%,
