@@ -18,6 +18,7 @@ import {
   analyzeSpelling,
   DEFAULT_SPELLING_CONFIG,
   SpellingFeedbackConfig,
+  getHintForAttempt,
 } from "@/lib/spellingAnalysis";
 import {
   SpellingFeedback,
@@ -25,7 +26,10 @@ import {
 } from "@/components/SpellingFeedback";
 import { TIMING } from "@/lib/timingConfig";
 import { Button } from "@/components/Button";
-import { LetterTileInput } from "@/components/LetterTileInput";
+import {
+  LetterTileInput,
+  TileFeedbackState,
+} from "@/components/LetterTileInput";
 import { WordBankInput } from "@/components/WordBankInput";
 import { SentenceFeedback } from "@/components/SentenceFeedback";
 import { generateLetterTiles, generateWordBank } from "@/lib/challenges";
@@ -157,6 +161,49 @@ function useFeedbackState(
   ]);
 
   return { isCurrentSentence, sentenceScoringResult, spellingConfig };
+}
+
+/**
+ * Computes tile-specific feedback state for LetterTileInput.
+ * Returns null when not showing feedback or when correct.
+ */
+function useTileFeedbackState(
+  showFeedback: boolean,
+  lastAnswerCorrect: boolean,
+  lastUserAnswer: string,
+  expectedAnswer: string,
+  currentTries: number,
+  maxAttempts: number,
+  spellingConfig: SpellingFeedbackConfig,
+): TileFeedbackState | null {
+  return useMemo(() => {
+    if (!showFeedback || lastAnswerCorrect || !lastUserAnswer) {
+      return null;
+    }
+
+    const analysis = analyzeSpelling(
+      lastUserAnswer,
+      expectedAnswer,
+      spellingConfig,
+    );
+    const hintKey = getHintForAttempt(analysis, currentTries, spellingConfig);
+
+    return {
+      analysis,
+      currentAttempt: currentTries,
+      maxAttempts,
+      hintKey,
+      lastUserAnswer,
+    };
+  }, [
+    showFeedback,
+    lastAnswerCorrect,
+    lastUserAnswer,
+    expectedAnswer,
+    currentTries,
+    maxAttempts,
+    spellingConfig,
+  ]);
 }
 
 // ============================================================================
@@ -332,6 +379,15 @@ export function TestView({
     currentTries,
     spellingConfig,
   );
+  const tileFeedbackState = useTileFeedbackState(
+    showFeedback,
+    lastAnswerCorrect,
+    lastUserAnswer,
+    expectedAnswer,
+    currentTries,
+    maxAttempts,
+    spellingConfig,
+  );
 
   // Focus input when feedback is hidden (ready for new input)
   useEffect(() => {
@@ -471,7 +527,24 @@ export function TestView({
 
             {/* Input/Feedback Area */}
             <div className="mb-6 flex flex-col justify-center">
-              {showFeedback ? (
+              {/* For letterTiles: always show the input, pass feedback state for inline display */}
+              {effectiveInputMethod === "letterTiles" ? (
+                <>
+                  {/* Show correct feedback above when answer is correct */}
+                  {showFeedback && lastAnswerCorrect && <CorrectFeedback />}
+                  {/* Show letter tile input with inline feedback when incorrect */}
+                  {(!showFeedback || !lastAnswerCorrect) && (
+                    <LetterTileInput
+                      key={tileKey}
+                      tiles={letterTiles}
+                      expectedWord={expectedAnswer}
+                      onSubmit={handleTileOrBankSubmit}
+                      disabled={showFeedback}
+                      feedbackState={tileFeedbackState}
+                    />
+                  )}
+                </>
+              ) : showFeedback ? (
                 <TestFeedbackDisplay
                   lastAnswerCorrect={lastAnswerCorrect}
                   feedbackState={feedbackState}
@@ -480,14 +553,6 @@ export function TestView({
                   currentTries={currentTries}
                   maxAttempts={maxAttempts}
                   showCorrectAnswer={testConfig?.showCorrectAnswer ?? false}
-                />
-              ) : effectiveInputMethod === "letterTiles" ? (
-                <LetterTileInput
-                  key={tileKey}
-                  tiles={letterTiles}
-                  expectedWord={expectedAnswer}
-                  onSubmit={handleTileOrBankSubmit}
-                  disabled={showFeedback}
                 />
               ) : effectiveInputMethod === "wordBank" ? (
                 <WordBankInput
