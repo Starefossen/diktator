@@ -4,10 +4,70 @@ All URIs are relative to *http://localhost:8080/api*
 
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|
+|[**apiFamiliesChildrenChildIdBirthyearPatch**](#apifamilieschildrenchildidbirthyearpatch) | **PATCH** /api/families/children/{childId}/birthyear | Update Child Birth Year|
 |[**apiFamiliesChildrenChildIdDelete**](#apifamilieschildrenchildiddelete) | **DELETE** /api/families/children/{childId} | Delete Child Account|
 |[**apiFamiliesChildrenChildIdProgressGet**](#apifamilieschildrenchildidprogressget) | **GET** /api/families/children/{childId}/progress | Get Child Progress|
 |[**apiFamiliesChildrenChildIdPut**](#apifamilieschildrenchildidput) | **PUT** /api/families/children/{childId} | Update Child Account|
 |[**apiFamiliesChildrenChildIdResultsGet**](#apifamilieschildrenchildidresultsget) | **GET** /api/families/children/{childId}/results | Get Child Results|
+
+# **apiFamiliesChildrenChildIdBirthyearPatch**
+> ModelsAPIResponse apiFamiliesChildrenChildIdBirthyearPatch(body)
+
+Update a child account\'s birth year (parent only)
+
+### Example
+
+```typescript
+import {
+    ChildrenApi,
+    Configuration,
+    ModelsUpdateChildBirthYearRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new ChildrenApi(configuration);
+
+let childId: string; //Child ID (default to undefined)
+let body: ModelsUpdateChildBirthYearRequest; //Birth year update request
+
+const { status, data } = await apiInstance.apiFamiliesChildrenChildIdBirthyearPatch(
+    childId,
+    body
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **body** | **ModelsUpdateChildBirthYearRequest**| Birth year update request | |
+| **childId** | [**string**] | Child ID | defaults to undefined|
+
+
+### Return type
+
+**ModelsAPIResponse**
+
+### Authorization
+
+[BearerAuth](../README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Child birth year updated successfully |  -  |
+|**400** | Invalid request data |  -  |
+|**401** | Parent access required |  -  |
+|**403** | Not authorized to update this child |  -  |
+|**500** | Failed to update child birth year |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiFamiliesChildrenChildIdDelete**
 > ModelsAPIResponse apiFamiliesChildrenChildIdDelete()

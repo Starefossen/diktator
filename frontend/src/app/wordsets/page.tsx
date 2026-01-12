@@ -496,6 +496,7 @@ function WordSetsPageContent() {
               setModeSelectionOpen(false);
               setSelectedWordSetForTest(null);
             }}
+            userBirthYear={userData?.birthYear}
           />
         )}
 

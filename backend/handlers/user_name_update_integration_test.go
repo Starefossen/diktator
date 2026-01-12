@@ -133,7 +133,7 @@ func TestUpdateChildDisplayName_Integration(t *testing.T) {
 	child := &models.ChildAccount{
 		FamilyID:    familyID,
 		DisplayName: "Original Child Name",
-		ParentID:    parent.ID,
+		ParentID:    &parent.ID,
 	}
 	err = env.DB.CreateChild(child)
 	assert.NoError(t, err)

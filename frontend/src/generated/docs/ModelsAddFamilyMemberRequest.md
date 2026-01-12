@@ -5,6 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**birthYear** | **number** | Optional birth year for children (age-adaptive features) | [optional] [default to undefined]
 **displayName** | **string** |  | [default to undefined]
 **email** | **string** |  | [default to undefined]
 **familyId** | **string** |  | [default to undefined]
@@ -16,6 +17,7 @@ Name | Type | Description | Notes
 import { ModelsAddFamilyMemberRequest } from './api';
 
 const instance: ModelsAddFamilyMemberRequest = {
+    birthYear,
     displayName,
     email,
     familyId,

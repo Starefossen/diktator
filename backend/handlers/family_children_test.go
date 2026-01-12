@@ -68,7 +68,7 @@ func createSampleChild(familyID, parentID, childID string) models.ChildAccount {
 		Email:        childID + "@test.com",
 		DisplayName:  "Test Child " + childID,
 		FamilyID:     familyID,
-		ParentID:     parentID,
+		ParentID:     &parentID,
 		Role:         "child",
 		IsActive:     true,
 		CreatedAt:    time.Now(),

@@ -4,7 +4,13 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { TestResult, FamilyStats, ChildAccount, FamilyProgress } from "@/types";
+import {
+  TestResult,
+  FamilyStats,
+  ChildAccount,
+  FamilyProgress,
+  calculateAge,
+} from "@/types";
 import { generatedApiClient } from "@/lib/api-generated";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -176,6 +182,12 @@ export default function ProfilePage() {
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">
                     {userData?.displayName || user?.email}
+                    {isChild && userData?.birthYear && (
+                      <span className="ml-2 text-lg font-normal text-gray-500">
+                        ({calculateAge(userData.birthYear)}{" "}
+                        {t("family.child.years")})
+                      </span>
+                    )}
                   </h2>
                   <p className="text-lg text-gray-600">
                     {userData?.role === "parent"

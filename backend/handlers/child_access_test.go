@@ -188,11 +188,12 @@ func testGetFamilyChildren(c *gin.Context) {
 	}
 
 	// Mock children data
+	userID := c.GetString("userID")
 	children := []models.ChildAccount{
 		{
 			ID:          "child-alice-123",
 			FamilyID:    familyID.(string),
-			ParentID:    c.GetString("userID"),
+			ParentID:    &userID,
 			DisplayName: "Alice",
 			Role:        "child",
 			IsActive:    true,
@@ -200,7 +201,7 @@ func testGetFamilyChildren(c *gin.Context) {
 		{
 			ID:          "child-bob-456",
 			FamilyID:    familyID.(string),
-			ParentID:    c.GetString("userID"),
+			ParentID:    &userID,
 			DisplayName: "Bob",
 			Role:        "child",
 			IsActive:    true,
@@ -244,7 +245,8 @@ func testCreateChildAccount(c *gin.Context) {
 	}
 
 	// Set parent ID and family ID from context
-	childData.ParentID = c.GetString("userID")
+	parentID := c.GetString("userID")
+	childData.ParentID = &parentID
 	childData.FamilyID = c.GetString("validatedFamilyID")
 	childData.ID = "new-child-" + time.Now().Format("20060102150405")
 

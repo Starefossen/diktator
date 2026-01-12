@@ -68,10 +68,20 @@ export const family = {
     "Failed to add child to family. Please try again.",
   "family.child.displayName": "Child's Name",
   "family.child.displayName.placeholder": "Enter child's name",
+  "family.child.birthYear": "Birth Year",
+  "family.child.birthYear.placeholder": "Enter birth year (e.g., 2018)",
+  "family.child.birthYear.help":
+    "Used for age-appropriate content and input methods",
+  "family.child.age": "Age",
+  "family.child.years": "years",
   "family.child.email": "Email Address",
   "family.child.email.placeholder": "Enter child's email",
   "family.child.email.help":
     "The child must already have an account in Zitadel. They will be linked when they log in.",
+  "family.child.email.cannotEdit":
+    "Email cannot be changed after account creation",
+  "family.child.edit.title": "Edit Child Information",
+  "family.child.edit.button": "Save Changes",
   "family.child.lastActive": "Last active",
   "family.child.active": "Active",
   "family.child.inactive": "Inactive",
@@ -82,6 +92,14 @@ export const family = {
   "family.child.editName.saving": "Saving...",
   "family.child.editName.success": "Child's name updated successfully!",
   "family.child.editName.error": "Failed to update name. Please try again.",
+  "family.child.editBirthYear": "Edit Birth Year",
+  "family.child.editBirthYear.title": "Edit Child's Birth Year",
+  "family.child.editBirthYear.save": "Save",
+  "family.child.editBirthYear.cancel": "Cancel",
+  "family.child.editBirthYear.success": "Birth year updated successfully!",
+  "family.child.editBirthYear.error":
+    "Failed to update birth year. Please try again.",
+  "family.child.editBirthYear.clear": "Clear",
   "family.child.viewProgress": "View Progress",
   "family.child.delete.title": "Delete Account",
   "family.child.delete.confirm":
@@ -94,6 +112,14 @@ export const family = {
   "family.child.progress.correctWords": "Words Correct",
   "family.child.progress.words": "Words",
   "family.child.progress.accuracy": "Accuracy",
+  "family.child.mastery.title": "Learning Progress",
+  "family.child.mastery.letterTiles": "Letter Tiles",
+  "family.child.mastery.wordBank": "Word Bank",
+  "family.child.mastery.keyboard": "Keyboard",
+  "family.child.mastery.masteredWords": "mastered",
+  "family.child.mastery.lockedUntilAge6": "Unlocks at age 6",
+  "family.child.mastery.lockedUntilAge7": "Unlocks at age 7",
+  "family.child.mastery.unlocked": "Unlocked",
 
   // Test Results
   "family.test.title": "Word Set Test",

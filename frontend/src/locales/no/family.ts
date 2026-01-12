@@ -66,10 +66,20 @@ export const family = {
     "Kunne ikke legge til barn i familie. Prøv igjen.",
   "family.child.displayName": "Barnets navn",
   "family.child.displayName.placeholder": "Skriv inn barnets navn",
+  "family.child.birthYear": "Fødselsår",
+  "family.child.birthYear.placeholder": "Skriv inn fødselsår (f.eks. 2018)",
+  "family.child.birthYear.help":
+    "Brukes for alderstilpasset innhold og inndatametoder",
+  "family.child.age": "Alder",
+  "family.child.years": "år",
   "family.child.email": "E-postadresse",
   "family.child.email.placeholder": "Skriv inn barnets e-post",
   "family.child.email.help":
     "Barnet må allerede ha en konto i Zitadel. De vil bli koblet når de logger inn.",
+  "family.child.email.cannotEdit":
+    "E-postadressen kan ikke endres etter kontoopprettelse",
+  "family.child.edit.title": "Rediger barneinformasjon",
+  "family.child.edit.button": "Lagre endringer",
   "family.child.lastActive": "Sist aktiv",
   "family.child.active": "Aktiv",
   "family.child.inactive": "Inaktiv",
@@ -80,6 +90,14 @@ export const family = {
   "family.child.editName.saving": "Lagrer...",
   "family.child.editName.success": "Barnets navn oppdatert!",
   "family.child.editName.error": "Kunne ikke oppdatere navn. Prøv igjen.",
+  "family.child.editBirthYear": "Rediger Fødselsår",
+  "family.child.editBirthYear.title": "Rediger Barnets Fødselsår",
+  "family.child.editBirthYear.save": "Lagre",
+  "family.child.editBirthYear.cancel": "Avbryt",
+  "family.child.editBirthYear.success": "Fødselsår oppdatert!",
+  "family.child.editBirthYear.error":
+    "Kunne ikke oppdatere fødselsår. Prøv igjen.",
+  "family.child.editBirthYear.clear": "Fjern",
   "family.child.viewProgress": "Se fremgang",
   "family.child.delete.title": "Slett konto",
   "family.child.delete.confirm":
@@ -92,6 +110,14 @@ export const family = {
   "family.child.progress.correctWords": "Ord riktig",
   "family.child.progress.words": "Ord",
   "family.child.progress.accuracy": "Nøyaktighet",
+  "family.child.mastery.title": "Læringsframgang",
+  "family.child.mastery.letterTiles": "Bokstavfliser",
+  "family.child.mastery.wordBank": "Ordbank",
+  "family.child.mastery.keyboard": "Tastatur",
+  "family.child.mastery.masteredWords": "mestret",
+  "family.child.mastery.lockedUntilAge6": "Låses opp ved 6 år",
+  "family.child.mastery.lockedUntilAge7": "Låses opp ved 7 år",
+  "family.child.mastery.unlocked": "Låst opp",
 
   // Test Results
   "family.test.title": "Ordsett-test",

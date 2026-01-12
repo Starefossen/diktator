@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"os"
 	"time"
 
+	"github.com/starefossen/diktator/backend/internal/migrate"
 	"github.com/starefossen/diktator/backend/internal/models"
 	"github.com/starefossen/diktator/backend/internal/services"
 )
@@ -80,6 +82,17 @@ var norwegianWords = map[string][]struct {
 func main() {
 	log.Println("🌱 Starting database seeding...")
 
+	// Run database migrations first
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		databaseURL = "postgresql://postgres:postgres@localhost:5432/diktator?sslmode=disable"
+	}
+
+	log.Println("📦 Running database migrations...")
+	if err := migrate.Run(databaseURL); err != nil {
+		log.Fatalf("Database migration failed: %v", err)
+	}
+
 	// Initialize services
 	serviceManager, err := services.NewManager()
 	if err != nil {
@@ -110,8 +123,9 @@ func main() {
 				email string
 				age   int
 			}{
-				{"Emma Hansen", "emma@example.no", 10},
-				{"Lucas Hansen", "lucas@example.no", 8},
+				{"Emma Hansen", "emma@example.no", 12},
+				{"Lucas Hansen", "lucas@example.no", 9},
+				{"Mia Hansen", "mia@example.no", 6},
 			},
 		},
 		{
@@ -194,6 +208,10 @@ func main() {
 		for j, childData := range familyData.childrenData {
 			childID := fmt.Sprintf("child-%d-%d", i+1, j+1)
 
+			// Calculate birth year from age
+			currentYear := time.Now().Year()
+			birthYear := currentYear - childData.age
+
 			child := &models.User{
 				ID:           childID,
 				AuthID:       childID,
@@ -203,6 +221,7 @@ func main() {
 				Role:         "child",
 				ParentID:     &parentID,
 				IsActive:     true,
+				BirthYear:    &birthYear,
 				CreatedAt:    parent.CreatedAt.Add(time.Duration(j+1) * 24 * time.Hour),
 				LastActiveAt: time.Now().Add(-time.Duration(rand.Intn(3)) * 24 * time.Hour),
 			}
@@ -217,7 +236,7 @@ func main() {
 				log.Printf("    Warning: Failed to add child to family_members: %v", err)
 			}
 
-			log.Printf("    ✓ Created child: %s", child.DisplayName)
+			log.Printf("    ✓ Created child: %s (age %d)", child.DisplayName, childData.age)
 		}
 
 		// Create word sets for this family
@@ -315,13 +334,34 @@ func main() {
 			for j, childData := range familyData.childrenData {
 				childID := fmt.Sprintf("child-%d-%d", i+1, j+1)
 
-				// Create 3-5 test results for each child, showing improvement over time
-				numTests := 3 + rand.Intn(3)
+				// Create realistic test results based on age and progression
+				// 6 years: 2-3 tests, 40-60% scores (minimal progress)
+				// 7-8 years: 4-6 tests, 55-70% scores (developing)
+				// 9-10 years: 6-9 tests, 65-80% scores (medium progress)
+				// 11-12 years: 10-15 tests, 75-92% scores (lots of progress, realistic)
+				var numTests int
+				var minScore, maxScore float64
+
+				if childData.age <= 6 {
+					numTests = 2 + rand.Intn(2) // 2-3 tests
+					minScore, maxScore = 40.0, 60.0
+				} else if childData.age <= 8 {
+					numTests = 4 + rand.Intn(3) // 4-6 tests
+					minScore, maxScore = 55.0, 70.0
+				} else if childData.age <= 10 {
+					numTests = 6 + rand.Intn(4) // 6-9 tests
+					minScore, maxScore = 65.0, 80.0
+				} else {
+					numTests = 10 + rand.Intn(6) // 10-15 tests
+					minScore, maxScore = 75.0, 92.0
+				}
+
 				for testNum := 0; testNum < numTests; testNum++ {
-					// Simulate performance improving over time (60-95%)
-					baseScore := 60.0 + float64(testNum)*8.0 + float64(rand.Intn(10))
-					if baseScore > 95.0 {
-						baseScore = 95.0
+					// Calculate score with gradual improvement over tests
+					progressFactor := float64(testNum) / float64(numTests) * 0.7 // 70% improvement range
+					baseScore := minScore + progressFactor*(maxScore-minScore) + float64(rand.Intn(10))
+					if baseScore > maxScore {
+						baseScore = maxScore
 					}
 
 					correctWords := int(float64(len(words)) * baseScore / 100.0)
@@ -378,6 +418,40 @@ func main() {
 						log.Printf("      Warning: Failed to create test result for %s: %v", childData.name, err)
 					}
 				}
+
+				// Create mastery records to show learning progress
+				// All ages: letter tiles mastery (shows their progress)
+				// Age 6+: also unlock word bank (2 letter_tiles_correct per word)
+				// Age 7+: also unlock keyboard (2 word_bank_correct per word)
+				for _, word := range words {
+					// All children get letter tiles mastery to show progress
+					if childData.age >= models.WordBankUnlockAge {
+						// Age 6+: Full mastery to unlock word bank
+						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodLetterTiles)
+						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodLetterTiles)
+					} else {
+						// Under 6: Partial mastery (shows progress but doesn't unlock)
+						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodLetterTiles)
+					}
+
+					// Age 7+: Also unlock keyboard mode
+					if childData.age >= models.KeyboardUnlockAge {
+						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodWordBank)
+						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodWordBank)
+					}
+				}
+
+				log.Printf("      ✓ Created mastery records for %s (age %d): %s", childData.name, childData.age, func() string {
+					if childData.age >= models.WordBankUnlockAge && childData.age >= models.KeyboardUnlockAge {
+						return "word bank unlocked, keyboard unlocked"
+					} else if childData.age >= models.KeyboardUnlockAge {
+						return "keyboard unlocked"
+					} else if childData.age >= models.WordBankUnlockAge {
+						return "word bank unlocked"
+					} else {
+						return "letter tiles progress tracked"
+					}
+				}())
 			}
 		}
 	}
@@ -427,17 +501,22 @@ func main() {
 			log.Printf("  Warning: Failed to update mock user with family ID: %v", err)
 		}
 
-		// Create mock children
+		// Create mock children with varied ages and progress levels
 		mockChildren := []struct {
 			name string
 			age  int
 		}{
-			{"Alex Dev", 9},
-			{"Sam Dev", 11},
+			{"Mia Dev", 6},  // Minimal progress (2-3 tests, 40-60% scores)
+			{"Alex Dev", 9}, // Medium progress (6-9 tests, 65-80% scores)
+			{"Sam Dev", 12}, // Lots of progress (10-15 tests, 75-92% scores)
 		}
 
 		for j, childData := range mockChildren {
 			childID := fmt.Sprintf("mock-child-%d", j+1)
+
+			// Calculate birth year from age
+			currentYear := time.Now().Year()
+			birthYear := currentYear - childData.age
 
 			child := &models.User{
 				ID:           childID,
@@ -448,6 +527,7 @@ func main() {
 				Role:         "child",
 				ParentID:     &mockUserID,
 				IsActive:     true,
+				BirthYear:    &birthYear,
 				CreatedAt:    mockUser.CreatedAt.Add(time.Duration(j+1) * 24 * time.Hour),
 				LastActiveAt: time.Now(),
 			}
@@ -462,7 +542,7 @@ func main() {
 				log.Printf("    Warning: Failed to add mock child to family_members: %v", err)
 			}
 
-			log.Printf("    ✓ Created mock child: %s", child.DisplayName)
+			log.Printf("    ✓ Created mock child: %s (age %d)", child.DisplayName, childData.age)
 		}
 
 		// Create word sets for mock family
@@ -572,17 +652,44 @@ func main() {
 			log.Printf("    ✓ Created word set: %s (%d words, mode: %s)", wordSet.Name, len(words), modeConfig.mode)
 			wordSetCount++
 
-			// Create test results for mock children showing progress
-			for j := range mockChildren {
+			// Create test results for mock children showing realistic age-based progress
+			for j, childData := range mockChildren {
 				childID := fmt.Sprintf("mock-child-%d", j+1)
 
-				// Create 2-3 test results for each child
-				numTests := 2 + rand.Intn(2)
+				// More realistic test counts and score ranges
+				// 6 years: 1-2 tests PER word set, 35-55% scores (struggling, just starting)
+				// 9 years: 3-4 tests PER word set, 60-78% scores (medium, still learning)
+				// 12 years: 5-6 tests PER word set, 72-88% scores (strong but realistic)
+				var numTests int
+				var minScore, maxScore float64
+
+				if childData.age <= 6 {
+					numTests = 1 + rand.Intn(2)     // 1-2 tests per word set
+					minScore, maxScore = 35.0, 55.0 // Lower for young kids
+				} else if childData.age <= 10 {
+					numTests = 3 + rand.Intn(2)     // 3-4 tests per word set
+					minScore, maxScore = 60.0, 78.0 // Medium, still learning
+				} else {
+					numTests = 5 + rand.Intn(2)     // 5-6 tests per word set
+					minScore, maxScore = 72.0, 88.0 // Strong but not perfect
+				}
+
 				for testNum := 0; testNum < numTests; testNum++ {
-					// Simulate improvement: 65-90%
-					baseScore := 65.0 + float64(testNum)*10.0 + float64(rand.Intn(5))
-					if baseScore > 90.0 {
-						baseScore = 90.0
+					// More realistic progression with variance
+					// Start lower, improve gradually, but with realistic dips
+					progressFactor := float64(testNum) / float64(numTests) * 0.5 // 50% improvement range
+					variance := float64(rand.Intn(15)) - 7.0                     // ±7% random variance
+					baseScore := minScore + progressFactor*(maxScore-minScore) + variance
+
+					// Clamp to realistic bounds
+					if baseScore < minScore-5.0 {
+						baseScore = minScore - 5.0
+					}
+					if baseScore > maxScore {
+						baseScore = maxScore
+					}
+					if baseScore < 20.0 {
+						baseScore = 20.0 // Minimum realistic score
 					}
 
 					correctWords := int(float64(len(words)) * baseScore / 100.0)
@@ -641,6 +748,61 @@ func main() {
 						log.Printf("      Warning: Failed to create test result for mock child: %v", err)
 					}
 				}
+
+				// Create mastery records with realistic variation for mock children
+				childAge := mockChildren[j].age
+				for _, word := range words {
+					// Letter tiles - all children show some progress
+					if childAge >= models.WordBankUnlockAge {
+						// Age 6+: Unlock word bank, vary mastery (some words fully mastered, some not)
+						// Mia (6): 40-60% mastery, Alex (9): 70-90% mastery, Sam (12): 90-100% mastery
+						var masteryChance int
+						if childAge <= 6 {
+							masteryChance = 50 // 50% chance to master each word
+						} else if childAge <= 10 {
+							masteryChance = 80 // 80% chance
+						} else {
+							masteryChance = 95 // 95% chance
+						}
+
+						if rand.Intn(100) < masteryChance {
+							serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodLetterTiles)
+							serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodLetterTiles)
+						} else {
+							// Partial progress (1 mastery point)
+							serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodLetterTiles)
+						}
+					} else {
+						// Under 6: Always partial mastery
+						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodLetterTiles)
+					}
+
+					// Word bank - age 7+, vary mastery
+					if childAge >= models.KeyboardUnlockAge {
+						var wordBankChance int
+						if childAge <= 9 {
+							wordBankChance = 30 // Alex: 30% mastery on word bank
+						} else {
+							wordBankChance = 75 // Sam: 75% mastery on word bank
+						}
+
+						if rand.Intn(100) < wordBankChance {
+							serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodWordBank)
+							serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodWordBank)
+						}
+					}
+
+					// Keyboard - age 7+, Sam should have some mastery
+					if childAge >= 12 {
+						// Sam: 40% mastery on keyboard (hardest mode)
+						if rand.Intn(100) < 40 {
+							serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodKeyboard)
+							serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.InputMethodKeyboard)
+						}
+					}
+				}
+
+				log.Printf("      ✓ Created mastery records for %s (age %d): realistic varied progress", mockChildren[j].name, childAge)
 			}
 		}
 	}

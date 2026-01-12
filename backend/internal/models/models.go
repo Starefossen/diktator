@@ -243,9 +243,10 @@ type ChildAccount struct {
 	Email        string    `json:"email"`
 	DisplayName  string    `json:"displayName"`
 	FamilyID     string    `json:"familyId"`
-	ParentID     string    `json:"parentId"` // The parent who created this child account
-	Role         string    `json:"role"`     // Always "child"
-	IsActive     bool      `json:"isActive"` // Parents can deactivate child accounts
+	ParentID     *string   `json:"parentId,omitempty"`  // The parent who created this child account
+	Role         string    `json:"role"`                // Always "child"
+	IsActive     bool      `json:"isActive"`            // Parents can deactivate child accounts
+	BirthYear    *int      `json:"birthYear,omitempty"` // Optional birth year for age-adaptive features
 	CreatedAt    time.Time `json:"createdAt"`
 	LastActiveAt time.Time `json:"lastActiveAt"`
 }
@@ -268,12 +269,18 @@ type FamilyProgress struct {
 	UserID        string       `json:"userId"`
 	UserName      string       `json:"userName"`
 	Role          string       `json:"role"`
+	BirthYear     *int         `json:"birthYear,omitempty"`
 	TotalTests    int          `json:"totalTests"`
 	AverageScore  float64      `json:"averageScore"`
 	TotalWords    int          `json:"totalWords"`
 	CorrectWords  int          `json:"correctWords"`
 	LastActivity  time.Time    `json:"lastActivity"`
 	RecentResults []TestResult `json:"recentResults"`
+	// Mastery summary across all word sets
+	TotalWordsWithMastery    int `json:"totalWordsWithMastery"`    // Total unique words with any mastery
+	LetterTilesMasteredWords int `json:"letterTilesMasteredWords"` // Words with letterTilesCorrect >= 2
+	WordBankMasteredWords    int `json:"wordBankMasteredWords"`    // Words with wordBankCorrect >= 2
+	KeyboardMasteredWords    int `json:"keyboardMasteredWords"`    // Words with keyboardCorrect >= 2
 }
 
 // DisplayNameUpdateRequest represents a request to update a user's display name
@@ -300,6 +307,12 @@ type AddFamilyMemberRequest struct {
 	DisplayName string `json:"displayName" binding:"required"`
 	Role        string `json:"role" binding:"required,oneof=parent child"`
 	FamilyID    string `json:"familyId" binding:"required"`
+	BirthYear   *int   `json:"birthYear,omitempty"` // Optional birth year for children (age-adaptive features)
+}
+
+// UpdateChildBirthYearRequest represents a request to update a child's birth year
+type UpdateChildBirthYearRequest struct {
+	BirthYear *int `json:"birthYear"` // Birth year for age-adaptive features (null to clear)
 }
 
 // CreateChildAccountRequest is deprecated, use AddFamilyMemberRequest instead

@@ -24,6 +24,171 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/dictionary/stats": {
+            "get": {
+                "description": "Get cache statistics and health status of the dictionary service",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "dictionary"
+                ],
+                "summary": "Get dictionary service statistics",
+                "responses": {
+                    "200": {
+                        "description": "Dictionary service statistics",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Dictionary service unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/dictionary/suggest": {
+            "get": {
+                "description": "Get autocomplete suggestions from ord.uib.no based on a query prefix",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "dictionary"
+                ],
+                "summary": "Get word suggestions from the Norwegian dictionary",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Query prefix for suggestions",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "bm",
+                        "description": "Dictionary code (bm=bokmål, nn=nynorsk)",
+                        "name": "dict",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 5,
+                        "description": "Number of suggestions (1-20)",
+                        "name": "n",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Suggestions returned",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.DictionarySuggestion"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Dictionary service unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/dictionary/validate": {
+            "get": {
+                "description": "Look up a word in ord.uib.no and return its information including lemma, word class, inflections, and definition",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "dictionary"
+                ],
+                "summary": "Validate a word in the Norwegian dictionary",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Word to validate",
+                        "name": "w",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "bm",
+                        "description": "Dictionary code (bm=bokmål, nn=nynorsk)",
+                        "name": "dict",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Word not found (data is null)",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Dictionary service unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/families": {
             "get": {
                 "security": [
@@ -220,6 +385,76 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Failed to delete child account",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/families/children/{childId}/birthyear": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update a child account's birth year (parent only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "children"
+                ],
+                "summary": "Update Child Birth Year",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Child ID",
+                        "name": "childId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Birth year update request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateChildBirthYearRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Child birth year updated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request data",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Parent access required",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Not authorized to update this child",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to update child birth year",
                         "schema": {
                             "$ref": "#/definitions/models.APIResponse"
                         }
@@ -734,6 +969,214 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Failed to accept invitation",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/mastery/{wordSetId}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get mastery progress for all words in a word set for the authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mastery"
+                ],
+                "summary": "Get mastery for word set",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Word Set ID",
+                        "name": "wordSetId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Mastery records",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.WordMastery"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "User authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve mastery",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/mastery/{wordSetId}/increment": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Increment the mastery counter for a specific word and input mode",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mastery"
+                ],
+                "summary": "Increment mastery for a word",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Word Set ID",
+                        "name": "wordSetId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Increment request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.IncrementMasteryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated mastery record",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.WordMastery"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "User authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to increment mastery",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/mastery/{wordSetId}/word/{word}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get mastery progress for a specific word in a word set",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mastery"
+                ],
+                "summary": "Get mastery for specific word",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Word Set ID",
+                        "name": "wordSetId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Word text",
+                        "name": "word",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Mastery record",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.WordMastery"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "User authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve mastery",
                         "schema": {
                             "$ref": "#/definitions/models.APIResponse"
                         }
@@ -1441,7 +1884,7 @@ const docTemplate = `{
         },
         "/api/wordsets/{id}/words/{word}/audio": {
             "get": {
-                "description": "Stream TTS audio for a specific word in a word set (generates on-demand, cached by browser)",
+                "description": "Stream TTS audio for a specific word or sentence in a word set (generates on-demand, cached by browser). Automatically uses appropriate speaking rate for single words (0.8x) vs sentences (0.9x).",
                 "consumes": [
                     "application/json"
                 ],
@@ -1451,7 +1894,7 @@ const docTemplate = `{
                 "tags": [
                     "wordsets"
                 ],
-                "summary": "Stream Audio for Word",
+                "summary": "Stream Audio for Word or Sentence",
                 "parameters": [
                     {
                         "type": "string",
@@ -1462,7 +1905,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Word to generate audio for",
+                        "description": "Word or sentence to generate audio for",
                         "name": "word",
                         "in": "path",
                         "required": true
@@ -1522,6 +1965,22 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handlers.IncrementMasteryRequest": {
+            "type": "object",
+            "required": [
+                "inputMode",
+                "word"
+            ],
+            "properties": {
+                "inputMode": {
+                    "description": "\"letterTiles\", \"wordBank\", or \"keyboard\"",
+                    "type": "string"
+                },
+                "word": {
+                    "type": "string"
+                }
+            }
+        },
         "models.APIResponse": {
             "type": "object",
             "properties": {
@@ -1543,6 +2002,10 @@ const docTemplate = `{
                 "role"
             ],
             "properties": {
+                "birthYear": {
+                    "description": "Optional birth year for children (age-adaptive features)",
+                    "type": "integer"
+                },
                 "displayName": {
                     "type": "string"
                 },
@@ -1584,6 +2047,45 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/models.WordInput"
                     }
+                }
+            }
+        },
+        "models.DictionarySuggestion": {
+            "type": "object",
+            "properties": {
+                "articleId": {
+                    "type": "integer"
+                },
+                "word": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.DictionaryWord": {
+            "type": "object",
+            "properties": {
+                "articleId": {
+                    "description": "For linking to ordbokene.no (e.g., https://ordbokene.no/bm/ID)",
+                    "type": "integer"
+                },
+                "definition": {
+                    "description": "Primary definition only",
+                    "type": "string"
+                },
+                "inflections": {
+                    "description": "All inflected forms (katt, katten, katter, kattene)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "lemma": {
+                    "description": "Base form of the word",
+                    "type": "string"
+                },
+                "wordClass": {
+                    "description": "NOUN, VERB, ADJ, ADV, etc.",
+                    "type": "string"
                 }
             }
         },
@@ -1669,6 +2171,15 @@ const docTemplate = `{
                 }
             }
         },
+        "models.UpdateChildBirthYearRequest": {
+            "type": "object",
+            "properties": {
+                "birthYear": {
+                    "description": "Birth year for age-adaptive features (null to clear)",
+                    "type": "integer"
+                }
+            }
+        },
         "models.UpdateWordSetRequest": {
             "type": "object",
             "required": [
@@ -1711,6 +2222,38 @@ const docTemplate = `{
                     }
                 },
                 "word": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.WordMastery": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "keyboardCorrect": {
+                    "type": "integer"
+                },
+                "letterTilesCorrect": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "string"
+                },
+                "word": {
+                    "type": "string"
+                },
+                "wordBankCorrect": {
+                    "type": "integer"
+                },
+                "wordSetId": {
                     "type": "string"
                 }
             }

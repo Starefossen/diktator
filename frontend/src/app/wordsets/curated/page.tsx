@@ -338,6 +338,7 @@ function CuratedPageContent() {
               setModeSelectionOpen(false);
               setSelectedWordSetForTest(null);
             }}
+            userBirthYear={userData?.birthYear}
           />
         )}
       </div>

@@ -58,6 +58,13 @@ export interface ChildAccount {
   lastActiveAt: string;
 }
 
+// Helper function to calculate age from birth year
+export function calculateAge(birthYear?: number): number | undefined {
+  if (!birthYear) return undefined;
+  const currentYear = new Date().getFullYear();
+  return currentYear - birthYear;
+}
+
 // Word Mastery for progressive challenge unlocking
 export interface WordMastery {
   id: string;
@@ -76,12 +83,18 @@ export interface FamilyProgress {
   userId: string;
   userName: string;
   role: "parent" | "child";
+  birthYear?: number;
   totalTests: number;
   averageScore: number;
   totalWords: number;
   correctWords: number;
   lastActivity: string;
   recentResults: TestResult[];
+  // Mastery summary across all word sets
+  totalWordsWithMastery: number; // Total unique words with any mastery
+  letterTilesMasteredWords: number; // Words with letterTilesCorrect >= 2
+  wordBankMasteredWords: number; // Words with wordBankCorrect >= 2
+  keyboardMasteredWords: number; // Words with keyboardCorrect >= 2
 }
 
 // Family statistics

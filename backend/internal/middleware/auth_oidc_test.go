@@ -95,10 +95,11 @@ func (stubRepo) UnassignWordSetFromUser(wordSetID, userID string) error { return
 func (stubRepo) GetWordSetAssignments(wordSetID string) ([]string, error) {
 	return nil, nil
 }
-func (stubRepo) UpdateUserDisplayName(userID, displayName string) error   { return nil }
-func (stubRepo) UpdateChildDisplayName(childID, displayName string) error { return nil }
-func (stubRepo) GetGlobalWordSets() ([]models.WordSet, error)             { return nil, nil }
-func (stubRepo) IsGlobalWordSet(wordSetID string) (bool, error)           { return false, nil }
+func (stubRepo) UpdateUserDisplayName(userID, displayName string) error    { return nil }
+func (stubRepo) UpdateChildDisplayName(childID, displayName string) error  { return nil }
+func (stubRepo) UpdateChildBirthYear(childID string, birthYear *int) error { return nil }
+func (stubRepo) GetGlobalWordSets() ([]models.WordSet, error)              { return nil, nil }
+func (stubRepo) IsGlobalWordSet(wordSetID string) (bool, error)            { return false, nil }
 
 // Word mastery operations
 func (stubRepo) GetWordMastery(userID, wordSetID, word string) (*models.WordMastery, error) {

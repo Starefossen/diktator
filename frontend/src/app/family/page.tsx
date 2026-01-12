@@ -9,6 +9,7 @@ import {
   FamilyProgress,
   FamilyStats,
   FamilyInvitation,
+  calculateAge,
 } from "@/types";
 import { generatedApiClient } from "@/lib/api-generated";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -22,6 +23,7 @@ import {
   HeroUserIcon,
   HeroPencilIcon,
 } from "@/components/Icons";
+import { AGE_THRESHOLDS } from "@/lib/constants";
 
 export default function FamilyPage() {
   const { t } = useLanguage();
@@ -33,17 +35,17 @@ export default function FamilyPage() {
   const [familyStats, setFamilyStats] = useState<FamilyStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [editingChildId, setEditingChildId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState("");
   const [invitations, setInvitations] = useState<FamilyInvitation[]>([]);
 
   // Modal state
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [editingChild, setEditingChild] = useState<ChildAccount | null>(null);
   const [selectedRole, setSelectedRole] = useState<"child" | "parent">("child");
   const [submitting, setSubmitting] = useState(false);
   const [memberFormData, setMemberFormData] = useState({
     email: "",
     displayName: "",
+    birthYear: "",
   });
 
   // Check if user is a parent
@@ -98,7 +100,7 @@ export default function FamilyPage() {
     e.preventDefault();
 
     // Validation
-    if (!memberFormData.email.trim()) {
+    if (!editingChild && !memberFormData.email.trim()) {
       setErrorMessage(
         t("family.child.email") +
           " " +
@@ -115,16 +117,54 @@ export default function FamilyPage() {
       return;
     }
 
+    // Validate birth year if provided
+    let birthYearNum: number | undefined;
+    if (selectedRole === "child" && memberFormData.birthYear.trim()) {
+      birthYearNum = parseInt(memberFormData.birthYear.trim(), 10);
+      const currentYear = new Date().getFullYear();
+      if (
+        isNaN(birthYearNum) ||
+        birthYearNum < 1900 ||
+        birthYearNum > currentYear
+      ) {
+        setErrorMessage(t("family.child.birthYear") + " must be a valid year");
+        return;
+      }
+    }
+
     try {
       setSubmitting(true);
       setErrorMessage(null);
 
-      if (selectedRole === "child") {
+      if (editingChild) {
+        // Edit mode - update existing child
+        await generatedApiClient.updateChildDisplayName(editingChild.id, {
+          displayName: memberFormData.displayName.trim(),
+        });
+
+        await generatedApiClient.updateChildBirthYear(editingChild.id, {
+          birthYear: birthYearNum,
+        });
+
+        setChildren(
+          children.map((child) =>
+            child.id === editingChild.id
+              ? {
+                  ...child,
+                  displayName: memberFormData.displayName.trim(),
+                  birthYear: birthYearNum,
+                }
+              : child,
+          ),
+        );
+      } else if (selectedRole === "child") {
+        // Add mode - create new child
         const response = await generatedApiClient.createChildAccount({
           email: memberFormData.email.trim(),
           displayName: memberFormData.displayName.trim(),
           role: "child",
           familyId: userData?.familyId || "",
+          birthYear: birthYearNum,
         });
 
         if (response.data?.data) {
@@ -132,6 +172,7 @@ export default function FamilyPage() {
           alert(t("family.child.create.success"));
         }
       } else {
+        // Add mode - invite parent
         await generatedApiClient.addFamilyMember({
           email: memberFormData.email.trim(),
           displayName: "",
@@ -142,14 +183,15 @@ export default function FamilyPage() {
       }
 
       // Reset and close
-      setMemberFormData({ email: "", displayName: "" });
+      setMemberFormData({ email: "", displayName: "", birthYear: "" });
       setShowAddMemberModal(false);
+      setEditingChild(null);
       setSelectedRole("child");
 
       // Reload family data
       loadFamilyData();
     } catch (error: unknown) {
-      console.error("Failed to add family member:", error);
+      console.error("Failed to add/edit family member:", error);
       const apiError =
         (
           error as {
@@ -158,9 +200,11 @@ export default function FamilyPage() {
           }
         )?.response?.data?.error ||
         (error as { message?: string })?.message ||
-        (selectedRole === "child"
-          ? t("family.child.create.error")
-          : t("family.invitation.inviteParent.error"));
+        (editingChild
+          ? t("family.child.editName.error")
+          : selectedRole === "child"
+            ? t("family.child.create.error")
+            : t("family.invitation.inviteParent.error"));
       setErrorMessage(apiError);
     } finally {
       setSubmitting(false);
@@ -199,42 +243,15 @@ export default function FamilyPage() {
     router.push(`/family/progress?childId=${childId}`);
   };
 
-  const handleEditChildName = async (childId: string) => {
-    if (!editingName.trim()) {
-      setErrorMessage(t("profile.settings.validation.required"));
-      return;
-    }
-
-    try {
-      setErrorMessage(null);
-      await generatedApiClient.updateChildDisplayName(childId, {
-        displayName: editingName.trim(),
-      });
-
-      // Update local state
-      setChildren(
-        children.map((child) =>
-          child.id === childId
-            ? { ...child, displayName: editingName.trim() }
-            : child,
-        ),
-      );
-
-      setEditingChildId(null);
-      setEditingName("");
-    } catch (error: unknown) {
-      console.error("Failed to update child name:", error);
-      const apiError =
-        (
-          error as {
-            response?: { data?: { error?: string } };
-            message?: string;
-          }
-        )?.response?.data?.error ||
-        (error as { message?: string })?.message ||
-        t("family.child.editName.error");
-      setErrorMessage(apiError);
-    }
+  const openEditModal = (child: ChildAccount) => {
+    setEditingChild(child);
+    setMemberFormData({
+      email: child.email,
+      displayName: child.displayName,
+      birthYear: child.birthYear?.toString() || "",
+    });
+    setSelectedRole("child");
+    setShowAddMemberModal(true);
   };
 
   const handleCancelInvitation = async (invitationId: string) => {
@@ -356,44 +373,48 @@ export default function FamilyPage() {
             </button>
           </div>
 
-          {/* Add Member Modal */}
+          {/* Add/Edit Member Modal */}
           {showAddMemberModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
               <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-xl">
                 <h2 className="mb-4 text-2xl font-semibold text-gray-800">
-                  {t("family.addMember.title")}
+                  {editingChild
+                    ? t("family.child.edit.title")
+                    : t("family.addMember.title")}
                 </h2>
 
-                {/* Role Selection */}
-                <div className="mb-6">
-                  <label className="block mb-2 text-sm font-medium text-gray-700">
-                    {t("family.addMember.role")}
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedRole("child")}
-                      className={`px-4 py-3 font-medium rounded-lg transition-all ${
-                        selectedRole === "child"
-                          ? "bg-nordic-sky text-nordic-midnight shadow-md"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }`}
-                    >
-                      {t("family.member.role.child")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedRole("parent")}
-                      className={`px-4 py-3 font-medium rounded-lg transition-all ${
-                        selectedRole === "parent"
-                          ? "bg-nordic-sky text-nordic-midnight shadow-md"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }`}
-                    >
-                      {t("family.member.role.parent")}
-                    </button>
+                {/* Role Selection - Only show in add mode */}
+                {!editingChild && (
+                  <div className="mb-6">
+                    <label className="block mb-2 text-sm font-medium text-gray-700">
+                      {t("family.addMember.role")}
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedRole("child")}
+                        className={`px-4 py-3 font-medium rounded-lg transition-all ${
+                          selectedRole === "child"
+                            ? "bg-nordic-sky text-nordic-midnight shadow-md"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}
+                      >
+                        {t("family.member.role.child")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedRole("parent")}
+                        className={`px-4 py-3 font-medium rounded-lg transition-all ${
+                          selectedRole === "parent"
+                            ? "bg-nordic-sky text-nordic-midnight shadow-md"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}
+                      >
+                        {t("family.member.role.parent")}
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Error Message */}
                 {errorMessage && (
@@ -427,66 +448,109 @@ export default function FamilyPage() {
                 {/* Form */}
                 <form onSubmit={handleAddMember} className="space-y-4">
                   {selectedRole === "child" && (
+                    <>
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-700">
+                          {t("family.child.displayName")}
+                        </label>
+                        <input
+                          type="text"
+                          value={memberFormData.displayName}
+                          onChange={(e) =>
+                            setMemberFormData({
+                              ...memberFormData,
+                              displayName: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-nordic-teal focus:border-transparent min-h-12"
+                          placeholder={t(
+                            "family.child.displayName.placeholder",
+                          )}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-700">
+                          {t("family.child.birthYear")}
+                        </label>
+                        <input
+                          type="number"
+                          value={memberFormData.birthYear}
+                          onChange={(e) =>
+                            setMemberFormData({
+                              ...memberFormData,
+                              birthYear: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-nordic-teal focus:border-transparent min-h-12"
+                          placeholder={t("family.child.birthYear.placeholder")}
+                          min="1900"
+                          max={new Date().getFullYear()}
+                        />
+                        <p className="mt-1 text-sm text-gray-500">
+                          {t("family.child.birthYear.help")}
+                        </p>
+                      </div>
+                    </>
+                  )}
+
+                  {editingChild ? (
                     <div>
                       <label className="block mb-2 text-sm font-medium text-gray-700">
-                        {t("family.child.displayName")}
+                        {t("family.child.email")}
                       </label>
                       <input
-                        type="text"
-                        value={memberFormData.displayName}
+                        type="email"
+                        value={memberFormData.email}
+                        disabled
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed min-h-12"
+                      />
+                      <p className="mt-1 text-sm text-gray-500">
+                        {t("family.child.email.cannotEdit")}
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block mb-2 text-sm font-medium text-gray-700">
+                        {t("family.child.email")}
+                      </label>
+                      <input
+                        type="email"
+                        value={memberFormData.email}
                         onChange={(e) =>
                           setMemberFormData({
                             ...memberFormData,
-                            displayName: e.target.value,
+                            email: e.target.value,
                           })
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-nordic-teal focus:border-transparent"
-                        placeholder={t("family.child.displayName.placeholder")}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-nordic-teal focus:border-transparent min-h-12"
+                        placeholder={
+                          selectedRole === "child"
+                            ? t("family.child.email.placeholder")
+                            : t(
+                                "family.invitation.inviteParent.email.placeholder",
+                              )
+                        }
                         required
                       />
+                      {selectedRole === "child" && (
+                        <p className="mt-1 text-sm text-gray-500">
+                          {t("family.child.email.help")}
+                        </p>
+                      )}
+                      {selectedRole === "parent" && (
+                        <p className="mt-1 text-sm text-gray-500">
+                          {t("family.invitation.inviteParent.help")}
+                        </p>
+                      )}
                     </div>
                   )}
-
-                  <div>
-                    <label className="block mb-2 text-sm font-medium text-gray-700">
-                      {t("family.child.email")}
-                    </label>
-                    <input
-                      type="email"
-                      value={memberFormData.email}
-                      onChange={(e) =>
-                        setMemberFormData({
-                          ...memberFormData,
-                          email: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-nordic-teal focus:border-transparent"
-                      placeholder={
-                        selectedRole === "child"
-                          ? t("family.child.email.placeholder")
-                          : t(
-                              "family.invitation.inviteParent.email.placeholder",
-                            )
-                      }
-                      required
-                    />
-                    {selectedRole === "child" && (
-                      <p className="mt-1 text-sm text-gray-500">
-                        {t("family.child.email.help")}
-                      </p>
-                    )}
-                    {selectedRole === "parent" && (
-                      <p className="mt-1 text-sm text-gray-500">
-                        {t("family.invitation.inviteParent.help")}
-                      </p>
-                    )}
-                  </div>
 
                   <div className="flex gap-3 pt-4">
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="flex items-center justify-center flex-1 px-6 py-3 font-semibold text-nordic-midnight transition-all duration-200 bg-nordic-meadow rounded-lg hover:bg-nordic-meadow/90 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center justify-center flex-1 px-6 py-3 font-semibold text-nordic-midnight transition-all duration-200 bg-nordic-meadow rounded-lg hover:bg-nordic-meadow/90 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed min-h-12"
                     >
                       {submitting ? (
                         <>
@@ -496,6 +560,11 @@ export default function FamilyPage() {
                               ? t("family.child.create.creating")
                               : t("family.invitation.inviteParent.sending")}
                           </span>
+                        </>
+                      ) : editingChild ? (
+                        <>
+                          <HeroPencilIcon className="w-4 h-4 mr-2" />
+                          {t("family.child.edit.button")}
                         </>
                       ) : (
                         <>
@@ -510,11 +579,16 @@ export default function FamilyPage() {
                       type="button"
                       onClick={() => {
                         setShowAddMemberModal(false);
-                        setMemberFormData({ email: "", displayName: "" });
+                        setMemberFormData({
+                          email: "",
+                          displayName: "",
+                          birthYear: "",
+                        });
                         setErrorMessage(null);
                         setSelectedRole("child");
+                        setEditingChild(null);
                       }}
-                      className="flex items-center px-6 py-3 font-semibold text-gray-700 transition-all duration-200 bg-gray-200 rounded-lg hover:bg-gray-300 hover:shadow-md"
+                      className="flex items-center px-6 py-3 font-semibold text-gray-700 transition-all duration-200 bg-gray-200 rounded-lg hover:bg-gray-300 hover:shadow-md min-h-12"
                     >
                       {t("family.child.create.cancel")}
                     </button>
@@ -589,50 +663,26 @@ export default function FamilyPage() {
                     >
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
-                          {editingChildId === child.id ? (
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                value={editingName}
-                                onChange={(e) => setEditingName(e.target.value)}
-                                className="flex-1 px-3 py-1 text-lg font-semibold border border-gray-300 rounded focus:ring-2 focus:ring-nordic-teal focus:border-transparent"
-                                autoFocus
-                              />
-                              <button
-                                onClick={() => handleEditChildName(child.id)}
-                                className="px-3 py-1 text-sm text-nordic-midnight bg-nordic-meadow rounded hover:bg-nordic-meadow/90"
-                              >
-                                {t("family.child.editName.save")}
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setEditingChildId(null);
-                                  setEditingName("");
-                                }}
-                                className="px-3 py-1 text-sm text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
-                              >
-                                {t("family.child.editName.cancel")}
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <h3 className="text-xl font-semibold text-gray-800">
-                                {child.displayName}
-                              </h3>
-                              <button
-                                onClick={() => {
-                                  setEditingChildId(child.id);
-                                  setEditingName(child.displayName);
-                                }}
-                                className="p-2 text-nordic-sky hover:text-nordic-sky/80 min-h-11 min-w-11 flex items-center justify-center rounded-lg hover:bg-nordic-sky/10"
-                                title={t("family.child.editName")}
-                                aria-label={t("aria.editChild")}
-                              >
-                                <HeroPencilIcon className="h-5 w-5" />
-                              </button>
-                            </div>
-                          )}
-                          <p className="text-base text-gray-600">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-xl font-semibold text-gray-800">
+                              {child.displayName}
+                              {child.birthYear && (
+                                <span className="ml-2 text-base font-normal text-gray-500">
+                                  ({calculateAge(child.birthYear)}{" "}
+                                  {t("family.child.years")})
+                                </span>
+                              )}
+                            </h3>
+                            <button
+                              onClick={() => openEditModal(child)}
+                              className="p-2 text-nordic-sky hover:text-nordic-sky/80 min-h-11 min-w-11 flex items-center justify-center rounded-lg hover:bg-nordic-sky/10"
+                              title={t("family.child.edit.title")}
+                              aria-label={t("aria.editChild")}
+                            >
+                              <HeroPencilIcon className="h-5 w-5" />
+                            </button>
+                          </div>
+                          <p className="text-base text-gray-600 mt-1">
                             {child.email}
                           </p>
                           <p className="text-sm text-gray-600">
@@ -654,32 +704,189 @@ export default function FamilyPage() {
                       </div>
 
                       {childProgress && (
-                        <div className="mb-4 space-y-2">
-                          <div className="flex justify-between text-base">
-                            <span className="text-gray-700">
-                              {t("family.child.progress.tests")}
-                            </span>
-                            <span className="font-medium">
-                              {childProgress.totalTests}
-                            </span>
+                        <div className="mb-4 space-y-3">
+                          {/* Test Statistics */}
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-base">
+                              <span className="text-gray-700">
+                                {t("family.child.progress.tests")}
+                              </span>
+                              <span className="font-medium">
+                                {childProgress.totalTests}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">
+                                {t("family.child.progress.avgScore")}
+                              </span>
+                              <span className="font-medium">
+                                {Math.round(childProgress.averageScore)}%
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">
+                                {t("family.child.progress.correctWords")}
+                              </span>
+                              <span className="font-medium">
+                                {childProgress.correctWords}/
+                                {childProgress.totalWords}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">
-                              {t("family.child.progress.avgScore")}
-                            </span>
-                            <span className="font-medium">
-                              {Math.round(childProgress.averageScore)}%
-                            </span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">
-                              {t("family.child.progress.correctWords")}
-                            </span>
-                            <span className="font-medium">
-                              {childProgress.correctWords}/
-                              {childProgress.totalWords}
-                            </span>
-                          </div>
+
+                          {/* Mastery Progress */}
+                          {childProgress.totalWordsWithMastery > 0 &&
+                            (() => {
+                              const childAge = child.birthYear
+                                ? calculateAge(child.birthYear)
+                                : null;
+                              const isWordBankUnlocked = childAge
+                                ? childAge >= AGE_THRESHOLDS.WORD_BANK_UNLOCK
+                                : false;
+                              const isKeyboardUnlocked = childAge
+                                ? childAge >= AGE_THRESHOLDS.KEYBOARD_UNLOCK
+                                : false;
+
+                              return (
+                                <div className="pt-3 border-t border-gray-200">
+                                  <h4 className="text-base font-semibold mb-2 text-gray-700">
+                                    {t("family.child.mastery.title")}
+                                  </h4>
+                                  <div className="space-y-2.5">
+                                    {/* Letter Tiles - Always available */}
+                                    <div>
+                                      <div className="flex justify-between items-center mb-1">
+                                        <span className="text-sm text-gray-600">
+                                          {t(
+                                            "family.child.mastery.letterTiles",
+                                          )}
+                                        </span>
+                                        <span className="text-sm font-medium text-nordic-midnight">
+                                          {
+                                            childProgress.letterTilesMasteredWords
+                                          }{" "}
+                                          {t(
+                                            "family.child.mastery.masteredWords",
+                                          )}
+                                        </span>
+                                      </div>
+                                      <div className="w-full bg-gray-200 rounded-full h-2">
+                                        <div
+                                          className="bg-nordic-sky h-2 rounded-full transition-all"
+                                          style={{
+                                            width: `${Math.min(100, (childProgress.letterTilesMasteredWords / Math.max(1, childProgress.totalWordsWithMastery)) * 100)}%`,
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+
+                                    {/* Word Bank - Unlocked at age 8+ */}
+                                    <div>
+                                      <div className="flex justify-between items-center mb-1">
+                                        <span
+                                          className={`text-sm ${
+                                            isWordBankUnlocked
+                                              ? "text-gray-600"
+                                              : "text-gray-400"
+                                          }`}
+                                        >
+                                          {t("family.child.mastery.wordBank")}
+                                        </span>
+                                        {isWordBankUnlocked ? (
+                                          <span className="text-sm font-medium text-nordic-meadow">
+                                            {
+                                              childProgress.wordBankMasteredWords
+                                            }{" "}
+                                            {t(
+                                              "family.child.mastery.masteredWords",
+                                            )}
+                                          </span>
+                                        ) : childAge !== null ? (
+                                          <span className="text-xs text-gray-400">
+                                            {t(
+                                              "family.child.mastery.lockedUntilAge6",
+                                            )}
+                                          </span>
+                                        ) : (
+                                          <span className="text-sm font-medium text-nordic-meadow">
+                                            {
+                                              childProgress.wordBankMasteredWords
+                                            }{" "}
+                                            {t(
+                                              "family.child.mastery.masteredWords",
+                                            )}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="w-full bg-gray-200 rounded-full h-2">
+                                        <div
+                                          className={`h-2 rounded-full transition-all ${
+                                            isWordBankUnlocked
+                                              ? "bg-nordic-meadow"
+                                              : "bg-gray-300"
+                                          }`}
+                                          style={{
+                                            width: `${Math.min(100, (childProgress.wordBankMasteredWords / Math.max(1, childProgress.totalWordsWithMastery)) * 100)}%`,
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+
+                                    {/* Keyboard - Unlocked at age 10+ */}
+                                    <div>
+                                      <div className="flex justify-between items-center mb-1">
+                                        <span
+                                          className={`text-sm ${
+                                            isKeyboardUnlocked
+                                              ? "text-gray-600"
+                                              : "text-gray-400"
+                                          }`}
+                                        >
+                                          {t("family.child.mastery.keyboard")}
+                                        </span>
+                                        {isKeyboardUnlocked ? (
+                                          <span className="text-sm font-medium text-nordic-aurora">
+                                            {
+                                              childProgress.keyboardMasteredWords
+                                            }{" "}
+                                            {t(
+                                              "family.child.mastery.masteredWords",
+                                            )}
+                                          </span>
+                                        ) : childAge !== null ? (
+                                          <span className="text-xs text-gray-400">
+                                            {t(
+                                              "family.child.mastery.lockedUntilAge7",
+                                            )}
+                                          </span>
+                                        ) : (
+                                          <span className="text-sm font-medium text-nordic-aurora">
+                                            {
+                                              childProgress.keyboardMasteredWords
+                                            }{" "}
+                                            {t(
+                                              "family.child.mastery.masteredWords",
+                                            )}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="w-full bg-gray-200 rounded-full h-2">
+                                        <div
+                                          className={`h-2 rounded-full transition-all ${
+                                            isKeyboardUnlocked
+                                              ? "bg-nordic-aurora"
+                                              : "bg-gray-300"
+                                          }`}
+                                          style={{
+                                            width: `${Math.min(100, (childProgress.keyboardMasteredWords / Math.max(1, childProgress.totalWordsWithMastery)) * 100)}%`,
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
                         </div>
                       )}
 

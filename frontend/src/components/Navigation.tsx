@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useApiStatus } from "@/hooks/useApiStatus";
+import { calculateAge } from "@/types";
 import {
   Disclosure,
   DisclosureButton,
@@ -183,6 +184,12 @@ export function Navigation() {
                       <div className="hidden md:block">
                         <div className="text-sm font-medium text-gray-700">
                           {userData?.displayName || user.email}
+                          {userData?.role === "child" &&
+                            userData?.birthYear && (
+                              <span className="ml-1 text-gray-500">
+                                ({calculateAge(userData.birthYear)})
+                              </span>
+                            )}
                         </div>
                         {userData?.familyName && (
                           <div className="text-xs text-gray-500">
@@ -383,6 +390,11 @@ export function Navigation() {
               <div className="ml-3">
                 <div className="text-base font-medium text-gray-800">
                   {userData?.displayName || user.email}
+                  {userData?.role === "child" && userData?.birthYear && (
+                    <span className="ml-1 text-gray-500">
+                      ({calculateAge(userData.birthYear)})
+                    </span>
+                  )}
                 </div>
                 <div className="text-sm font-medium text-gray-500">
                   {user.email}

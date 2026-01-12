@@ -94,11 +94,12 @@ func setupIntegrationTest(t *testing.T) *gin.Engine {
 		api.GET("/families/children", requireParentRole(), func(c *gin.Context) {
 			familyID, _ := c.Get("validatedFamilyID")
 			// Mock response with family-scoped children
+			userID := c.GetString("userID")
 			children := []models.ChildAccount{
 				{
 					ID:       "child-" + familyID.(string) + "-1",
 					FamilyID: familyID.(string),
-					ParentID: c.GetString("userID"),
+					ParentID: &userID,
 				},
 			}
 			c.JSON(http.StatusOK, models.APIResponse{Data: children})

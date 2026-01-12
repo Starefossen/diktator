@@ -155,7 +155,7 @@ func (m *MockDBService) GetFamilyChildren(familyID string) ([]models.ChildAccoun
 				Email:        user.Email,
 				DisplayName:  user.DisplayName,
 				FamilyID:     user.FamilyID,
-				ParentID:     *user.ParentID,
+				ParentID:     user.ParentID,
 				Role:         user.Role,
 				IsActive:     user.IsActive,
 				CreatedAt:    user.CreatedAt,
@@ -1012,7 +1012,7 @@ func (m *MockDBService) CreateChild(child *models.ChildAccount) error {
 		Email:        child.Email,
 		DisplayName:  child.DisplayName,
 		FamilyID:     child.FamilyID,
-		ParentID:     &child.ParentID,
+		ParentID:     child.ParentID,
 		Role:         child.Role,
 		IsActive:     child.IsActive,
 		CreatedAt:    child.CreatedAt,
@@ -1032,7 +1032,7 @@ func (m *MockDBService) GetChild(childID string) (*models.ChildAccount, error) {
 	if user, exists := m.users[childID]; exists && user.Role == "child" {
 		child := &models.ChildAccount{
 			ID:       user.ID,
-			ParentID: *user.ParentID,
+			ParentID: user.ParentID,
 			FamilyID: user.FamilyID,
 		}
 		return child, nil
@@ -1044,7 +1044,7 @@ func (m *MockDBService) UpdateChild(child *models.ChildAccount) error {
 	args := m.Called(child)
 	if user, exists := m.users[child.ID]; exists {
 		user.FamilyID = child.FamilyID
-		user.ParentID = &child.ParentID
+		user.ParentID = child.ParentID
 		m.users[child.ID] = user
 	}
 	return args.Error(0)

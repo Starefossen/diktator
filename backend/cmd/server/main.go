@@ -230,6 +230,7 @@ func main() {
 					childRoutes.Use(middleware.RequireChildOwnership(serviceManager.DB))
 					{
 						childRoutes.PUT("", handlers.UpdateChildAccount)
+						childRoutes.PATCH("/birthyear", handlers.UpdateChildBirthYear)
 						childRoutes.DELETE("", handlers.DeleteChildAccount)
 						childRoutes.GET("/progress", handlers.GetChildProgress)
 						childRoutes.GET("/results", handlers.GetChildResults)

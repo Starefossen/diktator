@@ -96,14 +96,14 @@ func (db *Postgres) GetUserByAuthID(authID string) (*models.User, error) {
 	ctx := context.Background()
 	query := `
 		SELECT id, auth_id, email, display_name, family_id, role,
-		       parent_id, is_active, created_at, last_active_at
+		       parent_id, is_active, birth_year, created_at, last_active_at
 		FROM users WHERE auth_id = $1`
 
 	var user models.User
 
 	err := db.pool.QueryRow(ctx, query, authID).Scan(
 		&user.ID, &user.AuthID, &user.Email, &user.DisplayName, &user.FamilyID,
-		&user.Role, &user.ParentID, &user.IsActive,
+		&user.Role, &user.ParentID, &user.IsActive, &user.BirthYear,
 		&user.CreatedAt, &user.LastActiveAt,
 	)
 	if err == pgx.ErrNoRows {
@@ -192,12 +192,12 @@ func (db *Postgres) CreateUser(user *models.User) error {
 
 	query := `
 		INSERT INTO users (id, auth_id, email, display_name, family_id, role,
-		                   parent_id, is_active, created_at, last_active_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+		                   parent_id, birth_year, is_active, created_at, last_active_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
 
 	_, err := db.pool.Exec(ctx, query,
 		user.ID, user.AuthID, user.Email, user.DisplayName, familyID,
-		user.Role, user.ParentID, user.IsActive,
+		user.Role, user.ParentID, user.BirthYear, user.IsActive,
 		user.CreatedAt, user.LastActiveAt,
 	)
 	if err != nil {
@@ -415,13 +415,13 @@ func (db *Postgres) GetChild(childID string) (*models.ChildAccount, error) {
 	ctx := context.Background()
 	query := `
 		SELECT id, email, display_name, family_id, parent_id, role,
-		       is_active, created_at, last_active_at
+		       is_active, birth_year, created_at, last_active_at
 		FROM users WHERE id = $1 AND role = 'child'`
 
 	var child models.ChildAccount
 	err := db.pool.QueryRow(ctx, query, childID).Scan(
 		&child.ID, &child.Email, &child.DisplayName, &child.FamilyID,
-		&child.ParentID, &child.Role, &child.IsActive,
+		&child.ParentID, &child.Role, &child.IsActive, &child.BirthYear,
 		&child.CreatedAt, &child.LastActiveAt,
 	)
 	if err == pgx.ErrNoRows {
@@ -438,7 +438,7 @@ func (db *Postgres) GetFamilyChildren(familyID string) ([]models.ChildAccount, e
 	ctx := context.Background()
 	query := `
 		SELECT id, email, display_name, family_id, parent_id, role,
-		       is_active, created_at, last_active_at
+		       is_active, birth_year, created_at, last_active_at
 		FROM users
 		WHERE family_id = $1 AND role = 'child'
 		ORDER BY created_at ASC`
@@ -454,7 +454,7 @@ func (db *Postgres) GetFamilyChildren(familyID string) ([]models.ChildAccount, e
 		var child models.ChildAccount
 		err := rows.Scan(
 			&child.ID, &child.Email, &child.DisplayName, &child.FamilyID,
-			&child.ParentID, &child.Role, &child.IsActive,
+			&child.ParentID, &child.Role, &child.IsActive, &child.BirthYear,
 			&child.CreatedAt, &child.LastActiveAt,
 		)
 		if err != nil {
@@ -503,6 +503,26 @@ func (db *Postgres) UpdateChildDisplayName(childID, displayName string) error {
 	result, err := db.pool.Exec(ctx, query, childID, displayName)
 	if err != nil {
 		return fmt.Errorf("failed to update child display name: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return ErrChildNotFound
+	}
+
+	return nil
+}
+
+func (db *Postgres) UpdateChildBirthYear(childID string, birthYear *int) error {
+	ctx := context.Background()
+
+	query := `
+		UPDATE users SET
+			birth_year = $2
+		WHERE id = $1 AND role = 'child'`
+
+	result, err := db.pool.Exec(ctx, query, childID, birthYear)
+	if err != nil {
+		return fmt.Errorf("failed to update child birth year: %w", err)
 	}
 
 	if result.RowsAffected() == 0 {
@@ -1362,7 +1382,7 @@ func (db *Postgres) GetFamilyProgress(familyID string) ([]models.FamilyProgress,
 
 	// Get all family members
 	membersQuery := `
-		SELECT u.id, u.display_name, u.role
+		SELECT u.id, u.display_name, u.role, u.birth_year
 		FROM users u
 		JOIN family_members fm ON u.id = fm.user_id
 		WHERE fm.family_id = $1`
@@ -1376,7 +1396,7 @@ func (db *Postgres) GetFamilyProgress(familyID string) ([]models.FamilyProgress,
 	var progress []models.FamilyProgress
 	for rows.Next() {
 		var fp models.FamilyProgress
-		err := rows.Scan(&fp.UserID, &fp.UserName, &fp.Role)
+		err := rows.Scan(&fp.UserID, &fp.UserName, &fp.Role, &fp.BirthYear)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan member: %w", err)
 		}
@@ -1420,6 +1440,26 @@ func (db *Postgres) GetFamilyProgress(familyID string) ([]models.FamilyProgress,
 			fp.RecentResults = append(fp.RecentResults, result)
 		}
 		recentRows.Close()
+
+		// Get mastery statistics (mastery threshold is 2 correct answers)
+		masteryQuery := `
+			SELECT
+				COUNT(DISTINCT word) as total_words,
+				COUNT(DISTINCT word) FILTER (WHERE letter_tiles_correct >= 2) as letter_tiles_mastered,
+				COUNT(DISTINCT word) FILTER (WHERE word_bank_correct >= 2) as word_bank_mastered,
+				COUNT(DISTINCT word) FILTER (WHERE keyboard_correct >= 2) as keyboard_mastered
+			FROM word_mastery
+			WHERE user_id = $1`
+
+		err = db.pool.QueryRow(ctx, masteryQuery, fp.UserID).Scan(
+			&fp.TotalWordsWithMastery,
+			&fp.LetterTilesMasteredWords,
+			&fp.WordBankMasteredWords,
+			&fp.KeyboardMasteredWords,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get mastery stats: %w", err)
+		}
 
 		progress = append(progress, fp)
 	}

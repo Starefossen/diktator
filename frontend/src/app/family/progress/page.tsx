@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { FamilyProgress, TestResult, WordSet } from "@/types";
+import { FamilyProgress, TestResult, WordSet, calculateAge } from "@/types";
 import { generatedApiClient } from "@/lib/api-generated";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -118,7 +118,10 @@ function FamilyProgressPageContent() {
             <div>
               <h1 className="mb-4 text-4xl font-bold text-transparent bg-linear-to-r from-nordic-sky to-nordic-teal bg-clip-text">
                 {isChildView
-                  ? selectedChild?.userName || t("family.progress.unknown")
+                  ? (selectedChild?.userName || t("family.progress.unknown")) +
+                    (selectedChild?.role === "child" && selectedChild?.birthYear
+                      ? ` (${calculateAge(selectedChild.birthYear)})`
+                      : "")
                   : t("family.title")}
               </h1>
               <p className="text-lg text-gray-600">
@@ -222,6 +225,11 @@ function FamilyProgressPageContent() {
                       <div>
                         <h3 className="font-semibold text-gray-800">
                           {member.userName}
+                          {member.role === "child" && member.birthYear && (
+                            <span className="ml-1 text-sm font-normal text-gray-500">
+                              ({calculateAge(member.birthYear)})
+                            </span>
+                          )}
                         </h3>
                         <p className="text-sm text-gray-600">
                           {member.role === "parent"

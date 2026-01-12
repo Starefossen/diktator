@@ -26,6 +26,106 @@ import { BASE_PATH, COLLECTION_FORMATS, BaseAPI, RequiredError, operationServerM
 /**
  * 
  * @export
+ * @interface ApiDictionarySuggestGet200Response
+ */
+export interface ApiDictionarySuggestGet200Response {
+    /**
+     * 
+     * @type {Array<ModelsDictionarySuggestion>}
+     * @memberof ApiDictionarySuggestGet200Response
+     */
+    'data'?: Array<ModelsDictionarySuggestion>;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiDictionarySuggestGet200Response
+     */
+    'error'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiDictionarySuggestGet200Response
+     */
+    'message'?: string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiDictionaryValidateGet200Response
+ */
+export interface ApiDictionaryValidateGet200Response {
+    /**
+     * 
+     * @type {object}
+     * @memberof ApiDictionaryValidateGet200Response
+     */
+    'data'?: object;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiDictionaryValidateGet200Response
+     */
+    'error'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiDictionaryValidateGet200Response
+     */
+    'message'?: string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiMasteryWordSetIdGet200Response
+ */
+export interface ApiMasteryWordSetIdGet200Response {
+    /**
+     * 
+     * @type {Array<ModelsWordMastery>}
+     * @memberof ApiMasteryWordSetIdGet200Response
+     */
+    'data'?: Array<ModelsWordMastery>;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiMasteryWordSetIdGet200Response
+     */
+    'error'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiMasteryWordSetIdGet200Response
+     */
+    'message'?: string;
+}
+/**
+ * 
+ * @export
+ * @interface ApiMasteryWordSetIdIncrementPost200Response
+ */
+export interface ApiMasteryWordSetIdIncrementPost200Response {
+    /**
+     * 
+     * @type {ModelsWordMastery}
+     * @memberof ApiMasteryWordSetIdIncrementPost200Response
+     */
+    'data'?: ModelsWordMastery;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiMasteryWordSetIdIncrementPost200Response
+     */
+    'error'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ApiMasteryWordSetIdIncrementPost200Response
+     */
+    'message'?: string;
+}
+/**
+ * 
+ * @export
  * @interface ApiUsersPostRequest
  */
 export interface ApiUsersPostRequest {
@@ -82,6 +182,25 @@ export interface ApiWordsetsVoicesGet200Response {
 /**
  * 
  * @export
+ * @interface HandlersIncrementMasteryRequest
+ */
+export interface HandlersIncrementMasteryRequest {
+    /**
+     * \"letterTiles\", \"wordBank\", or \"keyboard\"
+     * @type {string}
+     * @memberof HandlersIncrementMasteryRequest
+     */
+    'inputMode': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof HandlersIncrementMasteryRequest
+     */
+    'word': string;
+}
+/**
+ * 
+ * @export
  * @interface ModelsAPIResponse
  */
 export interface ModelsAPIResponse {
@@ -110,6 +229,12 @@ export interface ModelsAPIResponse {
  * @interface ModelsAddFamilyMemberRequest
  */
 export interface ModelsAddFamilyMemberRequest {
+    /**
+     * Optional birth year for children (age-adaptive features)
+     * @type {number}
+     * @memberof ModelsAddFamilyMemberRequest
+     */
+    'birthYear'?: number;
     /**
      * 
      * @type {string}
@@ -173,6 +298,62 @@ export interface ModelsCreateWordSetRequest {
      * @memberof ModelsCreateWordSetRequest
      */
     'words': Array<ModelsWordInput>;
+}
+/**
+ * 
+ * @export
+ * @interface ModelsDictionarySuggestion
+ */
+export interface ModelsDictionarySuggestion {
+    /**
+     * 
+     * @type {number}
+     * @memberof ModelsDictionarySuggestion
+     */
+    'articleId'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelsDictionarySuggestion
+     */
+    'word'?: string;
+}
+/**
+ * 
+ * @export
+ * @interface ModelsDictionaryWord
+ */
+export interface ModelsDictionaryWord {
+    /**
+     * For linking to ordbokene.no (e.g., https://ordbokene.no/bm/ID)
+     * @type {number}
+     * @memberof ModelsDictionaryWord
+     */
+    'articleId'?: number;
+    /**
+     * Primary definition only
+     * @type {string}
+     * @memberof ModelsDictionaryWord
+     */
+    'definition'?: string;
+    /**
+     * All inflected forms (katt, katten, katter, kattene)
+     * @type {Array<string>}
+     * @memberof ModelsDictionaryWord
+     */
+    'inflections'?: Array<string>;
+    /**
+     * Base form of the word
+     * @type {string}
+     * @memberof ModelsDictionaryWord
+     */
+    'lemma'?: string;
+    /**
+     * NOUN, VERB, ADJ, ADV, etc.
+     * @type {string}
+     * @memberof ModelsDictionaryWord
+     */
+    'wordClass'?: string;
 }
 /**
  * 
@@ -291,6 +472,19 @@ export interface ModelsTranslation {
 /**
  * 
  * @export
+ * @interface ModelsUpdateChildBirthYearRequest
+ */
+export interface ModelsUpdateChildBirthYearRequest {
+    /**
+     * Birth year for age-adaptive features (null to clear)
+     * @type {number}
+     * @memberof ModelsUpdateChildBirthYearRequest
+     */
+    'birthYear'?: number;
+}
+/**
+ * 
+ * @export
  * @interface ModelsUpdateWordSetRequest
  */
 export interface ModelsUpdateWordSetRequest {
@@ -343,6 +537,67 @@ export interface ModelsWordInput {
      * @memberof ModelsWordInput
      */
     'word': string;
+}
+/**
+ * 
+ * @export
+ * @interface ModelsWordMastery
+ */
+export interface ModelsWordMastery {
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelsWordMastery
+     */
+    'createdAt'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelsWordMastery
+     */
+    'id'?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof ModelsWordMastery
+     */
+    'keyboardCorrect'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ModelsWordMastery
+     */
+    'letterTilesCorrect'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelsWordMastery
+     */
+    'updatedAt'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelsWordMastery
+     */
+    'userId'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelsWordMastery
+     */
+    'word'?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof ModelsWordMastery
+     */
+    'wordBankCorrect'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ModelsWordMastery
+     */
+    'wordSetId'?: string;
 }
 /**
  * 
@@ -412,6 +667,49 @@ export interface ModelsWordTestResult {
  */
 export const ChildrenApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
+        /**
+         * Update a child account\'s birth year (parent only)
+         * @summary Update Child Birth Year
+         * @param {string} childId Child ID
+         * @param {ModelsUpdateChildBirthYearRequest} body Birth year update request
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiFamiliesChildrenChildIdBirthyearPatch: async (childId: string, body: ModelsUpdateChildBirthYearRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'childId' is not null or undefined
+            assertParamExists('apiFamiliesChildrenChildIdBirthyearPatch', 'childId', childId)
+            // verify required parameter 'body' is not null or undefined
+            assertParamExists('apiFamiliesChildrenChildIdBirthyearPatch', 'body', body)
+            const localVarPath = `/api/families/children/{childId}/birthyear`
+                .replace(`{${"childId"}}`, encodeURIComponent(String(childId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
         /**
          * Delete a child account (parent only)
          * @summary Delete Child Account
@@ -577,6 +875,20 @@ export const ChildrenApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = ChildrenApiAxiosParamCreator(configuration)
     return {
         /**
+         * Update a child account\'s birth year (parent only)
+         * @summary Update Child Birth Year
+         * @param {string} childId Child ID
+         * @param {ModelsUpdateChildBirthYearRequest} body Birth year update request
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiFamiliesChildrenChildIdBirthyearPatch(childId: string, body: ModelsUpdateChildBirthYearRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAPIResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiFamiliesChildrenChildIdBirthyearPatch(childId, body, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ChildrenApi.apiFamiliesChildrenChildIdBirthyearPatch']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Delete a child account (parent only)
          * @summary Delete Child Account
          * @param {string} childId Child ID
@@ -640,6 +952,17 @@ export const ChildrenApiFactory = function (configuration?: Configuration, baseP
     const localVarFp = ChildrenApiFp(configuration)
     return {
         /**
+         * Update a child account\'s birth year (parent only)
+         * @summary Update Child Birth Year
+         * @param {string} childId Child ID
+         * @param {ModelsUpdateChildBirthYearRequest} body Birth year update request
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiFamiliesChildrenChildIdBirthyearPatch(childId: string, body: ModelsUpdateChildBirthYearRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
+            return localVarFp.apiFamiliesChildrenChildIdBirthyearPatch(childId, body, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Delete a child account (parent only)
          * @summary Delete Child Account
          * @param {string} childId Child ID
@@ -689,6 +1012,17 @@ export const ChildrenApiFactory = function (configuration?: Configuration, baseP
  * @interface ChildrenApi
  */
 export interface ChildrenApiInterface {
+    /**
+     * Update a child account\'s birth year (parent only)
+     * @summary Update Child Birth Year
+     * @param {string} childId Child ID
+     * @param {ModelsUpdateChildBirthYearRequest} body Birth year update request
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ChildrenApiInterface
+     */
+    apiFamiliesChildrenChildIdBirthyearPatch(childId: string, body: ModelsUpdateChildBirthYearRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
     /**
      * Delete a child account (parent only)
      * @summary Delete Child Account
@@ -740,6 +1074,19 @@ export interface ChildrenApiInterface {
  */
 export class ChildrenApi extends BaseAPI implements ChildrenApiInterface {
     /**
+     * Update a child account\'s birth year (parent only)
+     * @summary Update Child Birth Year
+     * @param {string} childId Child ID
+     * @param {ModelsUpdateChildBirthYearRequest} body Birth year update request
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ChildrenApi
+     */
+    public apiFamiliesChildrenChildIdBirthyearPatch(childId: string, body: ModelsUpdateChildBirthYearRequest, options?: RawAxiosRequestConfig) {
+        return ChildrenApiFp(this.configuration).apiFamiliesChildrenChildIdBirthyearPatch(childId, body, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Delete a child account (parent only)
      * @summary Delete Child Account
      * @param {string} childId Child ID
@@ -786,6 +1133,315 @@ export class ChildrenApi extends BaseAPI implements ChildrenApiInterface {
      */
     public apiFamiliesChildrenChildIdResultsGet(childId: string, options?: RawAxiosRequestConfig) {
         return ChildrenApiFp(this.configuration).apiFamiliesChildrenChildIdResultsGet(childId, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * DictionaryApi - axios parameter creator
+ * @export
+ */
+export const DictionaryApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Get cache statistics and health status of the dictionary service
+         * @summary Get dictionary service statistics
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiDictionaryStatsGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/dictionary/stats`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get autocomplete suggestions from ord.uib.no based on a query prefix
+         * @summary Get word suggestions from the Norwegian dictionary
+         * @param {string} q Query prefix for suggestions
+         * @param {string} [dict] Dictionary code (bm&#x3D;bokmål, nn&#x3D;nynorsk)
+         * @param {number} [n] Number of suggestions (1-20)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiDictionarySuggestGet: async (q: string, dict?: string, n?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'q' is not null or undefined
+            assertParamExists('apiDictionarySuggestGet', 'q', q)
+            const localVarPath = `/api/dictionary/suggest`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (q !== undefined) {
+                localVarQueryParameter['q'] = q;
+            }
+
+            if (dict !== undefined) {
+                localVarQueryParameter['dict'] = dict;
+            }
+
+            if (n !== undefined) {
+                localVarQueryParameter['n'] = n;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Look up a word in ord.uib.no and return its information including lemma, word class, inflections, and definition
+         * @summary Validate a word in the Norwegian dictionary
+         * @param {string} w Word to validate
+         * @param {string} [dict] Dictionary code (bm&#x3D;bokmål, nn&#x3D;nynorsk)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiDictionaryValidateGet: async (w: string, dict?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'w' is not null or undefined
+            assertParamExists('apiDictionaryValidateGet', 'w', w)
+            const localVarPath = `/api/dictionary/validate`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (w !== undefined) {
+                localVarQueryParameter['w'] = w;
+            }
+
+            if (dict !== undefined) {
+                localVarQueryParameter['dict'] = dict;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * DictionaryApi - functional programming interface
+ * @export
+ */
+export const DictionaryApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = DictionaryApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Get cache statistics and health status of the dictionary service
+         * @summary Get dictionary service statistics
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiDictionaryStatsGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ModelsAPIResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiDictionaryStatsGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DictionaryApi.apiDictionaryStatsGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Get autocomplete suggestions from ord.uib.no based on a query prefix
+         * @summary Get word suggestions from the Norwegian dictionary
+         * @param {string} q Query prefix for suggestions
+         * @param {string} [dict] Dictionary code (bm&#x3D;bokmål, nn&#x3D;nynorsk)
+         * @param {number} [n] Number of suggestions (1-20)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiDictionarySuggestGet(q: string, dict?: string, n?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiDictionarySuggestGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiDictionarySuggestGet(q, dict, n, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DictionaryApi.apiDictionarySuggestGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Look up a word in ord.uib.no and return its information including lemma, word class, inflections, and definition
+         * @summary Validate a word in the Norwegian dictionary
+         * @param {string} w Word to validate
+         * @param {string} [dict] Dictionary code (bm&#x3D;bokmål, nn&#x3D;nynorsk)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiDictionaryValidateGet(w: string, dict?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiDictionaryValidateGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiDictionaryValidateGet(w, dict, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DictionaryApi.apiDictionaryValidateGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * DictionaryApi - factory interface
+ * @export
+ */
+export const DictionaryApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = DictionaryApiFp(configuration)
+    return {
+        /**
+         * Get cache statistics and health status of the dictionary service
+         * @summary Get dictionary service statistics
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiDictionaryStatsGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse> {
+            return localVarFp.apiDictionaryStatsGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Get autocomplete suggestions from ord.uib.no based on a query prefix
+         * @summary Get word suggestions from the Norwegian dictionary
+         * @param {string} q Query prefix for suggestions
+         * @param {string} [dict] Dictionary code (bm&#x3D;bokmål, nn&#x3D;nynorsk)
+         * @param {number} [n] Number of suggestions (1-20)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiDictionarySuggestGet(q: string, dict?: string, n?: number, options?: RawAxiosRequestConfig): AxiosPromise<ApiDictionarySuggestGet200Response> {
+            return localVarFp.apiDictionarySuggestGet(q, dict, n, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Look up a word in ord.uib.no and return its information including lemma, word class, inflections, and definition
+         * @summary Validate a word in the Norwegian dictionary
+         * @param {string} w Word to validate
+         * @param {string} [dict] Dictionary code (bm&#x3D;bokmål, nn&#x3D;nynorsk)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiDictionaryValidateGet(w: string, dict?: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiDictionaryValidateGet200Response> {
+            return localVarFp.apiDictionaryValidateGet(w, dict, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * DictionaryApi - interface
+ * @export
+ * @interface DictionaryApi
+ */
+export interface DictionaryApiInterface {
+    /**
+     * Get cache statistics and health status of the dictionary service
+     * @summary Get dictionary service statistics
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DictionaryApiInterface
+     */
+    apiDictionaryStatsGet(options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
+
+    /**
+     * Get autocomplete suggestions from ord.uib.no based on a query prefix
+     * @summary Get word suggestions from the Norwegian dictionary
+     * @param {string} q Query prefix for suggestions
+     * @param {string} [dict] Dictionary code (bm&#x3D;bokmål, nn&#x3D;nynorsk)
+     * @param {number} [n] Number of suggestions (1-20)
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DictionaryApiInterface
+     */
+    apiDictionarySuggestGet(q: string, dict?: string, n?: number, options?: RawAxiosRequestConfig): AxiosPromise<ApiDictionarySuggestGet200Response>;
+
+    /**
+     * Look up a word in ord.uib.no and return its information including lemma, word class, inflections, and definition
+     * @summary Validate a word in the Norwegian dictionary
+     * @param {string} w Word to validate
+     * @param {string} [dict] Dictionary code (bm&#x3D;bokmål, nn&#x3D;nynorsk)
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DictionaryApiInterface
+     */
+    apiDictionaryValidateGet(w: string, dict?: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiDictionaryValidateGet200Response>;
+
+}
+
+/**
+ * DictionaryApi - object-oriented interface
+ * @export
+ * @class DictionaryApi
+ * @extends {BaseAPI}
+ */
+export class DictionaryApi extends BaseAPI implements DictionaryApiInterface {
+    /**
+     * Get cache statistics and health status of the dictionary service
+     * @summary Get dictionary service statistics
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DictionaryApi
+     */
+    public apiDictionaryStatsGet(options?: RawAxiosRequestConfig) {
+        return DictionaryApiFp(this.configuration).apiDictionaryStatsGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get autocomplete suggestions from ord.uib.no based on a query prefix
+     * @summary Get word suggestions from the Norwegian dictionary
+     * @param {string} q Query prefix for suggestions
+     * @param {string} [dict] Dictionary code (bm&#x3D;bokmål, nn&#x3D;nynorsk)
+     * @param {number} [n] Number of suggestions (1-20)
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DictionaryApi
+     */
+    public apiDictionarySuggestGet(q: string, dict?: string, n?: number, options?: RawAxiosRequestConfig) {
+        return DictionaryApiFp(this.configuration).apiDictionarySuggestGet(q, dict, n, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Look up a word in ord.uib.no and return its information including lemma, word class, inflections, and definition
+     * @summary Validate a word in the Norwegian dictionary
+     * @param {string} w Word to validate
+     * @param {string} [dict] Dictionary code (bm&#x3D;bokmål, nn&#x3D;nynorsk)
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DictionaryApi
+     */
+    public apiDictionaryValidateGet(w: string, dict?: string, options?: RawAxiosRequestConfig) {
+        return DictionaryApiFp(this.configuration).apiDictionaryValidateGet(w, dict, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
@@ -1852,6 +2508,317 @@ export class InvitationsApi extends BaseAPI implements InvitationsApiInterface {
 
 
 /**
+ * MasteryApi - axios parameter creator
+ * @export
+ */
+export const MasteryApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Get mastery progress for all words in a word set for the authenticated user
+         * @summary Get mastery for word set
+         * @param {string} wordSetId Word Set ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiMasteryWordSetIdGet: async (wordSetId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'wordSetId' is not null or undefined
+            assertParamExists('apiMasteryWordSetIdGet', 'wordSetId', wordSetId)
+            const localVarPath = `/api/mastery/{wordSetId}`
+                .replace(`{${"wordSetId"}}`, encodeURIComponent(String(wordSetId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Increment the mastery counter for a specific word and input mode
+         * @summary Increment mastery for a word
+         * @param {string} wordSetId Word Set ID
+         * @param {HandlersIncrementMasteryRequest} body Increment request
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiMasteryWordSetIdIncrementPost: async (wordSetId: string, body: HandlersIncrementMasteryRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'wordSetId' is not null or undefined
+            assertParamExists('apiMasteryWordSetIdIncrementPost', 'wordSetId', wordSetId)
+            // verify required parameter 'body' is not null or undefined
+            assertParamExists('apiMasteryWordSetIdIncrementPost', 'body', body)
+            const localVarPath = `/api/mastery/{wordSetId}/increment`
+                .replace(`{${"wordSetId"}}`, encodeURIComponent(String(wordSetId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get mastery progress for a specific word in a word set
+         * @summary Get mastery for specific word
+         * @param {string} wordSetId Word Set ID
+         * @param {string} word Word text
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiMasteryWordSetIdWordWordGet: async (wordSetId: string, word: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'wordSetId' is not null or undefined
+            assertParamExists('apiMasteryWordSetIdWordWordGet', 'wordSetId', wordSetId)
+            // verify required parameter 'word' is not null or undefined
+            assertParamExists('apiMasteryWordSetIdWordWordGet', 'word', word)
+            const localVarPath = `/api/mastery/{wordSetId}/word/{word}`
+                .replace(`{${"wordSetId"}}`, encodeURIComponent(String(wordSetId)))
+                .replace(`{${"word"}}`, encodeURIComponent(String(word)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication BearerAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * MasteryApi - functional programming interface
+ * @export
+ */
+export const MasteryApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = MasteryApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Get mastery progress for all words in a word set for the authenticated user
+         * @summary Get mastery for word set
+         * @param {string} wordSetId Word Set ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiMasteryWordSetIdGet(wordSetId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiMasteryWordSetIdGet200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiMasteryWordSetIdGet(wordSetId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['MasteryApi.apiMasteryWordSetIdGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Increment the mastery counter for a specific word and input mode
+         * @summary Increment mastery for a word
+         * @param {string} wordSetId Word Set ID
+         * @param {HandlersIncrementMasteryRequest} body Increment request
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiMasteryWordSetIdIncrementPost(wordSetId: string, body: HandlersIncrementMasteryRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiMasteryWordSetIdIncrementPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiMasteryWordSetIdIncrementPost(wordSetId, body, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['MasteryApi.apiMasteryWordSetIdIncrementPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Get mastery progress for a specific word in a word set
+         * @summary Get mastery for specific word
+         * @param {string} wordSetId Word Set ID
+         * @param {string} word Word text
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiMasteryWordSetIdWordWordGet(wordSetId: string, word: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ApiMasteryWordSetIdIncrementPost200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiMasteryWordSetIdWordWordGet(wordSetId, word, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['MasteryApi.apiMasteryWordSetIdWordWordGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * MasteryApi - factory interface
+ * @export
+ */
+export const MasteryApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = MasteryApiFp(configuration)
+    return {
+        /**
+         * Get mastery progress for all words in a word set for the authenticated user
+         * @summary Get mastery for word set
+         * @param {string} wordSetId Word Set ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiMasteryWordSetIdGet(wordSetId: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiMasteryWordSetIdGet200Response> {
+            return localVarFp.apiMasteryWordSetIdGet(wordSetId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Increment the mastery counter for a specific word and input mode
+         * @summary Increment mastery for a word
+         * @param {string} wordSetId Word Set ID
+         * @param {HandlersIncrementMasteryRequest} body Increment request
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiMasteryWordSetIdIncrementPost(wordSetId: string, body: HandlersIncrementMasteryRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiMasteryWordSetIdIncrementPost200Response> {
+            return localVarFp.apiMasteryWordSetIdIncrementPost(wordSetId, body, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Get mastery progress for a specific word in a word set
+         * @summary Get mastery for specific word
+         * @param {string} wordSetId Word Set ID
+         * @param {string} word Word text
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiMasteryWordSetIdWordWordGet(wordSetId: string, word: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiMasteryWordSetIdIncrementPost200Response> {
+            return localVarFp.apiMasteryWordSetIdWordWordGet(wordSetId, word, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * MasteryApi - interface
+ * @export
+ * @interface MasteryApi
+ */
+export interface MasteryApiInterface {
+    /**
+     * Get mastery progress for all words in a word set for the authenticated user
+     * @summary Get mastery for word set
+     * @param {string} wordSetId Word Set ID
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof MasteryApiInterface
+     */
+    apiMasteryWordSetIdGet(wordSetId: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiMasteryWordSetIdGet200Response>;
+
+    /**
+     * Increment the mastery counter for a specific word and input mode
+     * @summary Increment mastery for a word
+     * @param {string} wordSetId Word Set ID
+     * @param {HandlersIncrementMasteryRequest} body Increment request
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof MasteryApiInterface
+     */
+    apiMasteryWordSetIdIncrementPost(wordSetId: string, body: HandlersIncrementMasteryRequest, options?: RawAxiosRequestConfig): AxiosPromise<ApiMasteryWordSetIdIncrementPost200Response>;
+
+    /**
+     * Get mastery progress for a specific word in a word set
+     * @summary Get mastery for specific word
+     * @param {string} wordSetId Word Set ID
+     * @param {string} word Word text
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof MasteryApiInterface
+     */
+    apiMasteryWordSetIdWordWordGet(wordSetId: string, word: string, options?: RawAxiosRequestConfig): AxiosPromise<ApiMasteryWordSetIdIncrementPost200Response>;
+
+}
+
+/**
+ * MasteryApi - object-oriented interface
+ * @export
+ * @class MasteryApi
+ * @extends {BaseAPI}
+ */
+export class MasteryApi extends BaseAPI implements MasteryApiInterface {
+    /**
+     * Get mastery progress for all words in a word set for the authenticated user
+     * @summary Get mastery for word set
+     * @param {string} wordSetId Word Set ID
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof MasteryApi
+     */
+    public apiMasteryWordSetIdGet(wordSetId: string, options?: RawAxiosRequestConfig) {
+        return MasteryApiFp(this.configuration).apiMasteryWordSetIdGet(wordSetId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Increment the mastery counter for a specific word and input mode
+     * @summary Increment mastery for a word
+     * @param {string} wordSetId Word Set ID
+     * @param {HandlersIncrementMasteryRequest} body Increment request
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof MasteryApi
+     */
+    public apiMasteryWordSetIdIncrementPost(wordSetId: string, body: HandlersIncrementMasteryRequest, options?: RawAxiosRequestConfig) {
+        return MasteryApiFp(this.configuration).apiMasteryWordSetIdIncrementPost(wordSetId, body, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get mastery progress for a specific word in a word set
+     * @summary Get mastery for specific word
+     * @param {string} wordSetId Word Set ID
+     * @param {string} word Word text
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof MasteryApi
+     */
+    public apiMasteryWordSetIdWordWordGet(wordSetId: string, word: string, options?: RawAxiosRequestConfig) {
+        return MasteryApiFp(this.configuration).apiMasteryWordSetIdWordWordGet(wordSetId, word, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
  * UsersApi - axios parameter creator
  * @export
  */
@@ -2533,10 +3500,10 @@ export const WordsetsApiAxiosParamCreator = function (configuration?: Configurat
             };
         },
         /**
-         * Stream TTS audio for a specific word in a word set (generates on-demand, cached by browser)
-         * @summary Stream Audio for Word
+         * Stream TTS audio for a specific word or sentence in a word set (generates on-demand, cached by browser). Automatically uses appropriate speaking rate for single words (0.8x) vs sentences (0.9x).
+         * @summary Stream Audio for Word or Sentence
          * @param {string} id Word Set ID
-         * @param {string} word Word to generate audio for
+         * @param {string} word Word or sentence to generate audio for
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2737,10 +3704,10 @@ export const WordsetsApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Stream TTS audio for a specific word in a word set (generates on-demand, cached by browser)
-         * @summary Stream Audio for Word
+         * Stream TTS audio for a specific word or sentence in a word set (generates on-demand, cached by browser). Automatically uses appropriate speaking rate for single words (0.8x) vs sentences (0.9x).
+         * @summary Stream Audio for Word or Sentence
          * @param {string} id Word Set ID
-         * @param {string} word Word to generate audio for
+         * @param {string} word Word or sentence to generate audio for
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2848,10 +3815,10 @@ export const WordsetsApiFactory = function (configuration?: Configuration, baseP
             return localVarFp.apiWordsetsIdPut(id, request, options).then((request) => request(axios, basePath));
         },
         /**
-         * Stream TTS audio for a specific word in a word set (generates on-demand, cached by browser)
-         * @summary Stream Audio for Word
+         * Stream TTS audio for a specific word or sentence in a word set (generates on-demand, cached by browser). Automatically uses appropriate speaking rate for single words (0.8x) vs sentences (0.9x).
+         * @summary Stream Audio for Word or Sentence
          * @param {string} id Word Set ID
-         * @param {string} word Word to generate audio for
+         * @param {string} word Word or sentence to generate audio for
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2949,10 +3916,10 @@ export interface WordsetsApiInterface {
     apiWordsetsIdPut(id: string, request: ModelsUpdateWordSetRequest, options?: RawAxiosRequestConfig): AxiosPromise<ModelsAPIResponse>;
 
     /**
-     * Stream TTS audio for a specific word in a word set (generates on-demand, cached by browser)
-     * @summary Stream Audio for Word
+     * Stream TTS audio for a specific word or sentence in a word set (generates on-demand, cached by browser). Automatically uses appropriate speaking rate for single words (0.8x) vs sentences (0.9x).
+     * @summary Stream Audio for Word or Sentence
      * @param {string} id Word Set ID
-     * @param {string} word Word to generate audio for
+     * @param {string} word Word or sentence to generate audio for
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof WordsetsApiInterface
@@ -3062,10 +4029,10 @@ export class WordsetsApi extends BaseAPI implements WordsetsApiInterface {
     }
 
     /**
-     * Stream TTS audio for a specific word in a word set (generates on-demand, cached by browser)
-     * @summary Stream Audio for Word
+     * Stream TTS audio for a specific word or sentence in a word set (generates on-demand, cached by browser). Automatically uses appropriate speaking rate for single words (0.8x) vs sentences (0.9x).
+     * @summary Stream Audio for Word or Sentence
      * @param {string} id Word Set ID
-     * @param {string} word Word to generate audio for
+     * @param {string} word Word or sentence to generate audio for
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof WordsetsApi

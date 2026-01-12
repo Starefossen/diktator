@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -1578,6 +1579,113 @@ func UpdateChildAccount(c *gin.Context) {
 	})
 }
 
+// @Summary		Update Child Birth Year
+// @Description	Update a child account's birth year (parent only)
+// @Tags			children
+// @Accept			json
+// @Produce		json
+// @Param			childId	path		string	true	"Child ID"
+// @Param			body	body		models.UpdateChildBirthYearRequest	true	"Birth year update request"
+// @Success		200	{object}	models.APIResponse	"Child birth year updated successfully"
+// @Failure		400	{object}	models.APIResponse	"Invalid request data"
+// @Failure		401	{object}	models.APIResponse	"Parent access required"
+// @Failure		403	{object}	models.APIResponse	"Not authorized to update this child"
+// @Failure		500	{object}	models.APIResponse	"Failed to update child birth year"
+// @Security		BearerAuth
+// @Router			/api/families/children/{childId}/birthyear [patch]
+func UpdateChildBirthYear(c *gin.Context) {
+	serviceManager := GetServiceManager(c)
+	if serviceManager == nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Service unavailable",
+		})
+		return
+	}
+
+	// Get the authenticated user's family ID
+	familyID, exists := c.Get("validatedFamilyID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.APIResponse{
+			Error: "Family access validation required",
+		})
+		return
+	}
+
+	childID := c.Param("childId")
+
+	// First, verify the child belongs to the same family
+	child, err := serviceManager.DB.GetChild(childID)
+	if err != nil {
+		if errors.Is(err, db.ErrChildNotFound) {
+			c.JSON(http.StatusNotFound, models.APIResponse{
+				Error: "Child not found",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to verify child",
+		})
+		return
+	}
+
+	// Ensure child belongs to the parent's family
+	if child.FamilyID != familyID.(string) {
+		c.JSON(http.StatusForbidden, models.APIResponse{
+			Error: "Cannot update child from another family",
+		})
+		return
+	}
+
+	var req models.UpdateChildBirthYearRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "Invalid request data",
+		})
+		return
+	}
+
+	// Validate birth year if provided
+	if req.BirthYear != nil {
+		currentYear := time.Now().Year()
+		if *req.BirthYear < 1900 || *req.BirthYear > currentYear {
+			c.JSON(http.StatusBadRequest, models.APIResponse{
+				Error: "Birth year must be between 1900 and the current year",
+			})
+			return
+		}
+	}
+
+	if err := serviceManager.DB.UpdateChildBirthYear(childID, req.BirthYear); err != nil {
+		if errors.Is(err, db.ErrChildNotFound) {
+			c.JSON(http.StatusNotFound, models.APIResponse{
+				Error: "Child not found",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Error: "Failed to update child birth year",
+		})
+		return
+	}
+
+	// Get updated child data
+	updatedChild, err := serviceManager.DB.GetChild(childID)
+	if err != nil {
+		c.JSON(http.StatusOK, models.APIResponse{
+			Message: "Child birth year updated successfully",
+			Data: map[string]interface{}{
+				"birthYear": req.BirthYear,
+			},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Message: "Child birth year updated successfully",
+		Data:    updatedChild,
+	})
+}
+
 // @Summary		Delete Child Account
 // @Description	Delete a child account (parent only)
 // @Tags			children
@@ -1923,6 +2031,7 @@ func GetUserProfile(c *gin.Context) {
 						"familyName":   familyName,
 						"role":         userData.Role,
 						"parentId":     userData.ParentID,
+						"birthYear":    userData.BirthYear,
 						"isActive":     userData.IsActive,
 						"createdAt":    userData.CreatedAt.Format(time.RFC3339),
 						"lastActiveAt": userData.LastActiveAt.Format(time.RFC3339),
@@ -1999,6 +2108,7 @@ func GetUserProfile(c *gin.Context) {
 			"familyName":   familyName,
 			"role":         userData.Role,
 			"parentId":     userData.ParentID,
+			"birthYear":    userData.BirthYear,
 			"isActive":     userData.IsActive,
 			"createdAt":    userData.CreatedAt.Format(time.RFC3339),
 			"lastActiveAt": userData.LastActiveAt.Format(time.RFC3339),

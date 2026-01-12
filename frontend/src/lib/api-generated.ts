@@ -10,6 +10,7 @@ import {
   FamiliesApi,
   HealthApi,
   InvitationsApi,
+  MasteryApi,
   UsersApi,
   WordsetsApi,
   ModelsSaveResultRequest,
@@ -17,6 +18,7 @@ import {
   ModelsCreateWordSetRequest,
   ModelsUpdateWordSetRequest,
   ModelsAddFamilyMemberRequest,
+  ModelsUpdateChildBirthYearRequest,
 } from "@/generated";
 
 // Create a configuration that automatically includes OIDC auth token
@@ -65,6 +67,7 @@ const createApiInstances = async (requireAuth = true) => {
     familiesApi: new FamiliesApi(config),
     healthApi: new HealthApi(config),
     invitationsApi: new InvitationsApi(config),
+    masteryApi: new MasteryApi(config),
     usersApi: new UsersApi(config),
     wordsetsApi: new WordsetsApi(config),
   };
@@ -169,6 +172,17 @@ export const generatedApiClient = {
     return childrenApi.apiFamiliesChildrenChildIdResultsGet(childId);
   },
 
+  async updateChildBirthYear(
+    childId: string,
+    request: ModelsUpdateChildBirthYearRequest,
+  ) {
+    const { childrenApi } = await createApiInstances();
+    return childrenApi.apiFamiliesChildrenChildIdBirthyearPatch(
+      childId,
+      request,
+    );
+  },
+
   // Word sets management
   async getWordSets() {
     const { wordsetsApi } = await createApiInstances();
@@ -226,5 +240,11 @@ export const generatedApiClient = {
   async getHealth() {
     const { healthApi } = await createApiInstances(false);
     return healthApi.healthGet();
+  },
+
+  // Mastery management
+  async getWordSetMastery(wordSetId: string) {
+    const { masteryApi } = await createApiInstances();
+    return masteryApi.apiMasteryWordSetIdGet(wordSetId);
   },
 };

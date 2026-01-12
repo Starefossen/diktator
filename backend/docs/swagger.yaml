@@ -1,5 +1,16 @@
 basePath: /api
 definitions:
+  handlers.IncrementMasteryRequest:
+    properties:
+      inputMode:
+        description: '"letterTiles", "wordBank", or "keyboard"'
+        type: string
+      word:
+        type: string
+    required:
+    - inputMode
+    - word
+    type: object
   models.APIResponse:
     properties:
       data: {}
@@ -10,6 +21,9 @@ definitions:
     type: object
   models.AddFamilyMemberRequest:
     properties:
+      birthYear:
+        description: Optional birth year for children (age-adaptive features)
+        type: integer
       displayName:
         type: string
       email:
@@ -44,6 +58,33 @@ definitions:
     - language
     - name
     - words
+    type: object
+  models.DictionarySuggestion:
+    properties:
+      articleId:
+        type: integer
+      word:
+        type: string
+    type: object
+  models.DictionaryWord:
+    properties:
+      articleId:
+        description: For linking to ordbokene.no (e.g., https://ordbokene.no/bm/ID)
+        type: integer
+      definition:
+        description: Primary definition only
+        type: string
+      inflections:
+        description: All inflected forms (katt, katten, katter, kattene)
+        items:
+          type: string
+        type: array
+      lemma:
+        description: Base form of the word
+        type: string
+      wordClass:
+        description: NOUN, VERB, ADJ, ADV, etc.
+        type: string
     type: object
   models.DisplayNameUpdateRequest:
     properties:
@@ -102,6 +143,12 @@ definitions:
       voiceId:
         type: string
     type: object
+  models.UpdateChildBirthYearRequest:
+    properties:
+      birthYear:
+        description: Birth year for age-adaptive features (null to clear)
+        type: integer
+    type: object
   models.UpdateWordSetRequest:
     properties:
       language:
@@ -132,6 +179,27 @@ definitions:
         type: string
     required:
     - word
+    type: object
+  models.WordMastery:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      keyboardCorrect:
+        type: integer
+      letterTilesCorrect:
+        type: integer
+      updatedAt:
+        type: string
+      userId:
+        type: string
+      word:
+        type: string
+      wordBankCorrect:
+        type: integer
+      wordSetId:
+        type: string
     type: object
   models.WordTestResult:
     properties:
@@ -180,6 +248,111 @@ info:
   title: Diktator API
   version: "1.0"
 paths:
+  /api/dictionary/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get cache statistics and health status of the dictionary service
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Dictionary service statistics
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Dictionary service unavailable
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      summary: Get dictionary service statistics
+      tags:
+      - dictionary
+  /api/dictionary/suggest:
+    get:
+      consumes:
+      - application/json
+      description: Get autocomplete suggestions from ord.uib.no based on a query prefix
+      parameters:
+      - description: Query prefix for suggestions
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: bm
+        description: Dictionary code (bm=bokmål, nn=nynorsk)
+        in: query
+        name: dict
+        type: string
+      - default: 5
+        description: Number of suggestions (1-20)
+        in: query
+        name: "n"
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Suggestions returned
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.DictionarySuggestion'
+                  type: array
+              type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Dictionary service unavailable
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      summary: Get word suggestions from the Norwegian dictionary
+      tags:
+      - dictionary
+  /api/dictionary/validate:
+    get:
+      consumes:
+      - application/json
+      description: Look up a word in ord.uib.no and return its information including
+        lemma, word class, inflections, and definition
+      parameters:
+      - description: Word to validate
+        in: query
+        name: w
+        required: true
+        type: string
+      - default: bm
+        description: Dictionary code (bm=bokmål, nn=nynorsk)
+        in: query
+        name: dict
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Word not found (data is null)
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Dictionary service unavailable
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      summary: Validate a word in the Norwegian dictionary
+      tags:
+      - dictionary
   /api/families:
     get:
       consumes:
@@ -307,6 +480,51 @@ paths:
       security:
       - BearerAuth: []
       summary: Update Child Account
+      tags:
+      - children
+  /api/families/children/{childId}/birthyear:
+    patch:
+      consumes:
+      - application/json
+      description: Update a child account's birth year (parent only)
+      parameters:
+      - description: Child ID
+        in: path
+        name: childId
+        required: true
+        type: string
+      - description: Birth year update request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateChildBirthYearRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Child birth year updated successfully
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "400":
+          description: Invalid request data
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "401":
+          description: Parent access required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "403":
+          description: Not authorized to update this child
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to update child birth year
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update Child Birth Year
       tags:
       - children
   /api/families/children/{childId}/progress:
@@ -637,6 +855,132 @@ paths:
       summary: Get Pending Invitations
       tags:
       - invitations
+  /api/mastery/{wordSetId}:
+    get:
+      consumes:
+      - application/json
+      description: Get mastery progress for all words in a word set for the authenticated
+        user
+      parameters:
+      - description: Word Set ID
+        in: path
+        name: wordSetId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Mastery records
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.WordMastery'
+                  type: array
+              type: object
+        "401":
+          description: User authentication required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to retrieve mastery
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get mastery for word set
+      tags:
+      - mastery
+  /api/mastery/{wordSetId}/increment:
+    post:
+      consumes:
+      - application/json
+      description: Increment the mastery counter for a specific word and input mode
+      parameters:
+      - description: Word Set ID
+        in: path
+        name: wordSetId
+        required: true
+        type: string
+      - description: Increment request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.IncrementMasteryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated mastery record
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.WordMastery'
+              type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "401":
+          description: User authentication required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to increment mastery
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Increment mastery for a word
+      tags:
+      - mastery
+  /api/mastery/{wordSetId}/word/{word}:
+    get:
+      consumes:
+      - application/json
+      description: Get mastery progress for a specific word in a word set
+      parameters:
+      - description: Word Set ID
+        in: path
+        name: wordSetId
+        required: true
+        type: string
+      - description: Word text
+        in: path
+        name: word
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Mastery record
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.WordMastery'
+              type: object
+        "401":
+          description: User authentication required
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to retrieve mastery
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get mastery for specific word
+      tags:
+      - mastery
   /api/users:
     post:
       consumes:
@@ -1030,15 +1374,16 @@ paths:
     get:
       consumes:
       - application/json
-      description: Stream TTS audio for a specific word in a word set (generates on-demand,
-        cached by browser)
+      description: Stream TTS audio for a specific word or sentence in a word set
+        (generates on-demand, cached by browser). Automatically uses appropriate speaking
+        rate for single words (0.8x) vs sentences (0.9x).
       parameters:
       - description: Word Set ID
         in: path
         name: id
         required: true
         type: string
-      - description: Word to generate audio for
+      - description: Word or sentence to generate audio for
         in: path
         name: word
         required: true
@@ -1062,7 +1407,7 @@ paths:
           description: Failed to generate audio
           schema:
             $ref: '#/definitions/models.APIResponse'
-      summary: Stream Audio for Word
+      summary: Stream Audio for Word or Sentence
       tags:
       - wordsets
   /api/wordsets/curated:

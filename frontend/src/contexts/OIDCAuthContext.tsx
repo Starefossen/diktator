@@ -30,6 +30,7 @@ export interface UserData {
   parentId?: string;
   children?: string[];
   isActive: boolean;
+  birthYear?: number; // Optional birth year for age-adaptive features
   createdAt: string;
   lastActiveAt: string;
 }

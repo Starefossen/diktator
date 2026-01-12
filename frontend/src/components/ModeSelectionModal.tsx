@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { WordSet, WordMastery } from "@/types";
 import { useLanguage, TranslationKey } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { generatedApiClient } from "@/lib/api-generated";
 import {
   BaseModal,
   ModalContent,
@@ -66,14 +67,9 @@ export function ModeSelectionModal({
 
       setIsLoadingMastery(true);
       try {
-        const response = await fetch(`/api/mastery/${wordSet.id}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-          },
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setMasteryData(data.data || []);
+        const response = await generatedApiClient.getWordSetMastery(wordSet.id);
+        if (response.data?.data) {
+          setMasteryData(response.data.data as WordMastery[]);
         }
       } catch {
         // Silently fail - mastery is optional enhancement

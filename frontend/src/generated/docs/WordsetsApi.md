@@ -10,7 +10,7 @@ All URIs are relative to *http://localhost:8080/api*
 |[**apiWordsetsIdAssignmentsUserIdPost**](#apiwordsetsidassignmentsuseridpost) | **POST** /api/wordsets/{id}/assignments/{userId} | Assign Word Set to User|
 |[**apiWordsetsIdDelete**](#apiwordsetsiddelete) | **DELETE** /api/wordsets/{id} | Delete Word Set|
 |[**apiWordsetsIdPut**](#apiwordsetsidput) | **PUT** /api/wordsets/{id} | Update Word Set|
-|[**apiWordsetsIdWordsWordAudioGet**](#apiwordsetsidwordswordaudioget) | **GET** /api/wordsets/{id}/words/{word}/audio | Stream Audio for Word|
+|[**apiWordsetsIdWordsWordAudioGet**](#apiwordsetsidwordswordaudioget) | **GET** /api/wordsets/{id}/words/{word}/audio | Stream Audio for Word or Sentence|
 |[**apiWordsetsPost**](#apiwordsetspost) | **POST** /api/wordsets | Create Word Set|
 |[**apiWordsetsVoicesGet**](#apiwordsetsvoicesget) | **GET** /api/wordsets/voices | List available TTS voices|
 
@@ -335,7 +335,7 @@ const { status, data } = await apiInstance.apiWordsetsIdPut(
 # **apiWordsetsIdWordsWordAudioGet**
 > File apiWordsetsIdWordsWordAudioGet()
 
-Stream TTS audio for a specific word in a word set (generates on-demand, cached by browser)
+Stream TTS audio for a specific word or sentence in a word set (generates on-demand, cached by browser). Automatically uses appropriate speaking rate for single words (0.8x) vs sentences (0.9x).
 
 ### Example
 
@@ -349,7 +349,7 @@ const configuration = new Configuration();
 const apiInstance = new WordsetsApi(configuration);
 
 let id: string; //Word Set ID (default to undefined)
-let word: string; //Word to generate audio for (default to undefined)
+let word: string; //Word or sentence to generate audio for (default to undefined)
 
 const { status, data } = await apiInstance.apiWordsetsIdWordsWordAudioGet(
     id,
@@ -362,7 +362,7 @@ const { status, data } = await apiInstance.apiWordsetsIdWordsWordAudioGet(
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
 | **id** | [**string**] | Word Set ID | defaults to undefined|
-| **word** | [**string**] | Word to generate audio for | defaults to undefined|
+| **word** | [**string**] | Word or sentence to generate audio for | defaults to undefined|
 
 
 ### Return type

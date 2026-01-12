@@ -36,6 +36,7 @@ type Repository interface {
 	CreateChild(child *models.ChildAccount) error
 	UpdateChild(child *models.ChildAccount) error
 	UpdateChildDisplayName(childID, displayName string) error
+	UpdateChildBirthYear(childID string, birthYear *int) error
 	DeleteChild(childID string) error
 
 	// Word set operations
