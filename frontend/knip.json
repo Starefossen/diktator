@@ -2,7 +2,11 @@
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "entry": ["src/app/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}"],
   "project": ["src/**/*.{ts,tsx}"],
-  "ignore": ["src/generated/**", "src/test/vitest-axe.d.ts"],
+  "ignore": [
+    "src/generated/**",
+    "src/test/vitest-axe.d.ts",
+    "src/lib/testEngine/**"
+  ],
   "ignoreDependencies": [
     "@openapitools/openapi-generator-cli",
     "flag-icons",

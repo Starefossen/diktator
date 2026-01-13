@@ -15,7 +15,7 @@ type LCWPhase = "look" | "cover" | "write" | "check";
 interface LookCoverWriteViewProps {
   word: string;
   audioUrl?: string;
-  onComplete: (answer: string, isCorrect: boolean) => void;
+  onSubmit: (answer: string, isCorrect: boolean) => void;
   onSkip?: () => void;
   lookDuration?: number; // Duration to show word in ms (default: 4000)
   autoPlayAudio?: boolean; // Auto-play audio when word shows (default: true)
@@ -40,7 +40,7 @@ interface LookCoverWriteViewProps {
 export function LookCoverWriteView({
   word,
   audioUrl,
-  onComplete,
+  onSubmit,
   onSkip,
   lookDuration = 4000,
   autoPlayAudio = true,
@@ -115,7 +115,7 @@ export function LookCoverWriteView({
       userInput.toLowerCase().trim() === word.toLowerCase().trim();
     setIsCorrect(correct);
     setPhase("check");
-    onComplete(userInput, correct);
+    onSubmit(userInput, correct);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -234,11 +234,10 @@ export function LookCoverWriteView({
       {phase === "check" && (
         <>
           <div
-            className={`rounded-xl px-6 py-2 text-sm font-medium uppercase tracking-wider ${
-              isCorrect
+            className={`rounded-xl px-6 py-2 text-sm font-medium uppercase tracking-wider ${isCorrect
                 ? "bg-green-50 text-green-600"
                 : "bg-amber-50 text-amber-600"
-            }`}
+              }`}
           >
             {t("lookCoverWrite.check")}
           </div>
@@ -250,9 +249,8 @@ export function LookCoverWriteView({
                 {t("lookCoverWrite.yourAnswer")}:
               </span>
               <span
-                className={`text-2xl font-semibold tracking-wider ${
-                  isCorrect ? "text-green-600" : "text-red-500"
-                }`}
+                className={`text-2xl font-semibold tracking-wider ${isCorrect ? "text-green-600" : "text-red-500"
+                  }`}
               >
                 {spacedWord(userInput)}
               </span>
@@ -289,9 +287,8 @@ export function LookCoverWriteView({
 
           {/* Feedback message */}
           <p
-            className={`text-lg font-medium ${
-              isCorrect ? "text-green-600" : "text-amber-600"
-            }`}
+            className={`text-lg font-medium ${isCorrect ? "text-green-600" : "text-amber-600"
+              }`}
           >
             {isCorrect
               ? t("test.feedback.correct")

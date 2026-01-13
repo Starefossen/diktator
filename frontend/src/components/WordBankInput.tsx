@@ -7,7 +7,7 @@ import type { WordBankItem } from "@/lib/challenges";
 interface WordBankInputProps {
   items: WordBankItem[];
   expectedWordCount: number;
-  onSubmit: (isCorrect: boolean, answer: string) => void;
+  onSubmit: (answer: string, isCorrect: boolean) => void;
   disabled?: boolean;
 }
 
@@ -67,7 +67,7 @@ export function WordBankInput({
   function handleSubmit() {
     if (disabled) return;
     if (selectedItemIds.length === 0) return;
-    onSubmit(true, currentAnswer);
+    onSubmit(currentAnswer, true);
   }
 
   const hasSelection = selectedItemIds.length > 0;

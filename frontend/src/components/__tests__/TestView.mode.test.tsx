@@ -97,7 +97,7 @@ describe("TestView - Mode-Specific Behavior", () => {
 
     it("shows keyboard placeholder text", () => {
       renderTestView(baseWordSet, "keyboard");
-      const input = screen.getByPlaceholderText(/type.*word here/i);
+      const input = screen.getByPlaceholderText("Type the word you heard");
       expect(input).toBeInTheDocument();
     });
 
@@ -132,7 +132,7 @@ describe("TestView - Mode-Specific Behavior", () => {
 
     it("shows translation placeholder text", () => {
       renderTestView(translationWordSet, "translation");
-      const input = screen.getByPlaceholderText(/type.*translation here/i);
+      const input = screen.getByPlaceholderText("Type translation here");
       expect(input).toBeInTheDocument();
     });
 
@@ -160,7 +160,7 @@ describe("TestView - Mode-Specific Behavior", () => {
 
     it("calls onUserAnswerChange when input changes", () => {
       renderTestView(baseWordSet, "keyboard");
-      const input = screen.getByPlaceholderText(/type.*word here/i);
+      const input = screen.getByPlaceholderText("Type the word you heard");
       fireEvent.change(input, { target: { value: "test" } });
       expect(mockOnUserAnswerChange).toHaveBeenCalledWith("test");
     });
@@ -219,15 +219,11 @@ describe("TestView - Mode-Specific Behavior", () => {
         showFeedback: true,
         lastAnswerCorrect: false,
         currentTries: 1,
+        lastUserAnswer: "helo",
       };
       renderTestView(baseWordSet, "keyboard", props);
       expect(screen.getByText(/incorrect/i)).toBeInTheDocument();
       expect(screen.getByText(/try again/i)).toBeInTheDocument();
-    });
-
-    it("shows attempts remaining", () => {
-      renderTestView(baseWordSet, "keyboard");
-      expect(screen.getByText(/attempts.*remaining.*3/i)).toBeInTheDocument();
     });
 
     it("shows correct count in progress", () => {
@@ -300,17 +296,6 @@ describe("TestView - Mode-Specific Behavior", () => {
       };
       renderTestView(baseWordSet, "keyboard", props);
       expect(screen.getByText(/so close/i)).toBeInTheDocument();
-    });
-
-    it("does not show spelling feedback when lastUserAnswer is not provided", () => {
-      const props = {
-        ...baseProps,
-        showFeedback: true,
-        lastAnswerCorrect: false,
-        currentTries: 1,
-      };
-      renderTestView(baseWordSet, "keyboard", props);
-      expect(screen.getByText(/incorrect/i)).toBeInTheDocument();
     });
   });
 
@@ -465,7 +450,7 @@ describe("TestView - Mode-Specific Behavior", () => {
     it("renders text input in keyboard mode", () => {
       renderTestView(baseWordSet, "keyboard");
       expect(
-        screen.getByPlaceholderText(/type.*word here/i),
+        screen.getByPlaceholderText("Type the word you heard"),
       ).toBeInTheDocument();
     });
 
@@ -478,14 +463,9 @@ describe("TestView - Mode-Specific Behavior", () => {
       expect(screen.getByText(/next.*word|finish.*test/i)).toBeInTheDocument();
     });
 
-    it("shows attempts remaining in keyboard mode", () => {
-      renderTestView(baseWordSet, "keyboard");
-      expect(screen.getByText(/attempts.*remaining/i)).toBeInTheDocument();
-    });
-
     it("calls onUserAnswerChange when typing in keyboard mode", () => {
       renderTestView(baseWordSet, "keyboard");
-      const input = screen.getByPlaceholderText(/type.*word here/i);
+      const input = screen.getByPlaceholderText("Type the word you heard");
       fireEvent.change(input, { target: { value: "hello" } });
       expect(mockOnUserAnswerChange).toHaveBeenCalledWith("hello");
     });

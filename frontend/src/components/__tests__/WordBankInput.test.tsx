@@ -133,7 +133,7 @@ describe("WordBankInput", () => {
     const checkButton = screen.getByRole("button", { name: /check/i });
     fireEvent.click(checkButton);
 
-    expect(mockOnSubmit).toHaveBeenCalledWith(true, "jeg liker");
+    expect(mockOnSubmit).toHaveBeenCalledWith("jeg liker", true);
   });
 
   it("disables check button when no words selected", () => {
@@ -190,6 +190,6 @@ describe("WordBankInput", () => {
     const checkButton = screen.getByRole("button", { name: /check/i });
     fireEvent.click(checkButton);
 
-    expect(mockOnSubmit).toHaveBeenCalledWith(true, "liker jeg deg");
+    expect(mockOnSubmit).toHaveBeenCalledWith("liker jeg deg", true);
   });
 });

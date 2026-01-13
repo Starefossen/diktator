@@ -10,7 +10,6 @@ import {
   Translation,
   TestMode,
   TEST_MODES,
-  TEST_MODE_INFO,
 } from "@/types";
 import {
   ModelsUpdateWordSetRequest,
@@ -30,6 +29,7 @@ import {
   ModalActions,
   ModalButton,
 } from "@/components/modals/BaseModal";
+import { getMode } from "@/lib/testEngine/registry";
 import { ChildAssignmentSelector } from "@/components/ChildAssignmentSelector";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -363,11 +363,21 @@ export default function WordSetEditor({
                   className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-2.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-nordic-teal sm:text-sm/6"
                 >
                   {TEST_MODES.map((mode) => {
-                    const info = TEST_MODE_INFO[mode];
+                    const modeDefinition = getMode(mode);
+                    if (!modeDefinition) return null;
                     return (
                       <option key={mode} value={mode}>
-                        {t(info.nameKey as Parameters<typeof t>[0])} -{" "}
-                        {t(info.descKey as Parameters<typeof t>[0])}
+                        {t(
+                          modeDefinition.metadata.nameKey as Parameters<
+                            typeof t
+                          >[0],
+                        )}{" "}
+                        -{" "}
+                        {t(
+                          modeDefinition.metadata.descriptionKey as Parameters<
+                            typeof t
+                          >[0],
+                        )}
                       </option>
                     );
                   })}
@@ -460,9 +470,9 @@ export default function WordSetEditor({
                       placeholder={
                         defaultMode === "translation"
                           ? t("wordsets.editor.sourceWord").replace(
-                              "{lang}",
-                              selectedLanguage,
-                            )
+                            "{lang}",
+                            selectedLanguage,
+                          )
                           : t("wordsets.addWord.placeholder")
                       }
                       onKeyPress={(e) => {

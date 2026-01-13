@@ -680,23 +680,30 @@ echo ""
 # Run backend and frontend checks in parallel
 (
   cd ${BACKEND_DIR}
+  echo "[backend] Running checks..."
   go fmt ./... > /dev/null 2>&1
   go vet ./... 2>&1 | grep -v "^#" || true
   DATABASE_URL="${DATABASE_TEST_URL}" go test ./... 2>&1 | grep -E "^(ok|FAIL|---)" | head -20
-  echo "[backend] ✅ Done"
+  EXIT_CODE=${PIPESTATUS[0]}
+  if [ $EXIT_CODE -eq 0 ]; then
+    echo "[backend] ✅ Done"
+  else
+    echo "[backend] ❌ Failed with exit code $EXIT_CODE"
+    exit $EXIT_CODE
+  fi
 ) &
 BACKEND_PID=$!
 
 (
   cd ${FRONTEND_DIR}
-  # Run checks and filter output for key lines
-  OUTPUT=$(pnpm run check 2>&1)
-  echo "$OUTPUT" | grep -E "(✓|✅|❌|Test Files|Tests |error|Error)" | head -20 || true
-  if echo "$OUTPUT" | grep -q "ELIFECYCLE"; then
-    echo "[frontend] ❌ Failed"
-    exit 1
+  echo "[frontend] Running checks..."
+  if pnpm run check 2>&1; then
+    echo "[frontend] ✅ Done"
+  else
+    EXIT_CODE=$?
+    echo "[frontend] ❌ Failed with exit code $EXIT_CODE"
+    exit $EXIT_CODE
   fi
-  echo "[frontend] ✅ Done"
 ) &
 FRONTEND_PID=$!
 

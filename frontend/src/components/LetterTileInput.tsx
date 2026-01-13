@@ -17,7 +17,7 @@ export interface TileFeedbackState {
 interface LetterTileInputProps {
   tiles: LetterTile[];
   expectedWord: string;
-  onSubmit: (isCorrect: boolean, answer: string) => void;
+  onSubmit: (answer: string, isCorrect: boolean) => void;
   disabled?: boolean;
   feedbackState?: TileFeedbackState | null;
 }
@@ -115,7 +115,7 @@ export function LetterTileInput({
     if (placedTileIds.length !== expectedWord.length) return;
     const isCorrect =
       currentAnswer.toLowerCase() === expectedWord.toLowerCase();
-    onSubmit(isCorrect, currentAnswer);
+    onSubmit(currentAnswer, isCorrect);
   }
 
   // Create empty slots for visual guidance
@@ -178,11 +178,10 @@ export function LetterTileInput({
     <div className="flex flex-col gap-4">
       {/* Answer slots area */}
       <div
-        className={`flex flex-wrap justify-center gap-2 p-4 pb-8 rounded-xl min-h-20 transition-colors duration-200 ${
-          showingFeedback
+        className={`flex flex-wrap justify-center gap-2 p-4 pb-8 rounded-xl min-h-20 transition-colors duration-200 ${showingFeedback
             ? "bg-red-50 border-2 border-red-200"
             : "bg-gray-50 border-2 border-dashed border-gray-300"
-        }`}
+          }`}
         role="group"
         aria-label={t("challenge.answerArea" as TranslationKey)}
       >

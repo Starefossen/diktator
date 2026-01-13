@@ -14,7 +14,7 @@ type FlashcardPhase = "show" | "countdown" | "reveal" | "verify";
 interface FlashcardViewProps {
   word: string;
   audioUrl?: string;
-  onComplete: (knewIt: boolean, verified?: boolean) => void;
+  onSubmit: (answer: string, isCorrect: boolean) => void;
   onSkip?: () => void;
   showDuration?: number; // Duration to show word in ms (default: 3000)
   countdownFrom?: number; // Countdown start number (default: 3)
@@ -40,7 +40,7 @@ interface FlashcardViewProps {
 export function FlashcardView({
   word,
   audioUrl,
-  onComplete,
+  onSubmit,
   onSkip,
   showDuration = 3000,
   countdownFrom = 3,
@@ -125,13 +125,14 @@ export function FlashcardView({
   }, [word, countdownFrom]);
 
   const handleKnewIt = (knewIt: boolean) => {
-    onComplete(knewIt, undefined);
+    // Return word if they knew it, empty string if not
+    onSubmit(knewIt ? word : "", knewIt);
   };
 
   const handleVerify = () => {
     const isCorrect =
       verifyInput.toLowerCase().trim() === word.toLowerCase().trim();
-    onComplete(isCorrect, true);
+    onSubmit(verifyInput, isCorrect);
   };
 
   const handleVerifyKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

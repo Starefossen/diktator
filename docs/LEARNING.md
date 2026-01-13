@@ -301,13 +301,13 @@ Norwegian presents specific spelling challenges that Diktator addresses:
 
 | Challenge             | Example                   | Teaching Approach                    |
 | --------------------- | ------------------------- | ------------------------------------ |
-| **Double consonants** | *mann* vs *man*           | Specific hints when detected         |
-| **Silent letters**    | *hjelpe* (silent h)       | Audio emphasizes pronunciation       |
-| **Æ, Ø, Å**           | *bære*, *høre*, *gå*      | Phonetic distractors in letter tiles |
-| **Skj-lyden**         | *skjære*, *ski*, *kjenne* | Multiple spelling patterns for /ʃ/   |
-| **Ng/Nk sounds**      | *sang*, *tenke*           | Distinct from standard consonants    |
-| **Compound words**    | *sjukepleier*             | Longer words broken into components  |
-| **Vowel length**      | *tak* vs *takk*           | Audio clarity for vowel duration     |
+| **Double consonants** | _mann_ vs _man_           | Specific hints when detected         |
+| **Silent letters**    | _hjelpe_ (silent h)       | Audio emphasizes pronunciation       |
+| **Æ, Ø, Å**           | _bære_, _høre_, _gå_      | Phonetic distractors in letter tiles |
+| **Skj-lyden**         | _skjære_, _ski_, _kjenne_ | Multiple spelling patterns for /ʃ/   |
+| **Ng/Nk sounds**      | _sang_, _tenke_           | Distinct from standard consonants    |
+| **Compound words**    | _sjukepleier_             | Longer words broken into components  |
+| **Vowel length**      | _tak_ vs _takk_           | Audio clarity for vowel duration     |
 
 ### Distractor Strategy
 
@@ -327,7 +327,7 @@ PHONETIC_PAIRS = {
   b: ["p"],
   t: ["d"],
   d: ["t"],
-}
+};
 ```
 
 Word bank includes confusable Norwegian word pairs:
@@ -341,7 +341,7 @@ CONFUSABLE_WORDS = {
   var: ["er", "blir"],
   er: ["var", "blir"],
   // ... etc.
-}
+};
 ```
 
 ### Error Analysis
@@ -537,13 +537,13 @@ For children who struggle with reading:
 
 ### Spelling Acquisition
 
-- **Ehri, L.C. (2000)**. Learning to read and learning to spell: Two sides of a coin. *Topics in Language Disorders*, 20(3), 19-36.
-- **Treiman, R. (2017)**. Learning to spell: Phonology and beyond. *Cognitive Neuropsychology*, 34(3-4), 185-191.
+- **Ehri, L.C. (2000)**. Learning to read and learning to spell: Two sides of a coin. _Topics in Language Disorders_, 20(3), 19-36.
+- **Treiman, R. (2017)**. Learning to spell: Phonology and beyond. _Cognitive Neuropsychology_, 34(3-4), 185-191.
 
 ### Feedback & Learning
 
-- **Hattie, J. & Timperley, H. (2007)**. The power of feedback. *Review of Educational Research*, 77(1), 81-112.
-- **Kapur, M. (2014)**. Productive failure in learning math. *Cognitive Science*, 38(5), 1008-1022.
+- **Hattie, J. & Timperley, H. (2007)**. The power of feedback. _Review of Educational Research_, 77(1), 81-112.
+- **Kapur, M. (2014)**. Productive failure in learning math. _Cognitive Science_, 38(5), 1008-1022.
 
 ### Child Development
 
@@ -552,20 +552,20 @@ For children who struggle with reading:
 
 ### Motivation & Rewards
 
-- **Deci, E.L. & Ryan, R.M. (2000)**. Self-determination theory and the facilitation of intrinsic motivation, social development, and well-being. *American Psychologist*, 55(1), 68-78.
-- **Deci, E.L. (1971)**. Effects of externally mediated rewards on intrinsic motivation. *Journal of Personality and Social Psychology*, 18(1), 105-115. (The foundational study on overjustification)
-- **Lepper, M.R., Greene, D., & Nisbett, R.E. (1973)**. Undermining children's intrinsic interest with extrinsic reward. *Journal of Personality and Social Psychology*, 28(1), 129-137.
-- **Tang, S.H. & Hall, V.C. (1995)**. The overjustification effect: A meta-analysis. *Applied Cognitive Psychology*, 9(5), 365-404.
+- **Deci, E.L. & Ryan, R.M. (2000)**. Self-determination theory and the facilitation of intrinsic motivation, social development, and well-being. _American Psychologist_, 55(1), 68-78.
+- **Deci, E.L. (1971)**. Effects of externally mediated rewards on intrinsic motivation. _Journal of Personality and Social Psychology_, 18(1), 105-115. (The foundational study on overjustification)
+- **Lepper, M.R., Greene, D., & Nisbett, R.E. (1973)**. Undermining children's intrinsic interest with extrinsic reward. _Journal of Personality and Social Psychology_, 28(1), 129-137.
+- **Tang, S.H. & Hall, V.C. (1995)**. The overjustification effect: A meta-analysis. _Applied Cognitive Psychology_, 9(5), 365-404.
 
 ### Memory & Retention
 
-- **Roediger, H.L. & Karpicke, J.D. (2006)**. Test-enhanced learning: Taking memory tests improves long-term retention. *Psychological Science*, 17(3), 249-255.
-- **Paivio, A. (1986)**. *Mental representations: A dual coding approach*. Oxford University Press.
+- **Roediger, H.L. & Karpicke, J.D. (2006)**. Test-enhanced learning: Taking memory tests improves long-term retention. _Psychological Science_, 17(3), 249-255.
+- **Paivio, A. (1986)**. _Mental representations: A dual coding approach_. Oxford University Press.
 
 ### Digital Writing in Schools
 
-- **Spilling, E.F., Rønneberg, V., Rogne, W.M., Roeser, J., & Torrance, M. (2023)**. Handwriting versus keyboard writing: Effect on word reading. *Computers & Education*, 201, 104803. (Norwegian first-grade study showing no disadvantage to keyboard instruction)
-- **Genlott, A.A. & Grönlund, Å. (2013)**. Improving literacy skills through learning reading by writing: The iWTR method presented and tested. *Computers & Education*, 67, 98-104. (Swedish study showing first graders writing like third graders using keyboards)
+- **Spilling, E.F., Rønneberg, V., Rogne, W.M., Roeser, J., & Torrance, M. (2023)**. Handwriting versus keyboard writing: Effect on word reading. _Computers & Education_, 201, 104803. (Norwegian first-grade study showing no disadvantage to keyboard instruction)
+- **Genlott, A.A. & Grönlund, Å. (2013)**. Improving literacy skills through learning reading by writing: The iWTR method presented and tested. _Computers & Education_, 67, 98-104. (Swedish study showing first graders writing like third graders using keyboards)
 
 ### Norwegian Literacy Research
 
@@ -592,4 +592,4 @@ Areas we'd like to investigate further:
 
 ---
 
-*This document should evolve as we learn more about what works for Norwegian children.*
+_This document should evolve as we learn more about what works for Norwegian children._

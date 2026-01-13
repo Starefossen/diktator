@@ -72,31 +72,21 @@ Family (1) ──────┬──────── (*) FamilyMember ──
 
 ### Test Modes
 
-Three test modes determine what the child sees and types:
+Diktator supports 7 different test modes, each designed for specific learning scenarios:
 
-| Test Mode   | Child Sees           | Child Types |
-| ----------- | -------------------- | ----------- |
-| Standard    | Word text + audio    | Same word   |
-| Dictation   | Audio only (no text) | Heard word  |
-| Translation | Word in source lang  | Translation |
+| Mode             | Input Type  | Tracks Mastery | Best For          |
+| ---------------- | ----------- | -------------- | ----------------- |
+| Letter Tiles     | Tap tiles   | ✅ Yes          | Young learners    |
+| Word Bank        | Tap words   | ✅ Yes          | Sentence building |
+| Keyboard         | Type        | ✅ Yes          | General practice  |
+| Missing Letters  | Fill blanks | ✅ Yes          | Spelling patterns |
+| Flashcard        | Self-report | ❌ No           | Quick review      |
+| Look-Cover-Write | Write       | ❌ No           | Memory training   |
+| Translation      | Type        | ✅ Yes          | Language learning |
 
-See [LEARNING.md](LEARNING.md) for pedagogical rationale behind each mode.
+**Mode Selection**: Available modes automatically filter based on word set content (e.g., Translation only shows when translations exist).
 
-### Input Methods
-
-Three input methods provide progressive scaffolding:
-
-| Input Method | Description                            | Age Range |
-| ------------ | -------------------------------------- | --------- |
-| Letter Tiles | Tap-to-place scrambled letters         | 5-8       |
-| Word Bank    | Tap-to-select words to build sentences | 7-10      |
-| Keyboard     | Traditional text input                 | 9+        |
-
-**Auto Mode**: Letter Tiles for single words, Word Bank for sentences.
-
-**Progressive Unlocking**: 2 correct answers unlocks the next input method.
-
-See [LEARNING.md](LEARNING.md) for detailed pedagogy and [DESIGN.md](DESIGN.md) for component specifications.
+**For detailed information on the test mode architecture**, including how to add new modes, see [TEST-ENGINE.md](TEST-ENGINE.md).
 
 ## Scoring & Mastery
 
@@ -193,12 +183,12 @@ User ──▶ OIDC Provider ──▶ JWT Token ──▶ Backend validates ─
 | Create/edit word sets   | ✅      | ❌     |
 | Assign word sets        | ✅      | ❌     |
 | Invite parents/children | ✅      | ❌     |
-| Remove family members   | ✅*     | ❌     |
+| Remove family members   | ✅\*    | ❌     |
 | View family progress    | ✅      | ❌     |
 | Take tests              | ✅      | ✅     |
 | View own results        | ✅      | ✅     |
 
-_* Parents cannot remove the `created_by` parent_
+_\* Parents cannot remove the `created_by` parent_
 
 ### Multi-Parent Model
 

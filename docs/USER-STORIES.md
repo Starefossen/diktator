@@ -107,6 +107,7 @@ Diktator is a family-oriented web application for children to learn Norwegian vo
 **Success**: Registration completed and first word set created in < 5 minutes
 
 **Drop-off Points**:
+
 - Registration form (monitor completion rate)
 - First word set creation (track skips)
 - Child account creation (measure adoption)
@@ -383,13 +384,13 @@ Diktator is a family-oriented web application for children to learn Norwegian vo
 
 | Action              | Parent | Child | System          |
 | ------------------- | ------ | ----- | --------------- |
-| Create word set     | ✅      | ❌     | Generates audio |
-| Edit word set       | ✅      | ❌     | Updates audio   |
-| Delete word set     | ✅      | ❌     | Removes data    |
-| Take test           | ✅      | ✅     | Tracks results  |
-| View own results    | ✅      | ✅     | Provides data   |
-| View family results | ✅      | ❌     | Provides data   |
-| Create child        | ✅      | ❌     | Creates account |
+| Create word set     | ✅     | ❌    | Generates audio |
+| Edit word set       | ✅     | ❌    | Updates audio   |
+| Delete word set     | ✅     | ❌    | Removes data    |
+| Take test           | ✅     | ✅    | Tracks results  |
+| View own results    | ✅     | ✅    | Provides data   |
+| View family results | ✅     | ❌    | Provides data   |
+| Create child        | ✅     | ❌    | Creates account |
 
 ---
 
@@ -427,4 +428,4 @@ Diktator is a family-oriented web application for children to learn Norwegian vo
 
 ---
 
-*Last reviewed: January 2026*
+_Last reviewed: January 2026_

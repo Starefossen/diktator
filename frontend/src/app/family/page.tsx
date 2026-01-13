@@ -103,16 +103,16 @@ export default function FamilyPage() {
     if (!editingChild && !memberFormData.email.trim()) {
       setErrorMessage(
         t("family.child.email") +
-        " " +
-        t("profile.settings.validation.required"),
+          " " +
+          t("profile.settings.validation.required"),
       );
       return;
     }
     if (selectedRole === "child" && !memberFormData.displayName.trim()) {
       setErrorMessage(
         t("family.child.displayName") +
-        " " +
-        t("profile.settings.validation.required"),
+          " " +
+          t("profile.settings.validation.required"),
       );
       return;
     }
@@ -150,10 +150,10 @@ export default function FamilyPage() {
           children.map((child) =>
             child.id === editingChild.id
               ? {
-                ...child,
-                displayName: memberFormData.displayName.trim(),
-                birthYear: birthYearNum,
-              }
+                  ...child,
+                  displayName: memberFormData.displayName.trim(),
+                  birthYear: birthYearNum,
+                }
               : child,
           ),
         );
@@ -400,20 +400,22 @@ export default function FamilyPage() {
                       <button
                         type="button"
                         onClick={() => setSelectedRole("child")}
-                        className={`px-4 py-3 font-medium rounded-lg transition-all ${selectedRole === "child"
+                        className={`px-4 py-3 font-medium rounded-lg transition-all ${
+                          selectedRole === "child"
                             ? "bg-nordic-sky text-nordic-midnight shadow-md"
                             : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                          }`}
+                        }`}
                       >
                         {t("family.member.role.child")}
                       </button>
                       <button
                         type="button"
                         onClick={() => setSelectedRole("parent")}
-                        className={`px-4 py-3 font-medium rounded-lg transition-all ${selectedRole === "parent"
+                        className={`px-4 py-3 font-medium rounded-lg transition-all ${
+                          selectedRole === "parent"
                             ? "bg-nordic-sky text-nordic-midnight shadow-md"
                             : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                          }`}
+                        }`}
                       >
                         {t("family.member.role.parent")}
                       </button>
@@ -533,8 +535,8 @@ export default function FamilyPage() {
                           selectedRole === "child"
                             ? t("family.child.email.placeholder")
                             : t(
-                              "family.invitation.inviteParent.email.placeholder",
-                            )
+                                "family.invitation.inviteParent.email.placeholder",
+                              )
                         }
                         required
                       />
@@ -696,10 +698,11 @@ export default function FamilyPage() {
                           </p>
                         </div>
                         <span
-                          className={`px-2.5 py-1 text-sm font-semibold rounded-full ${child.isActive
+                          className={`px-2.5 py-1 text-sm font-semibold rounded-full ${
+                            child.isActive
                               ? "bg-nordic-meadow/20 text-nordic-midnight"
                               : "bg-red-100 text-red-800"
-                            }`}
+                          }`}
                         >
                           {child.isActive
                             ? t("family.child.active")
@@ -788,10 +791,11 @@ export default function FamilyPage() {
                                     <div>
                                       <div className="flex justify-between items-center mb-1">
                                         <span
-                                          className={`text-sm ${isWordBankUnlocked
+                                          className={`text-sm ${
+                                            isWordBankUnlocked
                                               ? "text-gray-600"
                                               : "text-gray-400"
-                                            }`}
+                                          }`}
                                         >
                                           {t("family.child.mastery.wordBank")}
                                         </span>
@@ -823,10 +827,11 @@ export default function FamilyPage() {
                                       </div>
                                       <div className="w-full bg-gray-200 rounded-full h-2">
                                         <div
-                                          className={`h-2 rounded-full transition-all ${isWordBankUnlocked
+                                          className={`h-2 rounded-full transition-all ${
+                                            isWordBankUnlocked
                                               ? "bg-nordic-meadow"
                                               : "bg-gray-300"
-                                            }`}
+                                          }`}
                                           style={{
                                             width: `${Math.min(100, (childProgress.wordBankMasteredWords / Math.max(1, childProgress.totalWordsWithMastery)) * 100)}%`,
                                           }}
@@ -838,10 +843,11 @@ export default function FamilyPage() {
                                     <div>
                                       <div className="flex justify-between items-center mb-1">
                                         <span
-                                          className={`text-sm ${isKeyboardUnlocked
+                                          className={`text-sm ${
+                                            isKeyboardUnlocked
                                               ? "text-gray-600"
                                               : "text-gray-400"
-                                            }`}
+                                          }`}
                                         >
                                           {t("family.child.mastery.keyboard")}
                                         </span>
@@ -873,10 +879,11 @@ export default function FamilyPage() {
                                       </div>
                                       <div className="w-full bg-gray-200 rounded-full h-2">
                                         <div
-                                          className={`h-2 rounded-full transition-all ${isKeyboardUnlocked
+                                          className={`h-2 rounded-full transition-all ${
+                                            isKeyboardUnlocked
                                               ? "bg-nordic-aurora"
                                               : "bg-gray-300"
-                                            }`}
+                                          }`}
                                           style={{
                                             width: `${Math.min(100, (childProgress.keyboardMasteredWords / Math.max(1, childProgress.totalWordsWithMastery)) * 100)}%`,
                                           }}

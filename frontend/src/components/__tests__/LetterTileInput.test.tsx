@@ -119,7 +119,7 @@ describe("LetterTileInput", () => {
     const checkButton = screen.getByRole("button", { name: /check/i });
     fireEvent.click(checkButton);
 
-    expect(mockOnSubmit).toHaveBeenCalledWith(true, "cat");
+    expect(mockOnSubmit).toHaveBeenCalledWith("cat", true);
   });
 
   it("calls onSubmit with incorrect answer when wrong letters are used", () => {
@@ -133,7 +133,7 @@ describe("LetterTileInput", () => {
     const checkButton = screen.getByRole("button", { name: /check/i });
     fireEvent.click(checkButton);
 
-    expect(mockOnSubmit).toHaveBeenCalledWith(false, "xat");
+    expect(mockOnSubmit).toHaveBeenCalledWith("xat", false);
   });
 
   it("disables check button when answer is incomplete", () => {

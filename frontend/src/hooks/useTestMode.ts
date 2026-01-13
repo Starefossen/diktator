@@ -21,6 +21,7 @@ import {
 import { normalizeText } from "@/lib/sentenceScoring";
 import { TIMING } from "@/lib/timingConfig";
 import { calculateScores } from "@/lib/scoreCalculator";
+import { getMode } from "@/lib/testEngine/registry";
 
 export interface UseTestModeReturn {
   // State
@@ -315,25 +316,23 @@ export function useTestMode(): UseTestModeReturn {
 
       const currentWord = processedWords[currentWordIndex];
 
-      // Determine expected answer based on mode and direction
-      let expectedAnswer = currentWord;
-      if (
-        testMode === "translation" &&
-        wordDirections.length > currentWordIndex
-      ) {
-        const direction = wordDirections[currentWordIndex];
-        const targetLanguage = activeTest.testConfiguration?.targetLanguage;
-        const wordObj = activeTest.words.find((w) => w.word === currentWord);
-        const translation = wordObj?.translations?.find(
-          (tr) => tr.language === targetLanguage,
-        );
-
-        if (direction === "toTarget" && translation) {
-          expectedAnswer = translation.text;
-        } else if (direction === "toSource") {
-          expectedAnswer = currentWord;
-        }
+      // Get expected answer from mode definition
+      const wordObj = activeTest.words.find((w) => w.word === currentWord);
+      if (!wordObj) {
+        console.error(`Word not found: ${currentWord}`);
+        return;
       }
+
+      const mode = getMode(testMode);
+      const expectedAnswer = mode?.getExpectedAnswer
+        ? mode.getExpectedAnswer(wordObj, {
+          translationDirection:
+            wordDirections.length > currentWordIndex
+              ? wordDirections[currentWordIndex]
+              : "toTarget",
+          wordSet: activeTest,
+        })
+        : currentWord;
 
       // Use normalized comparison that ignores punctuation and case
       // This is especially important for sentences like "Katten sover." vs "katten sover"

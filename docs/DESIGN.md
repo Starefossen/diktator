@@ -28,7 +28,7 @@ A comprehensive design guide for Diktator—a Norwegian vocabulary learning app 
 
 These principles are grounded in research from Nielsen Norman Group, Smashing Magazine, and Toptal on designing educational apps for children.
 
-> **Cross-reference**: These UX design principles complement the educational research in [LEARNING.md](LEARNING.md). Design explains *how* we present things; Learning explains *why* they work pedagogically.
+> **Cross-reference**: These UX design principles complement the educational research in [LEARNING.md](LEARNING.md). Design explains _how_ we present things; Learning explains _why_ they work pedagogically.
 
 #### 1. Immediate Feedback on Everything
 
@@ -539,10 +539,10 @@ Gradients should feel natural, like light or sky, not artificial "tech" gradient
 
 ```css
 /* Primary action gradient — horizontal sunrise */
-background: linear-gradient(to right, #7DD3FC, #2DD4BF);
+background: linear-gradient(to right, #7dd3fc, #2dd4bf);
 
 /* Celebration gradient — achievement glow */
-background: linear-gradient(135deg, #FBBF24, #FB923C);
+background: linear-gradient(135deg, #fbbf24, #fb923c);
 
 /* Avoid: harsh purple-blue, neon, or overly saturated gradients */
 ```
@@ -560,17 +560,17 @@ To visually differentiate learning modes, each mode has a distinct gradient:
 ```css
 /* Test mode — focused, clear, primary */
 .progress-bar-test {
-  background: linear-gradient(to right, #7DD3FC, #2DD4BF);
+  background: linear-gradient(to right, #7dd3fc, #2dd4bf);
 }
 
 /* Practice mode — warm, relaxed, exploratory */
 .progress-bar-practice {
-  background: linear-gradient(to right, #2DD4BF, #FB923C);
+  background: linear-gradient(to right, #2dd4bf, #fb923c);
 }
 
 /* Results/completion — celebratory, accomplished */
 .progress-bar-results {
-  background: linear-gradient(to right, #4ADE80, #7DD3FC);
+  background: linear-gradient(to right, #4ade80, #7dd3fc);
 }
 ```
 
@@ -599,12 +599,12 @@ Achievement badges and celebration screens use warm, celebratory colors:
 ```css
 /* Achievement badge — warm celebratory glow */
 .badge-achievement {
-  background: linear-gradient(135deg, #FBBF24, #FB923C);
+  background: linear-gradient(135deg, #fbbf24, #fb923c);
 }
 
 /* Streak badge — growth and consistency */
 .badge-streak {
-  background: linear-gradient(135deg, #4ADE80, #2DD4BF);
+  background: linear-gradient(135deg, #4ade80, #2dd4bf);
 }
 ```
 
@@ -654,22 +654,22 @@ Earned by achieving high scores on tests. These are the "goal" badges children w
 
 | Badge Name            | Icon | Criteria                        | Tier   | EN Description                   | NO Description                  |
 | --------------------- | ---- | ------------------------------- | ------ | -------------------------------- | ------------------------------- |
-| **First Steps**       | 🌱    | Complete first test             | Bronze | "You took your first test!"      | "Du tok din første test!"       |
-| **Word Learner**      | 📖    | Score 70%+ on any test          | Bronze | "Good effort on your test!"      | "Godt jobba på testen!"         |
-| **Word Master**       | ⭐    | Score 90%+ on any test          | Silver | "Amazing score!"                 | "Fantastisk resultat!"          |
-| **Perfect Speller**   | 🏆    | Score 100% on any test          | Gold   | "Perfect! Not a single mistake!" | "Perfekt! Ikke én eneste feil!" |
-| **Spelling Champion** | 👑    | Score 100% on 5 different tests | Gold   | "A true spelling champion!"      | "En ekte stavemester!"          |
+| **First Steps**       | 🌱   | Complete first test             | Bronze | "You took your first test!"      | "Du tok din første test!"       |
+| **Word Learner**      | 📖   | Score 70%+ on any test          | Bronze | "Good effort on your test!"      | "Godt jobba på testen!"         |
+| **Word Master**       | ⭐   | Score 90%+ on any test          | Silver | "Amazing score!"                 | "Fantastisk resultat!"          |
+| **Perfect Speller**   | 🏆   | Score 100% on any test          | Gold   | "Perfect! Not a single mistake!" | "Perfekt! Ikke én eneste feil!" |
+| **Spelling Champion** | 👑   | Score 100% on 5 different tests | Gold   | "A true spelling champion!"      | "En ekte stavemester!"          |
 
 #### 2. Consistency Badges (Streak-Based)
 
 Earned by practicing regularly. Encourages habit formation without punishing breaks.
 
-| Badge Name             | Icon | Criteria      | Tier   | EN Description              | NO Description          |
-| ---------------------- | ---- | ------------- | ------ | --------------------------- | ----------------------- |
-| **Getting Started**    | 🔥    | 3-day streak  | Bronze | "3 days in a row!"          | "3 dager på rad!"       |
+| Badge Name             | Icon   | Criteria      | Tier   | EN Description              | NO Description          |
+| ---------------------- | ------ | ------------- | ------ | --------------------------- | ----------------------- |
+| **Getting Started**    | 🔥     | 3-day streak  | Bronze | "3 days in a row!"          | "3 dager på rad!"       |
 | **Consistent Learner** | 🔥🔥   | 7-day streak  | Silver | "A whole week of practice!" | "En hel uke med øving!" |
-| **Dedicated Student**  | 🔥🔥🔥  | 14-day streak | Gold   | "Two weeks strong!"         | "To uker i strekk!"     |
-| **Learning Machine**   | ⚡    | 30-day streak | Gold   | "Incredible dedication!"    | "Utrolig dedikasjon!"   |
+| **Dedicated Student**  | 🔥🔥🔥 | 14-day streak | Gold   | "Two weeks strong!"         | "To uker i strekk!"     |
+| **Learning Machine**   | ⚡     | 30-day streak | Gold   | "Incredible dedication!"    | "Utrolig dedikasjon!"   |
 
 **Streak rules:**
 
@@ -683,10 +683,10 @@ Earned by completing many tests. Celebrates persistence.
 
 | Badge Name         | Icon | Criteria           | Tier   | EN Description           | NO Description             |
 | ------------------ | ---- | ------------------ | ------ | ------------------------ | -------------------------- |
-| **Test Taker**     | 📝    | Complete 10 tests  | Bronze | "10 tests completed!"    | "10 tester fullført!"      |
-| **Frequent Flyer** | ✈️    | Complete 25 tests  | Silver | "25 tests and counting!" | "25 tester og teller!"     |
-| **Test Veteran**   | 🎖️    | Complete 50 tests  | Silver | "50 tests! Impressive!"  | "50 tester! Imponerende!"  |
-| **Century Club**   | 💯    | Complete 100 tests | Gold   | "100 tests! Legendary!"  | "100 tester! Legendarisk!" |
+| **Test Taker**     | 📝   | Complete 10 tests  | Bronze | "10 tests completed!"    | "10 tester fullført!"      |
+| **Frequent Flyer** | ✈️   | Complete 25 tests  | Silver | "25 tests and counting!" | "25 tester og teller!"     |
+| **Test Veteran**   | 🎖️   | Complete 50 tests  | Silver | "50 tests! Impressive!"  | "50 tester! Imponerende!"  |
+| **Century Club**   | 💯   | Complete 100 tests | Gold   | "100 tests! Legendary!"  | "100 tester! Legendarisk!" |
 
 #### 4. Word Count Badges
 
@@ -694,10 +694,10 @@ Earned by learning many unique words correctly.
 
 | Badge Name             | Icon | Criteria                         | Tier   | EN Description                 | NO Description                 |
 | ---------------------- | ---- | -------------------------------- | ------ | ------------------------------ | ------------------------------ |
-| **Word Collector**     | 🔤    | Spell 50 unique words correctly  | Bronze | "50 words in your collection!" | "50 ord i samlingen din!"      |
-| **Vocabulary Builder** | 📚    | Spell 100 unique words correctly | Silver | "100 words mastered!"          | "100 ord mestret!"             |
-| **Word Wizard**        | 🧙    | Spell 250 unique words correctly | Gold   | "250 words! You're a wizard!"  | "250 ord! Du er en trollmann!" |
-| **Dictionary Master**  | 📖✨   | Spell 500 unique words correctly | Gold   | "500 words! Incredible!"       | "500 ord! Utrolig!"            |
+| **Word Collector**     | 🔤   | Spell 50 unique words correctly  | Bronze | "50 words in your collection!" | "50 ord i samlingen din!"      |
+| **Vocabulary Builder** | 📚   | Spell 100 unique words correctly | Silver | "100 words mastered!"          | "100 ord mestret!"             |
+| **Word Wizard**        | 🧙   | Spell 250 unique words correctly | Gold   | "250 words! You're a wizard!"  | "250 ord! Du er en trollmann!" |
+| **Dictionary Master**  | 📖✨ | Spell 500 unique words correctly | Gold   | "500 words! Incredible!"       | "500 ord! Utrolig!"            |
 
 #### 5. Improvement Badges
 
@@ -705,9 +705,9 @@ Earned by showing growth over time. Celebrates effort, not just talent.
 
 | Badge Name         | Icon | Criteria                         | Tier   | EN Description           | NO Description         |
 | ------------------ | ---- | -------------------------------- | ------ | ------------------------ | ---------------------- |
-| **Getting Better** | 📈    | Improve score by 20%+ on retake  | Bronze | "Great improvement!"     | "Flott forbedring!"    |
-| **Comeback Kid**   | 🔄    | Go from <60% to 90%+ on same set | Silver | "What a turnaround!"     | "For en snuoperasjon!" |
-| **Growth Mindset** | 🌟    | Improve on 5 different word sets | Gold   | "Always getting better!" | "Alltid i fremgang!"   |
+| **Getting Better** | 📈   | Improve score by 20%+ on retake  | Bronze | "Great improvement!"     | "Flott forbedring!"    |
+| **Comeback Kid**   | 🔄   | Go from <60% to 90%+ on same set | Silver | "What a turnaround!"     | "For en snuoperasjon!" |
+| **Growth Mindset** | 🌟   | Improve on 5 different word sets | Gold   | "Always getting better!" | "Alltid i fremgang!"   |
 
 #### 6. Special Badges
 
@@ -715,12 +715,12 @@ Unique achievements that add variety.
 
 | Badge Name           | Icon | Criteria                        | Tier   | EN Description                    | NO Description              |
 | -------------------- | ---- | ------------------------------- | ------ | --------------------------------- | --------------------------- |
-| **Early Bird**       | 🐦    | Complete a test before 8am      | Bronze | "Up and learning early!"          | "Oppe og lærer tidlig!"     |
-| **Night Owl**        | 🦉    | Complete a test after 8pm       | Bronze | "Learning into the night!"        | "Lærer til langt på kveld!" |
-| **Speed Demon**      | ⚡    | Complete a 10-word test in <60s | Silver | "Lightning fast!"                 | "Lynrask!"                  |
-| **Careful Speller**  | 🎯    | 100% with no hints used         | Silver | "Perfect without any help!"       | "Perfekt uten hjelp!"       |
-| **Polyglot Starter** | 🌍    | Complete tests in 2+ languages  | Silver | "Learning in multiple languages!" | "Lærer på flere språk!"     |
-| **Family Helper**    | 👨‍👩‍👧    | Parent creates 5+ word sets     | Gold   | "Building a great collection!"    | "Bygger en flott samling!"  |
+| **Early Bird**       | 🐦   | Complete a test before 8am      | Bronze | "Up and learning early!"          | "Oppe og lærer tidlig!"     |
+| **Night Owl**        | 🦉   | Complete a test after 8pm       | Bronze | "Learning into the night!"        | "Lærer til langt på kveld!" |
+| **Speed Demon**      | ⚡   | Complete a 10-word test in <60s | Silver | "Lightning fast!"                 | "Lynrask!"                  |
+| **Careful Speller**  | 🎯   | 100% with no hints used         | Silver | "Perfect without any help!"       | "Perfekt uten hjelp!"       |
+| **Polyglot Starter** | 🌍   | Complete tests in 2+ languages  | Silver | "Learning in multiple languages!" | "Lærer på flere språk!"     |
+| **Family Helper**    | 👨‍👩‍👧   | Parent creates 5+ word sets     | Gold   | "Building a great collection!"    | "Bygger en flott samling!"  |
 
 ### Badge Display & Unlock Flow
 
@@ -770,7 +770,7 @@ Badges are displayed in a grid on the profile/achievements page:
 interface BadgeProps {
   name: string;
   icon: string;
-  tier: 'bronze' | 'silver' | 'gold';
+  tier: "bronze" | "silver" | "gold";
   earned: boolean;
   earnedAt?: Date;
   progress?: { current: number; target: number };
@@ -794,19 +794,19 @@ interface BadgeProps {
 ```typescript
 // Suggested badge storage structure
 interface UserBadge {
-  badgeId: string;           // e.g., "perfect-speller"
+  badgeId: string; // e.g., "perfect-speller"
   earnedAt: Date;
   metadata?: {
-    testId?: string;         // Which test triggered it
-    wordSetId?: string;      // Related word set
-    score?: number;          // Score that earned it
+    testId?: string; // Which test triggered it
+    wordSetId?: string; // Related word set
+    score?: number; // Score that earned it
   };
 }
 
 interface BadgeProgress {
   badgeId: string;
-  currentValue: number;      // e.g., 15 tests completed
-  targetValue: number;       // e.g., 25 tests needed
+  currentValue: number; // e.g., 15 tests completed
+  targetValue: number; // e.g., 25 tests needed
   lastUpdated: Date;
 }
 ```
@@ -845,20 +845,22 @@ Dark mode is not planned for initial release. The warm cream backgrounds work we
 #### 1. Update `frontend/src/app/layout.tsx`
 
 ```tsx
-import { Lexend } from 'next/font/google';
+import { Lexend } from "next/font/google";
 
 const lexend = Lexend({
-  subsets: ['latin', 'latin-ext'], // latin-ext includes æ, ø, å
-  display: 'swap',
-  variable: '--font-lexend',
+  subsets: ["latin", "latin-ext"], // latin-ext includes æ, ø, å
+  display: "swap",
+  variable: "--font-lexend",
 });
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="no" className={lexend.variable}>
-      <body className={lexend.className}>
-        {children}
-      </body>
+      <body className={lexend.className}>{children}</body>
     </html>
   );
 }
@@ -871,7 +873,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-lexend)', 'system-ui', 'sans-serif'],
+        sans: ["var(--font-lexend)", "system-ui", "sans-serif"],
       },
     },
   },
@@ -985,8 +987,8 @@ Compare to ParentWordSetCard which includes:
 ```css
 /* Primary action — "Start Test", "Next Word" */
 .btn-primary-child {
-  background: linear-gradient(to right, #7DD3FC, #2DD4BF);
-  color: #1E3A5A;
+  background: linear-gradient(to right, #7dd3fc, #2dd4bf);
+  color: #1e3a5a;
   padding: 16px 32px;
   border-radius: 16px;
   font-weight: 600;
@@ -997,9 +999,9 @@ Compare to ParentWordSetCard which includes:
 
 /* Secondary action — "Skip", "Back" */
 .btn-secondary-child {
-  background: #FAFAF9;
-  border: 2px solid #E7E5E4;
-  color: #1E3A5A;
+  background: #fafaf9;
+  border: 2px solid #e7e5e4;
+  color: #1e3a5a;
   padding: 12px 24px;
   border-radius: 12px;
   min-height: 48px;
@@ -1007,8 +1009,8 @@ Compare to ParentWordSetCard which includes:
 
 /* Success state — Correct answer feedback */
 .btn-success {
-  background: #4ADE80;
-  color: #1E3A5A;
+  background: #4ade80;
+  color: #1e3a5a;
 }
 ```
 
@@ -1019,8 +1021,8 @@ Compare to ParentWordSetCard which includes:
 ```css
 /* Primary — "Save", "Create" */
 .btn-primary {
-  background: #7DD3FC;
-  color: #1E3A5A;
+  background: #7dd3fc;
+  color: #1e3a5a;
   padding: 12px 24px;
   border-radius: 8px;
   font-weight: 500;
@@ -1030,7 +1032,7 @@ Compare to ParentWordSetCard which includes:
 /* Secondary — "Cancel", "Back" */
 .btn-secondary {
   background: transparent;
-  border: 1px solid #E7E5E4;
+  border: 1px solid #e7e5e4;
   color: #475569;
 }
 ```
@@ -1043,7 +1045,7 @@ Compare to ParentWordSetCard which includes:
 
 ```css
 .card-wordset-child {
-  background: #FAFAF9;
+  background: #fafaf9;
   border-radius: 20px;
   padding: 24px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -1051,7 +1053,7 @@ Compare to ParentWordSetCard which includes:
 }
 
 .card-wordset-child:hover {
-  border-color: #7DD3FC;
+  border-color: #7dd3fc;
   box-shadow: 0 8px 12px -2px rgba(125, 211, 252, 0.2);
 }
 ```
@@ -1062,8 +1064,8 @@ Compare to ParentWordSetCard which includes:
 
 ```css
 .card-achievement {
-  background: linear-gradient(135deg, #FEFCE8, #FEF3C7);
-  border: 2px solid #FBBF24;
+  background: linear-gradient(135deg, #fefce8, #fef3c7);
+  border: 2px solid #fbbf24;
   border-radius: 16px;
   padding: 20px;
 }
@@ -1075,8 +1077,8 @@ Compare to ParentWordSetCard which includes:
 
 ```css
 .input-child {
-  background: #FAFAF9;
-  border: 2px solid #E7E5E4;
+  background: #fafaf9;
+  border: 2px solid #e7e5e4;
   border-radius: 12px;
   padding: 16px 20px;
   font-size: 18px;
@@ -1084,7 +1086,7 @@ Compare to ParentWordSetCard which includes:
 }
 
 .input-child:focus {
-  border-color: #7DD3FC;
+  border-color: #7dd3fc;
   outline: none;
   box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.3);
 }
@@ -1097,13 +1099,13 @@ Compare to ParentWordSetCard which includes:
 ```css
 /* Test progress bar */
 .progress-bar {
-  background: #E7E5E4;
+  background: #e7e5e4;
   border-radius: 9999px;
   height: 12px;
 }
 
 .progress-bar-fill {
-  background: linear-gradient(to right, #7DD3FC, #4ADE80);
+  background: linear-gradient(to right, #7dd3fc, #4ade80);
   border-radius: 9999px;
   transition: width 0.3s ease-out;
 }
@@ -1123,7 +1125,7 @@ The mode selector replaces the old modal with sub-menus. Children see a simple g
 | **Tile size**          | 88-96px square, min-h-24                      |
 | **Tile spacing**       | 12px gap                                      |
 | **Tile content**       | Icon (32px) + label (14-16px)                 |
-| **Recommended badge**  | "⭐" top-right corner with subtle glow         |
+| **Recommended badge**  | "⭐" top-right corner with subtle glow        |
 | **Unavailable state**  | Grayed out (opacity-40), no click             |
 | **Unavailable reason** | Shown only for parent role (tooltip)          |
 | **Touch feedback**     | Scale 0.97 on tap, ring on focus              |
@@ -1161,13 +1163,13 @@ The mode selector replaces the old modal with sub-menus. Children see a simple g
 
 | Mode             | Icon | English          | Norwegian    |
 | ---------------- | ---- | ---------------- | ------------ |
-| Letter Tiles     | 🧩    | Build It         | Bygg Ordet   |
-| Word Bank        | 📝    | Pick Words       | Velg Ord     |
-| Keyboard         | ⌨️    | Type It          | Skriv Selv   |
-| Missing Letters  | 🔲    | Fill the Gap     | Fyll Inn     |
-| Flashcard        | 👀    | Quick Look       | Hurtigblikk  |
-| Look-Cover-Write | 🧠    | Memory Spell     | Huskestaving |
-| Translation      | 🌐    | Switch Languages | Bytt Språk   |
+| Letter Tiles     | 🧩   | Build It         | Bygg Ordet   |
+| Word Bank        | 📝   | Pick Words       | Velg Ord     |
+| Keyboard         | ⌨️   | Type It          | Skriv Selv   |
+| Missing Letters  | 🔲   | Fill the Gap     | Fyll Inn     |
+| Flashcard        | 👀   | Quick Look       | Hurtigblikk  |
+| Look-Cover-Write | 🧠   | Memory Spell     | Huskestaving |
+| Translation      | 🌐   | Switch Languages | Bytt Språk   |
 
 **Recommended badge algorithm:**
 
@@ -1393,14 +1395,21 @@ Quick-look mode for building familiarity. Word appears briefly, then revealed fo
 
 ```css
 @keyframes countdown-pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.1); opacity: 0.8; }
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
 }
 
 .countdown-number {
   font-size: 64px;
   font-weight: 700;
-  color: #1E3A5A;
+  color: #1e3a5a;
   animation: countdown-pulse 1s ease-in-out;
 }
 ```
@@ -1514,14 +1523,20 @@ The "⭐ Recommended" badge appears on one mode tile based on **content type** a
 
 ```css
 @keyframes success-pop {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .answer-correct {
   animation: success-pop 0.4s ease-out;
-  background-color: #DCFCE7;
+  background-color: #dcfce7;
 }
 ```
 
@@ -1531,9 +1546,16 @@ The "⭐ Recommended" badge appears on one mode tile based on **content type** a
 
 ```css
 @keyframes gentle-shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  75% { transform: translateX(4px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
 }
 
 .answer-wrong {
@@ -1548,9 +1570,16 @@ The "⭐ Recommended" badge appears on one mode tile based on **content type** a
 
 ```css
 @keyframes stavle-jump {
-  0%, 100% { transform: translateY(0); }
-  40% { transform: translateY(-12px); }
-  60% { transform: translateY(-8px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-12px);
+  }
+  60% {
+    transform: translateY(-8px);
+  }
 }
 
 .stavle-celebrating {
@@ -1562,7 +1591,9 @@ The "⭐ Recommended" badge appears on one mode tile based on **content type** a
 
 ```css
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -1662,4 +1693,4 @@ See the source code in `/frontend/src/` for implementation details.
 
 ---
 
-*This design system is a living document. Update it as the app evolves and new patterns emerge.*
+_This design system is a living document. Update it as the app evolves and new patterns emerge._

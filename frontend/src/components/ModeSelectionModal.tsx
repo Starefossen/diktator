@@ -1,22 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import {
-  PuzzlePieceIcon,
-  DocumentTextIcon,
-  EyeIcon,
-  LightBulbIcon,
-  LanguageIcon,
-  SquaresPlusIcon,
-} from "@heroicons/react/24/outline";
 import { StarIcon } from "@heroicons/react/24/solid";
-import {
-  WordSet,
-  TestMode,
-  TEST_MODES,
-  TEST_MODE_INFO,
-  ModeIconId,
-} from "@/types";
+import { WordSet, TestMode, TEST_MODES } from "@/types";
 import { useLanguage, TranslationKey } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -26,6 +12,7 @@ import {
   ModalButton,
 } from "@/components/modals/BaseModal";
 import { isSentence } from "@/lib/sentenceConfig";
+import { getMode } from "@/lib/testEngine/registry";
 
 export interface ModeSelectionResult {
   mode: TestMode;
@@ -38,74 +25,6 @@ interface ModeSelectionModalProps {
   onSelectMode: (mode: TestMode) => void;
   /** Optional birth year for age-adaptive mode recommendation */
   userBirthYear?: number;
-}
-
-/**
- * Map iconId to Heroicon component
- */
-function getModeIcon(iconId: ModeIconId, className: string) {
-  const iconMap: Record<ModeIconId, React.ElementType> = {
-    puzzle: PuzzlePieceIcon,
-    documentText: DocumentTextIcon,
-    keyboard: SquaresPlusIcon, // Using SquaresPlusIcon as keyboard-like icon
-    puzzleMissing: PuzzlePieceIcon, // Same as puzzle but semantically different
-    eye: EyeIcon,
-    lightBulb: LightBulbIcon,
-    language: LanguageIcon,
-  };
-
-  const IconComponent = iconMap[iconId];
-  return <IconComponent className={className} aria-hidden="true" />;
-}
-
-/**
- * Determine which modes are available based on word set content
- */
-function getModeAvailability(
-  wordSet: WordSet,
-): Record<TestMode, { available: boolean; reasonKey?: string }> {
-  const hasSentences =
-    wordSet.words.some((w) => isSentence(w.word)) ||
-    (wordSet.sentences?.length ?? 0) > 0;
-  const hasTranslations = wordSet.words.some(
-    (w) => w.translations && w.translations.length > 0,
-  );
-  const hasSingleWords = wordSet.words.some((w) => !isSentence(w.word));
-
-  const availability: Record<
-    TestMode,
-    { available: boolean; reasonKey?: string }
-  > = {
-    letterTiles: {
-      available: hasSingleWords,
-      reasonKey: hasSingleWords
-        ? undefined
-        : "modeSelector.unavailable.singleWordOnly",
-    },
-    wordBank: {
-      available: hasSentences,
-      reasonKey: hasSentences
-        ? undefined
-        : "modeSelector.unavailable.sentenceOnly",
-    },
-    keyboard: { available: true },
-    missingLetters: {
-      available: hasSingleWords,
-      reasonKey: hasSingleWords
-        ? undefined
-        : "modeSelector.unavailable.singleWordOnly",
-    },
-    flashcard: { available: true },
-    lookCoverWrite: { available: true },
-    translation: {
-      available: hasTranslations,
-      reasonKey: hasTranslations
-        ? undefined
-        : "modeSelector.unavailable.noTranslations",
-    },
-  };
-
-  return availability;
 }
 
 /**
@@ -147,13 +66,16 @@ export function ModeSelectionModal({
 
   if (!wordSet) return null;
 
-  const availability = getModeAvailability(wordSet);
   const recommendedMode = getRecommendedMode(wordSet);
 
   const handleModeSelection = (mode: TestMode) => {
-    if (availability[mode].available) {
-      onSelectMode(mode);
-      onClose();
+    const modeDefinition = getMode(mode);
+    if (modeDefinition) {
+      const { available } = modeDefinition.isAvailable(wordSet);
+      if (available) {
+        onSelectMode(mode);
+        onClose();
+      }
     }
   };
 
@@ -168,9 +90,14 @@ export function ModeSelectionModal({
         {/* 7-tile grid: 2 columns on mobile, 4 columns on larger screens */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {TEST_MODES.map((mode) => {
-            const info = TEST_MODE_INFO[mode];
-            const { available, reasonKey } = availability[mode];
+            const modeDefinition = getMode(mode);
+            if (!modeDefinition) return null;
+
+            const { metadata } = modeDefinition;
+            const { available, reasonKey } =
+              modeDefinition.isAvailable(wordSet);
             const isRecommended = mode === recommendedMode;
+            const IconComponent = metadata.icon;
 
             return (
               <button
@@ -179,19 +106,18 @@ export function ModeSelectionModal({
                 disabled={!available}
                 aria-label={
                   available
-                    ? t(info.nameKey as TranslationKey)
-                    : `${t(info.nameKey as TranslationKey)} - ${t(reasonKey as TranslationKey)}`
+                    ? t(metadata.nameKey as TranslationKey)
+                    : `${t(metadata.nameKey as TranslationKey)} - ${t(reasonKey as TranslationKey)}`
                 }
                 className={`
                   relative flex flex-col items-center justify-center
                   min-h-28 p-3 rounded-xl border-2 transition-all
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-nordic-sky focus-visible:ring-offset-2
-                  ${
-                    available
-                      ? isRecommended
-                        ? "border-nordic-sky bg-nordic-sky/10 hover:bg-nordic-sky/20"
-                        : "border-gray-200 hover:border-nordic-sky/50 hover:bg-gray-50"
-                      : "border-gray-200 bg-gray-100 opacity-60 cursor-not-allowed"
+                  ${available
+                    ? isRecommended
+                      ? "border-nordic-sky bg-nordic-sky/10 hover:bg-nordic-sky/20"
+                      : "border-gray-200 hover:border-nordic-sky/50 hover:bg-gray-50"
+                    : "border-gray-200 bg-gray-100 opacity-60 cursor-not-allowed"
                   }
                 `}
               >
@@ -207,29 +133,26 @@ export function ModeSelectionModal({
 
                 {/* Icon */}
                 <div
-                  className={`mb-2 ${
-                    available ? "text-nordic-sky" : "text-gray-400"
-                  }`}
+                  className={`mb-2 ${available ? "text-nordic-sky" : "text-gray-400"
+                    }`}
                 >
-                  {getModeIcon(info.iconId, "h-8 w-8")}
+                  <IconComponent className="h-8 w-8" aria-hidden={true} />
                 </div>
 
                 {/* Mode name */}
                 <span
-                  className={`text-sm font-semibold text-center ${
-                    available ? "text-gray-900" : "text-gray-500"
-                  }`}
+                  className={`text-sm font-semibold text-center ${available ? "text-gray-900" : "text-gray-500"
+                    }`}
                 >
-                  {t(info.nameKey as TranslationKey)}
+                  {t(metadata.nameKey as TranslationKey)}
                 </span>
 
                 {/* Description */}
                 <span
-                  className={`mt-1 text-xs text-center line-clamp-2 ${
-                    available ? "text-gray-600" : "text-gray-400"
-                  }`}
+                  className={`mt-1 text-xs text-center line-clamp-2 ${available ? "text-gray-600" : "text-gray-400"
+                    }`}
                 >
-                  {t(info.descKey as TranslationKey)}
+                  {t(metadata.descriptionKey as TranslationKey)}
                 </span>
 
                 {/* Unavailable reason - only shown to parents per DESIGN.md */}
