@@ -28,10 +28,12 @@ export function PWAInstaller() {
     // Register service worker
     if ("serviceWorker" in navigator && isProduction && swEnabled) {
       let refreshing = false; // Guard against multiple reloads
+      let userInitiatedUpdate = false; // Track if user explicitly requested update
 
       // Handle controller change (when new SW takes control)
       const handleControllerChange = () => {
-        if (!refreshing) {
+        // Only reload if user explicitly requested the update
+        if (!refreshing && userInitiatedUpdate) {
           refreshing = true;
           console.log("Service worker activated, reloading page");
           window.location.reload();
@@ -60,6 +62,13 @@ export function PWAInstaller() {
             setShowUpdatePrompt(true);
           };
 
+          // Listen for user-initiated update events
+          const handleUserUpdate = () => {
+            console.log("User initiated update detected");
+            userInitiatedUpdate = true;
+          };
+          window.addEventListener("userInitiatedUpdate", handleUserUpdate);
+
           // Check if there's already a waiting service worker
           if (registration.waiting && navigator.serviceWorker.controller) {
             console.log("Service worker update already waiting");
@@ -85,32 +94,36 @@ export function PWAInstaller() {
             });
           });
 
-          // Check for updates less frequently (every 5 minutes) to avoid disrupting user experience
+          // Check for updates periodically when tab is visible
+          // This only checks - it doesn't force reload
           const updateInterval = setInterval(() => {
             if (!document.hidden) {
               console.log("Checking for service worker updates...");
               registration.update();
             }
-          }, 300000); // 5 minutes instead of 30 seconds
+          }, 300000); // 5 minutes
 
           // Return cleanup function
-          return updateInterval;
+          return () => {
+            clearInterval(updateInterval);
+            window.removeEventListener("userInitiatedUpdate", handleUserUpdate);
+          };
         } catch (registrationError) {
           console.log("SW registration failed: ", registrationError);
           return null;
         }
       };
 
-      let updateInterval: NodeJS.Timeout | null = null;
+      let cleanup: (() => void) | null = null;
 
-      registerServiceWorker().then((interval) => {
-        updateInterval = interval;
+      registerServiceWorker().then((cleanupFn) => {
+        cleanup = cleanupFn;
       });
 
       // Return cleanup function
       return () => {
-        if (updateInterval) {
-          clearInterval(updateInterval);
+        if (cleanup) {
+          cleanup();
         }
         navigator.serviceWorker.removeEventListener(
           "controllerchange",
@@ -211,6 +224,10 @@ export function PWAInstaller() {
       console.warn("No waiting service worker found");
       return;
     }
+
+    // Mark that user initiated this update
+    const event = new CustomEvent("userInitiatedUpdate");
+    window.dispatchEvent(event);
 
     // Tell the waiting service worker to activate
     // The controllerchange listener (set up in useEffect) will handle the reload
