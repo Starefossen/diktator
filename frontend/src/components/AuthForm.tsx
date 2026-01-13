@@ -20,9 +20,9 @@ export default function AuthForm() {
       const redirectParam = searchParams.get("redirect");
       const redirectTo =
         redirectParam &&
-        redirectParam.startsWith("/") &&
-        !redirectParam.startsWith("//") &&
-        !redirectParam.includes("..")
+          redirectParam.startsWith("/") &&
+          !redirectParam.startsWith("//") &&
+          !redirectParam.includes("..")
           ? redirectParam
           : "/wordsets/";
 
@@ -39,9 +39,9 @@ export default function AuthForm() {
       const redirectParam = searchParams.get("redirect");
       const redirectTo =
         redirectParam &&
-        redirectParam.startsWith("/") &&
-        !redirectParam.startsWith("//") &&
-        !redirectParam.includes("..")
+          redirectParam.startsWith("/") &&
+          !redirectParam.startsWith("//") &&
+          !redirectParam.includes("..")
           ? redirectParam
           : "/wordsets/";
 
@@ -71,14 +71,14 @@ export default function AuthForm() {
 
   if (isMockMode) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center h-dvh overflow-hidden">
         <LoadingSpinner />
       </div>
     );
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen px-4 bg-nordic-birch">
+    <div className="flex items-center justify-center h-dvh overflow-hidden px-4 bg-nordic-birch">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <div className="flex items-center justify-center mb-6">

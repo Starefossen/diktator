@@ -31,8 +31,10 @@ export interface ScoreBreakdown {
   firstAttemptCorrect: number;
   /** Number of words correct on second attempt */
   secondAttemptCorrect: number;
-  /** Number of words correct on third or more attempts */
-  thirdPlusAttemptCorrect: number;
+  /** Number of words correct on third attempt */
+  thirdAttemptCorrect: number;
+  /** Number of words correct on 4+ attempts (scored as 0%) */
+  fourPlusAttemptCorrect: number;
   /** Number of words failed (not answered correctly) */
   failed: number;
   /** Total number of words */
@@ -43,12 +45,14 @@ export interface ScoreBreakdown {
 
 /**
  * Get the weight for a given number of attempts
+ * 1st: 100%, 2nd: 70%, 3rd: 40%, 4+: 0%
  */
 function getAttemptWeight(attempts: number, isCorrect: boolean): number {
   if (!isCorrect) return SCORE_WEIGHTS.FAILED;
   if (attempts === 1) return SCORE_WEIGHTS.FIRST_ATTEMPT;
   if (attempts === 2) return SCORE_WEIGHTS.SECOND_ATTEMPT;
-  return SCORE_WEIGHTS.THIRD_ATTEMPT; // 3+ attempts
+  if (attempts === 3) return SCORE_WEIGHTS.THIRD_ATTEMPT;
+  return SCORE_WEIGHTS.FAILED; // 4+ attempts score 0%
 }
 
 /**
@@ -67,7 +71,8 @@ export function calculateScores(answers: TestAnswer[]): ScoreBreakdown {
       weightedScore: 0,
       firstAttemptCorrect: 0,
       secondAttemptCorrect: 0,
-      thirdPlusAttemptCorrect: 0,
+      thirdAttemptCorrect: 0,
+      fourPlusAttemptCorrect: 0,
       failed: 0,
       totalWords: 0,
       isPerfect: false,
@@ -76,7 +81,8 @@ export function calculateScores(answers: TestAnswer[]): ScoreBreakdown {
 
   let firstAttemptCorrect = 0;
   let secondAttemptCorrect = 0;
-  let thirdPlusAttemptCorrect = 0;
+  let thirdAttemptCorrect = 0;
+  let fourPlusAttemptCorrect = 0;
   let failed = 0;
   let weightedSum = 0;
 
@@ -90,8 +96,10 @@ export function calculateScores(answers: TestAnswer[]): ScoreBreakdown {
       firstAttemptCorrect++;
     } else if (answer.attempts === 2) {
       secondAttemptCorrect++;
+    } else if (answer.attempts === 3) {
+      thirdAttemptCorrect++;
     } else {
-      thirdPlusAttemptCorrect++;
+      fourPlusAttemptCorrect++;
     }
   }
 
@@ -106,7 +114,8 @@ export function calculateScores(answers: TestAnswer[]): ScoreBreakdown {
     weightedScore,
     firstAttemptCorrect,
     secondAttemptCorrect,
-    thirdPlusAttemptCorrect,
+    thirdAttemptCorrect,
+    fourPlusAttemptCorrect,
     failed,
     totalWords,
     isPerfect,

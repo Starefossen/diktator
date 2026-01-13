@@ -31,7 +31,8 @@ describe("scoreCalculator", () => {
       expect(result.isPerfect).toBe(true);
       expect(result.firstAttemptCorrect).toBe(2);
       expect(result.secondAttemptCorrect).toBe(0);
-      expect(result.thirdPlusAttemptCorrect).toBe(0);
+      expect(result.thirdAttemptCorrect).toBe(0);
+      expect(result.fourPlusAttemptCorrect).toBe(0);
       expect(result.failed).toBe(0);
     });
 
@@ -97,7 +98,7 @@ describe("scoreCalculator", () => {
       expect(result.failed).toBe(1);
     });
 
-    it("should handle third+ attempts with reduced weight", () => {
+    it("should handle third attempt with reduced weight (40%)", () => {
       const answers: TestAnswer[] = [
         {
           word: "word1",
@@ -113,7 +114,29 @@ describe("scoreCalculator", () => {
 
       // Weighted: 0.4 / 1 = 40%
       expect(result.weightedScore).toBe(40);
-      expect(result.thirdPlusAttemptCorrect).toBe(1);
+      expect(result.thirdAttemptCorrect).toBe(1);
+      expect(result.fourPlusAttemptCorrect).toBe(0);
+    });
+
+    it("should give 0 weight for fourth+ attempts", () => {
+      const answers: TestAnswer[] = [
+        {
+          word: "word1",
+          userAnswers: ["w1", "w2", "w3", "word1"],
+          isCorrect: true,
+          timeSpent: 20,
+          attempts: 4,
+          finalAnswer: "word1",
+        },
+      ];
+
+      const result = calculateScores(answers);
+
+      // Weighted: 0.0 / 1 = 0% (4+ attempts = 0 weight)
+      expect(result.weightedScore).toBe(0);
+      expect(result.simpleScore).toBe(100); // Still correct
+      expect(result.thirdAttemptCorrect).toBe(0);
+      expect(result.fourPlusAttemptCorrect).toBe(1);
     });
 
     it("should handle empty answers array", () => {
@@ -154,6 +177,15 @@ describe("scoreCalculator", () => {
           attempts: 3,
           finalAnswer: "hard",
         },
+        // Fourth attempt correct (0.0)
+        {
+          word: "harder",
+          userAnswers: ["hrder", "hradr", "hrader", "harder"],
+          isCorrect: true,
+          timeSpent: 18,
+          attempts: 4,
+          finalAnswer: "harder",
+        },
         // Failed (0.0)
         {
           word: "veryhard",
@@ -167,16 +199,17 @@ describe("scoreCalculator", () => {
 
       const result = calculateScores(answers);
 
-      // Simple: 3/4 = 75%
-      expect(result.simpleScore).toBe(75);
-      // Weighted: (1.0 + 0.7 + 0.4 + 0.0) / 4 = 2.1/4 = 0.525 = 53% (rounded)
-      expect(result.weightedScore).toBe(53);
+      // Simple: 4/5 = 80%
+      expect(result.simpleScore).toBe(80);
+      // Weighted: (1.0 + 0.7 + 0.4 + 0.0 + 0.0) / 5 = 2.1/5 = 0.42 = 42% (rounded)
+      expect(result.weightedScore).toBe(42);
       expect(result.isPerfect).toBe(false);
       expect(result.firstAttemptCorrect).toBe(1);
       expect(result.secondAttemptCorrect).toBe(1);
-      expect(result.thirdPlusAttemptCorrect).toBe(1);
+      expect(result.thirdAttemptCorrect).toBe(1);
+      expect(result.fourPlusAttemptCorrect).toBe(1);
       expect(result.failed).toBe(1);
-      expect(result.totalWords).toBe(4);
+      expect(result.totalWords).toBe(5);
     });
   });
 
@@ -185,6 +218,7 @@ describe("scoreCalculator", () => {
       expect(SCORE_WEIGHTS.FIRST_ATTEMPT).toBe(1.0);
       expect(SCORE_WEIGHTS.SECOND_ATTEMPT).toBe(0.7);
       expect(SCORE_WEIGHTS.THIRD_ATTEMPT).toBe(0.4);
+      // 4+ attempts use FAILED weight (0.0) since they score the same
       expect(SCORE_WEIGHTS.FAILED).toBe(0.0);
     });
   });

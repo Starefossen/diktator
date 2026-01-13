@@ -1481,7 +1481,7 @@ The "⭐ Recommended" badge appears on one mode tile based on **content type** a
 | **Single word, mastery > 80%**      | Keyboard                     | Full production test     |
 | **Recent success with harder mode** | That harder mode             | Builds on momentum       |
 
-> **Note**: The recommendation is guidance, not restriction. Children can always tap any available mode. See [LEARNING.md](LEARNING.md#adaptive-mode-selection) for the full algorithm.
+> **Note**: The recommendation is guidance, not restriction. Children can always tap any available mode. See [LEARNING.md](LEARNING.md#adaptive-mode-selection) for the full algorithm and [ARCHITECTURE.md](ARCHITECTURE.md#scoring--mastery) for how mastery is calculated.
 
 ---
 

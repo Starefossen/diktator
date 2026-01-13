@@ -161,7 +161,8 @@ export const no = {
   "test.scoreBreakdown": "Poengoversikt",
   "test.firstAttempt": "1. forsøk",
   "test.secondAttempt": "2. forsøk",
-  "test.thirdAttempt": "3+ forsøk",
+  "test.thirdAttempt": "3. forsøk",
+  "test.fourPlusAttempt": "4+ forsøk",
   "test.failed": "Feil",
   "test.perfectScore": "Perfekt! Alle ord riktig på første forsøk!",
 

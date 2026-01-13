@@ -98,6 +98,73 @@ Three input methods provide progressive scaffolding:
 
 See [LEARNING.md](LEARNING.md) for detailed pedagogy and [DESIGN.md](DESIGN.md) for component specifications.
 
+## Scoring & Mastery
+
+### Per-Word Scoring
+
+Each word in a test is scored based on how many attempts the child needed:
+
+| Attempts | Score | Rationale                          |
+| -------- | ----- | ---------------------------------- |
+| 1st try  | 100%  | Perfect recall, no hints needed    |
+| 2nd try  | 70%   | Minor error, self-corrected        |
+| 3rd try  | 40%   | Struggled but eventually succeeded |
+| 4+ tries | 0%    | Needs more practice                |
+
+**Test Score** = Average of all word scores in the test.
+
+### Mastery Tracking
+
+Mastery measures a child's proficiency with a word across tests. Different input modes contribute different weights to mastery, reflecting their difficulty:
+
+| Input Mode       | Mastery Weight | Rationale                                     |
+| ---------------- | -------------- | --------------------------------------------- |
+| Keyboard         | 100%           | Full recall with no scaffolding               |
+| Translation      | 100%           | Full recall in target language                |
+| Letter Tiles     | 75%            | Moderate scaffolding (letters provided)       |
+| Word Bank        | 75%            | Moderate scaffolding (words provided)         |
+| Missing Letters  | 50%            | High scaffolding (partial word shown)         |
+| Flashcard        | 0%             | Self-reported, not verified                   |
+| Look-Cover-Write | 0%             | Self-paced study mode, not counted as mastery |
+
+**Word Mastery** = Weighted average of recent test scores for that word.
+
+### Mastery Thresholds
+
+Mastery level determines adaptive mode recommendations (see [DESIGN.md](DESIGN.md#adaptive-mode-recommendation)):
+
+| Mastery Level | Threshold | Recommendation            |
+| ------------- | --------- | ------------------------- |
+| Low           | < 50%     | Letter Tiles (most help)  |
+| Medium        | 50-80%    | Missing Letters/Flashcard |
+| High          | > 80%     | Keyboard (full challenge) |
+
+### TestResult Schema
+
+Each completed test creates a `TestResult` record:
+
+```sql
+test_results (
+  id            UUID PRIMARY KEY,
+  user_id       UUID NOT NULL REFERENCES users(id),
+  word_set_id   UUID NOT NULL REFERENCES word_sets(id),
+  test_mode     TEXT NOT NULL,      -- 'standard', 'dictation', 'translation'
+  input_method  TEXT NOT NULL,      -- 'letterTiles', 'wordBank', 'keyboard', etc.
+  score         INTEGER NOT NULL,   -- 0-100, calculated from word_answers
+  completed_at  TIMESTAMP NOT NULL,
+  family_id     UUID NOT NULL       -- For family-scoped queries
+)
+
+word_answers (
+  id             UUID PRIMARY KEY,
+  test_result_id UUID NOT NULL REFERENCES test_results(id),
+  word_id        UUID NOT NULL REFERENCES words(id),
+  attempts       INTEGER NOT NULL,  -- 1, 2, 3, or 4+
+  is_correct     BOOLEAN NOT NULL,  -- Final result
+  user_answer    TEXT               -- What the child typed
+)
+```
+
 ## Security Model
 
 ### Authentication & Authorization

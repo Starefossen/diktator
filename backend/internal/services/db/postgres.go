@@ -1447,7 +1447,9 @@ func (db *Postgres) GetFamilyProgress(familyID string) ([]models.FamilyProgress,
 				COUNT(DISTINCT word) as total_words,
 				COUNT(DISTINCT word) FILTER (WHERE letter_tiles_correct >= 2) as letter_tiles_mastered,
 				COUNT(DISTINCT word) FILTER (WHERE word_bank_correct >= 2) as word_bank_mastered,
-				COUNT(DISTINCT word) FILTER (WHERE keyboard_correct >= 2) as keyboard_mastered
+				COUNT(DISTINCT word) FILTER (WHERE keyboard_correct >= 2) as keyboard_mastered,
+				COUNT(DISTINCT word) FILTER (WHERE missing_letters_correct >= 2) as missing_letters_mastered,
+				COUNT(DISTINCT word) FILTER (WHERE translation_correct >= 2) as translation_mastered
 			FROM word_mastery
 			WHERE user_id = $1`
 
@@ -1456,6 +1458,8 @@ func (db *Postgres) GetFamilyProgress(familyID string) ([]models.FamilyProgress,
 			&fp.LetterTilesMasteredWords,
 			&fp.WordBankMasteredWords,
 			&fp.KeyboardMasteredWords,
+			&fp.MissingLettersMasteredWords,
+			&fp.TranslationMasteredWords,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get mastery stats: %w", err)
@@ -1909,7 +1913,7 @@ func (db *Postgres) GetWordMastery(userID, wordSetID, word string) (*models.Word
 	ctx := context.Background()
 	query := `
 		SELECT id, user_id, word_set_id, word, letter_tiles_correct, word_bank_correct,
-		       keyboard_correct, created_at, updated_at
+		       keyboard_correct, missing_letters_correct, translation_correct, created_at, updated_at
 		FROM word_mastery
 		WHERE user_id = $1 AND word_set_id = $2 AND word = $3`
 
@@ -1917,6 +1921,7 @@ func (db *Postgres) GetWordMastery(userID, wordSetID, word string) (*models.Word
 	err := db.pool.QueryRow(ctx, query, userID, wordSetID, word).Scan(
 		&m.ID, &m.UserID, &m.WordSetID, &m.Word,
 		&m.LetterTilesCorrect, &m.WordBankCorrect, &m.KeyboardCorrect,
+		&m.MissingLettersCorrect, &m.TranslationCorrect,
 		&m.CreatedAt, &m.UpdatedAt,
 	)
 	if err == pgx.ErrNoRows {
@@ -1934,7 +1939,7 @@ func (db *Postgres) GetWordSetMastery(userID, wordSetID string) ([]models.WordMa
 	ctx := context.Background()
 	query := `
 		SELECT id, user_id, word_set_id, word, letter_tiles_correct, word_bank_correct,
-		       keyboard_correct, created_at, updated_at
+		       keyboard_correct, missing_letters_correct, translation_correct, created_at, updated_at
 		FROM word_mastery
 		WHERE user_id = $1 AND word_set_id = $2
 		ORDER BY word`
@@ -1951,6 +1956,7 @@ func (db *Postgres) GetWordSetMastery(userID, wordSetID string) ([]models.WordMa
 		if err := rows.Scan(
 			&m.ID, &m.UserID, &m.WordSetID, &m.Word,
 			&m.LetterTilesCorrect, &m.WordBankCorrect, &m.KeyboardCorrect,
+			&m.MissingLettersCorrect, &m.TranslationCorrect,
 			&m.CreatedAt, &m.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan word mastery: %w", err)
@@ -1962,12 +1968,12 @@ func (db *Postgres) GetWordSetMastery(userID, wordSetID string) ([]models.WordMa
 }
 
 // IncrementMastery increments the mastery counter for a specific test mode
-// Only letterTiles, wordBank, and keyboard modes have mastery tracking
+// letterTiles, wordBank, keyboard, missingLetters, and translation modes have mastery tracking
+// flashcard and lookCoverWrite are self-reported and don't track mastery
 func (db *Postgres) IncrementMastery(userID, wordSetID, word string, mode models.TestMode) (*models.WordMastery, error) {
 	ctx := context.Background()
 
 	// Determine which column to increment based on mode
-	// Only the three progressive input modes have mastery tracking
 	var column string
 	switch mode {
 	case models.TestModeLetterTiles:
@@ -1976,7 +1982,12 @@ func (db *Postgres) IncrementMastery(userID, wordSetID, word string, mode models
 		column = "word_bank_correct"
 	case models.TestModeKeyboard:
 		column = "keyboard_correct"
+	case models.TestModeMissingLetters:
+		column = "missing_letters_correct"
+	case models.TestModeTranslation:
+		column = "translation_correct"
 	default:
+		// Flashcard and LookCoverWrite don't track mastery (self-reported)
 		return nil, fmt.Errorf("mode %s does not have mastery tracking", mode)
 	}
 
@@ -1987,13 +1998,14 @@ func (db *Postgres) IncrementMastery(userID, wordSetID, word string, mode models
 		ON CONFLICT (user_id, word_set_id, word)
 		DO UPDATE SET %s = word_mastery.%s + 1, updated_at = NOW()
 		RETURNING id, user_id, word_set_id, word, letter_tiles_correct, word_bank_correct,
-		          keyboard_correct, created_at, updated_at`,
+		          keyboard_correct, missing_letters_correct, translation_correct, created_at, updated_at`,
 		column, column, column)
 
 	var m models.WordMastery
 	err := db.pool.QueryRow(ctx, query, uuid.New().String(), userID, wordSetID, word).Scan(
 		&m.ID, &m.UserID, &m.WordSetID, &m.Word,
 		&m.LetterTilesCorrect, &m.WordBankCorrect, &m.KeyboardCorrect,
+		&m.MissingLettersCorrect, &m.TranslationCorrect,
 		&m.CreatedAt, &m.UpdatedAt,
 	)
 	if err != nil {

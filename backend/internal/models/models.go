@@ -26,15 +26,17 @@ type User struct {
 
 // WordMastery tracks progressive challenge unlocking per word per user
 type WordMastery struct {
-	ID                 string    `json:"id" db:"id"`
-	UserID             string    `json:"userId" db:"user_id"`
-	WordSetID          string    `json:"wordSetId" db:"word_set_id"`
-	Word               string    `json:"word" db:"word"`
-	LetterTilesCorrect int       `json:"letterTilesCorrect" db:"letter_tiles_correct"`
-	WordBankCorrect    int       `json:"wordBankCorrect" db:"word_bank_correct"`
-	KeyboardCorrect    int       `json:"keyboardCorrect" db:"keyboard_correct"`
-	CreatedAt          time.Time `json:"createdAt" db:"created_at"`
-	UpdatedAt          time.Time `json:"updatedAt" db:"updated_at"`
+	ID                    string    `json:"id" db:"id"`
+	UserID                string    `json:"userId" db:"user_id"`
+	WordSetID             string    `json:"wordSetId" db:"word_set_id"`
+	Word                  string    `json:"word" db:"word"`
+	LetterTilesCorrect    int       `json:"letterTilesCorrect" db:"letter_tiles_correct"`
+	WordBankCorrect       int       `json:"wordBankCorrect" db:"word_bank_correct"`
+	KeyboardCorrect       int       `json:"keyboardCorrect" db:"keyboard_correct"`
+	MissingLettersCorrect int       `json:"missingLettersCorrect" db:"missing_letters_correct"`
+	TranslationCorrect    int       `json:"translationCorrect" db:"translation_correct"`
+	CreatedAt             time.Time `json:"createdAt" db:"created_at"`
+	UpdatedAt             time.Time `json:"updatedAt" db:"updated_at"`
 }
 
 // TestMode represents the unified test/input mode
@@ -305,10 +307,12 @@ type FamilyProgress struct {
 	LastActivity  time.Time    `json:"lastActivity"`
 	RecentResults []TestResult `json:"recentResults"`
 	// Mastery summary across all word sets
-	TotalWordsWithMastery    int `json:"totalWordsWithMastery"`    // Total unique words with any mastery
-	LetterTilesMasteredWords int `json:"letterTilesMasteredWords"` // Words with letterTilesCorrect >= 2
-	WordBankMasteredWords    int `json:"wordBankMasteredWords"`    // Words with wordBankCorrect >= 2
-	KeyboardMasteredWords    int `json:"keyboardMasteredWords"`    // Words with keyboardCorrect >= 2
+	TotalWordsWithMastery       int `json:"totalWordsWithMastery"`       // Total unique words with any mastery
+	LetterTilesMasteredWords    int `json:"letterTilesMasteredWords"`    // Words with letterTilesCorrect >= 2
+	WordBankMasteredWords       int `json:"wordBankMasteredWords"`       // Words with wordBankCorrect >= 2
+	KeyboardMasteredWords       int `json:"keyboardMasteredWords"`       // Words with keyboardCorrect >= 2
+	MissingLettersMasteredWords int `json:"missingLettersMasteredWords"` // Words with missingLettersCorrect >= 2
+	TranslationMasteredWords    int `json:"translationMasteredWords"`    // Words with translationCorrect >= 2
 }
 
 // DisplayNameUpdateRequest represents a request to update a user's display name

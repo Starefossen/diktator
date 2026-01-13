@@ -161,7 +161,8 @@ export const en = {
   "test.scoreBreakdown": "Score Breakdown",
   "test.firstAttempt": "1st try",
   "test.secondAttempt": "2nd try",
-  "test.thirdAttempt": "3+ tries",
+  "test.thirdAttempt": "3rd try",
+  "test.fourPlusAttempt": "4+ tries",
   "test.failed": "Failed",
   "test.perfectScore": "Perfect! All words correct on first try!",
 

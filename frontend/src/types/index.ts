@@ -180,6 +180,8 @@ export interface WordMastery {
   letterTilesCorrect: number;
   wordBankCorrect: number;
   keyboardCorrect: number;
+  missingLettersCorrect: number;
+  translationCorrect: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -201,6 +203,8 @@ export interface FamilyProgress {
   letterTilesMasteredWords: number; // Words with letterTilesCorrect >= 2
   wordBankMasteredWords: number; // Words with wordBankCorrect >= 2
   keyboardMasteredWords: number; // Words with keyboardCorrect >= 2
+  missingLettersMasteredWords: number; // Words with missingLettersCorrect >= 2
+  translationMasteredWords: number; // Words with translationCorrect >= 2
 }
 
 // Family statistics
