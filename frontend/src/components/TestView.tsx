@@ -628,15 +628,42 @@ export function TestView({
           missingLettersData && (
             <div className="mx-auto max-w-2xl">
               <div className="rounded-lg bg-white p-4 shadow-xl sm:p-8">
-                {/* Audio button for missing letters mode */}
-                <div className="mb-6 flex justify-center">
-                  <button
-                    onClick={onPlayCurrentWord}
-                    className="flex h-14 w-14 items-center justify-center rounded-full bg-sky-100 text-sky-600 hover:bg-sky-200"
-                    aria-label={t("test.listenToWord")}
-                  >
-                    🔊
-                  </button>
+                {/* Audio button for missing letters mode - matches standard test styling */}
+                <div className="mb-8">
+                  <div className="flex items-center justify-center gap-4">
+                    <div className="relative inline-block">
+                      {isAudioPlaying && (
+                        <div className="absolute -inset-3 animate-spin rounded-full border-4 border-transparent border-r-nordic-sky/80 border-t-nordic-sky" />
+                      )}
+                      <button
+                        onClick={onPlayCurrentWord}
+                        className="relative transform rounded-full bg-linear-to-r from-nordic-meadow to-nordic-sky p-4 text-nordic-midnight shadow-lg transition-all duration-200 hover:scale-105 hover:from-nordic-meadow/90 hover:to-nordic-sky/90 hover:shadow-xl sm:p-6"
+                        aria-label={t("test.listenToWord")}
+                      >
+                        <HeroVolumeIcon className="h-12 w-12 text-nordic-midnight sm:h-16 sm:w-16" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Instruction text */}
+                  <p className="mt-4 text-gray-600 text-center">
+                    <span className="sm:hidden">
+                      {t("test.listenToWordMobile")}
+                    </span>
+                    <span className="hidden sm:inline">
+                      {t("test.listenToWord")}
+                    </span>
+                  </p>
+
+                  {/* Definition/context hint */}
+                  {currentWord.definition && (
+                    <div className="mx-auto mt-3 max-w-md rounded-lg border border-nordic-sky/30 bg-nordic-sky/10 px-4 py-2 text-sm">
+                      <p className="text-nordic-midnight">
+                        <span className="font-medium">{t("test.context")}</span>{" "}
+                        {currentWord.definition}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <MissingLettersInput
@@ -648,8 +675,17 @@ export function TestView({
                   onSkip={onExitTest}
                 />
 
-                {/* Exit Button */}
-                <div className="mt-6 flex justify-center">
+                {/* Action buttons - consistent with other modes */}
+                <div className="mt-6 flex flex-wrap justify-center gap-2 sm:gap-4">
+                  {/* Play Again Button */}
+                  <Button variant="secondary-child" onClick={onPlayCurrentWord}>
+                    <HeroVolumeIcon className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">
+                      {t("test.playAgain")}
+                    </span>
+                  </Button>
+
+                  {/* Exit Button */}
                   <Button variant="secondary-child" onClick={onExitTest}>
                     <span className="sm:hidden">{t("test.backMobile")}</span>
                     <span className="hidden sm:inline">

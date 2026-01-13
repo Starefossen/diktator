@@ -43,9 +43,9 @@ export const test = {
 
   // Missing letters mode specific
   "missingLetters.instruction": "Fyll inn de manglende bokstavene",
-  "missingLetters.placeholder": "Skriv de manglende bokstavene...",
   "missingLetters.letterMissing": "bokstav mangler",
   "missingLetters.lettersMissing": "bokstaver mangler",
+  "missingLetters.letterInput": "Bokstavfelt",
 
   // Test progress and navigation
   "test.progress": "Ord",
@@ -88,6 +88,12 @@ export const test = {
   "test.results.good": "Godt jobba! {score}% — øvelse gjør mester!",
   "test.results.keepGoing":
     "Fortsett sånn! {score}% — hvert ord du lærer er fremgang!",
+  "test.results.testComplete": "Test fullført!",
+  "test.results.ofCorrect": "{correct} av {total} riktige",
+  "test.results.firstTry": "1. forsøk",
+  "test.results.secondTry": "2. forsøk",
+  "test.results.thirdPlusTries": "3+ forsøk",
+  "test.results.failed": "Feilet",
 
   // Spelling feedback
   "test.feedback.correct": "Helt riktig!",
@@ -136,8 +142,6 @@ export const test = {
   "challenge.availableWords": "Tilgjengelige ord - trykk for å legge til",
   "challenge.removeWord": "Fjern ord",
   "challenge.addWord": "Legg til ord",
-  "challenge.tapWordsToAdd": "Trykk på ordene under for å bygge setningen",
-  "challenge.wordsSelected": "ord valgt",
   "challenge.currentSentence": "Nåværende setning",
   "challenge.noWordsSelected": "Ingen ord valgt ennå",
   "challenge.masteryProgress": "Mestringsfremgang",

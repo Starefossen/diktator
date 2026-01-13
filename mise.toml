@@ -327,6 +327,15 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 fi
 """
 
+[tasks."db:reset-force"]
+description = "Reset database without confirmation (use with caution)"
+run = """
+echo "⚠️  Force resetting database..."
+docker compose -f ${DOCKER_COMPOSE_FILE} down -v
+docker compose -f ${DOCKER_COMPOSE_FILE} up -d
+echo "✅ Database reset complete. Migrations will run on next backend start."
+"""
+
 # Migrations now run automatically on backend startup (see backend/internal/migrate)
 
 [tasks."db:reset-test"]
@@ -354,7 +363,7 @@ go run cmd/seed/main.go
 description = "Reset database and seed with fresh test data"
 run = """
 echo "🔄 Resetting database..."
-mise run db:reset
+mise run db:reset-force
 
 echo "⏳ Waiting for database..."
 sleep ${DB_RESET_WAIT}

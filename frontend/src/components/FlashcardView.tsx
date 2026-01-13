@@ -2,6 +2,12 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import {
+  SpeakerWaveIcon,
+  CheckIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
+import { CheckIcon as CheckIconSolid } from "@heroicons/react/24/solid";
 
 type FlashcardPhase = "show" | "countdown" | "reveal" | "verify";
 
@@ -150,10 +156,10 @@ export function FlashcardView({
             <button
               type="button"
               onClick={playAudio}
-              className="flex h-14 w-14 items-center justify-center rounded-full bg-sky-100 text-sky-600 hover:bg-sky-200"
+              className="flex h-14 w-14 items-center justify-center rounded-full bg-linear-to-r from-nordic-meadow to-nordic-sky text-nordic-midnight shadow-md hover:shadow-lg transition-all duration-200"
               aria-label={t("test.listenToWord")}
             >
-              🔊
+              <SpeakerWaveIcon className="h-7 w-7" aria-hidden="true" />
             </button>
             <span className="text-4xl font-bold tracking-wider text-gray-800">
               {word.split("").join(" ")}
@@ -191,10 +197,10 @@ export function FlashcardView({
             <button
               type="button"
               onClick={playAudio}
-              className="flex h-14 w-14 items-center justify-center rounded-full bg-sky-100 text-sky-600 hover:bg-sky-200"
+              className="flex h-14 w-14 items-center justify-center rounded-full bg-linear-to-r from-nordic-meadow to-nordic-sky text-nordic-midnight shadow-md hover:shadow-lg transition-all duration-200"
               aria-label={t("test.listenToWord")}
             >
-              🔊
+              <SpeakerWaveIcon className="h-7 w-7" aria-hidden="true" />
             </button>
             <span className="text-4xl font-bold tracking-wider text-gray-800">
               {word.split("").join(" ")}
@@ -213,14 +219,16 @@ export function FlashcardView({
               onClick={() => handleKnewIt(true)}
               className="flex min-h-14 min-w-32 items-center justify-center gap-2 rounded-2xl bg-green-500 px-8 py-4 text-xl font-semibold text-white shadow-lg hover:bg-green-600"
             >
-              {t("flashcard.yes")} ✓
+              {t("flashcard.yes")}
+              <CheckIconSolid className="w-6 h-6" aria-hidden="true" />
             </button>
             <button
               type="button"
               onClick={() => handleKnewIt(false)}
               className="flex min-h-14 min-w-32 items-center justify-center gap-2 rounded-2xl bg-amber-500 px-8 py-4 text-xl font-semibold text-white shadow-lg hover:bg-amber-600"
             >
-              {t("flashcard.no")} ✗
+              {t("flashcard.no")}
+              <XMarkIcon className="w-6 h-6" aria-hidden="true" />
             </button>
           </div>
 
@@ -232,7 +240,7 @@ export function FlashcardView({
               className="mt-4 flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700"
             >
               <span className="inline-flex h-5 w-5 items-center justify-center rounded border border-gray-300">
-                {showVerifyInput && "✓"}
+                {showVerifyInput && <CheckIcon className="w-3 h-3" />}
               </span>
               {t("flashcard.verify")}
             </button>
@@ -271,9 +279,10 @@ export function FlashcardView({
               type="button"
               onClick={handleVerify}
               disabled={!verifyInput.trim()}
-              className="min-h-12 rounded-xl bg-sky-500 px-8 py-3 font-semibold text-white hover:bg-sky-600 disabled:opacity-50"
+              className="min-h-12 rounded-xl bg-nordic-sky px-8 py-3 font-semibold text-white hover:bg-nordic-sky/90 disabled:opacity-50 inline-flex items-center gap-2"
             >
-              {t("challenge.check")} ✓
+              {t("challenge.check")}
+              <CheckIconSolid className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
         </>

@@ -251,10 +251,10 @@ func main() {
 			includeTranslations  bool
 		}{
 			"Animals": {"translation", "en", "toTarget", true}, // Translation mode: Norwegian → English
-			"Colors":  {"dictation", "", "", false},            // Dictation mode
-			"Family":  {"standard", "", "", false},             // Standard mode
+			"Colors":  {"keyboard", "", "", false},             // Keyboard mode (audio-only spelling)
+			"Family":  {"flashcard", "", "", false},            // Flashcard mode (visual exposure)
 			"Food":    {"translation", "en", "toSource", true}, // Translation mode: English → Norwegian
-			"School":  {"dictation", "", "", false},            // Dictation mode
+			"School":  {"keyboard", "", "", false},             // Keyboard mode (audio-only spelling)
 		}
 
 		for category, words := range norwegianWords {
@@ -296,7 +296,7 @@ func main() {
 			testConfig := map[string]interface{}{
 				"defaultMode":       modeConfig.mode,
 				"maxAttempts":       3,
-				"autoPlayAudio":     modeConfig.mode == "dictation", // Auto-play in dictation mode
+				"autoPlayAudio":     modeConfig.mode == "keyboard", // Auto-play in keyboard mode (audio-only spelling)
 				"enableAutocorrect": false,
 				"showCorrectAnswer": true,
 				"autoAdvance":       false,
@@ -557,10 +557,10 @@ func main() {
 			includeTranslations  bool
 		}{
 			"Animals": {"translation", "en", "toTarget", true}, // Translation mode: Norwegian → English
-			"Colors":  {"dictation", "", "", false},            // Dictation mode
-			"Family":  {"standard", "", "", false},             // Standard mode
+			"Colors":  {"keyboard", "", "", false},             // Keyboard mode (audio-only spelling)
+			"Family":  {"flashcard", "", "", false},            // Flashcard mode (visual exposure)
 			"Food":    {"translation", "en", "toSource", true}, // Translation mode: English → Norwegian
-			"School":  {"dictation", "", "", false},            // Dictation mode
+			"School":  {"keyboard", "", "", false},             // Keyboard mode (audio-only spelling)
 		}
 
 		for category, words := range norwegianWords {
@@ -579,7 +579,7 @@ func main() {
 					targetLanguage       string
 					translationDirection string
 					includeTranslations  bool
-				}{"standard", "", "", false}
+				}{"flashcard", "", "", false}
 			}
 
 			// Build words array for the word set
@@ -622,7 +622,7 @@ func main() {
 			}
 
 			// Add mode-specific settings
-			if modeConfig.mode == "dictation" {
+			if modeConfig.mode == "keyboard" {
 				testConfig["autoPlayAudio"] = true
 			} else if modeConfig.mode == "translation" && modeConfig.targetLanguage != "" {
 				testConfig["targetLanguage"] = modeConfig.targetLanguage

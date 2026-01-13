@@ -55,12 +55,14 @@ describe("WordBankInput", () => {
     expect(screen.getByText("katt")).toBeInTheDocument();
   });
 
-  it("shows placeholder text when no words selected", () => {
+  it("shows placeholder slots when no words selected", () => {
     const items = createItems("jeg liker");
     renderComponent(items, 2);
 
+    // Should show 2 empty placeholder slots (dashes)
     const sentenceArea = screen.getByRole("group", { name: /sentence/i });
-    expect(sentenceArea).toHaveTextContent(/tap words below/i);
+    const placeholders = sentenceArea.querySelectorAll("span");
+    expect(placeholders).toHaveLength(2);
   });
 
   it("selects word when clicked", () => {
@@ -98,18 +100,27 @@ describe("WordBankInput", () => {
     const clearButton = screen.getByRole("button", { name: /clear/i });
     fireEvent.click(clearButton);
 
+    // Should show 2 empty placeholder slots again
     const sentenceArea = screen.getByRole("group", { name: /sentence/i });
-    expect(sentenceArea).toHaveTextContent(/tap words below/i);
+    const placeholders = sentenceArea.querySelectorAll("span");
+    expect(placeholders).toHaveLength(2);
   });
 
-  it("shows word count indicator", () => {
+  it("shows correct number of slots for expected words", () => {
     const items = createItems("jeg liker deg");
     renderComponent(items, 3);
 
-    expect(screen.getByText(/0 \/ 3/)).toBeInTheDocument();
+    // Should show 3 empty placeholder slots
+    const sentenceArea = screen.getByRole("group", { name: /sentence/i });
+    const placeholders = sentenceArea.querySelectorAll("span");
+    expect(placeholders).toHaveLength(3);
 
+    // After selecting one word, should show 1 button and 2 placeholders
     fireEvent.click(screen.getByText("jeg"));
-    expect(screen.getByText(/1 \/ 3/)).toBeInTheDocument();
+    const buttons = sentenceArea.querySelectorAll("button");
+    const remainingPlaceholders = sentenceArea.querySelectorAll("span");
+    expect(buttons).toHaveLength(1);
+    expect(remainingPlaceholders).toHaveLength(2);
   });
 
   it("calls onSubmit when check is clicked", () => {

@@ -18,6 +18,7 @@ import {
   ModeIconId,
 } from "@/types";
 import { useLanguage, TranslationKey } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   BaseModal,
   ModalContent,
@@ -136,6 +137,8 @@ export function ModeSelectionModal({
   onSelectMode,
 }: ModeSelectionModalProps) {
   const { t } = useLanguage();
+  const { userData } = useAuth();
+  const isParent = userData?.role === "parent";
 
   // Reset state when modal closes
   useEffect(() => {
@@ -229,8 +232,8 @@ export function ModeSelectionModal({
                   {t(info.descKey as TranslationKey)}
                 </span>
 
-                {/* Unavailable reason */}
-                {!available && reasonKey && (
+                {/* Unavailable reason - only shown to parents per DESIGN.md */}
+                {!available && reasonKey && isParent && (
                   <span className="mt-1 text-xs text-center text-red-500">
                     {t(reasonKey as TranslationKey)}
                   </span>

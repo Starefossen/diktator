@@ -176,21 +176,6 @@ export function LetterTileInput({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Feedback header - compact indicator when showing feedback */}
-      {showingFeedback && feedbackState && (
-        <div className="flex items-center justify-center gap-3 text-sm animate-in fade-in-0 duration-200">
-          <span className="font-semibold text-red-700">
-            {t("test.tryAgain")} ({feedbackState.currentAttempt}/
-            {feedbackState.maxAttempts})
-          </span>
-          {feedbackState.analysis.isAlmostCorrect && (
-            <span className="px-2 py-0.5 text-xs font-medium text-orange-700 bg-orange-100 rounded-full">
-              {t("test.feedback.almostThere" as TranslationKey)}
-            </span>
-          )}
-        </div>
-      )}
-
       {/* Answer slots area */}
       <div
         className={`flex flex-wrap justify-center gap-2 p-4 pb-8 rounded-xl min-h-20 transition-colors duration-200 ${
@@ -266,6 +251,21 @@ export function LetterTileInput({
         </div>
       )}
 
+      {/* Feedback status - shows below legend during feedback */}
+      {showingFeedback && feedbackState && (
+        <div className="flex items-center justify-center gap-3 text-sm">
+          <span className="font-semibold text-red-700">
+            {t("test.tryAgain")} ({feedbackState.currentAttempt}/
+            {feedbackState.maxAttempts})
+          </span>
+          {feedbackState.analysis.isAlmostCorrect && (
+            <span className="px-2 py-0.5 text-xs font-medium text-orange-700 bg-orange-100 rounded-full">
+              {t("test.feedback.almostThere" as TranslationKey)}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Hint message - shows during feedback from second attempt */}
       {showingFeedback && feedbackState?.hintKey && (
         <div className="p-2 bg-nordic-sky/10 rounded-lg border border-nordic-sky/30">
@@ -274,13 +274,6 @@ export function LetterTileInput({
             {t(feedbackState.hintKey as TranslationKey)}
           </p>
         </div>
-      )}
-
-      {/* Attempts remaining - shows during feedback */}
-      {showingFeedback && attemptsRemaining > 0 && (
-        <p className="text-sm text-gray-500 text-center">
-          {t("test.attemptsRemaining")}: {attemptsRemaining}
-        </p>
       )}
 
       {/* Available tiles - hidden during feedback */}

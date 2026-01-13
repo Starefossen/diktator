@@ -72,24 +72,26 @@ export function WordBankInput({
 
   const hasSelection = selectedItemIds.length > 0;
 
+  // Create placeholder slots for expected words
+  const slots = Array.from({ length: expectedWordCount }, (_, i) => ({
+    index: i,
+    item: selectedItems[i] || null,
+  }));
+
   return (
     <div className="flex flex-col gap-6">
-      {/* Selected words area (sentence being built) */}
+      {/* Selected words area (sentence being built) - shows slots like Letter Tiles */}
       <div
-        className="flex flex-wrap gap-2 p-4 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 min-h-20"
+        className="flex flex-wrap justify-center gap-2 p-4 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 min-h-20"
         role="group"
         aria-label={t("challenge.sentenceArea" as TranslationKey)}
       >
-        {selectedItems.length === 0 ? (
-          <p className="text-gray-400 text-base w-full text-center py-2">
-            {t("challenge.tapWordsToAdd" as TranslationKey)}
-          </p>
-        ) : (
-          selectedItems.map((item, index) => (
+        {slots.map((slot) =>
+          slot.item ? (
             <button
-              key={item.id}
+              key={slot.item.id}
               type="button"
-              onClick={() => handleDeselectItem(item.id)}
+              onClick={() => handleDeselectItem(slot.item!.id)}
               disabled={disabled}
               className={`
                 px-4 py-2 min-h-12
@@ -102,21 +104,19 @@ export function WordBankInput({
                 shadow-md
                 ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
               `}
-              aria-label={`${t("challenge.removeWord" as TranslationKey)} ${item.word}`}
+              aria-label={`${t("challenge.removeWord" as TranslationKey)} ${slot.item.word}`}
             >
-              {item.word}
-              {index < selectedItems.length - 1 && (
-                <span className="sr-only">, </span>
-              )}
+              {slot.item.word}
             </button>
-          ))
+          ) : (
+            <span
+              key={`empty-${slot.index}`}
+              className="px-6 py-2 min-h-12 min-w-16 rounded-lg border-2 border-gray-300 bg-white flex items-center justify-center text-gray-400"
+            >
+              —
+            </span>
+          ),
         )}
-      </div>
-
-      {/* Word count indicator */}
-      <div className="text-center text-sm text-gray-600">
-        {selectedItemIds.length} / {expectedWordCount}{" "}
-        {t("challenge.wordsSelected" as TranslationKey)}
       </div>
 
       {/* Available words */}

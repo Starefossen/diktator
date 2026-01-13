@@ -43,9 +43,9 @@ export const test = {
 
   // Missing letters mode specific
   "missingLetters.instruction": "Fill in the missing letters",
-  "missingLetters.placeholder": "Type the missing letter(s)...",
   "missingLetters.letterMissing": "letter missing",
   "missingLetters.lettersMissing": "letters missing",
+  "missingLetters.letterInput": "Letter input",
 
   // Test progress and navigation
   "test.progress": "Word",
@@ -89,6 +89,12 @@ export const test = {
   "test.results.good": "Good effort! {score}% — practice makes perfect!",
   "test.results.keepGoing":
     "Keep going! {score}% — every word you learn is progress!",
+  "test.results.testComplete": "Test Complete!",
+  "test.results.ofCorrect": "{correct} of {total} correct",
+  "test.results.firstTry": "1st try",
+  "test.results.secondTry": "2nd try",
+  "test.results.thirdPlusTries": "3+ tries",
+  "test.results.failed": "Failed",
 
   // Spelling feedback
   "test.feedback.correct": "Nailed it!",
@@ -137,8 +143,6 @@ export const test = {
   "challenge.availableWords": "Available words - tap to add",
   "challenge.removeWord": "Remove word",
   "challenge.addWord": "Add word",
-  "challenge.tapWordsToAdd": "Tap words below to build your sentence",
-  "challenge.wordsSelected": "words selected",
   "challenge.currentSentence": "Current sentence",
   "challenge.noWordsSelected": "No words selected yet",
   "challenge.masteryProgress": "Mastery Progress",

@@ -2,6 +2,13 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { HeroVolumeIcon } from "@/components/Icons";
+import {
+  SpeakerWaveIcon,
+  CheckIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
+import { CheckIcon as CheckIconSolid } from "@heroicons/react/24/solid";
 
 type LCWPhase = "look" | "cover" | "write" | "check";
 
@@ -138,10 +145,10 @@ export function LookCoverWriteView({
             <button
               type="button"
               onClick={playAudio}
-              className="flex h-14 w-14 items-center justify-center rounded-full bg-sky-100 text-sky-600 hover:bg-sky-200"
+              className="flex h-14 w-14 items-center justify-center rounded-full bg-linear-to-r from-nordic-meadow to-nordic-sky text-nordic-midnight shadow-md hover:shadow-lg transition-all duration-200"
               aria-label={t("test.listenToWord")}
             >
-              🔊
+              <SpeakerWaveIcon className="h-7 w-7" aria-hidden="true" />
             </button>
             <span className="text-4xl font-bold tracking-wider text-gray-800">
               {spacedWord(word)}
@@ -167,9 +174,9 @@ export function LookCoverWriteView({
             {t("lookCoverWrite.cover")}
           </div>
 
-          {/* Thinking illustration placeholder */}
-          <div className="flex h-32 w-32 items-center justify-center rounded-full bg-gray-100 text-6xl">
-            🤔
+          {/* Thinking illustration - using question mark circle */}
+          <div className="flex h-32 w-32 items-center justify-center rounded-full bg-linear-to-br from-amber-100 to-amber-200 text-amber-600">
+            <span className="text-6xl font-bold">?</span>
           </div>
 
           <p className="text-xl font-medium text-gray-700">
@@ -215,9 +222,10 @@ export function LookCoverWriteView({
             type="button"
             onClick={handleSubmit}
             disabled={!userInput.trim()}
-            className="min-h-12 rounded-xl bg-sky-500 px-8 py-3 font-semibold text-white hover:bg-sky-600 disabled:opacity-50"
+            className="min-h-12 rounded-xl bg-nordic-sky px-8 py-3 font-semibold text-white hover:bg-nordic-sky/90 disabled:opacity-50 inline-flex items-center gap-2"
           >
-            {t("challenge.check")} ✓
+            {t("challenge.check")}
+            <CheckIconSolid className="w-5 h-5" aria-hidden="true" />
           </button>
         </>
       )}
@@ -249,9 +257,15 @@ export function LookCoverWriteView({
                 {spacedWord(userInput)}
               </span>
               {isCorrect ? (
-                <span className="text-2xl">✓</span>
+                <CheckIconSolid
+                  className="w-6 h-6 text-green-500"
+                  aria-hidden="true"
+                />
               ) : (
-                <span className="text-2xl">✗</span>
+                <XMarkIcon
+                  className="w-6 h-6 text-red-500"
+                  aria-hidden="true"
+                />
               )}
             </div>
 
@@ -265,10 +279,10 @@ export function LookCoverWriteView({
               <button
                 type="button"
                 onClick={playAudio}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 text-sky-600 hover:bg-sky-200"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-r from-nordic-meadow to-nordic-sky text-nordic-midnight hover:shadow-md transition-all duration-200"
                 aria-label={t("test.listenToWord")}
               >
-                🔊
+                <SpeakerWaveIcon className="h-5 w-5" aria-hidden="true" />
               </button>
             </div>
           </div>
