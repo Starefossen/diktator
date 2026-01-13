@@ -13,7 +13,7 @@ import (
 )
 
 // @Summary		Stream Audio for Word or Sentence
-// @Description	Stream TTS audio for a specific word or sentence in a word set (generates on-demand, cached by browser). Automatically uses appropriate speaking rate for single words (0.8x) vs sentences (0.9x).
+// @Description	Stream TTS audio for a specific word or sentence in a word set (generates on-demand, cached by browser). Automatically uses appropriate speaking rate for single words (0.8x) vs sentences (0.9x). Supports both GET and HEAD methods for iOS Safari compatibility.
 // @Tags			wordsets
 // @Accept			json
 // @Produce		audio/ogg
@@ -24,10 +24,12 @@ import (
 // @Failure		404		{object}	models.APIResponse	"Word set not found"
 // @Failure		500		{object}	models.APIResponse	"Failed to generate audio"
 // @Router			/api/wordsets/{id}/words/{word}/audio [get]
+// @Router			/api/wordsets/{id}/words/{word}/audio [head]
 func StreamWordAudio(c *gin.Context) {
 	wordSetID := c.Param("id")
 	word := c.Param("word")
 	language := c.Query("lang") // Optional language parameter
+	isHeadRequest := c.Request.Method == "HEAD"
 
 	if wordSetID == "" {
 		c.JSON(http.StatusBadRequest, models.APIResponse{
@@ -52,6 +54,16 @@ func StreamWordAudio(c *gin.Context) {
 			})
 			return
 		}
+	}
+
+	// For HEAD requests, just validate and return headers without generating audio
+	if isHeadRequest {
+		c.Header("Content-Type", "audio/ogg; codecs=opus")
+		c.Header("Cache-Control", "public, max-age=86400, immutable")
+		c.Header("Accept-Ranges", "bytes")
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Status(http.StatusOK)
+		return
 	}
 
 	// Check if serviceManager is properly initialized
@@ -128,6 +140,7 @@ func StreamWordAudio(c *gin.Context) {
 
 	// Set aggressive caching headers - browser will cache this for the session
 	c.Header("Content-Type", "audio/ogg; codecs=opus")
+	c.Header("Content-Length", fmt.Sprintf("%d", len(audioData)))
 	c.Header("Cache-Control", "public, max-age=86400, immutable") // Cache for 24 hours, immutable
 	c.Header("ETag", fmt.Sprintf(`"%s-%s-%s"`, wordSetID, word, language))
 	c.Header("Content-Disposition", fmt.Sprintf("inline; filename=\"%s\"", audioFile.ID))

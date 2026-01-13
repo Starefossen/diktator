@@ -140,7 +140,9 @@ func main() {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// On-demand streaming for word audio (public, cached by browser, no auth required)
+	// Support both GET and HEAD for iOS Safari compatibility
 	r.GET("/api/wordsets/:id/words/:word/audio", handlers.StreamWordAudio)
+	r.HEAD("/api/wordsets/:id/words/:word/audio", handlers.StreamWordAudio)
 
 	// Dictionary lookup endpoints (public, no auth required for word validation)
 	dictionary := r.Group("/api/dictionary")
