@@ -48,6 +48,7 @@ export interface UseTestModeReturn {
   restartTest: () => void;
   setUserAnswer: (answer: string) => void;
   handleSubmitAnswer: (directAnswer?: string) => void;
+  handleNextWord: () => void;
   playCurrentWord: () => void;
   playTestWordAudio: (word: string, autoDelay?: number) => void;
 }
@@ -82,6 +83,7 @@ export function useTestMode(): UseTestModeReturn {
   const processedWordsRef = useRef<string[]>([]);
   const isPlayingAudioRef = useRef(false);
   const lastAutoPlayIndexRef = useRef(-1);
+  const advancementTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sync refs with state
   useEffect(() => {
@@ -379,7 +381,12 @@ export function useTestMode(): UseTestModeReturn {
         playErrorSound();
       }
 
-      setTimeout(() => {
+      // Clear any existing advancement timer
+      if (advancementTimerRef.current) {
+        clearTimeout(advancementTimerRef.current);
+      }
+
+      advancementTimerRef.current = setTimeout(() => {
         setShowFeedback(false);
 
         const testConfig = getEffectiveTestConfig(activeTest);
@@ -443,6 +450,75 @@ export function useTestMode(): UseTestModeReturn {
     ],
   );
 
+  const handleNextWord = useCallback(() => {
+    if (!activeTest || !showFeedback) return;
+
+    // Clear the auto-advancement timer
+    if (advancementTimerRef.current) {
+      clearTimeout(advancementTimerRef.current);
+      advancementTimerRef.current = null;
+    }
+
+    // Immediately hide feedback
+    setShowFeedback(false);
+
+    const testConfig = getEffectiveTestConfig(activeTest);
+    const maxAttempts = testConfig?.maxAttempts ?? 3;
+    const currentWord = processedWords[currentWordIndex];
+
+    if (lastAnswerCorrect || currentTries >= maxAttempts) {
+      const timeSpent = wordStartTime
+        ? Math.round((new Date().getTime() - wordStartTime.getTime()) / 1000)
+        : 0;
+
+      const answer: TestAnswer = {
+        word: currentWord,
+        userAnswers: currentWordAnswers,
+        isCorrect: lastAnswerCorrect,
+        timeSpent,
+        attempts: currentTries,
+        finalAnswer: currentWordAnswers[currentWordAnswers.length - 1] || "",
+        audioPlayCount: currentWordAudioPlays,
+        errorTypes:
+          currentWordErrorTypes.length > 0 ? currentWordErrorTypes : undefined,
+      };
+
+      const newAnswersList = [...answers, answer];
+      setAnswers(newAnswersList);
+
+      if (currentWordIndex < processedWords.length - 1) {
+        setCurrentWordIndex((prev) => prev + 1);
+        setUserAnswer("");
+        setWordStartTime(new Date());
+        setCurrentTries(0);
+        setCurrentWordAnswers([]);
+        setCurrentWordAudioPlays(0);
+        setCurrentWordErrorTypes([]);
+        isPlayingAudioRef.current = false;
+        setIsAudioPlaying(false);
+      } else {
+        completeTest(newAnswersList);
+      }
+    } else {
+      setUserAnswer("");
+      playTestWordAudio(currentWord, TIMING.AUDIO_REPLAY_DELAY_MS, true);
+    }
+  }, [
+    activeTest,
+    showFeedback,
+    processedWords,
+    currentWordIndex,
+    lastAnswerCorrect,
+    currentTries,
+    wordStartTime,
+    currentWordAnswers,
+    currentWordAudioPlays,
+    currentWordErrorTypes,
+    answers,
+    completeTest,
+    playTestWordAudio,
+  ]);
+
   // Initialize test - first word audio is now played in startTest
   useEffect(() => {
     if (activeTest && processedWords.length > 0 && !testInitialized) {
@@ -501,6 +577,7 @@ export function useTestMode(): UseTestModeReturn {
     restartTest,
     setUserAnswer,
     handleSubmitAnswer,
+    handleNextWord,
     playCurrentWord,
     playTestWordAudio,
   };

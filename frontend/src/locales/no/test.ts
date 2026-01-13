@@ -57,6 +57,7 @@ export const test = {
   "test.restart": "Start på nytt",
   "test.tryAgain": "En gang til!",
   "test.backToWordSets": "Tilbake til ordsett",
+  "test.cancel": "Avbryt",
 
   // Test interface
   "test.listenToWordMobile": "Trykk for å høre",

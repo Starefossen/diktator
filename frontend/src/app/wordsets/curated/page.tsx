@@ -230,6 +230,7 @@ function CuratedPageContent() {
           lastUserAnswer={testMode.lastUserAnswer}
           onUserAnswerChange={testMode.setUserAnswer}
           onSubmitAnswer={testMode.handleSubmitAnswer}
+          onNextWord={testMode.handleNextWord}
           onPlayCurrentWord={testMode.playCurrentWord}
           onExitTest={() => {
             isExitingRef.current = true;

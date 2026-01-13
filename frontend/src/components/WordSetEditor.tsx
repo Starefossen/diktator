@@ -194,11 +194,11 @@ export default function WordSetEditor({
         words.map((w) =>
           w.id === editingWordId
             ? {
-              ...w,
-              word: newWord.trim(),
-              definition: newDefinition.trim(),
-              translations,
-            }
+                ...w,
+                word: newWord.trim(),
+                definition: newDefinition.trim(),
+                translations,
+              }
             : w,
         ),
       );
@@ -261,10 +261,10 @@ export default function WordSetEditor({
       );
       const data = response.data?.data as
         | {
-          definition?: string;
-          lemma?: string;
-          wordClass?: string;
-        }
+            definition?: string;
+            lemma?: string;
+            wordClass?: string;
+          }
         | null
         | undefined;
 
@@ -527,9 +527,9 @@ export default function WordSetEditor({
                       placeholder={
                         defaultMode === "translation"
                           ? t("wordsets.editor.sourceWord").replace(
-                            "{lang}",
-                            selectedLanguage,
-                          )
+                              "{lang}",
+                              selectedLanguage,
+                            )
                           : t("wordsets.addWord.placeholder")
                       }
                       onKeyPress={(e) => {
@@ -583,10 +583,11 @@ export default function WordSetEditor({
                           setTranslationError(true);
                         }
                       }}
-                      className={`block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 sm:text-sm/6 ${translationError
+                      className={`block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 sm:text-sm/6 ${
+                        translationError
                           ? "outline-red-300 focus:outline-red-500"
                           : "outline-gray-300 focus:outline-nordic-teal"
-                        }`}
+                      }`}
                       placeholder={t(
                         "wordsets.editor.translationRequired",
                       ).replace("{lang}", targetLanguage)}
@@ -646,10 +647,11 @@ export default function WordSetEditor({
                   words.map((word) => (
                     <div
                       key={word.id}
-                      className={`flex items-center gap-3 p-3 border rounded-lg ${editingWordId === word.id
+                      className={`flex items-center gap-3 p-3 border rounded-lg ${
+                        editingWordId === word.id
                           ? "border-nordic-sky bg-nordic-sky/10"
                           : "border-gray-200 bg-gray-50"
-                        }`}
+                      }`}
                     >
                       <div className="grid flex-1 grid-cols-1 gap-2 md:grid-cols-2">
                         <div className="flex items-center">

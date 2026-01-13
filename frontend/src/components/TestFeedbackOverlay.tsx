@@ -6,6 +6,7 @@ import {
   CorrectFeedback,
 } from "@/components/SpellingFeedback";
 import { SentenceFeedback } from "@/components/SentenceFeedback";
+import { HeroXMarkIcon, HeroArrowRightIcon } from "@/components/Icons";
 import { analyzeSpelling } from "@/lib/spellingAnalysis";
 import { TIMING } from "@/lib/timingConfig";
 import type { SpellingFeedbackConfig } from "@/lib/spellingAnalysis";
@@ -20,6 +21,8 @@ interface TestFeedbackOverlayProps {
   showCorrectAnswer: boolean;
   correctCount: number;
   totalAnswers: number;
+  isLastWord: boolean;
+  onNext: () => void;
   onExitTest: () => void;
   feedbackState: {
     isCurrentSentence: boolean;
@@ -43,6 +46,8 @@ export function TestFeedbackOverlay({
   showCorrectAnswer,
   correctCount,
   totalAnswers,
+  isLastWord,
+  onNext,
   onExitTest,
   feedbackState,
 }: TestFeedbackOverlayProps) {
@@ -65,49 +70,47 @@ export function TestFeedbackOverlay({
   ]);
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <div className="rounded-lg bg-white p-4 shadow-xl sm:p-8">
-        {lastAnswerCorrect ? (
-          <CorrectFeedback />
-        ) : isCurrentSentence && sentenceScoringResult ? (
-          <SentenceFeedback
-            result={sentenceScoringResult}
-            currentAttempt={currentTries}
-            maxAttempts={maxAttempts}
-            showCorrectAnswer={currentTries >= maxAttempts && showCorrectAnswer}
-            expectedSentence={expectedAnswer}
-            timerDurationMs={TIMING.FEEDBACK_DISPLAY_MS}
-          />
-        ) : spellingAnalysis ? (
-          <SpellingFeedback
-            userAnswer={lastUserAnswer}
-            expectedWord={expectedAnswer}
-            analysis={spellingAnalysis}
-            currentAttempt={currentTries}
-            maxAttempts={maxAttempts}
-            config={spellingConfig}
-            showCorrectAnswer={currentTries >= maxAttempts && showCorrectAnswer}
-            timerDurationMs={TIMING.FEEDBACK_DISPLAY_MS}
-          />
-        ) : null}
+    <>
+      {lastAnswerCorrect ? (
+        <CorrectFeedback />
+      ) : isCurrentSentence && sentenceScoringResult ? (
+        <SentenceFeedback
+          result={sentenceScoringResult}
+          currentAttempt={currentTries}
+          maxAttempts={maxAttempts}
+          showCorrectAnswer={currentTries >= maxAttempts && showCorrectAnswer}
+          expectedSentence={expectedAnswer}
+          timerDurationMs={TIMING.FEEDBACK_DISPLAY_MS}
+        />
+      ) : spellingAnalysis ? (
+        <SpellingFeedback
+          userAnswer={lastUserAnswer}
+          expectedWord={expectedAnswer}
+          analysis={spellingAnalysis}
+          currentAttempt={currentTries}
+          maxAttempts={maxAttempts}
+          config={spellingConfig}
+          showCorrectAnswer={currentTries >= maxAttempts && showCorrectAnswer}
+          timerDurationMs={TIMING.FEEDBACK_DISPLAY_MS}
+        />
+      ) : null}
 
-        {/* Exit Button */}
-        <div className="mt-6 flex justify-center">
-          <Button variant="secondary-child" onClick={onExitTest}>
-            <span className="sm:hidden">{t("test.backMobile")}</span>
-            <span className="hidden sm:inline">{t("test.backToWordSets")}</span>
-          </Button>
-        </div>
+      {/* Action Buttons */}
+      <div className="mt-6 flex justify-center gap-2 sm:gap-4">
+        <Button variant="primary-child" onClick={onNext}>
+          <span className="sm:hidden">
+            {isLastWord ? t("test.finishMobile") : t("test.nextMobile")}
+          </span>
+          <span className="hidden sm:inline">
+            {isLastWord ? t("test.finishTest") : t("test.nextWord")}
+          </span>
+        </Button>
+
+        <Button variant="secondary-child" onClick={onExitTest}>
+          <span className="sm:hidden">{t("test.backMobile")}</span>
+          <span className="hidden sm:inline">{t("test.backToWordSets")}</span>
+        </Button>
       </div>
-
-      {/* Score Summary */}
-      {totalAnswers > 0 && (
-        <div className="mt-8 text-center text-gray-600">
-          <p>
-            {t("test.correctSoFar")}: {correctCount} / {totalAnswers}
-          </p>
-        </div>
-      )}
-    </div>
+    </>
   );
 }

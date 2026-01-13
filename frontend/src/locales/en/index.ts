@@ -149,6 +149,7 @@ export const en = {
   "test.correctAnswers": "Correct Answers",
   "test.correctSoFar": "Correct so far",
   "test.backToWordSets": "Back to Word Sets",
+  "test.cancel": "Cancel",
   "test.retakeTest": "Retake Test",
   "test.restart": "Restart Test",
   "test.finishTest": "Finish Test",

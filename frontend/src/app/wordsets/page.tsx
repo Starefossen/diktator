@@ -364,6 +364,7 @@ function WordSetsPageContent() {
           lastUserAnswer={testMode.lastUserAnswer}
           onUserAnswerChange={testMode.setUserAnswer}
           onSubmitAnswer={testMode.handleSubmitAnswer}
+          onNextWord={testMode.handleNextWord}
           onPlayCurrentWord={testMode.playCurrentWord}
           onExitTest={() => {
             // Set flag to prevent useEffect from re-starting test

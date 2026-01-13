@@ -149,6 +149,7 @@ export const no = {
   "test.correctAnswers": "Riktige svar",
   "test.correctSoFar": "Riktige så langt",
   "test.backToWordSets": "Tilbake til ordsett",
+  "test.cancel": "Avbryt",
   "test.retakeTest": "Ta testen på nytt",
   "test.restart": "Start på nytt",
   "test.finishTest": "Fullfør test",

@@ -20,6 +20,7 @@ import {
   PlusIcon,
   TrashIcon,
   ArrowLeftIcon,
+  ArrowRightIcon,
   EyeIcon,
   EyeSlashIcon,
   MagnifyingGlassIcon,
@@ -332,6 +333,14 @@ export function HeroArrowLeftIcon({
   className?: string;
 }) {
   return <ArrowLeftIcon className={className} />;
+}
+
+export function HeroArrowRightIcon({
+  className = "w-5 h-5 text-gray-600",
+}: {
+  className?: string;
+}) {
+  return <ArrowRightIcon className={className} />;
 }
 
 export function HeroShieldCheckIcon({

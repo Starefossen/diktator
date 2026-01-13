@@ -14,7 +14,12 @@ import {
 } from "@/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { requiresUserInteractionForAudio } from "@/lib/audioPlayer";
-import { HeroVolumeIcon, HeroDevicePhoneMobileIcon } from "@/components/Icons";
+import {
+  HeroVolumeIcon,
+  HeroDevicePhoneMobileIcon,
+  HeroXMarkIcon,
+  HeroArrowRightIcon,
+} from "@/components/Icons";
 import {
   analyzeSpelling,
   DEFAULT_SPELLING_CONFIG,
@@ -61,6 +66,7 @@ interface TestViewProps {
   lastUserAnswer: string;
   onUserAnswerChange: (answer: string) => void;
   onSubmitAnswer: (directAnswer?: string) => void;
+  onNextWord: () => void;
   onPlayCurrentWord: () => void;
   onExitTest: () => void;
 }
@@ -255,6 +261,7 @@ export function TestView({
   lastUserAnswer,
   onUserAnswerChange,
   onSubmitAnswer,
+  onNextWord,
   onPlayCurrentWord,
   onExitTest,
 }: TestViewProps) {
@@ -456,6 +463,8 @@ export function TestView({
                 showCorrectAnswer={testConfig?.showCorrectAnswer ?? false}
                 correctCount={correctCount}
                 totalAnswers={answers.length}
+                isLastWord={isLastWord}
+                onNext={onNextWord}
                 onExitTest={onExitTest}
                 feedbackState={feedbackState}
               />
@@ -489,6 +498,8 @@ export function TestView({
                     showCorrectAnswer={testConfig?.showCorrectAnswer ?? false}
                     correctCount={correctCount}
                     totalAnswers={answers.length}
+                    isLastWord={isLastWord}
+                    onNext={onNextWord}
                     onExitTest={onExitTest}
                     feedbackState={feedbackState}
                   />
@@ -510,9 +521,14 @@ export function TestView({
                 )}
               </div>
 
-              {/* Action Buttons */}
+              {/* Action Buttons - Consistent order: Cancel (left), Play Again (middle), Next/Finish (right) */}
               {!showFeedback && (
-                <div className="flex flex-wrap justify-center gap-2 sm:gap-4">
+                <div className="flex justify-between gap-2 sm:gap-4">
+                  <Button variant="danger" onClick={onExitTest}>
+                    <HeroXMarkIcon className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">{t("test.cancel")}</span>
+                  </Button>
+
                   <Button variant="secondary-child" onClick={onPlayCurrentWord}>
                     <HeroVolumeIcon className="h-4 w-4 sm:mr-2" />
                     <span className="hidden sm:inline">
@@ -534,15 +550,9 @@ export function TestView({
                       <span className="hidden sm:inline">
                         {isLastWord ? t("test.finishTest") : t("test.nextWord")}
                       </span>
+                      <HeroArrowRightIcon className="h-4 w-4 sm:ml-2" />
                     </Button>
                   )}
-
-                  <Button variant="secondary-child" onClick={onExitTest}>
-                    <span className="sm:hidden">{t("test.backMobile")}</span>
-                    <span className="hidden sm:inline">
-                      {t("test.backToWordSets")}
-                    </span>
-                  </Button>
                 </div>
               )}
             </div>

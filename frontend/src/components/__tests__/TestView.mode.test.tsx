@@ -180,10 +180,10 @@ describe("TestView - Mode-Specific Behavior", () => {
       expect(mockOnPlayCurrentWord).toHaveBeenCalled();
     });
 
-    it("calls onExitTest when back button clicked", () => {
+    it("calls onExitTest when cancel button clicked", () => {
       renderTestView(baseWordSet, "keyboard");
-      const backButton = screen.getByRole("button", { name: /back/i });
-      fireEvent.click(backButton);
+      const cancelButton = screen.getByRole("button", { name: /cancel/i });
+      fireEvent.click(cancelButton);
       expect(mockOnExitTest).toHaveBeenCalled();
     });
 
