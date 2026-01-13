@@ -132,24 +132,27 @@ export const wordsets = {
 
   // Word Set Editor (updated for unified modes)
   "wordsets.editor.defaultTestMode": "Standard testmodus",
-  "wordsets.editor.targetLanguage": "Målspråk",
+  "wordsets.editor.targetLanguage": "Oversett til",
   "wordsets.editor.translationDirection":
-    "Brukere vil oversette fra {source} til {target}",
-  "wordsets.editor.sourceWord": "Kildeord ({lang})",
+    "Barnet skriver {source}-ord og skal oversette til {target}",
+  "wordsets.editor.sourceWord": "Ordet å øve ({lang})",
   "wordsets.editor.translationRequired":
     "Oversettelse ({lang}) - påkrevd for oversettelsesmodus",
+  "wordsets.editor.translationRequiredError":
+    "Oversettelse er påkrevd for oversettelsesmodus",
   "wordsets.editor.noDefinition": "Ingen definisjon",
   "wordsets.editor.definition.placeholder":
     "Definisjon/kontekst (valgfritt) - hjelper å skille homofoner som 'de', 'dem', 'dei'",
-  "wordsets.editor.definition.placeholderShort":
-    "Definisjon/kontekst (valgfritt)",
   "wordsets.editor.noWords": "Ingen ord lagt til ennå",
   "wordsets.editor.noWordsHint":
     "Bruk skjemaet ovenfor for å legge til ord i dette settet",
+  "wordsets.editor.editingWord": "Redigerer ord",
+  "wordsets.editor.update": "Oppdater",
 
   // Assignment strings
   "wordsets.assignment.assignedToMe": "Tildelt til meg",
   "wordsets.assignment.assigned": "Tildelt",
+  "wordsets.assignment.willBeAssigned": "Vil bli tildelt ved lagring",
   "wordsets.assignment.noAssignments": "Ikke tildelt",
   "wordsets.assignment.assignToChildren": "Tildel til barn",
   "wordsets.assignment.selectChildren": "Velg barn å tildele",

@@ -96,7 +96,7 @@ describe("WordSetEditor - Mode Selection", () => {
     renderEditor("create");
 
     // Initially should not show target language
-    expect(screen.queryByLabelText(/target language/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/translate to/i)).not.toBeInTheDocument();
 
     // Select translation mode
     const modeSelect = screen.getByLabelText(
@@ -105,7 +105,7 @@ describe("WordSetEditor - Mode Selection", () => {
     fireEvent.change(modeSelect, { target: { value: "translation" } });
 
     // Now target language should be visible
-    expect(screen.getByLabelText(/target language/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/translate to/i)).toBeInTheDocument();
   });
 
   it("shows translation input field when translation mode is selected", async () => {
@@ -117,9 +117,11 @@ describe("WordSetEditor - Mode Selection", () => {
     ) as HTMLSelectElement;
     fireEvent.change(modeSelect, { target: { value: "translation" } });
 
-    // The placeholder changes in translation mode - look for "Source word"
+    // The placeholder changes in translation mode - look for "Word to practice"
     await waitFor(() => {
-      expect(screen.getByPlaceholderText(/source word/i)).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText(/word to practice/i),
+      ).toBeInTheDocument();
     });
   });
 
@@ -131,11 +133,11 @@ describe("WordSetEditor - Mode Selection", () => {
 
     // Select translation mode first
     fireEvent.change(modeSelect, { target: { value: "translation" } });
-    expect(screen.getByLabelText(/target language/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/translate to/i)).toBeInTheDocument();
 
     // Switch to keyboard mode
     fireEvent.change(modeSelect, { target: { value: "keyboard" } });
-    expect(screen.queryByLabelText(/target language/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/translate to/i)).not.toBeInTheDocument();
   });
 
   it("saves wordset with keyboard mode configuration", async () => {
@@ -196,7 +198,7 @@ describe("WordSetEditor - Mode Selection", () => {
 
     // Select target language - verify the field exists and is interactable
     const languageSelect = screen.getByLabelText(
-      /target language/i,
+      /translate to/i,
     ) as HTMLSelectElement;
     expect(languageSelect).toBeInTheDocument();
     fireEvent.change(languageSelect, { target: { value: "es" } });
@@ -206,7 +208,7 @@ describe("WordSetEditor - Mode Selection", () => {
     fireEvent.change(nameInput, { target: { value: "Spanish Translation" } });
 
     // Add a word with translation
-    const wordInput = screen.getByPlaceholderText(/source word/i);
+    const wordInput = screen.getByPlaceholderText(/word to practice/i);
     fireEvent.change(wordInput, { target: { value: "hello" } });
     const addButton = screen.getByText(/add word/i);
     fireEvent.click(addButton);

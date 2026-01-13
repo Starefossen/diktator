@@ -7,6 +7,7 @@ import { getIdToken, isMockMode, getMockToken } from "@/lib/oidc";
 import {
   Configuration,
   ChildrenApi,
+  DictionaryApi,
   FamiliesApi,
   HealthApi,
   InvitationsApi,
@@ -64,6 +65,7 @@ const createApiInstances = async (requireAuth = true) => {
 
   return {
     childrenApi: new ChildrenApi(config),
+    dictionaryApi: new DictionaryApi(config),
     familiesApi: new FamiliesApi(config),
     healthApi: new HealthApi(config),
     invitationsApi: new InvitationsApi(config),
@@ -246,5 +248,21 @@ export const generatedApiClient = {
   async getWordSetMastery(wordSetId: string) {
     const { masteryApi } = await createApiInstances();
     return masteryApi.apiMasteryWordSetIdGet(wordSetId);
+  },
+
+  // Dictionary services
+  async validateWord(word: string, dict?: string) {
+    const { dictionaryApi } = await createApiInstances();
+    return dictionaryApi.apiDictionaryValidateGet(word, dict);
+  },
+
+  async suggestWords(query: string, dict?: string, limit?: number) {
+    const { dictionaryApi } = await createApiInstances();
+    return dictionaryApi.apiDictionarySuggestGet(query, dict, limit);
+  },
+
+  async getDictionaryStats() {
+    const { dictionaryApi } = await createApiInstances();
+    return dictionaryApi.apiDictionaryStatsGet();
   },
 };

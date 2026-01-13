@@ -19,9 +19,7 @@ import {
 import {
   HeroTrashIcon,
   HeroPlusIcon,
-  HeroXMarkIcon,
   HeroPencilIcon,
-  HeroCheckIcon,
 } from "@/components/Icons";
 import {
   BaseModal,
@@ -37,12 +35,14 @@ import {
   getWordCount,
   classifySentenceDifficulty,
 } from "@/lib/sentenceConfig";
+import { generatedApiClient } from "@/lib/api-generated";
 
 interface WordSetEditorProps {
   mode: "create" | "edit";
   initialData?: WordSet;
   onSave: (
     data: ModelsCreateWordSetRequest | ModelsUpdateWordSetRequest,
+    pendingAssignments?: string[],
   ) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
@@ -54,7 +54,6 @@ interface EditableWord {
   word: string;
   definition: string;
   translations: Translation[];
-  isEditing: boolean;
   showTranslations?: boolean;
 }
 
@@ -124,7 +123,7 @@ export default function WordSetEditor({
       initialData?.testConfiguration || DEFAULT_TEST_CONFIG,
     );
 
-  // Words state with inline editing
+  // Words state
   const [words, setWords] = useState<EditableWord[]>(() => {
     if (initialData?.words) {
       return initialData.words.map((w, index) => ({
@@ -132,19 +131,20 @@ export default function WordSetEditor({
         word: w.word,
         definition: w.definition || "",
         translations: w.translations || [],
-        isEditing: false,
         showTranslations: false,
       }));
     }
     return [];
   });
 
-  // New word form state
+  // New/editing word form state
+  const [editingWordId, setEditingWordId] = useState<string | null>(null);
   const [newWord, setNewWord] = useState("");
   const [newDefinition, setNewDefinition] = useState("");
   const [_newTranslationLang, _setNewTranslationLang] =
     useState<Language>("en");
   const [newTranslationText, setNewTranslationText] = useState("");
+  const [translationError, setTranslationError] = useState(false);
 
   // Child assignment state
   const [assignedUserIds, setAssignedUserIds] = useState<string[]>(
@@ -153,7 +153,6 @@ export default function WordSetEditor({
 
   // Refs for focus management
   const newWordRef = useRef<HTMLInputElement>(null);
-  const editRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-focus the name input when creating a new wordset, word input when editing
@@ -168,16 +167,17 @@ export default function WordSetEditor({
   const handleAddWord = () => {
     if (!newWord.trim()) return;
 
-    // Validate translation mode requirements
     if (defaultMode === "translation" && !newTranslationText.trim()) {
+      setTranslationError(true);
       return;
     }
 
     const wordExists = words.some(
-      (w) => w.word.toLowerCase() === newWord.trim().toLowerCase(),
+      (w) =>
+        w.id !== editingWordId &&
+        w.word.toLowerCase() === newWord.trim().toLowerCase(),
     );
     if (wordExists) {
-      // TODO: Show error message
       return;
     }
 
@@ -189,54 +189,91 @@ export default function WordSetEditor({
       });
     }
 
-    const newWordItem: EditableWord = {
-      id: `${newWord.trim()}-${Date.now()}`,
-      word: newWord.trim(),
-      definition: newDefinition.trim(),
-      translations,
-      isEditing: false,
-      showTranslations: false,
-    };
+    if (editingWordId) {
+      setWords(
+        words.map((w) =>
+          w.id === editingWordId
+            ? {
+              ...w,
+              word: newWord.trim(),
+              definition: newDefinition.trim(),
+              translations,
+            }
+            : w,
+        ),
+      );
+      setEditingWordId(null);
+    } else {
+      const newWordItem: EditableWord = {
+        id: `${newWord.trim()}-${Date.now()}`,
+        word: newWord.trim(),
+        definition: newDefinition.trim(),
+        translations,
+        showTranslations: false,
+      };
+      setWords([...words, newWordItem]);
+    }
 
-    setWords([...words, newWordItem]);
     setNewWord("");
     setNewDefinition("");
     setNewTranslationText("");
-    // Focus back to the word input for easy continuation
+    setTranslationError(false);
     if (newWordRef.current) {
       newWordRef.current.focus();
     }
   };
 
   const handleEditWord = (id: string) => {
-    setWords(
-      words.map((w) =>
-        w.id === id ? { ...w, isEditing: true } : { ...w, isEditing: false },
-      ),
-    );
+    const wordToEdit = words.find((w) => w.id === id);
+    if (!wordToEdit) return;
 
-    // Focus the word input after state update
-    setTimeout(() => {
-      const input = editRefs.current[`word-${id}`];
-      if (input) input.focus();
-    }, 50);
+    setEditingWordId(id);
+    setNewWord(wordToEdit.word);
+    setNewDefinition(wordToEdit.definition);
+
+    if (defaultMode === "translation" && wordToEdit.translations.length > 0) {
+      setNewTranslationText(wordToEdit.translations[0].text);
+    } else {
+      setNewTranslationText("");
+    }
+
+    if (newWordRef.current) {
+      newWordRef.current.focus();
+    }
   };
 
-  const handleSaveEdit = (id: string) => {
-    setWords(words.map((w) => (w.id === id ? { ...w, isEditing: false } : w)));
+  const handleCancelEdit = () => {
+    setEditingWordId(null);
+    setNewWord("");
+    setNewDefinition("");
+    setNewTranslationText("");
   };
 
-  const handleCancelEdit = (id: string) => {
-    // Reset to original values - would need to store original values
-    setWords(words.map((w) => (w.id === id ? { ...w, isEditing: false } : w)));
-  };
+  const handleWordBlur = async () => {
+    if (!newWord.trim() || selectedLanguage !== "no" || newDefinition.trim()) {
+      return;
+    }
 
-  const handleWordChange = (
-    id: string,
-    field: "word" | "definition",
-    value: string,
-  ) => {
-    setWords(words.map((w) => (w.id === id ? { ...w, [field]: value } : w)));
+    try {
+      const response = await generatedApiClient.validateWord(
+        newWord.trim(),
+        "bm",
+      );
+      const data = response.data?.data as
+        | {
+          definition?: string;
+          lemma?: string;
+          wordClass?: string;
+        }
+        | null
+        | undefined;
+
+      if (data?.definition) {
+        setNewDefinition(data.definition);
+      }
+    } catch (error) {
+      console.error("Failed to validate word:", error);
+    }
   };
 
   const handleRemoveWord = (id: string) => {
@@ -270,7 +307,12 @@ export default function WordSetEditor({
       testConfiguration: updatedTestConfig,
     };
 
-    await onSave(formData);
+    const pendingAssignments =
+      mode === "create" && assignedUserIds.length > 0
+        ? assignedUserIds
+        : undefined;
+
+    await onSave(formData, pendingAssignments);
   };
 
   return (
@@ -281,7 +323,7 @@ export default function WordSetEditor({
       size="xl"
     >
       <div className="flex flex-col h-full max-h-[calc(100vh-180px)] sm:max-h-[calc(100vh-160px)] md:max-h-[calc(100vh-140px)] lg:max-h-[calc(100vh-160px)]">
-        <ModalContent className="flex-1 min-h-0 pb-4 overflow-y-auto">
+        <ModalContent className="flex-1 min-h-0 overflow-y-auto pb-4">
           <form id="wordset-form" onSubmit={handleSubmit} className="space-y-6">
             {/* Error Display */}
             {error && (
@@ -457,8 +499,22 @@ export default function WordSetEditor({
                 </h3>
               </div>
 
-              {/* Add Word Form - Always visible */}
+              {/* Add/Edit Word Form - Always visible */}
               <div className="p-4 mt-6 border border-nordic-sky/30 rounded-lg bg-nordic-sky/10">
+                {editingWordId && (
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-sm font-medium text-nordic-midnight">
+                      {t("wordsets.editor.editingWord")}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCancelEdit}
+                      className="text-sm text-gray-600 hover:text-gray-800"
+                    >
+                      {t("wordsets.cancel")}
+                    </button>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 gap-3 mb-3 md:grid-cols-2">
                   <div>
                     <input
@@ -466,20 +522,20 @@ export default function WordSetEditor({
                       type="text"
                       value={newWord}
                       onChange={(e) => setNewWord(e.target.value)}
+                      onBlur={handleWordBlur}
                       className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-nordic-teal sm:text-sm/6"
                       placeholder={
                         defaultMode === "translation"
                           ? t("wordsets.editor.sourceWord").replace(
-                              "{lang}",
-                              selectedLanguage,
-                            )
+                            "{lang}",
+                            selectedLanguage,
+                          )
                           : t("wordsets.addWord.placeholder")
                       }
                       onKeyPress={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
                           if (defaultMode === "translation") {
-                            // Don't submit if translation is required but empty
                             return;
                           }
                           handleAddWord();
@@ -501,7 +557,6 @@ export default function WordSetEditor({
                             defaultMode === "translation" &&
                             !newTranslationText.trim()
                           ) {
-                            // Don't submit if translation is required but empty
                             return;
                           }
                           handleAddWord();
@@ -517,8 +572,21 @@ export default function WordSetEditor({
                     <input
                       type="text"
                       value={newTranslationText}
-                      onChange={(e) => setNewTranslationText(e.target.value)}
-                      className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-nordic-teal sm:text-sm/6"
+                      onChange={(e) => {
+                        setNewTranslationText(e.target.value);
+                        if (translationError && e.target.value.trim()) {
+                          setTranslationError(false);
+                        }
+                      }}
+                      onBlur={() => {
+                        if (!newTranslationText.trim() && newWord.trim()) {
+                          setTranslationError(true);
+                        }
+                      }}
+                      className={`block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 sm:text-sm/6 ${translationError
+                          ? "outline-red-300 focus:outline-red-500"
+                          : "outline-gray-300 focus:outline-nordic-teal"
+                        }`}
                       placeholder={t(
                         "wordsets.editor.translationRequired",
                       ).replace("{lang}", targetLanguage)}
@@ -529,6 +597,11 @@ export default function WordSetEditor({
                         }
                       }}
                     />
+                    {translationError && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {t("wordsets.editor.translationRequiredError")}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -544,8 +617,19 @@ export default function WordSetEditor({
                     className="rounded-md bg-nordic-teal px-2.5 py-1.5 text-sm font-semibold text-nordic-midnight shadow-xs ring-1 ring-nordic-teal ring-inset hover:bg-nordic-teal/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nordic-teal disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <HeroPlusIcon className="inline w-4 h-4 mr-1" />
-                    {t("wordsets.add")}
+                    {editingWordId
+                      ? t("wordsets.editor.update")
+                      : t("wordsets.add")}
                   </button>
+                  {editingWordId && (
+                    <button
+                      type="button"
+                      onClick={handleCancelEdit}
+                      className="rounded-md bg-gray-100 px-2.5 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-200"
+                    >
+                      {t("wordsets.cancel")}
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -562,142 +646,65 @@ export default function WordSetEditor({
                   words.map((word) => (
                     <div
                       key={word.id}
-                      className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg bg-gray-50"
+                      className={`flex items-center gap-3 p-3 border rounded-lg ${editingWordId === word.id
+                          ? "border-nordic-sky bg-nordic-sky/10"
+                          : "border-gray-200 bg-gray-50"
+                        }`}
                     >
-                      {word.isEditing ? (
-                        // Editing mode
-                        <>
-                          <div className="grid flex-1 grid-cols-1 gap-2 md:grid-cols-2">
-                            <input
-                              ref={(el) => {
-                                editRefs.current[`word-${word.id}`] = el;
-                              }}
-                              type="text"
-                              value={word.word}
-                              onChange={(e) =>
-                                handleWordChange(
-                                  word.id,
-                                  "word",
-                                  e.target.value,
-                                )
-                              }
-                              className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-nordic-teal sm:text-sm/6"
-                              onKeyPress={(e) => {
-                                if (e.key === "Enter") {
-                                  e.preventDefault();
-                                  handleSaveEdit(word.id);
-                                }
-                                if (e.key === "Escape") {
-                                  e.preventDefault();
-                                  handleCancelEdit(word.id);
-                                }
-                              }}
-                            />
-                            <input
-                              type="text"
-                              value={word.definition}
-                              onChange={(e) =>
-                                handleWordChange(
-                                  word.id,
-                                  "definition",
-                                  e.target.value,
-                                )
-                              }
-                              className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-nordic-teal sm:text-sm/6"
-                              placeholder={t(
-                                "wordsets.editor.definition.placeholderShort",
-                              )}
-                              onKeyPress={(e) => {
-                                if (e.key === "Enter") {
-                                  e.preventDefault();
-                                  handleSaveEdit(word.id);
-                                }
-                                if (e.key === "Escape") {
-                                  e.preventDefault();
-                                  handleCancelEdit(word.id);
-                                }
-                              }}
-                            />
-                          </div>
-                          <div className="flex gap-1">
-                            <button
-                              type="button"
-                              onClick={() => handleSaveEdit(word.id)}
-                              className="p-1 text-green-600 rounded hover:text-green-800 hover:bg-green-100"
-                              title={t("aria.saveButton")}
-                            >
-                              <HeroCheckIcon className="w-4 h-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleCancelEdit(word.id)}
-                              className="p-1 text-gray-600 rounded hover:text-gray-800 hover:bg-gray-100"
-                              title={t("aria.cancelButton")}
-                            >
-                              <HeroXMarkIcon className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </>
-                      ) : (
-                        // Display mode
-                        <>
-                          <div className="grid flex-1 grid-cols-1 gap-2 md:grid-cols-2">
-                            <div className="flex items-center">
-                              <span className="font-medium text-gray-900">
-                                {word.word}
-                              </span>
-                              <WordBadge text={word.word} />
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              {word.definition || (
-                                <span className="italic text-gray-400">
-                                  {t("wordsets.editor.noDefinition")}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex gap-1">
-                            <button
-                              type="button"
-                              onClick={() => handleEditWord(word.id)}
-                              className="p-1 text-nordic-sky rounded hover:text-nordic-sky/80 hover:bg-nordic-sky/10"
-                              title={t("aria.editButton")}
-                            >
-                              <HeroPencilIcon className="w-4 h-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveWord(word.id)}
-                              className="p-1 text-red-600 rounded hover:text-red-800 hover:bg-red-100"
-                              title={t("aria.removeButton")}
-                            >
-                              <HeroTrashIcon className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </>
-                      )}
+                      <div className="grid flex-1 grid-cols-1 gap-2 md:grid-cols-2">
+                        <div className="flex items-center">
+                          <span className="font-medium text-gray-900">
+                            {word.word}
+                          </span>
+                          <WordBadge text={word.word} />
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {word.definition || (
+                            <span className="italic text-gray-400">
+                              {t("wordsets.editor.noDefinition")}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleEditWord(word.id)}
+                          className="p-1 text-nordic-sky rounded hover:text-nordic-sky/80 hover:bg-nordic-sky/10"
+                          title={t("aria.editButton")}
+                        >
+                          <HeroPencilIcon className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveWord(word.id)}
+                          className="p-1 text-red-600 rounded hover:text-red-800 hover:bg-red-100"
+                          title={t("aria.removeButton")}
+                        >
+                          <HeroTrashIcon className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   ))
                 )}
               </div>
             </div>
 
-            {/* Child Assignment Section (parent only, edit mode only) */}
-            {userData?.role === "parent" &&
-              mode === "edit" &&
-              initialData?.id && (
-                <div className="pt-6 mt-6 border-t border-gray-200">
-                  <ChildAssignmentSelector
-                    wordSetId={initialData.id}
-                    assignedUserIds={assignedUserIds}
-                    onAssignmentChange={setAssignedUserIds}
-                  />
-                </div>
-              )}
+            {/* Child Assignment Section (parent only) */}
+            {userData?.role === "parent" && (
+              <div className="pt-6 mt-6 border-t border-gray-200">
+                <ChildAssignmentSelector
+                  wordSetId={initialData?.id}
+                  assignedUserIds={assignedUserIds}
+                  onAssignmentChange={setAssignedUserIds}
+                  pendingMode={mode === "create"}
+                />
+              </div>
+            )}
           </form>
         </ModalContent>
 
-        <ModalActions className="mt-6 shrink-0 sm:mt-6 md:mt-8">
+        <ModalActions className="mt-4 shrink-0 border-t border-gray-200 pt-4 sticky bottom-0 bg-white">
           {/* Primary action first in DOM for proper tab order and focus management */}
           <ModalButton
             onClick={() => {

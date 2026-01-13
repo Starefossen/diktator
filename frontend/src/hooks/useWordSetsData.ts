@@ -14,7 +14,7 @@ export interface UseWordSetsDataReturn {
   updating: boolean;
   deleting: boolean;
   loadWordSets: () => Promise<void>;
-  createWordSet: (data: ModelsCreateWordSetRequest) => Promise<void>;
+  createWordSet: (data: ModelsCreateWordSetRequest) => Promise<WordSet | null>;
   updateWordSet: (
     id: string,
     data: ModelsUpdateWordSetRequest,
@@ -45,13 +45,16 @@ export function useWordSetsData(): UseWordSetsDataReturn {
   }, []);
 
   const createWordSet = useCallback(
-    async (data: ModelsCreateWordSetRequest) => {
+    async (data: ModelsCreateWordSetRequest): Promise<WordSet | null> => {
       try {
         setCreating(true);
         const response = await generatedApiClient.createWordSet(data);
         if (response.data?.data) {
-          setWordSets((prev) => [response.data.data as WordSet, ...prev]);
+          const newWordSet = response.data.data as WordSet;
+          setWordSets((prev) => [newWordSet, ...prev]);
+          return newWordSet;
         }
+        return null;
       } catch (error) {
         console.error("Failed to create word set:", error);
         throw error;

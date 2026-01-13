@@ -8,15 +8,17 @@ import { HeroCheckIcon } from "@/components/Icons";
 import type { ChildAccount } from "@/types";
 
 interface ChildAssignmentSelectorProps {
-  wordSetId: string;
+  wordSetId?: string;
   assignedUserIds: string[];
   onAssignmentChange?: (newAssignedUserIds: string[]) => void;
+  pendingMode?: boolean;
 }
 
 export function ChildAssignmentSelector({
   wordSetId,
   assignedUserIds,
   onAssignmentChange,
+  pendingMode = false,
 }: ChildAssignmentSelectorProps) {
   const { t } = useLanguage();
   const { userData } = useAuth();
@@ -50,10 +52,20 @@ export function ChildAssignmentSelector({
   const handleToggleAssignment = async (childId: string) => {
     const isCurrentlyAssigned = localAssignedUserIds.includes(childId);
 
+    if (pendingMode) {
+      const newAssignedIds = isCurrentlyAssigned
+        ? localAssignedUserIds.filter((id) => id !== childId)
+        : [...localAssignedUserIds, childId];
+      setLocalAssignedUserIds(newAssignedIds);
+      onAssignmentChange?.(newAssignedIds);
+      return;
+    }
+
+    if (!wordSetId) return;
+
     try {
       setError(null);
       if (isCurrentlyAssigned) {
-        // Unassign
         await generatedApiClient.unassignWordSetFromUser(wordSetId, childId);
         const newAssignedIds = localAssignedUserIds.filter(
           (id) => id !== childId,
@@ -61,7 +73,6 @@ export function ChildAssignmentSelector({
         setLocalAssignedUserIds(newAssignedIds);
         onAssignmentChange?.(newAssignedIds);
       } else {
-        // Assign
         await generatedApiClient.assignWordSetToUser(wordSetId, childId);
         const newAssignedIds = [...localAssignedUserIds, childId];
         setLocalAssignedUserIds(newAssignedIds);
@@ -118,19 +129,17 @@ export function ChildAssignmentSelector({
               key={child.id}
               type="button"
               onClick={() => handleToggleAssignment(child.id)}
-              className={`w-full flex items-center justify-between p-3 rounded-lg border-2 transition-all ${
-                isAssigned
+              className={`w-full flex items-center justify-between p-3 rounded-lg border-2 transition-all ${isAssigned
                   ? "border-nordic-sky bg-nordic-sky/10 hover:bg-nordic-sky/20"
                   : "border-gray-200 bg-white hover:bg-gray-50"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3">
                 <div
-                  className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                    isAssigned
+                  className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isAssigned
                       ? "border-nordic-sky bg-nordic-sky"
                       : "border-gray-300 bg-white"
-                  }`}
+                    }`}
                 >
                   {isAssigned && (
                     <HeroCheckIcon className="w-3.5 h-3.5 text-white" />
@@ -146,7 +155,9 @@ export function ChildAssignmentSelector({
 
               {isAssigned && (
                 <span className="text-xs font-medium text-nordic-midnight bg-nordic-sky/20 px-2 py-1 rounded-full">
-                  {t("wordsets.assignment.assigned")}
+                  {pendingMode
+                    ? t("wordsets.assignment.willBeAssigned")
+                    : t("wordsets.assignment.assigned")}
                 </span>
               )}
             </button>

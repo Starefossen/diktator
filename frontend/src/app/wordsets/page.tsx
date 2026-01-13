@@ -204,9 +204,23 @@ function WordSetsPageContent() {
 
   // Editor handlers
   const handleCreateSave = useCallback(
-    async (data: ModelsCreateWordSetRequest) => {
+    async (data: ModelsCreateWordSetRequest, pendingAssignments?: string[]) => {
       try {
-        await createWordSet(data);
+        const newWordSet = await createWordSet(data);
+        const newWordSetId = newWordSet?.id;
+
+        if (
+          newWordSetId &&
+          pendingAssignments &&
+          pendingAssignments.length > 0
+        ) {
+          await Promise.all(
+            pendingAssignments.map((childId) =>
+              generatedApiClient.assignWordSetToUser(newWordSetId, childId),
+            ),
+          );
+        }
+
         modalState.closeCreateForm();
         console.log("Word set created successfully");
       } catch (error) {

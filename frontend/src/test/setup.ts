@@ -11,8 +11,8 @@ const originalConsoleLog = console.log;
 const originalConsoleWarn = console.warn;
 
 beforeAll(() => {
-  console.log = () => { }; // Suppress console.log
-  console.warn = () => { }; // Suppress console.warn
+  console.log = () => {}; // Suppress console.log
+  console.warn = () => {}; // Suppress console.warn
 });
 
 afterAll(() => {

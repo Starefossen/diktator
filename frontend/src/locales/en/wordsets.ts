@@ -132,23 +132,26 @@ export const wordsets = {
 
   // Word Set Editor (updated for unified modes)
   "wordsets.editor.defaultTestMode": "Default Test Mode",
-  "wordsets.editor.targetLanguage": "Target Language",
+  "wordsets.editor.targetLanguage": "Translate to",
   "wordsets.editor.translationDirection":
-    "Users will translate from {source} to {target}",
-  "wordsets.editor.sourceWord": "Source word ({lang})",
+    "Child writes {source} words and translates to {target}",
+  "wordsets.editor.sourceWord": "Word to practice ({lang})",
   "wordsets.editor.translationRequired":
     "Translation ({lang}) - required for translation mode",
+  "wordsets.editor.translationRequiredError":
+    "Translation is required for translation mode",
   "wordsets.editor.noDefinition": "No definition",
   "wordsets.editor.definition.placeholder":
     "Definition/context (optional) - helps distinguish homophones like 'to', 'two', 'too'",
-  "wordsets.editor.definition.placeholderShort":
-    "Definition/context (optional)",
   "wordsets.editor.noWords": "No words added yet",
   "wordsets.editor.noWordsHint": "Use the form above to add words to this set",
+  "wordsets.editor.editingWord": "Editing word",
+  "wordsets.editor.update": "Update",
 
   // Assignment strings
   "wordsets.assignment.assignedToMe": "Assigned to me",
   "wordsets.assignment.assigned": "Assigned",
+  "wordsets.assignment.willBeAssigned": "Will be assigned on save",
   "wordsets.assignment.noAssignments": "Not assigned",
   "wordsets.assignment.assignToChildren": "Assign to Children",
   "wordsets.assignment.selectChildren": "Select children to assign",
