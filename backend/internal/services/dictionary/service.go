@@ -1,6 +1,8 @@
+// Package dictionary provides integration with external Norwegian dictionary APIs.
 package dictionary
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,16 +21,16 @@ import (
 type Service struct {
 	client       *http.Client
 	cache        *cache.LRUCache
-	baseURL      string
 	rateLimiter  *rateLimiter
+	baseURL      string
 	cacheEnabled bool
 }
 
 // rateLimiter implements a simple token bucket rate limiter
 type rateLimiter struct {
-	mu          sync.Mutex
 	lastRequest time.Time
-	minInterval time.Duration // Minimum time between requests
+	minInterval time.Duration
+	mu          sync.Mutex
 }
 
 func newRateLimiter(requestsPerSecond float64) *rateLimiter {
@@ -88,7 +90,7 @@ func NewService(config *Config) *Service {
 
 // ValidateWord looks up a word in the dictionary and returns its information
 // Returns nil if the word is not found
-func (s *Service) ValidateWord(word, dictionary string) (*models.DictionaryWord, error) {
+func (s *Service) ValidateWord(ctx context.Context, word, dictionary string) (*models.DictionaryWord, error) {
 	if dictionary == "" {
 		dictionary = "bm" // Default to Bokmål
 	}
@@ -120,7 +122,12 @@ func (s *Service) ValidateWord(word, dictionary string) (*models.DictionaryWord,
 		dictionary,
 	)
 
-	resp, err := s.client.Get(lookupURL)
+	req, err := http.NewRequestWithContext(ctx, "GET", lookupURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create lookup request: %w", err)
+	}
+
+	resp, err := s.client.Do(req)
 	if err != nil {
 		log.Printf("[Dictionary] Error looking up word '%s': %v", word, err)
 		return nil, fmt.Errorf("dictionary service unavailable")
@@ -152,12 +159,12 @@ func (s *Service) ValidateWord(word, dictionary string) (*models.DictionaryWord,
 	}
 
 	// Step 2: Fetch the first article using /{dict}/article/{id}.json
-	return s.fetchArticle(articleIDs[0], dictionary, cacheKey)
+	return s.fetchArticle(ctx, articleIDs[0], dictionary, cacheKey)
 }
 
 // fetchArticle retrieves and parses a dictionary article by ID
 // Uses the /{dict}/article/{id}.json endpoint
-func (s *Service) fetchArticle(articleID int, dictionary, cacheKey string) (*models.DictionaryWord, error) {
+func (s *Service) fetchArticle(ctx context.Context, articleID int, dictionary, cacheKey string) (*models.DictionaryWord, error) {
 	// Rate limit upstream requests
 	s.rateLimiter.wait()
 
@@ -168,7 +175,12 @@ func (s *Service) fetchArticle(articleID int, dictionary, cacheKey string) (*mod
 		articleID,
 	)
 
-	resp, err := s.client.Get(articleURL)
+	req, err := http.NewRequestWithContext(ctx, "GET", articleURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create article request: %w", err)
+	}
+
+	resp, err := s.client.Do(req)
 	if err != nil {
 		log.Printf("[Dictionary] Error fetching article %d: %v", articleID, err)
 		return nil, fmt.Errorf("dictionary service unavailable")
@@ -206,7 +218,7 @@ func (s *Service) fetchArticle(articleID int, dictionary, cacheKey string) (*mod
 }
 
 // Suggest returns word suggestions for autocomplete
-func (s *Service) Suggest(query, dictionary string, limit int) ([]models.DictionarySuggestion, error) {
+func (s *Service) Suggest(ctx context.Context, query, dictionary string, limit int) ([]models.DictionarySuggestion, error) {
 	if dictionary == "" {
 		dictionary = "bm"
 	}
@@ -243,7 +255,12 @@ func (s *Service) Suggest(query, dictionary string, limit int) ([]models.Diction
 		limit,
 	)
 
-	resp, err := s.client.Get(suggestURL)
+	req, err := http.NewRequestWithContext(ctx, "GET", suggestURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create suggest request: %w", err)
+	}
+
+	resp, err := s.client.Do(req)
 	if err != nil {
 		log.Printf("[Dictionary] Error getting suggestions for '%s': %v", query, err)
 		return nil, fmt.Errorf("dictionary service unavailable")

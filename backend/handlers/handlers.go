@@ -32,6 +32,21 @@ func CloseServices() error {
 	return nil
 }
 
+// Helper function to safely extract string from gin context
+func getContextString(c *gin.Context, key string) (string, error) {
+	val, exists := c.Get(key)
+	if !exists {
+		return "", fmt.Errorf("%s not found in context", key)
+	}
+	str, ok := val.(string)
+	if !ok {
+		return "", fmt.Errorf("%s is not a string", key)
+	}
+	return str, nil
+}
+
+// HealthCheck returns the health status of the API.
+//
 // @Summary		Health Check
 // @Description	Returns the health status of the API
 // @Tags			health
@@ -217,13 +232,22 @@ func CreateWordSet(c *gin.Context) {
 	}
 
 	// Create new word set
-	familyIDStr := familyID.(string)
+	familyIDStr, ok := familyID.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid family ID"})
+		return
+	}
+	userIDStr, ok := userID.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
 	wordSet := &models.WordSet{
 		ID:                uuid.New().String(),
 		Name:              req.Name,
 		FamilyID:          &familyIDStr,
 		IsGlobal:          false,
-		CreatedBy:         userID.(string),
+		CreatedBy:         userIDStr,
 		Language:          req.Language,
 		TestConfiguration: req.TestConfiguration,
 		CreatedAt:         time.Now(),
@@ -309,7 +333,7 @@ func UpdateWordSet(c *gin.Context) {
 		return
 	}
 
-	familyID, exists := c.Get("validatedFamilyID")
+	_, exists = c.Get("validatedFamilyID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, models.APIResponse{
 			Error: "Family access validation required",
@@ -335,7 +359,12 @@ func UpdateWordSet(c *gin.Context) {
 	}
 
 	// Verify family access
-	if existingWordSet.FamilyID == nil || *existingWordSet.FamilyID != familyID.(string) {
+	familyIDStr, err := getContextString(c, "validatedFamilyID")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid family ID"})
+		return
+	}
+	if existingWordSet.FamilyID == nil || *existingWordSet.FamilyID != familyIDStr {
 		c.JSON(http.StatusNotFound, models.APIResponse{
 			Error: "Word set not found",
 		})
@@ -516,7 +545,7 @@ func AssignWordSetToUser(c *gin.Context) {
 	}
 
 	// Get the authenticated user ID (parent making the assignment)
-	assignedBy, exists := c.Get("userID")
+	_, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, models.APIResponse{
 			Error: "User authentication required",
@@ -525,7 +554,7 @@ func AssignWordSetToUser(c *gin.Context) {
 	}
 
 	// Verify the child user is in the same family
-	familyID, exists := c.Get("validatedFamilyID")
+	_, exists = c.Get("validatedFamilyID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, models.APIResponse{
 			Error: "Family access validation required",
@@ -542,14 +571,24 @@ func AssignWordSetToUser(c *gin.Context) {
 		return
 	}
 
-	if childUser.FamilyID != familyID.(string) {
+	familyIDStr, err := getContextString(c, "validatedFamilyID")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid family ID"})
+		return
+	}
+	if childUser.FamilyID != familyIDStr {
 		c.JSON(http.StatusForbidden, models.APIResponse{
 			Error: "Child user not in your family",
 		})
 		return
 	}
 
-	err = sm.DB.AssignWordSetToUser(wordSetID, userID, assignedBy.(string))
+	assignedByStr, err := getContextString(c, "userID")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+	err = sm.DB.AssignWordSetToUser(wordSetID, userID, assignedByStr)
 	if err != nil {
 		// Check for specific error types to return appropriate status codes
 		errMsg := err.Error()
@@ -603,7 +642,7 @@ func UnassignWordSetFromUser(c *gin.Context) {
 	}
 
 	// Verify the child user is in the same family
-	familyID, exists := c.Get("validatedFamilyID")
+	_, exists := c.Get("validatedFamilyID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, models.APIResponse{
 			Error: "Family access validation required",
@@ -619,7 +658,12 @@ func UnassignWordSetFromUser(c *gin.Context) {
 		return
 	}
 
-	if childUser.FamilyID != familyID.(string) {
+	familyIDStr, err := getContextString(c, "validatedFamilyID")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid family ID"})
+		return
+	}
+	if childUser.FamilyID != familyIDStr {
 		c.JSON(http.StatusForbidden, models.APIResponse{
 			Error: "Child user not in your family",
 		})
@@ -667,7 +711,7 @@ func SaveResult(c *gin.Context) {
 	}
 
 	// Get userID from authenticated context
-	userID, exists := c.Get("userID")
+	_, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, models.APIResponse{
 			Error: "User authentication required",
@@ -712,10 +756,15 @@ func SaveResult(c *gin.Context) {
 	}
 
 	// Create test result
+	userIDStr, err := getContextString(c, "userID")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
 	result := &models.TestResult{
 		ID:             uuid.New().String(),
 		WordSetID:      req.WordSetID,
-		UserID:         userID.(string),
+		UserID:         userIDStr,
 		Score:          req.Score,
 		TotalWords:     req.TotalWords,
 		CorrectWords:   req.CorrectWords,
@@ -727,9 +776,9 @@ func SaveResult(c *gin.Context) {
 		CreatedAt:      time.Now(),
 	}
 
-	err := serviceManager.DB.SaveTestResult(result)
+	err = serviceManager.DB.SaveTestResult(result)
 	if err != nil {
-		log.Printf("[SaveResult] Error saving test result for user %s, wordset %s: %v", userID, req.WordSetID, err)
+		log.Printf("[SaveResult] Error saving test result for user %s, wordset %s: %v", userIDStr, req.WordSetID, err)
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to save test result",
 		})
@@ -754,7 +803,7 @@ func SaveResult(c *gin.Context) {
 // @Router			/api/users/results [get]
 func GetResults(c *gin.Context) {
 	// Get userID from authenticated context
-	userID, exists := c.Get("userID")
+	_, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, models.APIResponse{
 			Error: "User authentication required",
@@ -770,7 +819,12 @@ func GetResults(c *gin.Context) {
 		return
 	}
 
-	results, err := serviceManager.DB.GetTestResults(userID.(string))
+	userIDStr, err := getContextString(c, "userID")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+	results, err := serviceManager.DB.GetTestResults(userIDStr)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve test results",
@@ -875,12 +929,12 @@ func AcceptInvitation(c *gin.Context) {
 	}
 
 	// Try to get existing userID (for users who already have an account)
-	userID, userExists := c.Get("userID")
+	_, userExists := c.Get("userID")
 
 	// If user doesn't exist yet, this is a first-time login accepting an invitation
 	// We need to link their OIDC identity to the existing child account
 	if !userExists {
-		authIdentityID, authExists := c.Get("authIdentityID")
+		_, authExists := c.Get("authIdentityID")
 		if !authExists {
 			c.JSON(http.StatusUnauthorized, models.APIResponse{
 				Error: "Authentication required",
@@ -938,12 +992,18 @@ func AcceptInvitation(c *gin.Context) {
 			return
 		}
 
+		authIDStr, err := getContextString(c, "authIdentityID")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid auth identity ID"})
+			return
+		}
+
 		var newUserID string
 
 		if existingUser != nil {
 			// User already exists (legacy flow) - just link the auth ID
-			if err := serviceManager.DB.LinkUserToAuthID(existingUser.ID, authIdentityID.(string)); err != nil {
-				log.Printf("ERROR linking user to auth ID: %v (userID=%s, authID=%s)", err, existingUser.ID, authIdentityID)
+			if err := serviceManager.DB.LinkUserToAuthID(existingUser.ID, authIDStr); err != nil {
+				log.Printf("ERROR linking user to auth ID: %v (userID=%s, authID=%s)", err, existingUser.ID, authIDStr)
 				c.JSON(http.StatusInternalServerError, models.APIResponse{
 					Error: "Failed to link account: " + err.Error(),
 				})
@@ -952,7 +1012,7 @@ func AcceptInvitation(c *gin.Context) {
 			newUserID = existingUser.ID
 		} else {
 			// Create new user with their auth ID as the user ID
-			newUserID = authIdentityID.(string)
+			newUserID = authIDStr
 
 			// Use email prefix as display name (user can update later)
 			displayName := strings.Split(authIdentity.Email, "@")[0]
@@ -989,7 +1049,9 @@ func AcceptInvitation(c *gin.Context) {
 			log.Printf("ERROR accepting invitation: %v (id=%s, user=%s)", err, invitationID, newUserID)
 			// Clean up the user if we just created them
 			if existingUser == nil {
-				_ = serviceManager.DB.DeleteUser(newUserID)
+				if delErr := serviceManager.DB.DeleteUser(newUserID); delErr != nil {
+					log.Printf("Warning: failed to delete temporary user %s: %v", newUserID, delErr)
+				}
 			}
 			c.JSON(http.StatusInternalServerError, models.APIResponse{
 				Error: "Failed to accept invitation: " + err.Error(),
@@ -1008,9 +1070,14 @@ func AcceptInvitation(c *gin.Context) {
 	}
 
 	// User already exists - regular invitation acceptance flow
-	err := serviceManager.DB.AcceptInvitation(invitationID, userID.(string))
+	userIDStr, err := getContextString(c, "userID")
 	if err != nil {
-		log.Printf("ERROR accepting invitation: %v (id=%s, user=%s)", err, invitationID, userID)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+	err = serviceManager.DB.AcceptInvitation(invitationID, userIDStr)
+	if err != nil {
+		log.Printf("ERROR accepting invitation: %v (id=%s, user=%s)", err, invitationID, userIDStr)
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to accept invitation: " + err.Error(),
 		})
@@ -1043,7 +1110,7 @@ func GetFamily(c *gin.Context) {
 		return
 	}
 
-	familyID, exists := c.Get("validatedFamilyID")
+	_, exists := c.Get("validatedFamilyID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, models.APIResponse{
 			Error: "Family access validation required",
@@ -1051,7 +1118,12 @@ func GetFamily(c *gin.Context) {
 		return
 	}
 
-	family, err := serviceManager.DB.GetFamily(familyID.(string))
+	familyIDStr, err := getContextString(c, "validatedFamilyID")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid family ID"})
+		return
+	}
+	family, err := serviceManager.DB.GetFamily(familyIDStr)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve family",
@@ -1083,7 +1155,7 @@ func GetFamilyStats(c *gin.Context) {
 		return
 	}
 
-	familyID, exists := c.Get("validatedFamilyID")
+	_, exists := c.Get("validatedFamilyID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, models.APIResponse{
 			Error: "Family access validation required",
@@ -1091,7 +1163,12 @@ func GetFamilyStats(c *gin.Context) {
 		return
 	}
 
-	stats, err := serviceManager.DB.GetFamilyStats(familyID.(string))
+	familyIDStr, err := getContextString(c, "validatedFamilyID")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid family ID"})
+		return
+	}
+	stats, err := serviceManager.DB.GetFamilyStats(familyIDStr)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve family stats",
@@ -1123,7 +1200,7 @@ func GetFamilyResults(c *gin.Context) {
 		return
 	}
 
-	familyID, exists := c.Get("validatedFamilyID")
+	_, exists := c.Get("validatedFamilyID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, models.APIResponse{
 			Error: "Family access validation required",
@@ -1131,7 +1208,12 @@ func GetFamilyResults(c *gin.Context) {
 		return
 	}
 
-	familyResults, err := serviceManager.DB.GetFamilyResults(familyID.(string))
+	familyIDStr, err := getContextString(c, "validatedFamilyID")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid family ID"})
+		return
+	}
+	familyResults, err := serviceManager.DB.GetFamilyResults(familyIDStr)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve family results",
@@ -1163,7 +1245,7 @@ func GetFamilyChildren(c *gin.Context) {
 		return
 	}
 
-	familyID, exists := c.Get("validatedFamilyID")
+	_, exists := c.Get("validatedFamilyID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, models.APIResponse{
 			Error: "Family access validation required",
@@ -1171,7 +1253,12 @@ func GetFamilyChildren(c *gin.Context) {
 		return
 	}
 
-	children, err := serviceManager.DB.GetFamilyChildren(familyID.(string))
+	familyIDStr, err := getContextString(c, "validatedFamilyID")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid family ID"})
+		return
+	}
+	children, err := serviceManager.DB.GetFamilyChildren(familyIDStr)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve children",
@@ -1203,7 +1290,7 @@ func GetFamilyProgress(c *gin.Context) {
 		return
 	}
 
-	familyID, exists := c.Get("validatedFamilyID")
+	_, exists := c.Get("validatedFamilyID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, models.APIResponse{
 			Error: "Family access validation required",
@@ -1211,7 +1298,12 @@ func GetFamilyProgress(c *gin.Context) {
 		return
 	}
 
-	progress, err := serviceManager.DB.GetFamilyProgress(familyID.(string))
+	familyIDStr, err := getContextString(c, "validatedFamilyID")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid family ID"})
+		return
+	}
+	progress, err := serviceManager.DB.GetFamilyProgress(familyIDStr)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve family progress",
@@ -1254,26 +1346,33 @@ func AddFamilyMember(c *gin.Context) {
 		return
 	}
 
-	userID, _ := c.Get("userID")
-	familyID, _ := c.Get("validatedFamilyID")
-
 	// Handle parent invitation vs child creation based on role
 	if req.Role == "parent" {
 		// Create invitation for parent
+		familyIDStr, err := getContextString(c, "validatedFamilyID")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid family ID"})
+			return
+		}
+		userIDStr, err := getContextString(c, "userID")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+			return
+		}
 		expiresAt := time.Now().Add(7 * 24 * time.Hour) // 7 days expiration
 		invitation := &models.FamilyInvitation{
 			ID:        uuid.New().String(),
-			FamilyID:  familyID.(string),
+			FamilyID:  familyIDStr,
 			Email:     req.Email,
 			Role:      "parent",
-			InvitedBy: userID.(string),
+			InvitedBy: userIDStr,
 			Status:    "pending",
 			CreatedAt: time.Now(),
 			ExpiresAt: &expiresAt,
 		}
 
 		if err := serviceManager.DB.CreateFamilyInvitation(invitation); err != nil {
-			log.Printf("ERROR creating parent invitation: %v (email=%s, family=%s)", err, req.Email, familyID)
+			log.Printf("ERROR creating parent invitation: %v (email=%s, family=%s)", err, req.Email, familyIDStr)
 			c.JSON(http.StatusInternalServerError, models.APIResponse{
 				Error: "Failed to invite parent: " + err.Error(),
 			})
@@ -1337,20 +1436,30 @@ func AddFamilyMember(c *gin.Context) {
 	}
 
 	// Create invitation record - child user will be created when they accept the invitation
+	familyIDStr, err := getContextString(c, "validatedFamilyID")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid family ID"})
+		return
+	}
+	userIDStr, err := getContextString(c, "userID")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
 	expiresAt := time.Now().Add(30 * 24 * time.Hour) // 30 days for child invitations
 	invitation := &models.FamilyInvitation{
 		ID:        uuid.New().String(),
-		FamilyID:  familyID.(string),
+		FamilyID:  familyIDStr,
 		Email:     req.Email,
 		Role:      "child",
-		InvitedBy: userID.(string),
+		InvitedBy: userIDStr,
 		Status:    "pending",
 		CreatedAt: time.Now(),
 		ExpiresAt: &expiresAt,
 	}
 
 	if err := serviceManager.DB.CreateFamilyInvitation(invitation); err != nil {
-		log.Printf("ERROR creating child invitation: %v (email=%s, family=%s)", err, req.Email, familyID)
+		log.Printf("ERROR creating child invitation: %v (email=%s, family=%s)", err, req.Email, familyIDStr)
 		// Check if error is due to duplicate invitation
 		if strings.Contains(err.Error(), "invitation already exists") {
 			c.JSON(http.StatusConflict, models.APIResponse{
@@ -1368,7 +1477,7 @@ func AddFamilyMember(c *gin.Context) {
 		Message: "Invitation sent to " + req.Email,
 		Data: map[string]interface{}{
 			"email":      req.Email,
-			"familyId":   familyID,
+			"familyId":   familyIDStr,
 			"invitation": invitation,
 		},
 	})
@@ -1392,11 +1501,14 @@ func GetFamilyInvitations(c *gin.Context) {
 		return
 	}
 
-	familyID, _ := c.Get("validatedFamilyID")
-
-	invitations, err := serviceManager.DB.GetFamilyInvitations(familyID.(string))
+	familyIDStr, err := getContextString(c, "validatedFamilyID")
 	if err != nil {
-		log.Printf("ERROR getting family invitations: %v (family=%s)", err, familyID)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid family ID"})
+		return
+	}
+	invitations, err := serviceManager.DB.GetFamilyInvitations(familyIDStr)
+	if err != nil {
+		log.Printf("ERROR getting family invitations: %v (family=%s)", err, familyIDStr)
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve invitations",
 		})
@@ -1478,12 +1590,15 @@ func RemoveFamilyMember(c *gin.Context) {
 		return
 	}
 
-	familyID, _ := c.Get("validatedFamilyID")
-
 	// Get family to check created_by
-	family, err := serviceManager.DB.GetFamily(familyID.(string))
+	familyIDStr, err := getContextString(c, "validatedFamilyID")
 	if err != nil {
-		log.Printf("ERROR getting family: %v (family=%s)", err, familyID)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid family ID"})
+		return
+	}
+	family, err := serviceManager.DB.GetFamily(familyIDStr)
+	if err != nil {
+		log.Printf("ERROR getting family: %v (family=%s)", err, familyIDStr)
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve family",
 		})
@@ -1603,7 +1718,7 @@ func UpdateChildBirthYear(c *gin.Context) {
 	}
 
 	// Get the authenticated user's family ID
-	familyID, exists := c.Get("validatedFamilyID")
+	_, exists := c.Get("validatedFamilyID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, models.APIResponse{
 			Error: "Family access validation required",
@@ -1629,7 +1744,12 @@ func UpdateChildBirthYear(c *gin.Context) {
 	}
 
 	// Ensure child belongs to the parent's family
-	if child.FamilyID != familyID.(string) {
+	familyIDStr, err := getContextString(c, "validatedFamilyID")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid family ID"})
+		return
+	}
+	if child.FamilyID != familyIDStr {
 		c.JSON(http.StatusForbidden, models.APIResponse{
 			Error: "Cannot update child from another family",
 		})
@@ -1852,14 +1972,13 @@ func CreateUser(c *gin.Context) {
 	}
 
 	// Get identity info from OIDC middleware context
-	authIdentityID, exists := c.Get("authIdentityID")
-	if !exists {
+	authID, err := getContextString(c, "authIdentityID")
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, models.APIResponse{
 			Error: "Auth identity not found in token",
 		})
 		return
 	}
-	authID := authIdentityID.(string)
 
 	serviceManager := GetServiceManager(c)
 	if serviceManager == nil {
@@ -1950,7 +2069,9 @@ func CreateUser(c *gin.Context) {
 
 	if err := serviceManager.DB.CreateFamily(family); err != nil {
 		log.Printf("ERROR creating family: %v", err)
-		serviceManager.DB.DeleteUser(newUser.ID)
+		if delErr := serviceManager.DB.DeleteUser(newUser.ID); delErr != nil {
+			log.Printf("Warning: failed to delete user during cleanup: %v", delErr)
+		}
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to create family",
 		})
@@ -1997,15 +2118,13 @@ func GetUserProfile(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
 		// User not in context, try to lookup by authIdentityID
-		authIdentityID, exists := c.Get("authIdentityID")
-		if !exists {
+		authID, err := getContextString(c, "authIdentityID")
+		if err != nil {
 			c.JSON(http.StatusUnauthorized, models.APIResponse{
 				Error: "User not authenticated",
 			})
 			return
 		}
-
-		authID := authIdentityID.(string)
 
 		// Get service manager and try to lookup user
 		serviceManager := GetServiceManager(c)
@@ -2055,7 +2174,7 @@ func GetUserProfile(c *gin.Context) {
 							// User has pending invitations
 							c.JSON(http.StatusOK, models.APIResponse{
 								Data: map[string]interface{}{
-									"authId":             authIdentityID,
+									"authId":             authID,
 									"email":              email,
 									"hasPendingInvites":  true,
 									"pendingInvitations": invitations,
@@ -2072,7 +2191,7 @@ func GetUserProfile(c *gin.Context) {
 		c.JSON(http.StatusNotFound, models.APIResponse{
 			Error: "User not found in system. Please complete registration.",
 			Data: map[string]interface{}{
-				"authId":            authIdentityID,
+				"authId":            authID,
 				"needsRegistration": true,
 			},
 		})
@@ -2137,7 +2256,7 @@ func UpdateUserDisplayName(c *gin.Context) {
 		return
 	}
 
-	userID, exists := c.Get("userID")
+	_, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, models.APIResponse{
 			Error: "User not authenticated",
@@ -2164,7 +2283,12 @@ func UpdateUserDisplayName(c *gin.Context) {
 		return
 	}
 
-	if err := serviceManager.DB.UpdateUserDisplayName(userID.(string), displayName); err != nil {
+	userIDStr, err := getContextString(c, "userID")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+	if err := serviceManager.DB.UpdateUserDisplayName(userIDStr, displayName); err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to update display name",
 		})
@@ -2211,8 +2335,8 @@ func ListVoices(c *gin.Context) {
 		LanguageCode string   `json:"languageCode"`
 		Gender       string   `json:"gender"`
 		Type         string   `json:"type"`
-		SampleRate   int32    `json:"sampleRate"`
 		Languages    []string `json:"supportedLanguages"`
+		SampleRate   int32    `json:"sampleRate"`
 	}
 
 	var voiceList []VoiceInfo
@@ -2272,7 +2396,7 @@ func ListVoices(c *gin.Context) {
 // @Security		BearerAuth
 // @Router			/api/mastery/{wordSetId} [get]
 func GetWordSetMastery(c *gin.Context) {
-	userID, exists := c.Get("userID")
+	_, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, models.APIResponse{
 			Error: "User authentication required",
@@ -2296,7 +2420,12 @@ func GetWordSetMastery(c *gin.Context) {
 		return
 	}
 
-	mastery, err := serviceManager.DB.GetWordSetMastery(userID.(string), wordSetID)
+	userIDStr, err := getContextString(c, "userID")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+	mastery, err := serviceManager.DB.GetWordSetMastery(userIDStr, wordSetID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve mastery data",
@@ -2328,7 +2457,7 @@ func GetWordSetMastery(c *gin.Context) {
 // @Security		BearerAuth
 // @Router			/api/mastery/{wordSetId}/word/{word} [get]
 func GetWordMastery(c *gin.Context) {
-	userID, exists := c.Get("userID")
+	_, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, models.APIResponse{
 			Error: "User authentication required",
@@ -2354,7 +2483,12 @@ func GetWordMastery(c *gin.Context) {
 		return
 	}
 
-	mastery, err := serviceManager.DB.GetWordMastery(userID.(string), wordSetID, word)
+	userIDStr, err := getContextString(c, "userID")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+	mastery, err := serviceManager.DB.GetWordMastery(userIDStr, wordSetID, word)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Failed to retrieve mastery data",
@@ -2365,7 +2499,7 @@ func GetWordMastery(c *gin.Context) {
 	// Return default mastery if no record exists
 	if mastery == nil {
 		mastery = &models.WordMastery{
-			UserID:             userID.(string),
+			UserID:             userIDStr,
 			WordSetID:          wordSetID,
 			Word:               word,
 			LetterTilesCorrect: 0,
@@ -2400,7 +2534,7 @@ type IncrementMasteryRequest struct {
 // @Security		BearerAuth
 // @Router			/api/mastery/{wordSetId}/increment [post]
 func IncrementMastery(c *gin.Context) {
-	userID, exists := c.Get("userID")
+	_, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, models.APIResponse{
 			Error: "User authentication required",
@@ -2449,7 +2583,12 @@ func IncrementMastery(c *gin.Context) {
 		return
 	}
 
-	mastery, err := serviceManager.DB.IncrementMastery(userID.(string), wordSetID, req.Word, inputMode)
+	userIDStr, err := getContextString(c, "userID")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+	mastery, err := serviceManager.DB.IncrementMastery(userIDStr, wordSetID, req.Word, inputMode)
 	if err != nil {
 		log.Printf("[IncrementMastery] Error: %v", err)
 		c.JSON(http.StatusInternalServerError, models.APIResponse{

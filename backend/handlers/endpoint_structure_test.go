@@ -23,8 +23,8 @@ func TestEndpointSecurity(t *testing.T) {
 		name         string
 		endpoint     string
 		method       string
-		requiresAuth bool
 		requiresRole string
+		requiresAuth bool
 	}{
 		{
 			name:         "GET /api/users/results requires authentication",

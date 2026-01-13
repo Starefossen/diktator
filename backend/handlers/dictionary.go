@@ -47,7 +47,7 @@ func ValidateDictionaryWord(c *gin.Context) {
 		return
 	}
 
-	result, err := dictService.ValidateWord(req.Word, req.Dictionary)
+	result, err := dictService.ValidateWord(c.Request.Context(), req.Word, req.Dictionary)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: err.Error(),
@@ -99,7 +99,7 @@ func SuggestDictionaryWords(c *gin.Context) {
 		return
 	}
 
-	suggestions, err := dictService.Suggest(req.Query, req.Dictionary, req.Limit)
+	suggestions, err := dictService.Suggest(c.Request.Context(), req.Query, req.Dictionary, req.Limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: err.Error(),

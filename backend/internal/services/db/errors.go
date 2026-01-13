@@ -1,3 +1,4 @@
+// Package db provides database access layer and repository implementations.
 package db
 
 import "errors"

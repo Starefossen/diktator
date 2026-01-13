@@ -20,21 +20,19 @@ import (
 
 // OIDCValidator validates JWT tokens against an OIDC provider
 type OIDCValidator struct {
+	httpClient  *http.Client
+	jwks        *JWKS
 	issuer      string
 	audience    string
-	httpClient  *http.Client
-	userinfoURL string // Userinfo endpoint URL
-
-	// JWKS caching
-	jwks      *JWKS
-	jwksMutex sync.RWMutex
-	jwksURL   string
+	userinfoURL string
+	jwksURL     string
+	jwksMutex   sync.RWMutex
 }
 
 // JWKS represents a JSON Web Key Set
 type JWKS struct {
-	Keys      []JWK     `json:"keys"`
 	FetchedAt time.Time `json:"-"`
+	Keys      []JWK     `json:"keys"`
 }
 
 // JWK represents a JSON Web Key
@@ -100,7 +98,7 @@ func NewOIDCValidator(cfg *OIDCConfig) (*OIDCValidator, error) {
 	}
 
 	// Discover JWKS URL from OIDC discovery document
-	if err := validator.discoverJWKS(); err != nil {
+	if err := validator.discoverJWKS(context.Background()); err != nil {
 		return nil, fmt.Errorf("failed to discover OIDC configuration: %w", err)
 	}
 
@@ -108,17 +106,25 @@ func NewOIDCValidator(cfg *OIDCConfig) (*OIDCValidator, error) {
 }
 
 // discoverJWKS fetches the OIDC discovery document and extracts the JWKS URL
-func (o *OIDCValidator) discoverJWKS() error {
+func (o *OIDCValidator) discoverJWKS(ctx context.Context) error {
 	discoveryURL := o.issuer + "/.well-known/openid-configuration"
 
-	resp, err := o.httpClient.Get(discoveryURL)
+	req, err := http.NewRequestWithContext(ctx, "GET", discoveryURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create discovery request: %w", err)
+	}
+
+	resp, err := o.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to fetch discovery document: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("discovery document returned status %d", resp.StatusCode)
+		}
 		return fmt.Errorf("discovery document returned status %d: %s", resp.StatusCode, string(body))
 	}
 
@@ -134,7 +140,7 @@ func (o *OIDCValidator) discoverJWKS() error {
 }
 
 // fetchJWKS fetches the JSON Web Key Set from the OIDC provider
-func (o *OIDCValidator) fetchJWKS() error {
+func (o *OIDCValidator) fetchJWKS(ctx context.Context) error {
 	o.jwksMutex.Lock()
 	defer o.jwksMutex.Unlock()
 
@@ -143,7 +149,12 @@ func (o *OIDCValidator) fetchJWKS() error {
 		return nil
 	}
 
-	resp, err := o.httpClient.Get(o.jwksURL)
+	req, err := http.NewRequestWithContext(ctx, "GET", o.jwksURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create JWKS request: %w", err)
+	}
+
+	resp, err := o.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to fetch JWKS: %w", err)
 	}
@@ -165,8 +176,8 @@ func (o *OIDCValidator) fetchJWKS() error {
 }
 
 // getKey retrieves the signing key for a given key ID
-func (o *OIDCValidator) getKey(kid string) (*JWK, error) {
-	if err := o.fetchJWKS(); err != nil {
+func (o *OIDCValidator) getKey(ctx context.Context, kid string) (*JWK, error) {
+	if err := o.fetchJWKS(ctx); err != nil {
 		return nil, err
 	}
 
@@ -186,7 +197,7 @@ func (o *OIDCValidator) getKey(kid string) (*JWK, error) {
 	o.jwksMutex.Unlock()
 	o.jwksMutex.RLock()
 
-	if err := o.fetchJWKS(); err != nil {
+	if err := o.fetchJWKS(ctx); err != nil {
 		return nil, err
 	}
 
@@ -232,7 +243,7 @@ func (o *OIDCValidator) validateToken(ctx context.Context, tokenString string) (
 		}
 
 		// Get the signing key
-		jwk, err := o.getKey(kid)
+		jwk, err := o.getKey(ctx, kid)
 		if err != nil {
 			log.Printf("[OIDC] Token validation failed: key lookup error for kid=%s: %v", kid, err)
 			return nil, err
@@ -423,7 +434,10 @@ func (o *OIDCValidator) enrichIdentityFromUserinfo(ctx context.Context, accessTo
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("jwks endpoint returned status %d", resp.StatusCode)
+		}
 		return fmt.Errorf("userinfo endpoint returned status %d: %s", resp.StatusCode, string(body))
 	}
 

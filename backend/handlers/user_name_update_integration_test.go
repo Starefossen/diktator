@@ -31,8 +31,8 @@ func TestUpdateUserDisplayName_Integration(t *testing.T) {
 	tests := []struct {
 		name           string
 		displayName    string
-		expectedStatus int
 		expectedError  string
+		expectedStatus int
 	}{
 		{
 			name:           "Valid name update",
@@ -147,8 +147,8 @@ func TestUpdateChildDisplayName_Integration(t *testing.T) {
 		childID        string
 		displayName    string
 		userID         string
-		expectedStatus int
 		expectedError  string
+		expectedStatus int
 	}{
 		{
 			name:           "Valid child name update",

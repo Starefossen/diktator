@@ -1,0 +1,146 @@
+# golangci-lint configuration for Diktator
+# See https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+  skip-dirs:
+    - vendor
+    - docs # Swagger generated docs
+    - tmp
+  skip-files:
+    - cmd/seed/main.go # Seed script doesn't need strict linting
+
+output:
+  formats:
+    - format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+  sort-results: true
+
+linters:
+  enable:
+    # Must-have: Core analysis
+    - govet        # Official Go static analyzer
+    - staticcheck  # Advanced static analysis
+    - errcheck     # Unchecked errors (critical for AI-generated code)
+
+    # Must-have: Security
+    - gosec        # Security issues
+
+    # Must-have: Code quality
+    - unused       # Unused code detection (includes deadcode functionality)
+    - ineffassign  # Ineffectual assignments
+    - typecheck    # Type errors
+
+    # Important: Best practices
+    - revive       # Replacement for golint
+    - gocyclo      # Cyclomatic complexity
+    - misspell     # Spelling errors in comments
+    - unconvert    # Unnecessary type conversions
+    - unparam      # Unused function parameters
+    - gosimple     # Simplify code suggestions
+
+    # AI-native specific
+    - bodyclose    # HTTP response body not closed
+    - noctx        # HTTP requests without context
+    - rowserrcheck # SQL rows.Err not checked
+    - sqlclosecheck # SQL statement not closed
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+    exclude-functions:
+      - (io.Closer).Close # Allow deferred Close without checking error
+
+  govet:
+    enable-all: true
+    disable:
+      - shadow # Too noisy for now
+
+  gocyclo:
+    min-complexity: 15 # Flag functions with complexity > 15
+
+  staticcheck:
+    checks: ["all"]
+
+  gosec:
+    severity: medium
+    confidence: medium
+    excludes:
+      - G404 # Use of weak random number generator - ok for non-crypto use
+
+  revive:
+    severity: warning
+    enable-all-rules: false
+    rules:
+      - name: exported
+        severity: warning
+      - name: error-return
+      - name: error-naming
+      - name: if-return
+      - name: var-naming
+      - name: package-comments
+        severity: warning
+      - name: unexported-return
+      - name: time-naming
+      - name: context-as-argument
+      - name: context-keys-type
+
+  unused:
+    check-exported: false # Don't flag exported but unused (might be used externally)
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude-dirs:
+    - vendor
+    - docs
+
+  exclude-rules:
+    # Exclude linters from test files only
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - errcheck
+        - gosec
+        - noctx
+        - unparam
+        - govet
+
+    # Exclude integration test helpers
+    - path: testutil_integration\.go
+      linters:
+        - errcheck
+        - gosec
+        - noctx
+        - unparam
+
+    # Deferred Close() and Rollback() errors are acceptable pattern
+    - linters:
+        - errcheck
+      text: "Error return value.*Close.*not checked"
+
+    - linters:
+        - errcheck
+      text: "Error return value of `tx.Rollback` is not checked"
+
+    # InsecureSkipVerify is documented as dev-only with #nosec comment
+    - path: internal/services/auth/oidc\.go
+      linters:
+        - gosec
+      text: "G402"
+
+    # MD5 is documented as safe for cache keys with #nosec comment
+    - linters:
+        - gosec
+      text: "G401"
+
+    # Integer conversions for pool config are safe (within limits)
+    - path: internal/services/db/postgres\.go
+      linters:
+        - gosec
+      text: "G115.*integer overflow"

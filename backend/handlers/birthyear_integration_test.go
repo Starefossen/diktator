@@ -40,8 +40,8 @@ func TestBirthYear_AddFamilyMemberWithBirthYear_Integration(t *testing.T) {
 		require.Equal(t, http.StatusCreated, resp.Code, "Response body: %s", resp.Body.String())
 
 		var apiResp struct {
-			Message string                 `json:"message"`
 			Data    map[string]interface{} `json:"data"`
+			Message string                 `json:"message"`
 		}
 		err := json.Unmarshal(resp.Body.Bytes(), &apiResp)
 		require.NoError(t, err)

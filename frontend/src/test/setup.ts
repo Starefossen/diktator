@@ -1,10 +1,24 @@
 import "@testing-library/jest-dom";
 import { cleanup } from "@testing-library/react";
-import { afterEach, vi, expect } from "vitest";
+import { afterEach, beforeAll, afterAll, vi, expect } from "vitest";
 import * as matchers from "vitest-axe/matchers";
 
 // Extend Vitest matchers with axe-core accessibility matchers
 expect.extend(matchers);
+
+// Suppress console.log and console.warn during tests to reduce noise
+const originalConsoleLog = console.log;
+const originalConsoleWarn = console.warn;
+
+beforeAll(() => {
+  console.log = () => { }; // Suppress console.log
+  console.warn = () => { }; // Suppress console.warn
+});
+
+afterAll(() => {
+  console.log = originalConsoleLog;
+  console.warn = originalConsoleWarn;
+});
 
 // Cleanup after each test
 afterEach(() => {

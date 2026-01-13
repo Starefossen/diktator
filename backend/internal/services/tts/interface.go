@@ -1,3 +1,4 @@
+// Package tts provides text-to-speech services using Google Cloud TTS.
 package tts
 
 import (
@@ -7,7 +8,8 @@ import (
 
 // TTSService defines the interface for text-to-speech services.
 // This abstraction allows for different TTS implementations (Google Cloud, local mock, etc.)
-type TTSService interface {
+// Provider defines the interface for text-to-speech operations.
+type Provider interface {
 	// GenerateAudio generates audio for a single word using text-to-speech
 	// Returns the audio data, audio file metadata, and any error
 	GenerateAudio(word, language string) ([]byte, *models.AudioFile, error)
@@ -33,5 +35,5 @@ type TTSService interface {
 	Close() error
 }
 
-// Ensure Service implements TTSService interface
-var _ TTSService = (*Service)(nil)
+// Ensure Service implements Provider interface
+var _ Provider = (*Service)(nil)

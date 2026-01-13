@@ -10,22 +10,24 @@ const SystemUserID = "system"
 
 // User represents a user in the system - Enhanced for family management
 type User struct {
+	CreatedAt    time.Time `json:"createdAt" db:"created_at"`
+	LastActiveAt time.Time `json:"lastActiveAt" db:"last_active_at"`
+	ParentID     *string   `json:"parentId,omitempty" db:"parent_id"`
+	BirthYear    *int      `json:"birthYear,omitempty" db:"birth_year"`
 	ID           string    `json:"id" db:"id"`
-	AuthID       string    `json:"authId" db:"auth_id"` // External auth provider ID (OIDC subject claim)
+	AuthID       string    `json:"authId" db:"auth_id"`
 	Email        string    `json:"email" db:"email"`
 	DisplayName  string    `json:"displayName" db:"display_name"`
 	FamilyID     string    `json:"familyId" db:"family_id"`
-	Role         string    `json:"role" db:"role"`                    // "parent" or "child"
-	ParentID     *string   `json:"parentId,omitempty" db:"parent_id"` // Only for child accounts
-	Children     []string  `json:"children,omitempty" db:"-"`         // Only for parent accounts (computed)
+	Role         string    `json:"role" db:"role"`
+	Children     []string  `json:"children,omitempty" db:"-"`
 	IsActive     bool      `json:"isActive" db:"is_active"`
-	BirthYear    *int      `json:"birthYear,omitempty" db:"birth_year"` // Optional birth year for age-adaptive features
-	CreatedAt    time.Time `json:"createdAt" db:"created_at"`
-	LastActiveAt time.Time `json:"lastActiveAt" db:"last_active_at"`
 }
 
 // WordMastery tracks progressive challenge unlocking per word per user
 type WordMastery struct {
+	CreatedAt             time.Time `json:"createdAt" db:"created_at"`
+	UpdatedAt             time.Time `json:"updatedAt" db:"updated_at"`
 	ID                    string    `json:"id" db:"id"`
 	UserID                string    `json:"userId" db:"user_id"`
 	WordSetID             string    `json:"wordSetId" db:"word_set_id"`
@@ -35,8 +37,6 @@ type WordMastery struct {
 	KeyboardCorrect       int       `json:"keyboardCorrect" db:"keyboard_correct"`
 	MissingLettersCorrect int       `json:"missingLettersCorrect" db:"missing_letters_correct"`
 	TranslationCorrect    int       `json:"translationCorrect" db:"translation_correct"`
-	CreatedAt             time.Time `json:"createdAt" db:"created_at"`
-	UpdatedAt             time.Time `json:"updatedAt" db:"updated_at"`
 }
 
 // TestMode represents the unified test/input mode
@@ -90,20 +90,20 @@ func (m *WordMastery) GetCurrentChallengeMode(letterTilesRequired, wordBankRequi
 
 // WordAudio represents audio information for a word
 type WordAudio struct {
+	CreatedAt time.Time `json:"createdAt"`
 	Word      string    `json:"word"`
 	AudioURL  string    `json:"audioUrl"`
 	AudioID   string    `json:"audioId"`
 	VoiceID   string    `json:"voiceId"`
-	CreatedAt time.Time `json:"createdAt"`
 }
 
 // Translation represents a word translation in another language
 type Translation struct {
-	Language string  `json:"language"`
-	Text     string  `json:"text"`
 	AudioURL *string `json:"audioUrl,omitempty"`
 	AudioID  *string `json:"audioId,omitempty"`
 	VoiceID  *string `json:"voiceId,omitempty"`
+	Language string  `json:"language"`
+	Text     string  `json:"text"`
 }
 
 // GradeLevel represents Norwegian school grade levels (LK20 curriculum)
@@ -142,77 +142,78 @@ const (
 
 // SentenceItem represents a sentence for sentence dictation mode
 type SentenceItem struct {
-	Sentence    string          `json:"sentence"`              // Full sentence text
-	Translation string          `json:"translation,omitempty"` // Optional translation
-	FocusWords  []string        `json:"focusWords,omitempty"`  // Words being specifically tested
-	Difficulty  DifficultyLevel `json:"difficulty"`            // beginner, intermediate, advanced
-	Pattern     string          `json:"pattern,omitempty"`     // e.g., "S+V+O", "subordinate clause"
-	Audio       *WordAudio      `json:"audio,omitempty"`       // Audio info for the full sentence
+	Audio       *WordAudio      `json:"audio,omitempty"`
+	Sentence    string          `json:"sentence"`
+	Translation string          `json:"translation,omitempty"`
+	Difficulty  DifficultyLevel `json:"difficulty"`
+	Pattern     string          `json:"pattern,omitempty"`
+	FocusWords  []string        `json:"focusWords,omitempty"`
 }
 
 // WordSet represents a collection of words for spelling tests
 type WordSet struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Words []struct {
-		Word         string        `json:"word"`                   // The word itself
-		Audio        WordAudio     `json:"audio,omitempty"`        // Optional audio info for the word
-		Definition   string        `json:"definition,omitempty"`   // Optional definition for the word
-		Translations []Translation `json:"translations,omitempty"` // Optional translations to other languages
-	} `json:"words"`
-	Description       *string                 `json:"description,omitempty"`     // Optional description for curated word sets
-	Sentences         []SentenceItem          `json:"sentences,omitempty"`       // Sentences for sentence dictation mode
-	FamilyID          *string                 `json:"familyId,omitempty"`        // NULL for global word sets
-	IsGlobal          bool                    `json:"isGlobal"`                  // True for curated word sets available to all users
-	CreatedBy         string                  `json:"createdBy"`                 // SystemUserID for curated sets
-	Language          string                  `json:"language"`                  // 'en' or 'no'
-	AssignedUserIDs   []string                `json:"assignedUserIds,omitempty"` // IDs of child users assigned to this wordset
+	UpdatedAt         time.Time               `json:"updatedAt"`
+	CreatedAt         time.Time               `json:"createdAt"`
+	TargetGrade       *GradeLevel             `json:"targetGrade,omitempty"`
+	Description       *string                 `json:"description,omitempty"`
+	FamilyID          *string                 `json:"familyId,omitempty"`
+	Difficulty        *DifficultyLevel        `json:"difficulty,omitempty"`
 	TestConfiguration *map[string]interface{} `json:"testConfiguration,omitempty"`
-	// Curated content metadata
-	TargetGrade   *GradeLevel             `json:"targetGrade,omitempty"`   // Norwegian school grade level
-	SpellingFocus []SpellingFocusCategory `json:"spellingFocus,omitempty"` // Spelling challenge categories
-	Difficulty    *DifficultyLevel        `json:"difficulty,omitempty"`    // Overall difficulty level
-	CreatedAt     time.Time               `json:"createdAt"`
-	UpdatedAt     time.Time               `json:"updatedAt"`
+	Name              string                  `json:"name"`
+	ID                string                  `json:"id"`
+	CreatedBy         string                  `json:"createdBy"`
+	Language          string                  `json:"language"`
+	Sentences         []SentenceItem          `json:"sentences,omitempty"`
+	SpellingFocus     []SpellingFocusCategory `json:"spellingFocus,omitempty"`
+	AssignedUserIDs   []string                `json:"assignedUserIds,omitempty"`
+	Words             []struct {
+		Word         string        `json:"word"`
+		Audio        WordAudio     `json:"audio,omitempty"`
+		Definition   string        `json:"definition,omitempty"`
+		Translations []Translation `json:"translations,omitempty"` // The word itself
+		// Optional definition for the word
+
+	} `json:"words"`
+	IsGlobal bool `json:"isGlobal"` // Optional translations to other languages
 }
 
 // WordTestResult represents detailed information about a word in a test
 type WordTestResult struct {
 	Word           string   `json:"word"`
-	UserAnswers    []string `json:"userAnswers"`              // All answers the user provided for this word
-	Attempts       int      `json:"attempts"`                 // Number of attempts made
-	Correct        bool     `json:"correct"`                  // Whether the word was answered correctly
-	TimeSpent      int      `json:"timeSpent"`                // Time spent on this word in seconds
-	FinalAnswer    string   `json:"finalAnswer"`              // The final answer provided
-	HintsUsed      int      `json:"hintsUsed,omitempty"`      // Number of hints used (if applicable)
-	AudioPlayCount int      `json:"audioPlayCount,omitempty"` // Number of times audio was played
-	ErrorTypes     []string `json:"errorTypes,omitempty"`     // Detected spelling error types (doubleConsonant, silentH, etc.)
+	FinalAnswer    string   `json:"finalAnswer"`
+	UserAnswers    []string `json:"userAnswers"`
+	ErrorTypes     []string `json:"errorTypes,omitempty"`
+	Attempts       int      `json:"attempts"`
+	TimeSpent      int      `json:"timeSpent"`
+	HintsUsed      int      `json:"hintsUsed,omitempty"`
+	AudioPlayCount int      `json:"audioPlayCount,omitempty"`
+	Correct        bool     `json:"correct"`
 }
 
 // TestResult represents the result of a spelling test
 type TestResult struct {
+	CompletedAt    time.Time        `json:"completedAt"`
+	CreatedAt      time.Time        `json:"createdAt"`
 	ID             string           `json:"id"`
 	WordSetID      string           `json:"wordSetId"`
 	UserID         string           `json:"userId"`
-	Score          float64          `json:"score"` // Percentage (0-100)
+	Mode           string           `json:"mode"`
+	IncorrectWords []string         `json:"incorrectWords,omitempty"`
+	Words          []WordTestResult `json:"words"`
+	Score          float64          `json:"score"`
 	TotalWords     int              `json:"totalWords"`
 	CorrectWords   int              `json:"correctWords"`
-	Mode           string           `json:"mode"`                     // Test mode: letterTiles, wordBank, keyboard, missingLetters, flashcard, lookCoverWrite, translation
-	IncorrectWords []string         `json:"incorrectWords,omitempty"` // Deprecated: Use Words field for detailed information
-	Words          []WordTestResult `json:"words"`                    // Detailed information for each word in the test
-	TimeSpent      int              `json:"timeSpent"`                // Total time spent on test in seconds
-	CompletedAt    time.Time        `json:"completedAt"`
-	CreatedAt      time.Time        `json:"createdAt"`
+	TimeSpent      int              `json:"timeSpent"`
 }
 
 // AudioFile represents a generated TTS audio file
 type AudioFile struct {
+	CreatedAt time.Time `json:"createdAt"`
 	ID        string    `json:"id"`
 	Word      string    `json:"word"`
 	Language  string    `json:"language"`
 	VoiceID   string    `json:"voiceId"`
 	URL       string    `json:"url"`
-	CreatedAt time.Time `json:"createdAt"`
 }
 
 // WordInput represents a word input with optional definition for word set creation/updates
@@ -224,29 +225,29 @@ type WordInput struct {
 
 // CreateWordSetRequest represents the request to create a word set
 type CreateWordSetRequest struct {
-	Name              string                  `json:"name" binding:"required"`
-	Words             []WordInput             `json:"words" binding:"required"`
-	Language          string                  `json:"language" binding:"required"`
 	TestConfiguration *map[string]interface{} `json:"testConfiguration,omitempty"`
+	Name              string                  `json:"name" binding:"required"`
+	Language          string                  `json:"language" binding:"required"`
+	Words             []WordInput             `json:"words" binding:"required"`
 }
 
 // UpdateWordSetRequest represents the request to update a word set
 type UpdateWordSetRequest struct {
-	Name              string                  `json:"name" binding:"required"`
-	Words             []WordInput             `json:"words" binding:"required"`
-	Language          string                  `json:"language" binding:"required"`
 	TestConfiguration *map[string]interface{} `json:"testConfiguration,omitempty"`
+	Name              string                  `json:"name" binding:"required"`
+	Language          string                  `json:"language" binding:"required"`
+	Words             []WordInput             `json:"words" binding:"required"`
 }
 
 // SaveResultRequest represents the request to save a test result
 type SaveResultRequest struct {
 	WordSetID      string           `json:"wordSetId" binding:"required"`
+	Mode           string           `json:"mode" binding:"required,oneof=letterTiles wordBank keyboard missingLetters flashcard lookCoverWrite translation"`
+	IncorrectWords []string         `json:"incorrectWords,omitempty"`
+	Words          []WordTestResult `json:"words"`
 	Score          float64          `json:"score" binding:"required"`
 	TotalWords     int              `json:"totalWords" binding:"required"`
 	CorrectWords   int              `json:"correctWords" binding:"required"`
-	Mode           string           `json:"mode" binding:"required,oneof=letterTiles wordBank keyboard missingLetters flashcard lookCoverWrite translation"`
-	IncorrectWords []string         `json:"incorrectWords,omitempty"` // Deprecated: Use Words field for detailed information
-	Words          []WordTestResult `json:"words"`                    // Detailed information for each word in the test
 	TimeSpent      int              `json:"timeSpent"`
 }
 
@@ -259,60 +260,59 @@ type APIResponse struct {
 
 // Family represents a family group
 type Family struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	CreatedBy string    `json:"createdBy"` // Parent's user ID
-	Members   []string  `json:"members"`   // Array of user IDs in the family
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	CreatedBy string    `json:"createdBy"`
+	Members   []string  `json:"members"`
 }
 
 // ChildAccount represents a child user account managed by a parent
 type ChildAccount struct {
+	CreatedAt    time.Time `json:"createdAt"`
+	LastActiveAt time.Time `json:"lastActiveAt"`
+	ParentID     *string   `json:"parentId,omitempty"`
+	BirthYear    *int      `json:"birthYear,omitempty"`
 	ID           string    `json:"id"`
 	Email        string    `json:"email"`
 	DisplayName  string    `json:"displayName"`
 	FamilyID     string    `json:"familyId"`
-	ParentID     *string   `json:"parentId,omitempty"`  // The parent who created this child account
-	Role         string    `json:"role"`                // Always "child"
-	IsActive     bool      `json:"isActive"`            // Parents can deactivate child accounts
-	BirthYear    *int      `json:"birthYear,omitempty"` // Optional birth year for age-adaptive features
-	CreatedAt    time.Time `json:"createdAt"`
-	LastActiveAt time.Time `json:"lastActiveAt"`
+	Role         string    `json:"role"`
+	IsActive     bool      `json:"isActive"`
 }
 
 // FamilyInvitation represents an invitation to join a family
 type FamilyInvitation struct {
+	CreatedAt  time.Time  `json:"createdAt" db:"created_at"`
+	ExpiresAt  *time.Time `json:"expiresAt,omitempty" db:"expires_at"`
 	ID         string     `json:"id" db:"id"`
 	FamilyID   string     `json:"familyId" db:"family_id"`
-	FamilyName string     `json:"familyName" db:"family_name"` // Name of the family being invited to
+	FamilyName string     `json:"familyName" db:"family_name"`
 	Email      string     `json:"email" db:"email"`
-	Role       string     `json:"role" db:"role"` // "child" or "parent"
+	Role       string     `json:"role" db:"role"`
 	InvitedBy  string     `json:"invitedBy" db:"invited_by"`
-	Status     string     `json:"status" db:"status"` // "pending", "accepted", "declined", "expired"
-	CreatedAt  time.Time  `json:"createdAt" db:"created_at"`
-	ExpiresAt  *time.Time `json:"expiresAt,omitempty" db:"expires_at"` // NULL for non-expiring invitations
+	Status     string     `json:"status" db:"status"`
 }
 
 // FamilyProgress represents progress tracking for family members
 type FamilyProgress struct {
-	UserID        string       `json:"userId"`
-	UserName      string       `json:"userName"`
-	Role          string       `json:"role"`
-	BirthYear     *int         `json:"birthYear,omitempty"`
-	TotalTests    int          `json:"totalTests"`
-	AverageScore  float64      `json:"averageScore"`
-	TotalWords    int          `json:"totalWords"`
-	CorrectWords  int          `json:"correctWords"`
-	LastActivity  time.Time    `json:"lastActivity"`
-	RecentResults []TestResult `json:"recentResults"`
-	// Mastery summary across all word sets
-	TotalWordsWithMastery       int `json:"totalWordsWithMastery"`       // Total unique words with any mastery
-	LetterTilesMasteredWords    int `json:"letterTilesMasteredWords"`    // Words with letterTilesCorrect >= 2
-	WordBankMasteredWords       int `json:"wordBankMasteredWords"`       // Words with wordBankCorrect >= 2
-	KeyboardMasteredWords       int `json:"keyboardMasteredWords"`       // Words with keyboardCorrect >= 2
-	MissingLettersMasteredWords int `json:"missingLettersMasteredWords"` // Words with missingLettersCorrect >= 2
-	TranslationMasteredWords    int `json:"translationMasteredWords"`    // Words with translationCorrect >= 2
+	LastActivity                time.Time    `json:"lastActivity"`
+	BirthYear                   *int         `json:"birthYear,omitempty"`
+	UserName                    string       `json:"userName"`
+	Role                        string       `json:"role"`
+	UserID                      string       `json:"userId"`
+	RecentResults               []TestResult `json:"recentResults"`
+	TotalTests                  int          `json:"totalTests"`
+	CorrectWords                int          `json:"correctWords"`
+	TotalWords                  int          `json:"totalWords"`
+	AverageScore                float64      `json:"averageScore"`
+	TotalWordsWithMastery       int          `json:"totalWordsWithMastery"`
+	LetterTilesMasteredWords    int          `json:"letterTilesMasteredWords"`
+	WordBankMasteredWords       int          `json:"wordBankMasteredWords"`
+	KeyboardMasteredWords       int          `json:"keyboardMasteredWords"`
+	MissingLettersMasteredWords int          `json:"missingLettersMasteredWords"`
+	TranslationMasteredWords    int          `json:"translationMasteredWords"`
 }
 
 // DisplayNameUpdateRequest represents a request to update a user's display name
@@ -322,24 +322,24 @@ type DisplayNameUpdateRequest struct {
 
 // FamilyStats represents aggregated statistics for a family
 type FamilyStats struct {
+	LastActivity        time.Time `json:"lastActivity"`
+	MostActiveChild     *string   `json:"mostActiveChild,omitempty"`
 	TotalMembers        int       `json:"totalMembers"`
 	TotalChildren       int       `json:"totalChildren"`
 	TotalWordSets       int       `json:"totalWordSets"`
 	TotalTestsCompleted int       `json:"totalTestsCompleted"`
 	AverageFamilyScore  float64   `json:"averageFamilyScore"`
-	MostActiveChild     *string   `json:"mostActiveChild,omitempty"`
-	LastActivity        time.Time `json:"lastActivity"`
 }
 
 // AddFamilyMemberRequest represents a request to add a parent or child to a family
 // For children: creates pending user that links when they first log in via OIDC
 // For parents: creates invitation that user accepts on login/registration
 type AddFamilyMemberRequest struct {
+	BirthYear   *int   `json:"birthYear,omitempty"`
 	Email       string `json:"email" binding:"required,email"`
 	DisplayName string `json:"displayName" binding:"required"`
 	Role        string `json:"role" binding:"required,oneof=parent child"`
 	FamilyID    string `json:"familyId" binding:"required"`
-	BirthYear   *int   `json:"birthYear,omitempty"` // Optional birth year for children (age-adaptive features)
 }
 
 // UpdateChildBirthYearRequest represents a request to update a child's birth year

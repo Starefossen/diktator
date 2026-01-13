@@ -1,3 +1,4 @@
+// Package cache provides LRU caching implementations for the application.
 package cache
 
 import (
@@ -13,11 +14,11 @@ type Entry struct {
 
 // LRUCache is a thread-safe LRU cache implementation
 type LRUCache struct {
-	capacity  int
-	maxBytes  int64 // Maximum bytes to store
-	usedBytes int64 // Current bytes used
 	cache     map[string]*list.Element
 	list      *list.List
+	capacity  int
+	maxBytes  int64
+	usedBytes int64
 	mu        sync.RWMutex
 }
 

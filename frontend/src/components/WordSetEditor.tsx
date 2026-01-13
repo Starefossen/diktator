@@ -470,9 +470,9 @@ export default function WordSetEditor({
                       placeholder={
                         defaultMode === "translation"
                           ? t("wordsets.editor.sourceWord").replace(
-                            "{lang}",
-                            selectedLanguage,
-                          )
+                              "{lang}",
+                              selectedLanguage,
+                            )
                           : t("wordsets.addWord.placeholder")
                       }
                       onKeyPress={(e) => {

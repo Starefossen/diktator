@@ -136,7 +136,7 @@ function LetterTilesSection() {
           <LetterTileInput
             tiles={tiles}
             expectedWord={TEST_WORD}
-            onSubmit={() => { }}
+            onSubmit={() => {}}
             disabled={false}
           />
         </ModeCard>
@@ -147,7 +147,7 @@ function LetterTilesSection() {
           <LetterTileInput
             tiles={wrongTiles}
             expectedWord={TEST_WORD}
-            onSubmit={() => { }}
+            onSubmit={() => {}}
             disabled={true}
             feedbackState={errorFeedbackState}
           />
@@ -189,7 +189,7 @@ function WordBankSection() {
           <WordBankInput
             items={items}
             expectedWordCount={2}
-            onSubmit={() => { }}
+            onSubmit={() => {}}
             disabled={false}
           />
         </ModeCard>
@@ -335,7 +335,7 @@ function MissingLettersSection() {
             word="mann"
             blankedWord={challenge.blankedWord}
             missingLetters={challenge.missingLetters}
-            onSubmit={() => { }}
+            onSubmit={() => {}}
             autoFocus={false}
           />
         </ModeCard>
@@ -422,7 +422,7 @@ function FlashcardSection() {
         <ModeCard title="Flashcard - Show Phase" state="input">
           <FlashcardView
             word={TEST_WORD}
-            onSubmit={() => { }}
+            onSubmit={() => {}}
             showDuration={999999}
             autoPlayAudio={false}
           />
@@ -471,7 +471,7 @@ function LookCoverWriteSection() {
         <ModeCard title="LCW - Look Phase" state="input">
           <LookCoverWriteView
             word={TEST_WORD}
-            onSubmit={() => { }}
+            onSubmit={() => {}}
             lookDuration={999999}
             autoPlayAudio={false}
           />
@@ -729,10 +729,11 @@ export default function WordTestPage() {
             <button
               key={mode.id}
               onClick={() => setSelectedMode(mode.id)}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedMode === mode.id
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                selectedMode === mode.id
                   ? "bg-nordic-sky text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+              }`}
             >
               {mode.label}
             </button>

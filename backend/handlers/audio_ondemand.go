@@ -1,3 +1,4 @@
+// Package handlers implements HTTP request handlers for the Diktator API.
 package handlers
 
 import (

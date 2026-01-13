@@ -21,8 +21,8 @@ type MockAuthProvider struct {
 
 // MockToken represents a mock JWT token for testing
 type MockToken struct {
-	Subject string
 	Claims  map[string]interface{}
+	Subject string
 }
 
 func (m *MockAuthProvider) VerifyIDToken(ctx context.Context, idToken string) (*MockToken, error) {

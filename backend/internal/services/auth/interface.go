@@ -1,3 +1,4 @@
+// Package auth provides authentication and authorization services including OIDC validation.
 package auth
 
 import (
@@ -40,16 +41,11 @@ type SessionValidator interface {
 
 // Config holds authentication service configuration
 type Config struct {
-	// Mode determines which auth implementation to use: "oidc" or "mock"
-	Mode string
-
-	// OIDC configuration
-	OIDCIssuerURL          string // OIDC issuer URL (e.g., https://auth.example.com)
-	OIDCAudience           string // Expected audience (usually client ID)
-	OIDCInsecureSkipVerify bool   // Skip TLS verification (development only!)
-
-	// MockIdentity is used in mock mode to return a predefined identity
-	MockIdentity *Identity
+	MockIdentity           *Identity
+	Mode                   string
+	OIDCIssuerURL          string
+	OIDCAudience           string
+	OIDCInsecureSkipVerify bool
 }
 
 // NewSessionValidator creates a new session validator based on the configuration

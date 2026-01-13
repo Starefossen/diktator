@@ -14,12 +14,12 @@ func TestGinRouteMatching(t *testing.T) {
 
 	r.GET("/api/wordsets/:id/audio/:audioId", func(c *gin.Context) {
 		id := c.Param("id")
-		audioId := c.Param("audioId")
+		audioID := c.Param("audioId")
 		c.JSON(200, gin.H{
 			"id":          id,
-			"audioId":     audioId,
+			"audioId":     audioID,
 			"id_empty":    id == "",
-			"audio_empty": audioId == "",
+			"audio_empty": audioID == "",
 		})
 	})
 

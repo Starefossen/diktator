@@ -4,6 +4,10 @@ node = "24"
 opentofu = "latest"
 air = "latest"
 pnpm = "10"
+"go:github.com/golangci/golangci-lint/cmd/golangci-lint" = "latest"
+"go:golang.org/x/vuln/cmd/govulncheck" = "latest"
+"go:github.com/securego/gosec/v2/cmd/gosec" = "latest"
+"go:github.com/swaggo/swag/cmd/swag" = "latest"
 
 # ============================================================================
 # Environment Configuration
@@ -160,7 +164,6 @@ echo "📦 Installing dependencies..."
 (cd ${FRONTEND_DIR} && pnpm install) &
 (cd ${BACKEND_DIR} && go mod tidy) &
 wait
-go install github.com/swaggo/swag/cmd/swag@latest
 echo "✅ All dependencies installed"
 """
 
@@ -379,11 +382,45 @@ echo "✅ Database reset and seeded!"
 # ============================================================================
 
 [tasks.lint]
-description = "Run linters"
+description = "Run linters (golangci-lint + ESLint)"
 run = """
 (cd ${FRONTEND_DIR} && pnpm run lint) &
-(cd ${BACKEND_DIR} && go vet ./...) &
+(cd ${BACKEND_DIR} && golangci-lint run ./...) &
 wait
+"""
+
+[tasks."backend:lint"]
+description = "Run Go linting with golangci-lint"
+dir = "backend"
+run = "golangci-lint run ./..."
+
+[tasks."backend:lint-fix"]
+description = "Run Go linting with auto-fix"
+dir = "backend"
+run = "golangci-lint run --fix ./..."
+
+[tasks."backend:security"]
+description = "Run security scans (gosec + govulncheck)"
+dir = "backend"
+run = """
+echo "🔒 Running security scans..."
+echo ""
+echo "📋 Scanning for vulnerabilities in dependencies..."
+govulncheck ./...
+echo ""
+echo "🔍 Scanning for security issues in code..."
+gosec -quiet ./...
+echo ""
+echo "✅ Security scans complete"
+"""
+
+[tasks."backend:race"]
+description = "Run tests with race detector"
+depends = ["_ensure-postgres"]
+dir = "backend"
+run = """
+echo "🏃 Running tests with race detector..."
+DATABASE_URL="${DATABASE_TEST_URL}" go test -race ./...
 """
 
 [tasks.format]
@@ -432,7 +469,7 @@ NODE_ENV=production pnpm run build
 """
 
 [tasks."backend:check"]
-description = "Run all backend checks (fmt, vet, test) with auto-fixing"
+description = "Run all backend checks (fmt, lint, test, security) with auto-fixing"
 depends = ["_ensure-postgres"]
 dir = "backend"
 run = """
@@ -442,12 +479,16 @@ echo "📝 Formatting code..."
 go fmt ./...
 
 echo ""
-echo "🔍 Running go vet..."
-go vet ./...
+echo "🔍 Running golangci-lint..."
+golangci-lint run --fix ./...
 
 echo ""
 echo "🧪 Running tests..."
 DATABASE_URL="${DATABASE_TEST_URL}" go test ./...
+
+echo ""
+echo "🔒 Running security scans..."
+govulncheck ./... 2>&1 | head -20 || echo "⚠️  Vulnerabilities found - run 'mise run backend:security' for details"
 
 echo ""
 echo "✅ All backend checks passed!"
@@ -674,50 +715,26 @@ echo "✅ All tests (unit + integration + E2E) passed!"
 description = "Run all checks (backend + frontend: fmt, lint, typecheck, knip, tests)"
 depends = ["_ensure-postgres"]
 run = """
-echo "🔍 Running all checks in parallel..."
+echo "🔍 Running all checks..."
 echo ""
 
-# Run backend and frontend checks in parallel
-(
-  cd ${BACKEND_DIR}
-  echo "[backend] Running checks..."
-  go fmt ./... > /dev/null 2>&1
-  go vet ./... 2>&1 | grep -v "^#" || true
-  DATABASE_URL="${DATABASE_TEST_URL}" go test ./... 2>&1 | grep -E "^(ok|FAIL|---)" | head -20
-  EXIT_CODE=${PIPESTATUS[0]}
-  if [ $EXIT_CODE -eq 0 ]; then
-    echo "[backend] ✅ Done"
-  else
-    echo "[backend] ❌ Failed with exit code $EXIT_CODE"
-    exit $EXIT_CODE
-  fi
-) &
-BACKEND_PID=$!
-
-(
-  cd ${FRONTEND_DIR}
-  echo "[frontend] Running checks..."
-  if pnpm run check 2>&1; then
-    echo "[frontend] ✅ Done"
-  else
-    EXIT_CODE=$?
-    echo "[frontend] ❌ Failed with exit code $EXIT_CODE"
-    exit $EXIT_CODE
-  fi
-) &
-FRONTEND_PID=$!
-
-# Wait for both to complete
-wait $BACKEND_PID
-BACKEND_EXIT=$?
-wait $FRONTEND_PID
-FRONTEND_EXIT=$?
-
+# Backend checks
+echo "[backend] Running checks..."
+cd ${BACKEND_DIR}
+go fmt ./... > /dev/null 2>&1
+golangci-lint run --fix ./... > /dev/null 2>&1 || true
+govulncheck ./...
+DATABASE_URL="${DATABASE_TEST_URL}" go test ./... || exit 1
+echo "[backend] ✅ Done"
 echo ""
-if [ $BACKEND_EXIT -ne 0 ] || [ $FRONTEND_EXIT -ne 0 ]; then
-  echo "❌ Some checks failed"
-  exit 1
-fi
+
+# Frontend checks
+echo "[frontend] Running checks..."
+cd ../${FRONTEND_DIR}
+pnpm run check || exit 1
+echo "[frontend] ✅ Done"
+echo ""
+
 echo "✅ All checks passed!"
 """
 

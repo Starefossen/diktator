@@ -326,12 +326,12 @@ export function useTestMode(): UseTestModeReturn {
       const mode = getMode(testMode);
       const expectedAnswer = mode?.getExpectedAnswer
         ? mode.getExpectedAnswer(wordObj, {
-          translationDirection:
-            wordDirections.length > currentWordIndex
-              ? wordDirections[currentWordIndex]
-              : "toTarget",
-          wordSet: activeTest,
-        })
+            translationDirection:
+              wordDirections.length > currentWordIndex
+                ? wordDirections[currentWordIndex]
+                : "toTarget",
+            wordSet: activeTest,
+          })
         : currentWord;
 
       // Use normalized comparison that ignores punctuation and case

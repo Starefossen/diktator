@@ -130,9 +130,12 @@ mise run typecheck        # TypeScript check + Go build check
 
 ### Quality Assurance
 
-- `mise run lint` - Lint all code (ESLint + go vet)
+- `mise run lint` - Lint all code (golangci-lint + ESLint)
 - `mise run format` - Format all code (prettier + go fmt + tofu fmt)
 - `mise run typecheck` - Type checking (TypeScript + Go build check)
+- `mise run backend:lint` - Run golangci-lint on backend
+- `mise run backend:security` - Security scans (gosec + govulncheck)
+- `mise run backend:race` - Run tests with race detector
 
 ### API Documentation
 

@@ -6,19 +6,18 @@ You are an expert full-stack developer working on **Diktator**, a Norwegian voca
 
 Use mise to run commands in the development environment. Here are some common commands:
 
-```bash
 - `mise run install` - Install dependencies for both frontend and backend
 - `mise run test` - All tests (lint + typecheck + backend + frontend unit tests)
 - `mise run check` - Alias for `test`
 - `mise run backend:swagger-gen` - Regenerate backend Swagger docs
 - `mise run frontend:client-gen` - Regenerate frontend API client from Swagger
-```
 
 Assume dev server is already running with `mise run dev`. Do not run `pnpm` or `go run` directly.
 
 ## Project Knowledge
 
 **Tech Stack:**
+
 - Frontend: Next.js 16, React 19, TypeScript, Tailwind CSS 4+ static export PWA
 - Backend: Go 1.25+, Gin HTTP framework
 - Database: PostgreSQL with pgx/v5 driver
@@ -26,7 +25,8 @@ Assume dev server is already running with `mise run dev`. Do not run `pnpm` or `
 - Infrastructure: Knative on HOMELAB-cluster (see deploy/HOMELAB.md)
 
 **File Structure:**
-```
+
+```text
 frontend/src/
   app/           # Next.js App Router pages (NOT Pages Router)
   components/    # Reusable UI components
@@ -145,6 +145,66 @@ When adding features that affect the data model, follow this order:
 6. **Tests**: Run all tests - backend AND frontend must pass 100%
 
 **Note:** Database migrations run automatically on backend startup.
+
+### Database Migration Guidelines
+
+**Critical Rules** - Migrations must be production-safe and idempotent:
+
+1. **Constraint Order**: ALWAYS drop constraints BEFORE updating data that would violate them
+
+   ```sql
+   -- ✅ Good: Drop constraint first
+   ALTER TABLE test_results DROP CONSTRAINT IF EXISTS test_results_mode_check;
+   UPDATE test_results SET mode = 'new_value' WHERE mode = 'old_value';
+   ALTER TABLE test_results ADD CONSTRAINT test_results_mode_check CHECK (mode IN ('new_value'));
+
+   -- ❌ Bad: Update violates existing constraint
+   UPDATE test_results SET mode = 'new_value' WHERE mode = 'old_value';  -- FAILS!
+   ALTER TABLE test_results DROP CONSTRAINT IF EXISTS test_results_mode_check;
+   ```
+
+2. **Use IF EXISTS/IF NOT EXISTS**: All DDL must be idempotent (safe to run multiple times)
+
+   ```sql
+   ALTER TABLE users DROP COLUMN IF EXISTS old_column;
+   ALTER TABLE users ADD COLUMN IF NOT EXISTS new_column TEXT;
+   ```
+
+3. **Test Locally First**: Run migration on dev database before committing
+
+   ```bash
+   # Reset dev database
+   docker-compose down -v
+   docker-compose up -d postgres
+   mise run dev  # Migrations run automatically
+   ```
+
+4. **Backwards Compatibility**: Migrations should not break running code
+   - Add new columns as nullable first, populate them, then add NOT NULL
+   - Don't drop columns until code stops using them (2-phase deployment)
+
+5. **Data Migrations**: When transforming data, validate before and after
+
+   ```sql
+   -- Before: Check current state
+   SELECT mode, COUNT(*) FROM test_results GROUP BY mode;
+
+   -- Migrate
+   UPDATE test_results SET mode = 'keyboard' WHERE mode = 'dictation';
+
+   -- After: Verify transformation
+   SELECT mode, COUNT(*) FROM test_results GROUP BY mode;
+   ```
+
+6. **Rollback Strategy**: Always include a `.down.sql` file for reversibility
+
+**Migration Naming**: `NNNNNN_descriptive_name.{up,down}.sql` (e.g., `000014_unified_test_modes.up.sql`)
+
+**Common Pitfalls**:
+
+- Updating data before dropping restrictive constraints → constraint violation
+- Missing `IF EXISTS`/`IF NOT EXISTS` → migration fails on retry after partial completion
+- Not testing on production-like data → unexpected edge cases in production
 
 ## Standards
 

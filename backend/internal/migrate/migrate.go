@@ -1,3 +1,4 @@
+// Package migrate handles database schema migrations using golang-migrate.
 package migrate
 
 import (

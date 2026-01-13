@@ -1,3 +1,4 @@
+// Package services provides the service manager and dependency injection for the application.
 package services
 
 import (
@@ -17,7 +18,7 @@ import (
 // Manager coordinates all services for the application
 type Manager struct {
 	DB            db.Repository // PostgreSQL database repository
-	TTS           tts.TTSService
+	TTS           tts.Provider
 	AuthValidator auth.SessionValidator
 	Dictionary    *dictionary.Service // Norwegian dictionary proxy service
 }
@@ -119,7 +120,10 @@ func (m *Manager) CreateUserIfNotExists(identity *auth.Identity) (*models.User, 
 	if err == nil {
 		// User exists, update last active time
 		user.LastActiveAt = time.Now()
-		m.DB.UpdateUser(user)
+		if err := m.DB.UpdateUser(user); err != nil {
+			// Log error but don't fail - user can still proceed
+			log.Printf("Warning: failed to update user last active time: %v", err)
+		}
 		return user, nil
 	}
 

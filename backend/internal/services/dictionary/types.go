@@ -4,10 +4,10 @@ package dictionary
 // Example: https://ord.uib.no/api/suggest?q=katt&dict=bm&n=10
 // The actual response wraps results in an "a" object
 type suggestResponse struct {
-	Q      string         `json:"q"`      // Original query
-	Cnt    int            `json:"cnt"`    // Total count
-	CMatch int            `json:"cmatch"` // Count of matches
-	A      suggestResults `json:"a"`      // Results wrapper
+	Q      string         `json:"q"`
+	A      suggestResults `json:"a"`
+	Cnt    int            `json:"cnt"`
+	CMatch int            `json:"cmatch"`
 }
 
 // suggestResults contains the actual suggestion arrays
@@ -45,10 +45,10 @@ type articleMeta struct {
 
 // article represents a single dictionary article from /{dict}/article/{id}.json
 type article struct {
-	ArticleID int      `json:"article_id"`
-	Suggest   []string `json:"suggest"` // Suggested search terms for this article
-	Lemmas    []lemma  `json:"lemmas"`
 	Body      body     `json:"body"`
+	Suggest   []string `json:"suggest"`
+	Lemmas    []lemma  `json:"lemmas"`
+	ArticleID int      `json:"article_id"`
 }
 
 // lemma represents a word lemma (base form) with its paradigm information
@@ -66,8 +66,8 @@ type paradigmInfo struct {
 
 // inflection represents a single inflected form of a word
 type inflection struct {
-	Tags     []string `json:"tags"`      // Grammatical tags (e.g., "Sing", "Def")
-	WordForm string   `json:"word_form"` // The inflected form
+	WordForm string   `json:"word_form"`
+	Tags     []string `json:"tags"`
 }
 
 // body represents the article body with definitions

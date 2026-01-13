@@ -2,7 +2,7 @@ package tts
 
 import (
 	"context"
-	"crypto/md5"
+	"crypto/md5" // #nosec G501 -- MD5 used for cache keys only, not cryptographic purposes
 	"fmt"
 	"log"
 	"os"
@@ -16,6 +16,7 @@ import (
 	"google.golang.org/api/option"
 )
 
+// Service implements text-to-speech functionality using Google Cloud TTS API.
 type Service struct {
 	client *texttospeech.Client
 	ctx    context.Context
@@ -31,7 +32,7 @@ type VoiceConfig struct {
 	Pitch        float64
 }
 
-// Enhanced voice configurations with child-friendly options
+// DefaultVoices provides enhanced voice configurations with child-friendly options for Norwegian text-to-speech.
 var DefaultVoices = map[string]VoiceConfig{
 	"en": {
 		LanguageCode: "en-GB",

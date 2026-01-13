@@ -17,11 +17,11 @@ import (
 
 // MockDBService implements all database methods for testing
 type MockDBService struct {
-	mock.Mock
 	users    map[string]*models.User
 	families map[string]*models.Family
 	wordSets map[string]*models.WordSet
 	results  map[string][]models.TestResult
+	mock.Mock
 }
 
 func NewMockDBService() *MockDBService {
@@ -1104,14 +1104,14 @@ func TestUpdateWordSet(t *testing.T) {
 	setupTestData(mockDB)
 
 	tests := []struct {
+		setupMocks     func()
 		name           string
 		wordSetID      string
 		userID         string
 		familyID       string
-		requestBody    models.UpdateWordSetRequest
-		setupMocks     func()
-		expectedStatus int
 		expectedError  string
+		requestBody    models.UpdateWordSetRequest
+		expectedStatus int
 	}{
 		{
 			name:      "Successful word set update",

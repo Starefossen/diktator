@@ -113,11 +113,12 @@ export function ModeSelectionModal({
                   relative flex flex-col items-center justify-center
                   min-h-28 p-3 rounded-xl border-2 transition-all
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-nordic-sky focus-visible:ring-offset-2
-                  ${available
-                    ? isRecommended
-                      ? "border-nordic-sky bg-nordic-sky/10 hover:bg-nordic-sky/20"
-                      : "border-gray-200 hover:border-nordic-sky/50 hover:bg-gray-50"
-                    : "border-gray-200 bg-gray-100 opacity-60 cursor-not-allowed"
+                  ${
+                    available
+                      ? isRecommended
+                        ? "border-nordic-sky bg-nordic-sky/10 hover:bg-nordic-sky/20"
+                        : "border-gray-200 hover:border-nordic-sky/50 hover:bg-gray-50"
+                      : "border-gray-200 bg-gray-100 opacity-60 cursor-not-allowed"
                   }
                 `}
               >
@@ -133,24 +134,27 @@ export function ModeSelectionModal({
 
                 {/* Icon */}
                 <div
-                  className={`mb-2 ${available ? "text-nordic-sky" : "text-gray-400"
-                    }`}
+                  className={`mb-2 ${
+                    available ? "text-nordic-sky" : "text-gray-400"
+                  }`}
                 >
                   <IconComponent className="h-8 w-8" aria-hidden={true} />
                 </div>
 
                 {/* Mode name */}
                 <span
-                  className={`text-sm font-semibold text-center ${available ? "text-gray-900" : "text-gray-500"
-                    }`}
+                  className={`text-sm font-semibold text-center ${
+                    available ? "text-gray-900" : "text-gray-500"
+                  }`}
                 >
                   {t(metadata.nameKey as TranslationKey)}
                 </span>
 
                 {/* Description */}
                 <span
-                  className={`mt-1 text-xs text-center line-clamp-2 ${available ? "text-gray-600" : "text-gray-400"
-                    }`}
+                  className={`mt-1 text-xs text-center line-clamp-2 ${
+                    available ? "text-gray-600" : "text-gray-400"
+                  }`}
                 >
                   {t(metadata.descriptionKey as TranslationKey)}
                 </span>

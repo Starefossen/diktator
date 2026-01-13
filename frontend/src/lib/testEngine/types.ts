@@ -31,12 +31,12 @@ export interface ChallengeData {
   blankedWord?: string;
   missingLetters?: string;
   challengeType?:
-  | "prefix"
-  | "suffix"
-  | "compound"
-  | "double"
-  | "silent"
-  | "mixed";
+    | "prefix"
+    | "suffix"
+    | "compound"
+    | "double"
+    | "silent"
+    | "mixed";
 }
 
 /**
