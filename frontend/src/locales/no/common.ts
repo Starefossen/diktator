@@ -231,4 +231,13 @@ export const common = {
   // Navigation
   "nav.appName": "Diktator",
   "nav.languageSwitcher": "Language / Språk",
+
+  // Audio errors
+  "audio.error.unavailable":
+    "Lyd er midlertidig utilgjengelig. Du kan fortsatt fullføre testen ved å skrive ordet.",
+  "audio.error.failed": "Kunne ikke spille av lyd. Prøv igjen.",
+  "audio.error.technicalDetails": "Tekniske detaljer",
+  "audio.error.showDetails": "Vis detaljer",
+  "audio.error.hideDetails": "Skjul detaljer",
+  "audio.error.dismiss": "Lukk",
 };

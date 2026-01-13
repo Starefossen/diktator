@@ -92,6 +92,9 @@ const FUTURE_FEATURE_PREFIXES = [
 const DYNAMIC_USAGE_PREFIXES = [
   // ARIA labels
   "aria.",
+  // Audio error messages (used as string literals, translated in component)
+  "audio.error.unavailable",
+  "audio.error.failed",
   // Word set config/status/time keys (object property access)
   "wordsets.config.",
   "wordsets.status.",

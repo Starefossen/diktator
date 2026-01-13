@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/starefossen/diktator/backend/internal/models"
@@ -104,8 +105,21 @@ func StreamWordAudio(c *gin.Context) {
 	audioData, audioFile, err := sm.TTS.GenerateTextAudio(word, language)
 	if err != nil {
 		log.Printf("StreamWordAudio: Error generating audio: %v", err)
+
+		// Check if it's a permission error from Google Cloud
+		errStr := err.Error()
+		if strings.Contains(errStr, "PermissionDenied") || strings.Contains(errStr, "serviceusage.serviceUsageConsumer") {
+			c.JSON(http.StatusServiceUnavailable, models.APIResponse{
+				Error:   "Audio generation temporarily unavailable due to service configuration. Please try again later.",
+				Details: errStr,
+			})
+			return
+		}
+
+		// For other errors, return 500 with details
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
-			Error: fmt.Sprintf("Failed to generate audio: %v", err),
+			Error:   "Failed to generate audio",
+			Details: errStr,
 		})
 		return
 	}

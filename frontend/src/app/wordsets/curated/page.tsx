@@ -165,12 +165,14 @@ function CuratedPageContent() {
           currentPracticeIndex={practiceMode.currentPracticeIndex}
           showPracticeWord={practiceMode.showPracticeWord}
           isAudioPlaying={practiceMode.isAudioPlaying}
+          audioError={practiceMode.audioError}
           onSetCurrentIndex={practiceMode.setCurrentPracticeIndex}
           onSetShowWord={practiceMode.setShowPracticeWord}
           onNext={practiceMode.nextPracticeWord}
           onPrevious={practiceMode.previousPracticeWord}
           onPlayAudio={practiceMode.playPracticeWordAudio}
           onShuffle={practiceMode.shufflePracticeWords}
+          onClearAudioError={practiceMode.clearAudioError}
           onStartTest={(wordSet) => {
             isExitingRef.current = true;
             practiceMode.exitPractice();

@@ -236,4 +236,13 @@ export const common = {
   // Navigation
   "nav.appName": "Diktator",
   "nav.languageSwitcher": "Language / Språk",
+
+  // Audio errors
+  "audio.error.unavailable":
+    "Audio is temporarily unavailable. You can still complete the test by typing the word.",
+  "audio.error.failed": "Failed to play audio. Please try again.",
+  "audio.error.technicalDetails": "Technical details",
+  "audio.error.showDetails": "Show details",
+  "audio.error.hideDetails": "Hide details",
+  "audio.error.dismiss": "Dismiss",
 };

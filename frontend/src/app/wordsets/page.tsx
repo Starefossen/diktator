@@ -290,12 +290,14 @@ function WordSetsPageContent() {
           currentPracticeIndex={practiceMode.currentPracticeIndex}
           showPracticeWord={practiceMode.showPracticeWord}
           isAudioPlaying={practiceMode.isAudioPlaying}
+          audioError={practiceMode.audioError}
           onSetCurrentIndex={practiceMode.setCurrentPracticeIndex}
           onSetShowWord={practiceMode.setShowPracticeWord}
           onNext={practiceMode.nextPracticeWord}
           onPrevious={practiceMode.previousPracticeWord}
           onPlayAudio={practiceMode.playPracticeWordAudio}
           onShuffle={practiceMode.shufflePracticeWords}
+          onClearAudioError={practiceMode.clearAudioError}
           onStartTest={(wordSet) => {
             // Set flag to prevent useEffect from re-starting practice
             isExitingRef.current = true;

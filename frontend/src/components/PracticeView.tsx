@@ -13,6 +13,7 @@ import {
   HeroXMarkIcon,
 } from "@/components/Icons";
 import { Button } from "@/components/Button";
+import { AudioErrorDisplay } from "@/components/AudioErrorDisplay";
 
 interface PracticeViewProps {
   practiceMode: WordSet;
@@ -20,6 +21,7 @@ interface PracticeViewProps {
   currentPracticeIndex: number;
   showPracticeWord: boolean;
   isAudioPlaying: boolean;
+  audioError: { message: string; details?: string } | null;
   onSetCurrentIndex: (index: number) => void;
   onSetShowWord: (show: boolean) => void;
   onNext: () => void;
@@ -28,6 +30,7 @@ interface PracticeViewProps {
   onShuffle: () => void;
   onStartTest: (wordSet: WordSet) => void;
   onExit: () => void;
+  onClearAudioError: () => void;
 }
 
 export function PracticeView({
@@ -36,6 +39,7 @@ export function PracticeView({
   currentPracticeIndex,
   showPracticeWord,
   isAudioPlaying,
+  audioError,
   onSetCurrentIndex,
   onSetShowWord,
   onNext,
@@ -44,6 +48,7 @@ export function PracticeView({
   onShuffle,
   onStartTest,
   onExit,
+  onClearAudioError,
 }: PracticeViewProps) {
   const { t } = useLanguage();
 
@@ -79,10 +84,21 @@ export function PracticeView({
           <div className="max-w-2xl mx-auto mb-4">
             <div className="p-3 text-sm border rounded-lg text-amber-700 bg-amber-50 border-amber-200">
               <div className="flex items-center">
-                <HeroDevicePhoneMobileIcon className="w-5 h-5 mr-2 text-amber-600" />
-                <span>{t("wordsets.practice.autoplayNotice")}</span>
+                <HeroDevicePhoneMobileIcon className="w-5 h-5 mr-2 shrink-0" />
+                {t("wordsets.practice.autoplayNotice")}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Audio Error Display */}
+        {audioError && (
+          <div className="max-w-2xl mx-auto mb-4">
+            <AudioErrorDisplay
+              error={audioError.message}
+              details={audioError.details}
+              onDismiss={onClearAudioError}
+            />
           </div>
         )}
 

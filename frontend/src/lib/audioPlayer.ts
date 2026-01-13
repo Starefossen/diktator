@@ -105,10 +105,16 @@ export const initializeAudioForIOS = (): void => {
  * Key insight: audio.play() must be called synchronously in the user gesture context,
  * BEFORE any async operations (fetch, setTimeout, Promise.then, etc.)
  */
-const playAudioDirect = (
+const playAudioDirect = async (
   audioUrl: string,
   onEnd?: () => void,
 ): Promise<void> => {
+  // First check if the URL is accessible
+  const response = await fetch(audioUrl, { method: "HEAD" });
+  if (!response.ok) {
+    throw response; // Throw the response for error handling
+  }
+
   return new Promise((resolve, reject) => {
     const audio = new Audio();
 
@@ -169,7 +175,7 @@ const playAudioWithiOSSupport = async (
   try {
     const response = await fetch(audioUrl);
     if (!response.ok) {
-      throw new Error(`Failed to fetch audio: ${response.status}`);
+      throw response; // Throw the response for error handling upstream
     }
 
     const blob = await response.blob();
@@ -252,7 +258,7 @@ const playAudioWithiOSSupport = async (
 interface AudioPlayerOptions {
   onStart?: () => void;
   onEnd?: () => void;
-  onError?: (error: Error) => void;
+  onError?: (error: Error, details?: string) => void;
   autoDelay?: number;
   speechRate?: number;
   isAutoPlay?: boolean; // True if this is an automatic play (not user-initiated click)
@@ -336,6 +342,36 @@ export const playWordAudio = async (
         }
         return; // Success - don't fall back to TTS
       } catch (streamingError) {
+        // Check if it's an HTTP error with a response
+        if (streamingError instanceof Response) {
+          try {
+            const errorData = await streamingError.json();
+            const errorMessage = errorData.error || "Failed to play audio";
+            const errorDetails = errorData.details || streamingError.statusText;
+
+            if (process.env.NODE_ENV === "development") {
+              console.log("[Audio] API error:", { errorMessage, errorDetails });
+            }
+
+            // If it's a service unavailable error, notify the user
+            if (streamingError.status === 503) {
+              const error = new Error(errorMessage);
+              onError?.(error, errorDetails);
+              onEnd?.();
+              return; // Don't fall back to TTS for configuration errors
+            }
+
+            // For other API errors, report but try TTS fallback
+            if (process.env.NODE_ENV === "development") {
+              console.log("[Audio] API error, will try TTS fallback");
+            }
+          } catch (parseError) {
+            if (process.env.NODE_ENV === "development") {
+              console.log("[Audio] Could not parse error response");
+            }
+          }
+        }
+
         if (process.env.NODE_ENV === "development") {
           console.log(
             "[Audio] Streaming failed, using browser TTS:",

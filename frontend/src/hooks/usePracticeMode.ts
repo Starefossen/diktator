@@ -15,6 +15,7 @@ export interface UsePracticeModeReturn {
   currentPracticeIndex: number;
   showPracticeWord: boolean;
   isAudioPlaying: boolean;
+  audioError: { message: string; details?: string } | null;
 
   // Actions
   startPractice: (wordSet: WordSet) => void;
@@ -25,6 +26,7 @@ export interface UsePracticeModeReturn {
   setShowPracticeWord: (show: boolean) => void;
   playPracticeWordAudio: () => void;
   shufflePracticeWords: () => void;
+  clearAudioError: () => void;
 }
 
 export function usePracticeMode(): UsePracticeModeReturn {
@@ -33,6 +35,14 @@ export function usePracticeMode(): UsePracticeModeReturn {
   const [currentPracticeIndex, setCurrentPracticeIndex] = useState(0);
   const [showPracticeWord, setShowPracticeWord] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [audioError, setAudioError] = useState<{
+    message: string;
+    details?: string;
+  } | null>(null);
+
+  const clearAudioError = useCallback(() => {
+    setAudioError(null);
+  }, []);
 
   const playPracticeWordAudioWithDelay = useCallback(
     (word: string, delay = 0) => {
@@ -50,9 +60,14 @@ export function usePracticeMode(): UsePracticeModeReturn {
       playWordAudioHelper(word, practiceMode, {
         onStart: () => setIsAudioPlaying(true),
         onEnd: () => setIsAudioPlaying(false),
-        onError: (error: Error) => {
+        onError: (error: Error, details?: string) => {
           console.error("Practice auto-play error:", error);
           setIsAudioPlaying(false);
+          // Map to user-friendly translation key based on error details
+          const message = details?.includes("Permission")
+            ? "audio.error.unavailable"
+            : "audio.error.failed";
+          setAudioError({ message, details });
         },
         speechRate: 0.8,
         autoDelay: delay,
@@ -107,9 +122,14 @@ export function usePracticeMode(): UsePracticeModeReturn {
     playWordAudioHelper(currentWord, practiceMode, {
       onStart: () => setIsAudioPlaying(true),
       onEnd: () => setIsAudioPlaying(false),
-      onError: (error: Error) => {
+      onError: (error: Error, details?: string) => {
         console.error("Practice audio playback error:", error);
         setIsAudioPlaying(false);
+        // Map to user-friendly translation key based on error details
+        const message = details?.includes("Permission")
+          ? "audio.error.unavailable"
+          : "audio.error.failed";
+        setAudioError({ message, details });
       },
       speechRate: 0.8,
     });
@@ -230,6 +250,7 @@ export function usePracticeMode(): UsePracticeModeReturn {
     currentPracticeIndex,
     showPracticeWord,
     isAudioPlaying,
+    audioError,
 
     // Actions
     startPractice,
@@ -240,5 +261,6 @@ export function usePracticeMode(): UsePracticeModeReturn {
     setShowPracticeWord,
     playPracticeWordAudio,
     shufflePracticeWords,
+    clearAudioError,
   };
 }
