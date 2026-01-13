@@ -1014,6 +1014,139 @@ Compare to ParentWordSetCard which includes:
 }
 ```
 
+#### Consistent Button Layout in Tests
+
+**Critical for muscle memory**: Children benefit from predictable button placement. Test screens use a **three-position layout** (when all buttons are present):
+
+| Position   | Purpose             | Style       | Icon                             | Label (NO)       | Label (EN)      |
+| ---------- | ------------------- | ----------- | -------------------------------- | ---------------- | --------------- |
+| **Left**   | Exit test (danger)  | `danger`    | X mark (HeroXMarkIcon)           | "Avbryt"         | "Cancel"        |
+| **Middle** | Repeat audio/replay | `secondary` | Speaker (HeroSpeakerWaveIcon)    | "Spill igjen"    | "Play Again"    |
+| **Right**  | Advance/complete    | `primary`   | Arrow right (HeroArrowRightIcon) | "Neste"/"Ferdig" | "Next"/"Finish" |
+
+**Layout structure**:
+
+```jsx
+<div className="flex items-center justify-between gap-4">
+  <ModalButton variant="danger" onClick={handleExitClick}>
+    <HeroXMarkIcon /> Avbryt
+  </ModalButton>
+
+  {/* Middle button (when present) */}
+  <ModalButton variant="secondary" onClick={handlePlayAgain}>
+    <HeroSpeakerWaveIcon /> Spill igjen
+  </ModalButton>
+
+  <ModalButton variant="primary" onClick={handleNext}>
+    Neste <HeroArrowRightIcon />
+  </ModalButton>
+</div>
+```
+
+**Two-button layout** (no middle button):
+
+```jsx
+<div className="flex items-center justify-between gap-4">
+  <ModalButton variant="danger" onClick={handleExitClick}>
+    <HeroXMarkIcon /> Avbryt
+  </ModalButton>
+
+  <ModalButton variant="primary" onClick={handleNext}>
+    Ferdig <HeroArrowRightIcon />
+  </ModalButton>
+</div>
+```
+
+**Why this matters**:
+
+- **Left = Danger**: Consistent with "back/cancel/exit" patterns, requires deliberate left-hand reach
+- **Right = Progress**: Natural reading flow (Norwegian left-to-right), thumb-friendly on mobile
+- **Predictability**: Same layout across all test modes (standard, specialized, feedback overlay)
+
+### Confirmation Dialogs
+
+#### Exit Test Confirmation
+
+When exiting a test mid-session, **always confirm** to prevent accidental progress loss:
+
+**Pattern**:
+
+```jsx
+const [showExitConfirm, setShowExitConfirm] = useState(false);
+
+const handleExitClick = useCallback(() => {
+  setShowExitConfirm(true);
+}, []);
+
+const handleConfirmExit = useCallback(() => {
+  setShowExitConfirm(false);
+  onExitTest();
+}, [onExitTest]);
+
+const handleCancelExit = useCallback(() => {
+  setShowExitConfirm(false);
+}, []);
+```
+
+**Modal structure**:
+
+```jsx
+<BaseModal isOpen={showExitConfirm} onClose={handleCancelExit}>
+  <ModalContent>
+    <div className="mb-4 flex items-center justify-center rounded-lg bg-yellow-50 p-4">
+      <HeroExclamationTriangleIcon className="h-12 w-12 text-yellow-600" />
+    </div>
+
+    <h2 className="text-xl font-semibold text-gray-900">
+      {t('test.exitConfirm')}
+    </h2>
+
+    <p className="text-base text-gray-600">
+      {t('test.exitConfirmMessage', {
+        correct: answers.filter(a => a.correct).length,
+        total: answers.length
+      })}
+    </p>
+  </ModalContent>
+
+  <ModalActions>
+    <ModalButton variant="danger" onClick={handleConfirmExit}>
+      {t('test.exitConfirmButton')}
+    </ModalButton>
+    <ModalButton variant="secondary" onClick={handleCancelExit}>
+      {t('test.continueTest')}
+    </ModalButton>
+  </ModalActions>
+</BaseModal>
+```
+
+**Required i18n keys**:
+
+```typescript
+// locales/no/test.ts
+export const test = {
+  exitConfirm: 'Avslutte testen?',
+  exitConfirmMessage: 'Du har {{correct}} av {{total}} riktige så langt. Hvis du avslutter nå, mister du fremgangen din.',
+  exitConfirmButton: 'Ja, avslutt',
+  continueTest: 'Nei, fortsett',
+}
+
+// locales/en/test.ts
+export const test = {
+  exitConfirm: 'Exit Test?',
+  exitConfirmMessage: 'You have {{correct}} out of {{total}} correct so far. If you exit now, you will lose your progress.',
+  exitConfirmButton: 'Yes, exit',
+  continueTest: 'No, continue',
+}
+```
+
+**Why confirmation is critical**:
+
+- Children may accidentally tap "Avbryt" while rushing
+- Losing test progress is frustrating and demotivating
+- Follows "Let Mistakes Happen Gracefully" principle by preventing the mistake
+- Shows current progress (X/Y correct) to help decision-making
+
 #### Parent Interface Buttons
 
 **Suggested CSS:**

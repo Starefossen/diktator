@@ -34,6 +34,13 @@ import { TestFeedbackOverlay } from "@/components/TestFeedbackOverlay";
 import { TestModeRenderer } from "@/components/TestModeRenderer";
 import { TIMING } from "@/lib/timingConfig";
 import { Button } from "@/components/Button";
+import {
+  BaseModal,
+  ModalContent,
+  ModalActions,
+  ModalButton,
+} from "@/components/modals/BaseModal";
+import { HeroExclamationTriangleIcon } from "@/components/Icons";
 import { TileFeedbackState } from "@/components/LetterTileInput";
 import { WordBankInput } from "@/components/WordBankInput";
 import { SentenceFeedback } from "@/components/SentenceFeedback";
@@ -267,6 +274,21 @@ export function TestView({
 }: TestViewProps) {
   const { t } = useLanguage();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+
+  // Handler for exit confirmation
+  const handleExitClick = useCallback(() => {
+    setShowExitConfirm(true);
+  }, []);
+
+  const handleConfirmExit = useCallback(() => {
+    setShowExitConfirm(false);
+    onExitTest();
+  }, [onExitTest]);
+
+  const handleCancelExit = useCallback(() => {
+    setShowExitConfirm(false);
+  }, []);
 
   // Validation (throws on invalid props)
   validateProps(activeTest, currentWordIndex, processedWords);
@@ -397,10 +419,10 @@ export function TestView({
           translationInfo={
             testMode === "translation" && translation
               ? {
-                  wordDirection,
-                  showWord: showWord!,
-                  targetLanguage: targetLanguage!,
-                }
+                wordDirection,
+                showWord: showWord!,
+                targetLanguage: targetLanguage!,
+              }
               : undefined
           }
         />
@@ -438,7 +460,7 @@ export function TestView({
 
               {!showFeedback && (
                 <div className="mt-6 flex justify-center">
-                  <Button variant="secondary-child" onClick={onExitTest}>
+                  <Button variant="secondary-child" onClick={handleExitClick}>
                     <span className="sm:hidden">{t("test.backMobile")}</span>
                     <span className="hidden sm:inline">
                       {t("test.backToWordSets")}
@@ -465,7 +487,7 @@ export function TestView({
                 totalAnswers={answers.length}
                 isLastWord={isLastWord}
                 onNext={onNextWord}
-                onExitTest={onExitTest}
+                onExitTest={handleExitClick}
                 feedbackState={feedbackState}
               />
             )}
@@ -524,7 +546,7 @@ export function TestView({
               {/* Action Buttons - Consistent order: Cancel (left), Play Again (middle), Next/Finish (right) */}
               {!showFeedback && (
                 <div className="flex justify-between gap-2 sm:gap-4">
-                  <Button variant="danger" onClick={onExitTest}>
+                  <Button variant="danger" onClick={handleExitClick}>
                     <HeroXMarkIcon className="h-4 w-4 sm:mr-2" />
                     <span className="hidden sm:inline">{t("test.cancel")}</span>
                   </Button>
@@ -564,6 +586,61 @@ export function TestView({
           </div>
         )}
       </div>
+
+      {/* Exit Confirmation Modal */}
+      {showExitConfirm && (
+        <BaseModal
+          isOpen={true}
+          onClose={handleCancelExit}
+          title={t("test.exitConfirm")}
+          size="md"
+        >
+          <ModalContent>
+            <div className="sm:flex sm:items-start">
+              <div className="mt-3 text-center sm:mt-0 sm:text-left">
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500">
+                    {t("test.exitConfirmMessage")
+                      .replace(
+                        "{{correct}}",
+                        String(answers.filter((a) => a.isCorrect).length),
+                      )
+                      .replace("{{total}}", String(answers.length))}
+                  </p>
+                </div>
+
+                <div className="p-3 mt-4 border border-yellow-200 rounded-lg bg-yellow-50">
+                  <div className="flex items-start">
+                    <div className="shrink-0">
+                      <HeroExclamationTriangleIcon className="w-5 h-5 text-yellow-400" />
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-yellow-700">
+                        {t("test.correctSoFar")}:{" "}
+                        {answers.filter((a) => a.isCorrect).length} /{" "}
+                        {answers.length}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ModalContent>
+
+          <ModalActions>
+            <ModalButton onClick={handleConfirmExit} variant="danger">
+              {t("test.exitConfirmButton")}
+            </ModalButton>
+            <ModalButton
+              onClick={handleCancelExit}
+              variant="secondary"
+              className="mt-3 sm:mt-0 sm:mr-3"
+            >
+              {t("test.continueTest")}
+            </ModalButton>
+          </ModalActions>
+        </BaseModal>
+      )}
     </div>
   );
 }

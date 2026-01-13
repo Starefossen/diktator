@@ -57,6 +57,12 @@ export const test = {
   "test.restart": "Restart Test",
   "test.tryAgain": "Again!",
   "test.backToWordSets": "Back to Word Sets",
+  "test.cancel": "Cancel",
+  "test.exitConfirm": "Exit Test?",
+  "test.exitConfirmMessage":
+    "You have {{correct}} out of {{total}} correct so far. If you exit now, you will lose your progress.",
+  "test.exitConfirmButton": "Yes, Exit",
+  "test.continueTest": "No, Continue",
 
   // Test interface
   "test.listenToWordMobile": "Tap to hear",

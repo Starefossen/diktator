@@ -180,10 +180,18 @@ describe("TestView - Mode-Specific Behavior", () => {
       expect(mockOnPlayCurrentWord).toHaveBeenCalled();
     });
 
-    it("calls onExitTest when cancel button clicked", () => {
+    it("calls onExitTest when cancel button clicked and confirmed", () => {
       renderTestView(baseWordSet, "keyboard");
       const cancelButton = screen.getByRole("button", { name: /cancel/i });
       fireEvent.click(cancelButton);
+
+      // Should show confirmation modal
+      expect(screen.getByText(/exit test/i)).toBeInTheDocument();
+
+      // Click "Yes, Exit" button to confirm
+      const confirmButton = screen.getByRole("button", { name: /yes.*exit/i });
+      fireEvent.click(confirmButton);
+
       expect(mockOnExitTest).toHaveBeenCalled();
     });
 
