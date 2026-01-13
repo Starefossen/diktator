@@ -22,6 +22,11 @@ type Provider interface {
 	// and using the appropriate generation method (single word vs sentence)
 	GenerateTextAudio(text, language string) ([]byte, *models.AudioFile, error)
 
+	// GenerateTextAudioWithFormat generates audio for any text with format control.
+	// If useMP3 is true, generates MP3 format for iOS Safari compatibility.
+	// Returns audio data, metadata, content type, and any error.
+	GenerateTextAudioWithFormat(text, language string, useMP3 bool) ([]byte, *models.AudioFile, string, error)
+
 	// GenerateAudioWithSSML generates audio using SSML markup for custom pronunciation
 	GenerateAudioWithSSML(ssml, language string) ([]byte, error)
 

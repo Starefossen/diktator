@@ -176,14 +176,30 @@ func (s *Service) Close() error {
 
 // GenerateAudio generates audio for a word using Text-to-Speech with optimal voice selection
 func (s *Service) GenerateAudio(word, language string) ([]byte, *models.AudioFile, error) {
+	return s.GenerateAudioWithFormat(word, language, false)
+}
+
+// GenerateAudioWithFormat generates TTS audio for a single word with format control.
+// If useMP3 is true, generates MP3 format for iOS Safari compatibility. Otherwise uses OGG Opus.
+func (s *Service) GenerateAudioWithFormat(word, language string, useMP3 bool) ([]byte, *models.AudioFile, error) {
 	if s.client == nil {
 		return nil, nil, fmt.Errorf("TTS service is disabled")
 	}
 	// Normalize language code and get voice configuration
 	voiceConfig := s.getOptimalVoiceConfig(language)
 
-	// Generate cache key
-	cacheKey := fmt.Sprintf("%s:%s:%s", word, language, voiceConfig.VoiceName)
+	// Determine format-specific cache key and settings
+	formatSuffix := "ogg"
+	var audioEncoding texttospeechpb.AudioEncoding
+	if useMP3 {
+		formatSuffix = "mp3"
+		audioEncoding = texttospeechpb.AudioEncoding_MP3
+	} else {
+		audioEncoding = texttospeechpb.AudioEncoding_OGG_OPUS
+	}
+
+	// Generate cache key including format
+	cacheKey := fmt.Sprintf("%s:%s:%s:%s", word, language, voiceConfig.VoiceName, formatSuffix)
 
 	// Check cache first
 	if cachedAudio, found := s.cache.Get(cacheKey); found {
@@ -221,10 +237,10 @@ func (s *Service) GenerateAudio(word, language string) ([]byte, *models.AudioFil
 	}
 
 	// Configure audio for child-friendly output
-	// Using OGG_OPUS for better browser compatibility (especially Firefox)
-	// and higher quality at similar bitrate compared to MP3
+	// iOS Safari requires MP3 (doesn't support OGG Opus codec)
+	// Other browsers use OGG_OPUS for better quality at similar bitrate
 	audioConfig := &texttospeechpb.AudioConfig{
-		AudioEncoding:   texttospeechpb.AudioEncoding_OGG_OPUS,
+		AudioEncoding:   audioEncoding,
 		SpeakingRate:    voiceConfig.SpeakingRate,
 		Pitch:           voiceConfig.Pitch,
 		VolumeGainDb:    2.0,   // Slightly louder for clarity
@@ -343,6 +359,12 @@ func GetWordCount(text string) int {
 // GenerateSentenceAudio generates audio for a sentence using SSML with appropriate prosody
 // Uses a slightly faster speaking rate (0.9x) than single words (0.8x) for natural flow
 func (s *Service) GenerateSentenceAudio(sentence, language string) ([]byte, *models.AudioFile, error) {
+	return s.GenerateSentenceAudioWithFormat(sentence, language, false)
+}
+
+// GenerateSentenceAudioWithFormat generates TTS audio for a sentence with format control.
+// If useMP3 is true, generates MP3 format for iOS Safari compatibility. Otherwise uses OGG Opus.
+func (s *Service) GenerateSentenceAudioWithFormat(sentence, language string, useMP3 bool) ([]byte, *models.AudioFile, error) {
 	if s.client == nil {
 		return nil, nil, fmt.Errorf("TTS service is disabled")
 	}
@@ -356,9 +378,19 @@ func (s *Service) GenerateSentenceAudio(sentence, language string) ([]byte, *mod
 	// Normalize language code and get voice configuration
 	voiceConfig := s.getOptimalVoiceConfig(language)
 
-	// Generate cache key with "sentence:" prefix to distinguish from single words
+	// Determine format-specific settings
+	formatSuffix := "ogg"
+	var audioEncoding texttospeechpb.AudioEncoding
+	if useMP3 {
+		formatSuffix = "mp3"
+		audioEncoding = texttospeechpb.AudioEncoding_MP3
+	} else {
+		audioEncoding = texttospeechpb.AudioEncoding_OGG_OPUS
+	}
+
+	// Generate cache key with "sentence:" prefix and format to distinguish from single words
 	hash := md5.Sum([]byte(sentence))
-	cacheKey := fmt.Sprintf("sentence:%x:%s:%s", hash, language, voiceConfig.VoiceName)
+	cacheKey := fmt.Sprintf("sentence:%x:%s:%s:%s", hash, language, voiceConfig.VoiceName, formatSuffix)
 
 	// Check cache first
 	if cachedAudio, found := s.cache.Get(cacheKey); found {
@@ -398,7 +430,7 @@ func (s *Service) GenerateSentenceAudio(sentence, language string) ([]byte, *mod
 
 	// Use base speaking rate of 1.0 since prosody handles the rate adjustment
 	audioConfig := &texttospeechpb.AudioConfig{
-		AudioEncoding:   texttospeechpb.AudioEncoding_OGG_OPUS,
+		AudioEncoding:   audioEncoding,
 		SpeakingRate:    1.0, // Prosody rate is relative to this
 		Pitch:           voiceConfig.Pitch,
 		VolumeGainDb:    2.0,
@@ -457,6 +489,31 @@ func (s *Service) GenerateTextAudio(text, language string) ([]byte, *models.Audi
 		return s.GenerateSentenceAudio(text, language)
 	}
 	return s.GenerateAudio(text, language)
+}
+
+// GenerateTextAudioWithFormat generates audio for text (word or sentence) with format detection
+// and returns the appropriate content type. iOS Safari requires MP3, other browsers use OGG Opus.
+func (s *Service) GenerateTextAudioWithFormat(text, language string, useMP3 bool) ([]byte, *models.AudioFile, string, error) {
+	var audioData []byte
+	var audioFile *models.AudioFile
+	var err error
+
+	if IsSentence(text) {
+		audioData, audioFile, err = s.GenerateSentenceAudioWithFormat(text, language, useMP3)
+	} else {
+		audioData, audioFile, err = s.GenerateAudioWithFormat(text, language, useMP3)
+	}
+
+	if err != nil {
+		return nil, nil, "", err
+	}
+
+	contentType := "audio/ogg; codecs=opus"
+	if useMP3 {
+		contentType = "audio/mpeg"
+	}
+
+	return audioData, audioFile, contentType, nil
 }
 
 // generateSentenceFilename creates a unique filename for sentence audio

@@ -58,7 +58,16 @@ func StreamWordAudio(c *gin.Context) {
 
 	// For HEAD requests, just validate and return headers without generating audio
 	if isHeadRequest {
-		c.Header("Content-Type", "audio/ogg; codecs=opus")
+		// Detect if client is iOS Safari (requires MP3, not OGG Opus)
+		userAgent := c.GetHeader("User-Agent")
+		isIOSSafari := strings.Contains(userAgent, "iPhone") || strings.Contains(userAgent, "iPad")
+
+		contentType := "audio/ogg; codecs=opus"
+		if isIOSSafari {
+			contentType = "audio/mpeg"
+		}
+
+		c.Header("Content-Type", contentType)
 		c.Header("Cache-Control", "public, max-age=86400, immutable")
 		c.Header("Accept-Ranges", "bytes")
 		c.Header("Access-Control-Allow-Origin", "*")
@@ -106,15 +115,20 @@ func StreamWordAudio(c *gin.Context) {
 		language = wordSet.Language
 	}
 
+	// Detect if client is iOS Safari (requires MP3, not OGG Opus)
+	userAgent := c.GetHeader("User-Agent")
+	isIOSSafari := strings.Contains(userAgent, "iPhone") || strings.Contains(userAgent, "iPad")
+
 	isSentence := tts.IsSentence(word)
 	if isSentence {
-		log.Printf("StreamWordAudio: Generating sentence audio (%d words) in language '%s'", tts.GetWordCount(word), language)
+		log.Printf("StreamWordAudio: Generating sentence audio (%d words) in language '%s' for %s", tts.GetWordCount(word), language, map[bool]string{true: "iOS", false: "other"}[isIOSSafari])
 	} else {
-		log.Printf("StreamWordAudio: Generating word audio for '%s' in language '%s'", word, language)
+		log.Printf("StreamWordAudio: Generating word audio for '%s' in language '%s' for %s", word, language, map[bool]string{true: "iOS", false: "other"}[isIOSSafari])
 	}
 
 	// Generate audio using TTS service - automatically detects sentence vs word
-	audioData, audioFile, err := sm.TTS.GenerateTextAudio(word, language)
+	// iOS Safari requires MP3 format (doesn't support OGG Opus)
+	audioData, audioFile, contentType, err := sm.TTS.GenerateTextAudioWithFormat(word, language, isIOSSafari)
 	if err != nil {
 		log.Printf("StreamWordAudio: Error generating audio: %v", err)
 
@@ -136,10 +150,10 @@ func StreamWordAudio(c *gin.Context) {
 		return
 	}
 
-	log.Printf("StreamWordAudio: Successfully generated audio, size: %d bytes", len(audioData))
+	log.Printf("StreamWordAudio: Successfully generated audio, size: %d bytes, type: %s", len(audioData), contentType)
 
 	// Set aggressive caching headers - browser will cache this for the session
-	c.Header("Content-Type", "audio/ogg; codecs=opus")
+	c.Header("Content-Type", contentType)
 	c.Header("Content-Length", fmt.Sprintf("%d", len(audioData)))
 	c.Header("Cache-Control", "public, max-age=86400, immutable") // Cache for 24 hours, immutable
 	c.Header("ETag", fmt.Sprintf(`"%s-%s-%s"`, wordSetID, word, language))
@@ -169,10 +183,10 @@ func StreamWordAudio(c *gin.Context) {
 		// Return partial content
 		c.Header("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, end, len(audioData)))
 		c.Header("Content-Length", fmt.Sprintf("%d", end-start+1))
-		c.Data(http.StatusPartialContent, "audio/ogg", audioData[start:end+1])
+		c.Data(http.StatusPartialContent, contentType, audioData[start:end+1])
 		return
 	}
 
 	// Stream the full audio data directly to the client
-	c.Data(http.StatusOK, "audio/ogg", audioData)
+	c.Data(http.StatusOK, contentType, audioData)
 }

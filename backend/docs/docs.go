@@ -1884,7 +1884,62 @@ const docTemplate = `{
         },
         "/api/wordsets/{id}/words/{word}/audio": {
             "get": {
-                "description": "Stream TTS audio for a specific word or sentence in a word set (generates on-demand, cached by browser). Automatically uses appropriate speaking rate for single words (0.8x) vs sentences (0.9x).",
+                "description": "Stream TTS audio for a specific word or sentence in a word set (generates on-demand, cached by browser). Automatically uses appropriate speaking rate for single words (0.8x) vs sentences (0.9x). Supports both GET and HEAD methods for iOS Safari compatibility.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "audio/ogg"
+                ],
+                "tags": [
+                    "wordsets"
+                ],
+                "summary": "Stream Audio for Word or Sentence",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Word Set ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Word or sentence to generate audio for",
+                        "name": "word",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Audio file content (OGG Opus)",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Word set not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to generate audio",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    }
+                }
+            },
+            "head": {
+                "description": "Stream TTS audio for a specific word or sentence in a word set (generates on-demand, cached by browser). Automatically uses appropriate speaking rate for single words (0.8x) vs sentences (0.9x). Supports both GET and HEAD methods for iOS Safari compatibility.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1985,6 +2040,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "data": {},
+                "details": {
+                    "description": "Technical details for debugging",
+                    "type": "string"
+                },
                 "error": {
                     "type": "string"
                 },
@@ -2003,7 +2062,6 @@ const docTemplate = `{
             ],
             "properties": {
                 "birthYear": {
-                    "description": "Optional birth year for children (age-adaptive features)",
                     "type": "integer"
                 },
                 "displayName": {
@@ -2065,26 +2123,21 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "articleId": {
-                    "description": "For linking to ordbokene.no (e.g., https://ordbokene.no/bm/ID)",
                     "type": "integer"
                 },
                 "definition": {
-                    "description": "Primary definition only",
                     "type": "string"
                 },
                 "inflections": {
-                    "description": "All inflected forms (katt, katten, katter, kattene)",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
                 "lemma": {
-                    "description": "Base form of the word",
                     "type": "string"
                 },
                 "wordClass": {
-                    "description": "NOUN, VERB, ADJ, ADV, etc.",
                     "type": "string"
                 }
             }
@@ -2116,7 +2169,6 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "incorrectWords": {
-                    "description": "Deprecated: Use Words field for detailed information",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -2147,7 +2199,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "words": {
-                    "description": "Detailed information for each word in the test",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.WordTestResult"
@@ -2245,6 +2296,12 @@ const docTemplate = `{
                 "letterTilesCorrect": {
                     "type": "integer"
                 },
+                "missingLettersCorrect": {
+                    "type": "integer"
+                },
+                "translationCorrect": {
+                    "type": "integer"
+                },
                 "updatedAt": {
                     "type": "string"
                 },
@@ -2266,38 +2323,30 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "attempts": {
-                    "description": "Number of attempts made",
                     "type": "integer"
                 },
                 "audioPlayCount": {
-                    "description": "Number of times audio was played",
                     "type": "integer"
                 },
                 "correct": {
-                    "description": "Whether the word was answered correctly",
                     "type": "boolean"
                 },
                 "errorTypes": {
-                    "description": "Detected spelling error types (doubleConsonant, silentH, etc.)",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
                 "finalAnswer": {
-                    "description": "The final answer provided",
                     "type": "string"
                 },
                 "hintsUsed": {
-                    "description": "Number of hints used (if applicable)",
                     "type": "integer"
                 },
                 "timeSpent": {
-                    "description": "Time spent on this word in seconds",
                     "type": "integer"
                 },
                 "userAnswers": {
-                    "description": "All answers the user provided for this word",
                     "type": "array",
                     "items": {
                         "type": "string"

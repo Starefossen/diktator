@@ -12,7 +12,6 @@ export function Footer() {
         <p className="mt-1 text-xs text-gray-400">
           {t("footer.build")}{" "}
           {process.env.NEXT_PUBLIC_BUILD_TIME || new Date().toISOString()}
-          {process.env.NODE_ENV === "development" && " (dev)"}
         </p>
       </div>
     </footer>

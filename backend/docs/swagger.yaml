@@ -14,6 +14,9 @@ definitions:
   models.APIResponse:
     properties:
       data: {}
+      details:
+        description: Technical details for debugging
+        type: string
       error:
         type: string
       message:
@@ -22,7 +25,6 @@ definitions:
   models.AddFamilyMemberRequest:
     properties:
       birthYear:
-        description: Optional birth year for children (age-adaptive features)
         type: integer
       displayName:
         type: string
@@ -69,21 +71,16 @@ definitions:
   models.DictionaryWord:
     properties:
       articleId:
-        description: For linking to ordbokene.no (e.g., https://ordbokene.no/bm/ID)
         type: integer
       definition:
-        description: Primary definition only
         type: string
       inflections:
-        description: All inflected forms (katt, katten, katter, kattene)
         items:
           type: string
         type: array
       lemma:
-        description: Base form of the word
         type: string
       wordClass:
-        description: NOUN, VERB, ADJ, ADV, etc.
         type: string
     type: object
   models.DisplayNameUpdateRequest:
@@ -100,7 +97,6 @@ definitions:
       correctWords:
         type: integer
       incorrectWords:
-        description: 'Deprecated: Use Words field for detailed information'
         items:
           type: string
         type: array
@@ -123,7 +119,6 @@ definitions:
       wordSetId:
         type: string
       words:
-        description: Detailed information for each word in the test
         items:
           $ref: '#/definitions/models.WordTestResult'
         type: array
@@ -194,6 +189,10 @@ definitions:
         type: integer
       letterTilesCorrect:
         type: integer
+      missingLettersCorrect:
+        type: integer
+      translationCorrect:
+        type: integer
       updatedAt:
         type: string
       userId:
@@ -208,30 +207,22 @@ definitions:
   models.WordTestResult:
     properties:
       attempts:
-        description: Number of attempts made
         type: integer
       audioPlayCount:
-        description: Number of times audio was played
         type: integer
       correct:
-        description: Whether the word was answered correctly
         type: boolean
       errorTypes:
-        description: Detected spelling error types (doubleConsonant, silentH, etc.)
         items:
           type: string
         type: array
       finalAnswer:
-        description: The final answer provided
         type: string
       hintsUsed:
-        description: Number of hints used (if applicable)
         type: integer
       timeSpent:
-        description: Time spent on this word in seconds
         type: integer
       userAnswers:
-        description: All answers the user provided for this word
         items:
           type: string
         type: array
@@ -1380,7 +1371,48 @@ paths:
       - application/json
       description: Stream TTS audio for a specific word or sentence in a word set
         (generates on-demand, cached by browser). Automatically uses appropriate speaking
-        rate for single words (0.8x) vs sentences (0.9x).
+        rate for single words (0.8x) vs sentences (0.9x). Supports both GET and HEAD
+        methods for iOS Safari compatibility.
+      parameters:
+      - description: Word Set ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Word or sentence to generate audio for
+        in: path
+        name: word
+        required: true
+        type: string
+      produces:
+      - audio/ogg
+      responses:
+        "200":
+          description: Audio file content (OGG Opus)
+          schema:
+            type: file
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "404":
+          description: Word set not found
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Failed to generate audio
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      summary: Stream Audio for Word or Sentence
+      tags:
+      - wordsets
+    head:
+      consumes:
+      - application/json
+      description: Stream TTS audio for a specific word or sentence in a word set
+        (generates on-demand, cached by browser). Automatically uses appropriate speaking
+        rate for single words (0.8x) vs sentences (0.9x). Supports both GET and HEAD
+        methods for iOS Safari compatibility.
       parameters:
       - description: Word Set ID
         in: path

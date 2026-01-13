@@ -4,6 +4,7 @@ import type { ModelsSaveResultRequest as SaveResultRequest } from "@/generated";
 import { generatedApiClient } from "@/lib/api-generated";
 import {
   playWordAudio as playWordAudioHelper,
+  playAudioSync,
   stopAudio,
   initializeAudioForIOS,
   isAudioUnlocked,
@@ -199,32 +200,46 @@ export function useTestMode(): UseTestModeReturn {
     // This is the only way to ensure we have the user gesture token for autoplay.
     // The browser's transient user activation expires after a few seconds or after
     // being consumed by another audio play attempt.
+    //
+    // iOS Safari requires audio.play() to be in the EXACT same synchronous call stack
+    // as the user click. ANY async boundary breaks this (even calling an async function).
     if (config?.autoPlayAudio && words.length > 0) {
       lastAutoPlayIndexRef.current = 0;
-      if (process.env.NODE_ENV === "development") {
-        console.log(
-          "[useTestMode] Playing first word SYNCHRONOUSLY in click handler",
-        );
-      }
-      // Play directly - this happens in the user gesture context!
-      playWordAudioHelper(words[0], wordSet, {
-        onStart: () => {
-          isPlayingAudioRef.current = true;
-          setIsAudioPlaying(true);
-        },
-        onEnd: () => {
-          isPlayingAudioRef.current = false;
-          setIsAudioPlaying(false);
-        },
-        onError: (error: Error) => {
-          console.error("[useTestMode] First word audio error:", error);
-          isPlayingAudioRef.current = false;
-          setIsAudioPlaying(false);
-        },
-        autoDelay: TIMING.TEST_START_AUDIO_DELAY_MS,
-        speechRate: 0.8,
-        isAutoPlay: false, // It's triggered by user click, so NOT autoplay!
-        preloadNext: true,
+      console.log(
+        "[useTestMode] Playing first word SYNCHRONOUSLY in click handler",
+      );
+
+      const apiBaseUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const audioUrl = `${apiBaseUrl}/api/wordsets/${wordSet.id}/words/${encodeURIComponent(words[0])}/audio?lang=${encodeURIComponent(wordSet.language)}`;
+
+      // Mark audio as playing BEFORE calling playAudioSync
+      isPlayingAudioRef.current = true;
+      setIsAudioPlaying(true);
+
+      // Call playAudioSync SYNCHRONOUSLY - NO await, NO async boundary!
+      const audioHandle = playAudioSync(audioUrl);
+
+      // Set up callbacks AFTER the synchronous play() call
+      audioHandle.onEnd(() => {
+        console.log("[useTestMode] First word audio ended");
+        isPlayingAudioRef.current = false;
+        setIsAudioPlaying(false);
+      });
+
+      audioHandle.onError((error: Error) => {
+        console.error("[useTestMode] First word audio error:", error.message);
+        isPlayingAudioRef.current = false;
+        setIsAudioPlaying(false);
+        // Fall back to TTS
+        playWordAudioHelper(words[0], wordSet, {
+          onEnd: () => {
+            isPlayingAudioRef.current = false;
+            setIsAudioPlaying(false);
+          },
+          speechRate: 0.8,
+          isAutoPlay: true, // Mark as autoplay since we're in fallback
+        });
       });
     }
   }, []);
@@ -328,12 +343,12 @@ export function useTestMode(): UseTestModeReturn {
       const mode = getMode(testMode);
       const expectedAnswer = mode?.getExpectedAnswer
         ? mode.getExpectedAnswer(wordObj, {
-            translationDirection:
-              wordDirections.length > currentWordIndex
-                ? wordDirections[currentWordIndex]
-                : "toTarget",
-            wordSet: activeTest,
-          })
+          translationDirection:
+            wordDirections.length > currentWordIndex
+              ? wordDirections[currentWordIndex]
+              : "toTarget",
+          wordSet: activeTest,
+        })
         : currentWord;
 
       // Use normalized comparison that ignores punctuation and case
