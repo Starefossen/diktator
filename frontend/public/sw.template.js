@@ -30,8 +30,9 @@ self.addEventListener("install", (event) => {
         console.error("Cache install failed:", error);
       }),
   );
-  // Don't skip waiting - let the user decide when to update
+  // CRITICAL: Never call skipWaiting() here - we wait for explicit user action
   // This prevents automatic page reloads that lose in-memory data
+  console.log("Service worker installed but waiting for user approval");
 });
 
 // Activate service worker and clean up old caches
@@ -49,8 +50,9 @@ self.addEventListener("activate", (event) => {
       );
     }),
   );
-  // Don't claim clients immediately - wait for user to reload
-  // This prevents losing in-memory data from unexpected reloads
+  // CRITICAL: Never call clients.claim() here - we wait for user to reload
+  // This prevents unexpected reloads that lose in-memory data
+  console.log("Service worker activated - waiting for page reload");
 });
 
 // Handle fetch requests with cache-first strategy for static assets
@@ -170,7 +172,12 @@ self.addEventListener("message", (event) => {
 
   // Allow clients to trigger skipWaiting when user explicitly requests update
   if (event.data && event.data.type === "SKIP_WAITING") {
-    console.log("User requested service worker activation");
-    self.skipWaiting();
+    console.log("User requested service worker activation via SKIP_WAITING");
+    // Only call skipWaiting() when explicitly requested by user
+    self.skipWaiting().then(() => {
+      console.log(
+        "Service worker skipped waiting - new version will activate on next navigation",
+      );
+    });
   }
 });

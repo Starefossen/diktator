@@ -32,11 +32,18 @@ export function PWAInstaller() {
 
       // Handle controller change (when new SW takes control)
       const handleControllerChange = () => {
+        console.log(
+          `[SW] Controller changed - refreshing=${refreshing}, userInitiated=${userInitiatedUpdate}`,
+        );
         // Only reload if user explicitly requested the update
         if (!refreshing && userInitiatedUpdate) {
           refreshing = true;
-          console.log("Service worker activated, reloading page");
+          console.log("[SW] User-initiated update - reloading page");
           window.location.reload();
+        } else if (!userInitiatedUpdate) {
+          console.log(
+            "[SW] Controller changed but NOT user-initiated - skipping reload to prevent data loss",
+          );
         }
       };
 
@@ -64,7 +71,7 @@ export function PWAInstaller() {
 
           // Listen for user-initiated update events
           const handleUserUpdate = () => {
-            console.log("User initiated update detected");
+            console.log("[SW] User initiated update event received");
             userInitiatedUpdate = true;
           };
           window.addEventListener("userInitiatedUpdate", handleUserUpdate);
@@ -98,7 +105,7 @@ export function PWAInstaller() {
           // This only checks - it doesn't force reload
           const updateInterval = setInterval(() => {
             if (!document.hidden) {
-              console.log("Checking for service worker updates...");
+              console.log("[SW] Periodic update check (5min interval)");
               registration.update();
             }
           }, 300000); // 5 minutes
@@ -218,20 +225,24 @@ export function PWAInstaller() {
   }, []);
 
   const handleUpdateClick = async () => {
+    console.log("[SW] User clicked update button");
     // Get the waiting service worker
     const registration = await navigator.serviceWorker.getRegistration();
     if (!registration?.waiting) {
-      console.warn("No waiting service worker found");
+      console.warn("[SW] No waiting service worker found - cannot update");
       return;
     }
 
+    console.log(
+      "[SW] Found waiting service worker, dispatching userInitiatedUpdate event",
+    );
     // Mark that user initiated this update
     const event = new CustomEvent("userInitiatedUpdate");
     window.dispatchEvent(event);
 
     // Tell the waiting service worker to activate
     // The controllerchange listener (set up in useEffect) will handle the reload
-    console.log("Sending SKIP_WAITING message to service worker");
+    console.log("[SW] Sending SKIP_WAITING message to service worker");
     registration.waiting.postMessage({ type: "SKIP_WAITING" });
   };
 
