@@ -16,40 +16,15 @@ Assume dev server is already running with `mise run dev`. Do not run `pnpm` or `
 
 ## Project Knowledge
 
-**Tech Stack:**
+**Tech Stack:** Next.js 16/React 19/TypeScript frontend, Go 1.25+/Gin backend, PostgreSQL. Full details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-- Frontend: Next.js 16, React 19, TypeScript, Tailwind CSS 4+ static export PWA
-- Backend: Go 1.25+, Gin HTTP framework
-- Database: PostgreSQL with pgx/v5 driver
-- Auth: OIDC (Zitadel), mock mode for development (`AUTH_MODE=mock`)
-- Infrastructure: Knative on HOMELAB-cluster (see deploy/HOMELAB.md)
+**Key Directories:**
 
-**File Structure:**
+- `frontend/src/` — App Router pages, components, contexts, locales (en/, no/)
+- `backend/` — cmd/server/, handlers/, internal/ (middleware, migrate, models, services)
+- `docs/` — Architecture, personas, design system
 
-```text
-frontend/src/
-  app/           # Next.js App Router pages (NOT Pages Router)
-  components/    # Reusable UI components
-  contexts/      # React contexts (Auth, Language)
-  lib/           # Utilities, API clients, OIDC config
-  locales/       # i18n files (en/, no/ with common.ts, aria.ts, etc.)
-  test/          # Test utilities (setup.ts, vitest-axe.d.ts)
-backend/
-  cmd/server/    # Application entrypoint
-  handlers/      # HTTP route handlers
-  internal/      # Private application code
-    middleware/  # Auth middleware (OIDC)
-    migrate/     # Database migrations (embedded, auto-run on startup)
-    models/      # Data models
-    services/    # Business logic (db, tts, storage)
-terraform/       # Infrastructure (modular files)
-```
-
-**Documentation:**
-
-- Architecture & data model: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- Personas & user stories: [docs/USER-STORIES.md](docs/USER-STORIES.md)
-- Development setup: [README.md](README.md)
+**Documentation:** [ARCHITECTURE.md](docs/ARCHITECTURE.md) (data model, security), [USER-STORIES.md](docs/USER-STORIES.md) (personas), [DESIGN.md](docs/DESIGN.md) (UI/UX, accessibility)
 
 ## Code Style Examples
 
@@ -62,7 +37,7 @@ terraform/       # Infrastructure (modular files)
 ### TypeScript (Frontend)
 
 ```typescript
-// ✅ Good - Server Component by default, explicit types, descriptive names
+// ✅ Server Component by default, explicit types, descriptive names
 interface WordSetCardProps {
   wordSet: WordSet;
   onStartTest: (id: string) => void;
@@ -72,45 +47,26 @@ export function WordSetCard({ wordSet, onStartTest }: WordSetCardProps) {
   return (
     <div className="rounded-lg bg-white p-4 shadow-md">
       <h3 className="text-lg font-semibold">{wordSet.name}</h3>
-      <button
-        onClick={() => onStartTest(wordSet.id)}
-        className="mt-2 rounded bg-blue-600 px-4 py-2 text-white"
-      >
+      <button onClick={() => onStartTest(wordSet.id)} className="mt-2 rounded bg-blue-600 px-4 py-2 text-white">
         Start Test
       </button>
     </div>
   );
 }
 
-// ✅ Good - Client Component only when needed
-'use client';
-
-import { useState } from 'react';
-
-export function AudioPlayer({ audioUrl }: { audioUrl: string }) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  // ...
-}
-```
-
-```typescript
-// ❌ Bad - vague names, any types, missing error handling
-function doThing(x: any) {
-  return fetch(x).then(r => r.json());
-}
+// Use 'use client' only when needed (useState, useEffect, event handlers)
 ```
 
 ### Go (Backend)
 
 ```go
-// ✅ Good - explicit error handling, structured responses, context usage
+// ✅ Explicit error handling, structured responses, context usage
 func (h *Handler) GetWordSet(c *gin.Context) {
     id := c.Param("id")
     if id == "" {
         c.JSON(http.StatusBadRequest, gin.H{"error": "word set ID required"})
         return
     }
-
     wordSet, err := h.db.GetWordSet(c.Request.Context(), id)
     if err != nil {
         if errors.Is(err, sql.ErrNoRows) {
@@ -120,16 +76,7 @@ func (h *Handler) GetWordSet(c *gin.Context) {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch word set"})
         return
     }
-
     c.JSON(http.StatusOK, wordSet)
-}
-```
-
-```go
-// ❌ Bad - ignoring errors, no context
-func (h *Handler) GetWordSet(c *gin.Context) {
-    wordSet, _ := h.db.GetWordSet(context.Background(), c.Param("id"))
-    c.JSON(200, wordSet)
 }
 ```
 
@@ -148,63 +95,20 @@ When adding features that affect the data model, follow this order:
 
 ### Database Migration Guidelines
 
-**Critical Rules** - Migrations must be production-safe and idempotent:
+Migrations must be **production-safe** and **idempotent**. Naming: `NNNNNN_descriptive_name.{up,down}.sql`
 
-1. **Constraint Order**: ALWAYS drop constraints BEFORE updating data that would violate them
+1. **Drop constraints BEFORE updating data** — Most common pitfall:
 
    ```sql
-   -- ✅ Good: Drop constraint first
    ALTER TABLE test_results DROP CONSTRAINT IF EXISTS test_results_mode_check;
    UPDATE test_results SET mode = 'new_value' WHERE mode = 'old_value';
    ALTER TABLE test_results ADD CONSTRAINT test_results_mode_check CHECK (mode IN ('new_value'));
-
-   -- ❌ Bad: Update violates existing constraint
-   UPDATE test_results SET mode = 'new_value' WHERE mode = 'old_value';  -- FAILS!
-   ALTER TABLE test_results DROP CONSTRAINT IF EXISTS test_results_mode_check;
    ```
 
-2. **Use IF EXISTS/IF NOT EXISTS**: All DDL must be idempotent (safe to run multiple times)
-
-   ```sql
-   ALTER TABLE users DROP COLUMN IF EXISTS old_column;
-   ALTER TABLE users ADD COLUMN IF NOT EXISTS new_column TEXT;
-   ```
-
-3. **Test Locally First**: Run migration on dev database before committing
-
-   ```bash
-   # Reset dev database
-   docker-compose down -v
-   docker-compose up -d postgres
-   mise run dev  # Migrations run automatically
-   ```
-
-4. **Backwards Compatibility**: Migrations should not break running code
-   - Add new columns as nullable first, populate them, then add NOT NULL
-   - Don't drop columns until code stops using them (2-phase deployment)
-
-5. **Data Migrations**: When transforming data, validate before and after
-
-   ```sql
-   -- Before: Check current state
-   SELECT mode, COUNT(*) FROM test_results GROUP BY mode;
-
-   -- Migrate
-   UPDATE test_results SET mode = 'keyboard' WHERE mode = 'dictation';
-
-   -- After: Verify transformation
-   SELECT mode, COUNT(*) FROM test_results GROUP BY mode;
-   ```
-
-6. **Rollback Strategy**: Always include a `.down.sql` file for reversibility
-
-**Migration Naming**: `NNNNNN_descriptive_name.{up,down}.sql` (e.g., `000014_unified_test_modes.up.sql`)
-
-**Common Pitfalls**:
-
-- Updating data before dropping restrictive constraints → constraint violation
-- Missing `IF EXISTS`/`IF NOT EXISTS` → migration fails on retry after partial completion
-- Not testing on production-like data → unexpected edge cases in production
+2. **Use IF EXISTS/IF NOT EXISTS** — All DDL must be safe to run multiple times
+3. **Test locally first** — `docker-compose down -v && docker-compose up -d postgres && mise run dev`
+4. **Backwards compatible** — Add nullable columns first, drop columns only after code stops using them
+5. **Always include `.down.sql`** — For rollback capability
 
 ## Standards
 
@@ -215,21 +119,11 @@ When adding features that affect the data model, follow this order:
 - Database: snake_case tables and columns
 - Files: kebab-case for components, snake_case for Go
 
-### Data Model
+### Data Model & Security
 
-Family-scoped data model (see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)):
+Family-scoped architecture — see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for full details.
 
-- Family contains Users (parent/child roles)
-- Family contains WordSets
-- Users take Tests which create TestResults
-- Parents see all family data, children see only their own
-
-### Security
-
-- All queries scoped to user's family ID
-- JWT validation on every API call
-- Parents can manage family, children cannot
-- No secrets in frontend code
+**Critical rules:** All queries scoped to user's family ID. JWT validation on every API call. No secrets in frontend.
 
 ## Boundaries
 
@@ -278,116 +172,36 @@ Family-scoped data model (see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)):
 
 ## Project Context
 
-**Target audience**: Norwegian children learning vocabulary (ages 5-12)
+**Target:** Norwegian children (ages 5-12) learning vocabulary with gamified spelling tests.
 
-**Core features**:
+**Personas:** Parent (Erik), Child (Sofie, 7), Child (Magnus, 10) — see [docs/USER-STORIES.md](docs/USER-STORIES.md)
 
-- Word sets with TTS audio generation
-- Three test modes: Standard, Dictation, Translation
-- Practice mode with reveal-on-hover
-- Family progress tracking
-- Parent/child role separation
-
-**Personas** (see [docs/USER-STORIES.md](docs/USER-STORIES.md)):
-
-- **Parent (Erik)**: Creates content, monitors children's progress
-- **Child (Sofie, 7)**: Needs simple UI, immediate feedback, audio replay
-- **Child (Magnus, 10)**: Self-motivated, wants statistics and challenges
-
-**UI/UX principles**:
-
-- Simple, colorful, gamified interface
-- Mobile-first responsive design
-- Large touch targets for children
-- Immediate visual and audio feedback
+**UI/UX:** Mobile-first, large touch targets, immediate feedback — see [docs/DESIGN.md](docs/DESIGN.md)
 
 ## Accessibility Standards
 
-**WCAG 2.1 Level AA Compliance** - Critical for children ages 5-12:
+**WCAG 2.1 Level AA** — Full guidelines in [docs/DESIGN.md](docs/DESIGN.md#accessibility)
 
-### Touch Targets
+**Critical rules:**
 
-- **Minimum 48px**: All buttons, links, and interactive elements must be min-h-12 (48px)
-- **Global classes**: Use `.btn-primary` and `.btn-secondary` with py-4 min-h-12
-- **Form inputs**: Always min-h-12 for child-friendly interaction
-- **Navigation**: py-3 text-base minimum for menu items
-
-### Typography
-
-- **Primary content**: text-base (16px) minimum, NOT text-sm
-- **Responsive scaling**: Add md:text-lg to important stats and content
-- **Badges/labels**: text-sm font-semibold minimum (was text-xs)
-- **Avoid text-sm globally**: Only use for truly secondary content
-
-### Color Contrast
-
-- **Minimum 4.5:1 ratio**: All text must meet WCAG AA standards
-- **Common fixes**: text-gray-400 → text-gray-600, test with contrast checkers
-- **Badges on colored backgrounds**: Ensure sufficient contrast
-
-### ARIA Support
-
-- **i18n integration**: All ARIA labels in `locales/en/aria.ts` and `locales/no/aria.ts`
-- **Icon-only buttons**: Always include aria-label (e.g., "Play audio", "Delete word set")
-- **Loading states**: role="status" aria-live="polite" with sr-only text
-- **Dynamic content**: Use ARIA live regions for test feedback
-- **Forms**: HTML5 validation preferred, ARIA support for errors
-
-### Keyboard Navigation
-
-- **Semantic markup**: Use `<button>` not `<div>` for clickable elements
-- **Focus indicators**: focus-visible:ring-2 focus-visible:ring-blue-600 with sufficient contrast
-- **Tab order**: Logical flow through interactive elements
-- **Word pills**: Convert to buttons with proper aria-labels when interactive
-
-### Testing & Enforcement
-
-- **Automated testing**: vitest-axe integration for component tests
-- **Example test**: See `frontend/src/components/__tests__/ModeSelectionModal.test.tsx`
-- **ESLint rules**: Strict jsx-a11y configuration in eslint.config.js
-- **Run checks**: `mise run check` includes accessibility linting
-
-### Common Patterns
+- Touch targets: `min-h-12` (48px) on all interactive elements
+- Typography: `text-base` (16px) minimum, never `text-sm` for primary content
+- Contrast: 4.5:1 ratio — use `text-gray-600` not `text-gray-400`
+- ARIA: Labels in `locales/*/aria.ts`, icon-only buttons need `aria-label`
+- Semantic HTML: Use `<button>` not `<div>` for clickable elements
 
 ```typescript
-// ✅ Good - Semantic button with ARIA label
-import { useTranslation } from '@/hooks/useTranslation';
-
-const { t } = useTranslation();
+// ✅ Good
 <button
   onClick={() => playAudio(word.id)}
-  className="rounded-full bg-blue-500 p-2 hover:bg-blue-600 min-h-12 min-w-12"
+  className="rounded-full bg-blue-500 p-2 min-h-12 min-w-12"
   aria-label={t('aria.playAudio', { word: word.text })}
 >
   <SpeakerIcon className="h-5 w-5" aria-hidden="true" />
 </button>
 
-// ✅ Good - Loading state with ARIA
-<div role="status" aria-live="polite" className="flex items-center justify-center p-8">
-  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
-  <span className="sr-only">{t('aria.loading')}</span>
-</div>
-
-// ❌ Bad - Interactive div without keyboard support
-<div onClick={() => handleClick()} className="cursor-pointer">
-  Click me
-</div>
-
-// ❌ Bad - Text too small, insufficient touch target
-<button className="py-1 text-xs">
-  Submit
-</button>
-
-// ❌ Bad - Icon without label
-<button onClick={() => deleteItem()}>
-  <TrashIcon />
-</button>
+// ❌ Bad - div for click, no aria-label, small target
+<div onClick={handleClick} className="py-1 text-xs cursor-pointer"><TrashIcon /></div>
 ```
 
-### Key Learnings
-
-1. **TypeScript config for tests**: Use separate `tsconfig.test.json` with vitest/globals types
-2. **ESLint intentional patterns**: Disable rules at config level (not inline) for documented UX patterns
-3. **Touch target calculation**: py-4 (1rem = 16px × 2 = 32px) + min-h-12 (48px) ensures 48px minimum
-4. **ARIA translations**: Keep ARIA labels separate from UI text for clarity and maintenance
-5. **Semantic HTML first**: Use native HTML elements before adding ARIA (e.g., `<button>` over `<div role="button">`)
+**Testing:** vitest-axe integration, jsx-a11y ESLint rules, `mise run check` includes a11y linting

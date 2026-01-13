@@ -654,22 +654,22 @@ Earned by achieving high scores on tests. These are the "goal" badges children w
 
 | Badge Name            | Icon | Criteria                        | Tier   | EN Description                   | NO Description                  |
 | --------------------- | ---- | ------------------------------- | ------ | -------------------------------- | ------------------------------- |
-| **First Steps**       | 🌱   | Complete first test             | Bronze | "You took your first test!"      | "Du tok din første test!"       |
-| **Word Learner**      | 📖   | Score 70%+ on any test          | Bronze | "Good effort on your test!"      | "Godt jobba på testen!"         |
-| **Word Master**       | ⭐   | Score 90%+ on any test          | Silver | "Amazing score!"                 | "Fantastisk resultat!"          |
-| **Perfect Speller**   | 🏆   | Score 100% on any test          | Gold   | "Perfect! Not a single mistake!" | "Perfekt! Ikke én eneste feil!" |
-| **Spelling Champion** | 👑   | Score 100% on 5 different tests | Gold   | "A true spelling champion!"      | "En ekte stavemester!"          |
+| **First Steps**       | 🌱    | Complete first test             | Bronze | "You took your first test!"      | "Du tok din første test!"       |
+| **Word Learner**      | 📖    | Score 70%+ on any test          | Bronze | "Good effort on your test!"      | "Godt jobba på testen!"         |
+| **Word Master**       | ⭐    | Score 90%+ on any test          | Silver | "Amazing score!"                 | "Fantastisk resultat!"          |
+| **Perfect Speller**   | 🏆    | Score 100% on any test          | Gold   | "Perfect! Not a single mistake!" | "Perfekt! Ikke én eneste feil!" |
+| **Spelling Champion** | 👑    | Score 100% on 5 different tests | Gold   | "A true spelling champion!"      | "En ekte stavemester!"          |
 
 #### 2. Consistency Badges (Streak-Based)
 
 Earned by practicing regularly. Encourages habit formation without punishing breaks.
 
-| Badge Name             | Icon   | Criteria      | Tier   | EN Description              | NO Description          |
-| ---------------------- | ------ | ------------- | ------ | --------------------------- | ----------------------- |
-| **Getting Started**    | 🔥     | 3-day streak  | Bronze | "3 days in a row!"          | "3 dager på rad!"       |
+| Badge Name             | Icon | Criteria      | Tier   | EN Description              | NO Description          |
+| ---------------------- | ---- | ------------- | ------ | --------------------------- | ----------------------- |
+| **Getting Started**    | 🔥    | 3-day streak  | Bronze | "3 days in a row!"          | "3 dager på rad!"       |
 | **Consistent Learner** | 🔥🔥   | 7-day streak  | Silver | "A whole week of practice!" | "En hel uke med øving!" |
-| **Dedicated Student**  | 🔥🔥🔥 | 14-day streak | Gold   | "Two weeks strong!"         | "To uker i strekk!"     |
-| **Learning Machine**   | ⚡     | 30-day streak | Gold   | "Incredible dedication!"    | "Utrolig dedikasjon!"   |
+| **Dedicated Student**  | 🔥🔥🔥  | 14-day streak | Gold   | "Two weeks strong!"         | "To uker i strekk!"     |
+| **Learning Machine**   | ⚡    | 30-day streak | Gold   | "Incredible dedication!"    | "Utrolig dedikasjon!"   |
 
 **Streak rules:**
 
@@ -683,10 +683,10 @@ Earned by completing many tests. Celebrates persistence.
 
 | Badge Name         | Icon | Criteria           | Tier   | EN Description           | NO Description             |
 | ------------------ | ---- | ------------------ | ------ | ------------------------ | -------------------------- |
-| **Test Taker**     | 📝   | Complete 10 tests  | Bronze | "10 tests completed!"    | "10 tester fullført!"      |
-| **Frequent Flyer** | ✈️   | Complete 25 tests  | Silver | "25 tests and counting!" | "25 tester og teller!"     |
-| **Test Veteran**   | 🎖️   | Complete 50 tests  | Silver | "50 tests! Impressive!"  | "50 tester! Imponerende!"  |
-| **Century Club**   | 💯   | Complete 100 tests | Gold   | "100 tests! Legendary!"  | "100 tester! Legendarisk!" |
+| **Test Taker**     | 📝    | Complete 10 tests  | Bronze | "10 tests completed!"    | "10 tester fullført!"      |
+| **Frequent Flyer** | ✈️    | Complete 25 tests  | Silver | "25 tests and counting!" | "25 tester og teller!"     |
+| **Test Veteran**   | 🎖️    | Complete 50 tests  | Silver | "50 tests! Impressive!"  | "50 tester! Imponerende!"  |
+| **Century Club**   | 💯    | Complete 100 tests | Gold   | "100 tests! Legendary!"  | "100 tester! Legendarisk!" |
 
 #### 4. Word Count Badges
 
@@ -694,10 +694,10 @@ Earned by learning many unique words correctly.
 
 | Badge Name             | Icon | Criteria                         | Tier   | EN Description                 | NO Description                 |
 | ---------------------- | ---- | -------------------------------- | ------ | ------------------------------ | ------------------------------ |
-| **Word Collector**     | 🔤   | Spell 50 unique words correctly  | Bronze | "50 words in your collection!" | "50 ord i samlingen din!"      |
-| **Vocabulary Builder** | 📚   | Spell 100 unique words correctly | Silver | "100 words mastered!"          | "100 ord mestret!"             |
-| **Word Wizard**        | 🧙   | Spell 250 unique words correctly | Gold   | "250 words! You're a wizard!"  | "250 ord! Du er en trollmann!" |
-| **Dictionary Master**  | 📖✨ | Spell 500 unique words correctly | Gold   | "500 words! Incredible!"       | "500 ord! Utrolig!"            |
+| **Word Collector**     | 🔤    | Spell 50 unique words correctly  | Bronze | "50 words in your collection!" | "50 ord i samlingen din!"      |
+| **Vocabulary Builder** | 📚    | Spell 100 unique words correctly | Silver | "100 words mastered!"          | "100 ord mestret!"             |
+| **Word Wizard**        | 🧙    | Spell 250 unique words correctly | Gold   | "250 words! You're a wizard!"  | "250 ord! Du er en trollmann!" |
+| **Dictionary Master**  | 📖✨   | Spell 500 unique words correctly | Gold   | "500 words! Incredible!"       | "500 ord! Utrolig!"            |
 
 #### 5. Improvement Badges
 
@@ -705,9 +705,9 @@ Earned by showing growth over time. Celebrates effort, not just talent.
 
 | Badge Name         | Icon | Criteria                         | Tier   | EN Description           | NO Description         |
 | ------------------ | ---- | -------------------------------- | ------ | ------------------------ | ---------------------- |
-| **Getting Better** | 📈   | Improve score by 20%+ on retake  | Bronze | "Great improvement!"     | "Flott forbedring!"    |
-| **Comeback Kid**   | 🔄   | Go from <60% to 90%+ on same set | Silver | "What a turnaround!"     | "For en snuoperasjon!" |
-| **Growth Mindset** | 🌟   | Improve on 5 different word sets | Gold   | "Always getting better!" | "Alltid i fremgang!"   |
+| **Getting Better** | 📈    | Improve score by 20%+ on retake  | Bronze | "Great improvement!"     | "Flott forbedring!"    |
+| **Comeback Kid**   | 🔄    | Go from <60% to 90%+ on same set | Silver | "What a turnaround!"     | "For en snuoperasjon!" |
+| **Growth Mindset** | 🌟    | Improve on 5 different word sets | Gold   | "Always getting better!" | "Alltid i fremgang!"   |
 
 #### 6. Special Badges
 
@@ -715,12 +715,12 @@ Unique achievements that add variety.
 
 | Badge Name           | Icon | Criteria                        | Tier   | EN Description                    | NO Description              |
 | -------------------- | ---- | ------------------------------- | ------ | --------------------------------- | --------------------------- |
-| **Early Bird**       | 🐦   | Complete a test before 8am      | Bronze | "Up and learning early!"          | "Oppe og lærer tidlig!"     |
-| **Night Owl**        | 🦉   | Complete a test after 8pm       | Bronze | "Learning into the night!"        | "Lærer til langt på kveld!" |
-| **Speed Demon**      | ⚡   | Complete a 10-word test in <60s | Silver | "Lightning fast!"                 | "Lynrask!"                  |
-| **Careful Speller**  | 🎯   | 100% with no hints used         | Silver | "Perfect without any help!"       | "Perfekt uten hjelp!"       |
-| **Polyglot Starter** | 🌍   | Complete tests in 2+ languages  | Silver | "Learning in multiple languages!" | "Lærer på flere språk!"     |
-| **Family Helper**    | 👨‍👩‍👧   | Parent creates 5+ word sets     | Gold   | "Building a great collection!"    | "Bygger en flott samling!"  |
+| **Early Bird**       | 🐦    | Complete a test before 8am      | Bronze | "Up and learning early!"          | "Oppe og lærer tidlig!"     |
+| **Night Owl**        | 🦉    | Complete a test after 8pm       | Bronze | "Learning into the night!"        | "Lærer til langt på kveld!" |
+| **Speed Demon**      | ⚡    | Complete a 10-word test in <60s | Silver | "Lightning fast!"                 | "Lynrask!"                  |
+| **Careful Speller**  | 🎯    | 100% with no hints used         | Silver | "Perfect without any help!"       | "Perfekt uten hjelp!"       |
+| **Polyglot Starter** | 🌍    | Complete tests in 2+ languages  | Silver | "Learning in multiple languages!" | "Lærer på flere språk!"     |
+| **Family Helper**    | 👨‍👩‍👧    | Parent creates 5+ word sets     | Gold   | "Building a great collection!"    | "Bygger en flott samling!"  |
 
 ### Badge Display & Unlock Flow
 
@@ -1125,7 +1125,7 @@ The mode selector replaces the old modal with sub-menus. Children see a simple g
 | **Tile size**          | 88-96px square, min-h-24                      |
 | **Tile spacing**       | 12px gap                                      |
 | **Tile content**       | Icon (32px) + label (14-16px)                 |
-| **Recommended badge**  | "⭐" top-right corner with subtle glow        |
+| **Recommended badge**  | "⭐" top-right corner with subtle glow         |
 | **Unavailable state**  | Grayed out (opacity-40), no click             |
 | **Unavailable reason** | Shown only for parent role (tooltip)          |
 | **Touch feedback**     | Scale 0.97 on tap, ring on focus              |
@@ -1163,13 +1163,13 @@ The mode selector replaces the old modal with sub-menus. Children see a simple g
 
 | Mode             | Icon | English          | Norwegian    |
 | ---------------- | ---- | ---------------- | ------------ |
-| Letter Tiles     | 🧩   | Build It         | Bygg Ordet   |
-| Word Bank        | 📝   | Pick Words       | Velg Ord     |
-| Keyboard         | ⌨️   | Type It          | Skriv Selv   |
-| Missing Letters  | 🔲   | Fill the Gap     | Fyll Inn     |
-| Flashcard        | 👀   | Quick Look       | Hurtigblikk  |
-| Look-Cover-Write | 🧠   | Memory Spell     | Huskestaving |
-| Translation      | 🌐   | Switch Languages | Bytt Språk   |
+| Letter Tiles     | 🧩    | Build It         | Bygg Ordet   |
+| Word Bank        | 📝    | Pick Words       | Velg Ord     |
+| Keyboard         | ⌨️    | Type It          | Skriv Selv   |
+| Missing Letters  | 🔲    | Fill the Gap     | Fyll Inn     |
+| Flashcard        | 👀    | Quick Look       | Hurtigblikk  |
+| Look-Cover-Write | 🧠    | Memory Spell     | Huskestaving |
+| Translation      | 🌐    | Switch Languages | Bytt Språk   |
 
 **Recommended badge algorithm:**
 
@@ -1658,6 +1658,16 @@ The app must meet accessibility standards, especially important for children who
 3. **Audio support** — TTS for words, sound effects optional
 4. **Simple language** — Instructions use clear, short sentences
 5. **Consistent layout** — Predictable navigation aids children with attention differences
+
+### Implementation Notes
+
+Key learnings from accessibility implementation:
+
+1. **TypeScript config for tests**: Use separate `tsconfig.test.json` with vitest/globals types
+2. **ESLint intentional patterns**: Disable rules at config level (not inline) for documented UX patterns
+3. **Touch target calculation**: py-4 (1rem = 16px × 2 = 32px) + min-h-12 (48px) ensures 48px minimum
+4. **ARIA translations**: Keep ARIA labels separate from UI text in `locales/*/aria.ts`
+5. **Semantic HTML first**: Use native HTML elements before adding ARIA (e.g., `<button>` over `<div role="button">`)
 
 ---
 
