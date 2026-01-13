@@ -149,6 +149,30 @@ func StreamWordAudio(c *gin.Context) {
 	c.Header("Accept-Ranges", "bytes")           // Enable range requests for better browser compatibility
 	c.Header("Access-Control-Allow-Origin", "*") // CORS for audio playback
 
-	// Stream the audio data directly to the client
+	// Handle Range requests for iOS Safari compatibility
+	rangeHeader := c.GetHeader("Range")
+	if rangeHeader != "" {
+		// Parse range header (e.g., "bytes=0-1023")
+		var start, end int64
+		_, err := fmt.Sscanf(rangeHeader, "bytes=%d-%d", &start, &end)
+		if err != nil || start < 0 || start >= int64(len(audioData)) {
+			// Invalid range, return full content
+			c.Data(http.StatusOK, "audio/ogg", audioData)
+			return
+		}
+
+		// Adjust end if not specified or out of bounds
+		if end <= 0 || end >= int64(len(audioData)) {
+			end = int64(len(audioData)) - 1
+		}
+
+		// Return partial content
+		c.Header("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, end, len(audioData)))
+		c.Header("Content-Length", fmt.Sprintf("%d", end-start+1))
+		c.Data(http.StatusPartialContent, "audio/ogg", audioData[start:end+1])
+		return
+	}
+
+	// Stream the full audio data directly to the client
 	c.Data(http.StatusOK, "audio/ogg", audioData)
 }
