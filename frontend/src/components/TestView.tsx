@@ -419,10 +419,10 @@ export function TestView({
           translationInfo={
             testMode === "translation" && translation
               ? {
-                  wordDirection,
-                  showWord: showWord!,
-                  targetLanguage: targetLanguage!,
-                }
+                wordDirection,
+                showWord: showWord!,
+                targetLanguage: targetLanguage!,
+              }
               : undefined
           }
         />

@@ -20,6 +20,16 @@ const config = {
       fontFamily: {
         sans: ["var(--font-lexend)", "system-ui", "sans-serif"],
       },
+      animation: {
+        "shrink-x": "shrink-x var(--timer-duration, 3500ms) linear forwards",
+        "progress-shrink": "shrink-x var(--progress-duration, 2000ms) linear forwards",
+      },
+      keyframes: {
+        "shrink-x": {
+          "0%": { width: "100%" },
+          "100%": { width: "0%" },
+        },
+      },
     },
   },
 };

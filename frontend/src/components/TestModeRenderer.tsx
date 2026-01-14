@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { getMode } from "@/lib/testEngine/registry";
 import type { TestMode, WordItem } from "@/types";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { LetterTileInput, TileFeedbackState } from "./LetterTileInput";
 import { WordBankInput } from "./WordBankInput";
 import { MissingLettersInput } from "./MissingLettersInput";
@@ -41,6 +42,7 @@ export function TestModeRenderer({
   tileKey,
   testConfig,
 }: TestModeRendererProps) {
+  const { t } = useLanguage();
   const inputRef = useRef<HTMLInputElement>(null);
   const mode = getMode(testMode);
 
@@ -150,8 +152,8 @@ export function TestModeRenderer({
       className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 text-center text-xl transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-nordic-teal sm:px-6 sm:py-4 sm:text-2xl min-h-12"
       placeholder={
         testMode === "translation"
-          ? "Type translation here"
-          : "Type the word you heard"
+          ? t("test.typeTranslationHere")
+          : t("test.typeWordHere")
       }
       autoFocus
       autoCorrect={testConfig?.enableAutocorrect ? "on" : "off"}

@@ -72,7 +72,7 @@ export function TestFeedbackOverlay({
   return (
     <>
       {lastAnswerCorrect ? (
-        <CorrectFeedback />
+        <CorrectFeedback timerDurationMs={TIMING.FEEDBACK_DISPLAY_MS} />
       ) : isCurrentSentence && sentenceScoringResult ? (
         <SentenceFeedback
           result={sentenceScoringResult}

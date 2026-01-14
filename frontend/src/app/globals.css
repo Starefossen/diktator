@@ -98,7 +98,7 @@ textarea {
 
 /* Danger Button - Red for destructive actions */
 .btn-danger {
-  @apply px-4 py-2 min-h-12 bg-nordic-coral text-white font-medium rounded-xl transition-colors duration-200;
+  @apply inline-flex flex-row flex-nowrap items-center justify-center gap-2 whitespace-nowrap px-4 py-2 min-h-12 bg-nordic-coral text-white font-medium rounded-xl transition-colors duration-200;
   @apply hover:brightness-110;
   @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nordic-coral focus-visible:ring-offset-2;
   @apply disabled:opacity-50 disabled:cursor-not-allowed;

@@ -212,18 +212,38 @@ export function SpellingFeedback({
 /**
  * Simple success feedback for correct answers
  */
-export function CorrectFeedback() {
+export function CorrectFeedback({
+  timerDurationMs,
+}: {
+  timerDurationMs?: number;
+}) {
   const { t } = useLanguage();
 
   return (
-    <div className="p-4 rounded-lg bg-green-100 border border-green-300 animate-in fade-in-0 slide-in-from-top-2 duration-300">
-      <div className="flex items-center justify-center gap-3">
-        <Stavle pose="celebrating" size={64} animate />
-        <p className="font-semibold text-lg text-green-800 flex items-center gap-2">
-          <HeroCheckSolidIcon className="w-7 h-7 text-green-600" />
-          {t("test.correct")}
-        </p>
+    <div className="rounded-lg bg-green-100 border border-green-300 overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-300">
+      <div className="p-4">
+        <div className="flex items-center justify-center gap-3">
+          <Stavle pose="celebrating" size={64} animate />
+          <p className="font-semibold text-lg text-green-800 flex items-center gap-2">
+            <HeroCheckSolidIcon className="w-7 h-7 text-green-600" />
+            {t("test.correct")}
+          </p>
+        </div>
       </div>
+
+      {/* Timer bar at the bottom */}
+      {timerDurationMs && timerDurationMs > 0 && (
+        <div className="h-1.5 bg-green-200">
+          <div
+            className="h-full bg-green-600 animate-shrink-x"
+            style={
+              {
+                "--timer-duration": `${timerDurationMs}ms`,
+              } as React.CSSProperties
+            }
+          />
+        </div>
+      )}
     </div>
   );
 }
