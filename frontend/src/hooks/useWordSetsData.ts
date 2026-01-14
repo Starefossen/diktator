@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { WordSet } from "@/types";
 import { generatedApiClient } from "@/lib/api-generated";
+import { logger } from "@/lib/logger";
 import {
   models_CreateWordSetRequest,
   models_UpdateWordSetRequest,
@@ -38,7 +39,7 @@ export function useWordSetsData(): UseWordSetsDataReturn {
         setWordSets(response.data as WordSet[]);
       }
     } catch (error) {
-      console.error("Failed to load word sets:", error);
+      logger.api.error("Failed to load word sets:", error);
     } finally {
       setLoading(false);
     }
@@ -56,7 +57,7 @@ export function useWordSetsData(): UseWordSetsDataReturn {
         }
         return null;
       } catch (error) {
-        console.error("Failed to create word set:", error);
+        logger.api.error("Failed to create word set:", error);
         throw error;
       } finally {
         setCreating(false);
@@ -76,7 +77,7 @@ export function useWordSetsData(): UseWordSetsDataReturn {
           );
         }
       } catch (error) {
-        console.error("Failed to update word set:", error);
+        logger.api.error("Failed to update word set:", error);
         throw error;
       } finally {
         setUpdating(false);
@@ -91,7 +92,7 @@ export function useWordSetsData(): UseWordSetsDataReturn {
       await generatedApiClient.deleteWordSet(id);
       setWordSets((prev) => prev.filter((ws) => ws.id !== id));
     } catch (error) {
-      console.error("Failed to delete word set:", error);
+      logger.api.error("Failed to delete word set:", error);
       throw error;
     } finally {
       setDeleting(false);

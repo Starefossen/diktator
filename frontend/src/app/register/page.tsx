@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 // ApiUsersPostRequest type no longer needed - using inline type
@@ -29,7 +30,7 @@ export default function RegisterPage() {
 
   // Log auth state on mount and changes
   useEffect(() => {
-    console.log("[RegisterPage] Auth state changed:", {
+    logger.auth.debug("RegisterPage auth state changed", {
       loading,
       user: user?.email,
       needsRegistration,
@@ -62,16 +63,12 @@ export default function RegisterPage() {
   // AND we're not in a loading state AND user exists with valid email
   // AND there are no pending invites
   useEffect(() => {
-    console.log(
-      "[RegisterPage] Redirect check: loading=",
+    logger.auth.debug("RegisterPage redirect check", {
       loading,
-      "user=",
-      user?.email,
-      "needsRegistration=",
+      user: user?.email,
       needsRegistration,
-      "hasPendingInvites=",
       hasPendingInvites,
-    );
+    });
     if (
       !loading &&
       user &&
@@ -79,16 +76,14 @@ export default function RegisterPage() {
       !needsRegistration &&
       !hasPendingInvites
     ) {
-      console.log(
-        "[RegisterPage] All conditions met for redirect! Redirecting away...",
-      );
+      logger.auth.debug("All conditions met for redirect! Redirecting away...");
       const redirect =
         sessionStorage.getItem("post_registration_redirect") || "/wordsets/";
-      console.log("[RegisterPage] Redirecting to:", redirect);
+      logger.auth.debug("Redirecting to", { redirect });
       sessionStorage.removeItem("post_registration_redirect");
       router.replace(redirect);
     } else {
-      console.log("[RegisterPage] Not redirecting. Conditions:", {
+      logger.auth.debug("Not redirecting. Conditions:", {
         loading,
         hasUser: !!user,
         userHasEmail: !!user?.email,
@@ -100,9 +95,9 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    console.log("[RegisterPage] handleSubmit: Starting form submission");
+    logger.auth.debug("handleSubmit: Starting form submission");
     if (!user) {
-      console.log("[RegisterPage] handleSubmit: No user, signing in");
+      logger.auth.debug("handleSubmit: No user, signing in");
       await signIn();
       return;
     }
@@ -116,7 +111,7 @@ export default function RegisterPage() {
       const trimmedFamilyName = familyName.trim();
 
       if (!trimmedDisplayName || !trimmedEmail || !trimmedFamilyName) {
-        console.log("[RegisterPage] handleSubmit: Validation failed", {
+        logger.auth.debug("handleSubmit: Validation failed", {
           displayName: !!trimmedDisplayName,
           email: !!trimmedEmail,
           familyName: !!trimmedFamilyName,
@@ -136,22 +131,21 @@ export default function RegisterPage() {
         email: trimmedEmail,
       };
 
-      console.log("[RegisterPage] handleSubmit: Creating user", payload);
+      logger.auth.debug("handleSubmit: Creating user", payload);
       await generatedApiClient.createUser(payload);
 
-      console.log("[RegisterPage] handleSubmit: User created, refreshing data");
+      logger.auth.debug("handleSubmit: User created, refreshing data");
       await refreshUserData();
 
       const redirect =
         sessionStorage.getItem("post_registration_redirect") || "/wordsets/";
       sessionStorage.removeItem("post_registration_redirect");
-      console.log(
-        "[RegisterPage] handleSubmit: Registration complete, redirecting to:",
+      logger.auth.info("handleSubmit: Registration complete, redirecting to", {
         redirect,
-      );
+      });
       router.push(redirect);
     } catch (err) {
-      console.error("[RegisterPage] Registration failed", err);
+      logger.auth.error("Registration failed", { error: err });
       setError(t("auth.register.error.failed"));
     } finally {
       setSubmitting(false);
@@ -159,28 +153,22 @@ export default function RegisterPage() {
   };
 
   const handleAcceptInvitation = async (invitationId: string) => {
-    console.log(
-      "[RegisterPage] handleAcceptInvitation: Starting",
-      invitationId,
-    );
+    logger.auth.debug("handleAcceptInvitation: Starting", { invitationId });
     setAcceptingInvite(true);
     setError(null);
 
     try {
       await generatedApiClient.acceptInvitation(invitationId);
-      console.log("[RegisterPage] handleAcceptInvitation: Invitation accepted");
+      logger.auth.debug("handleAcceptInvitation: Invitation accepted");
       await refreshUserData();
 
       const redirect =
         sessionStorage.getItem("post_registration_redirect") || "/wordsets/";
       sessionStorage.removeItem("post_registration_redirect");
-      console.log(
-        "[RegisterPage] handleAcceptInvitation: Redirecting to:",
-        redirect,
-      );
+      logger.auth.info("handleAcceptInvitation: Redirecting to", { redirect });
       router.push(redirect);
     } catch (err) {
-      console.error("[RegisterPage] Invitation acceptance failed", err);
+      logger.auth.error("Invitation acceptance failed", { error: err });
       setError(t("auth.register.error.invitationFailed"));
     } finally {
       setAcceptingInvite(false);

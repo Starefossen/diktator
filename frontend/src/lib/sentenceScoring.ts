@@ -7,6 +7,7 @@
  * - Word-level feedback with alignment
  */
 
+import { logger } from "@/lib/logger";
 import { analyzeSpelling, SpellingAnalysisResult } from "./spellingAnalysis";
 
 // ============================================================================
@@ -395,7 +396,7 @@ export function scoreSentence(
   const expectedWords = tokenize(expected, config);
   const actualWords = tokenize(actual, config);
 
-  console.log("[scoreSentence] Input:", {
+  logger.api.debug("Sentence scoring input", {
     expected,
     actual,
     expectedWords,

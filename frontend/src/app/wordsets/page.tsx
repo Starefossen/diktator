@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import React, {
   useState,
   useCallback,
@@ -141,7 +142,7 @@ function WordSetsPageContent() {
           }
         }
       } catch (error) {
-        console.error("Failed to load personalization data:", error);
+        logger.api.error("Failed to load personalization data", { error });
       } finally {
         setPersonalizationLoading(false);
       }
@@ -164,7 +165,7 @@ function WordSetsPageContent() {
         onEnd: () => setPlayingAudio(null),
         onError: (error: Error) => {
           setPlayingAudio(null);
-          console.error("Failed to play audio for word:", word, error);
+          logger.audio.error("Failed to play audio for word", { word, error });
         },
         preloadNext: true,
       });
@@ -198,7 +199,7 @@ function WordSetsPageContent() {
 
       modalState.closeSettingsModal();
     } catch (error) {
-      console.error("Failed to save settings:", error);
+      logger.api.error("Failed to save settings", { error });
     }
   }, [modalState, updateWordSet]);
 
@@ -222,9 +223,9 @@ function WordSetsPageContent() {
         }
 
         modalState.closeCreateForm();
-        console.log("Word set created successfully");
+        logger.api.info("Word set created successfully");
       } catch (error) {
-        console.error("Failed to create word set:", error);
+        logger.api.error("Failed to create word set", { error });
         throw new Error(t("wordsets.createError"));
       }
     },
@@ -238,9 +239,9 @@ function WordSetsPageContent() {
       try {
         await updateWordSet(modalState.editingWordSet.id, data);
         modalState.closeEditForm();
-        console.log("Word set updated successfully");
+        logger.api.info("Word set updated successfully");
       } catch (error) {
-        console.error("Failed to update word set:", error);
+        logger.api.error("Failed to update word set", { error });
         throw new Error(t("wordsets.updateError"));
       }
     },
@@ -253,9 +254,9 @@ function WordSetsPageContent() {
     try {
       await deleteWordSet(modalState.deleteWordSet.id);
       modalState.closeDeleteModal();
-      console.log("Word set deleted successfully");
+      logger.api.info("Word set deleted successfully");
     } catch (error) {
-      console.error("Failed to delete word set:", error);
+      logger.api.error("Failed to delete word set", { error });
     }
   }, [deleteWordSet, modalState]);
 

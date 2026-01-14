@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { handleCallback, getReturnUrl, isMockMode } from "@/lib/oidc";
@@ -53,7 +54,7 @@ function CallbackContent() {
 
         router.push(returnTo);
       } catch (err) {
-        console.error("Callback error:", err);
+        logger.auth.error("Callback error", { error: err });
         setError(err instanceof Error ? err.message : "Authentication failed");
       }
     }

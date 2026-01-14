@@ -164,7 +164,7 @@ async function getDiscoveryDocument(): Promise<OIDCDiscovery | null> {
     discoveryCache = await response.json();
     return discoveryCache;
   } catch (error) {
-    console.error("Failed to fetch OIDC discovery document:", error);
+    logger.oidc.error("Failed to fetch OIDC discovery document:", error);
     return null;
   }
 }
@@ -459,7 +459,7 @@ export async function getUserInfo(): Promise<OIDCUser | null> {
  */
 export async function initiateLogin(returnTo?: string): Promise<void> {
   if (isMockMode) {
-    console.log("Mock mode: Login simulated");
+    logger.oidc.debug("Mock mode: Login simulated");
     // In mock mode, store mock tokens
     const token = getMockToken();
     storeTokens({
@@ -570,7 +570,7 @@ export async function handleCallback(
  */
 export async function initiateLogout(): Promise<void> {
   if (isMockMode) {
-    console.log("Mock mode: Logout simulated");
+    logger.oidc.debug("Mock mode: Logout simulated");
     clearTokens();
     if (typeof window !== "undefined") {
       window.location.href = "/";
@@ -636,7 +636,7 @@ async function refreshAccessToken(): Promise<boolean> {
 
     return true;
   } catch (error) {
-    console.error("Token refresh failed:", error);
+    logger.oidc.error("Token refresh failed:", error);
     clearTokens();
     return false;
   }

@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -100,7 +101,7 @@ export default function ProfilePage() {
         }
       }
     } catch (err) {
-      console.error("Error loading profile data:", err);
+      logger.api.error("Error loading profile data", { error: err });
       setError(t("profile.error.load"));
     } finally {
       setLoading(false);
@@ -116,9 +117,9 @@ export default function ProfilePage() {
   const averageScore =
     totalTests > 0
       ? Math.round(
-          recentResults.reduce((sum, result) => sum + result.score, 0) /
-            totalTests,
-        )
+        recentResults.reduce((sum, result) => sum + result.score, 0) /
+        totalTests,
+      )
       : 0;
 
   const formatDate = (dateString: string) => {
@@ -321,13 +322,12 @@ export default function ProfilePage() {
                     </div>
                     <div className="text-right">
                       <div
-                        className={`inline-block px-3 py-1 rounded-full font-semibold ${
-                          result.score >= 90
+                        className={`inline-block px-3 py-1 rounded-full font-semibold ${result.score >= 90
                             ? "text-nordic-meadow bg-nordic-meadow/10"
                             : result.score >= 70
                               ? "text-nordic-sunrise bg-nordic-sunrise/10"
                               : "text-nordic-cloudberry bg-nordic-cloudberry/10"
-                        }`}
+                          }`}
                       >
                         {result.score}%
                       </div>
@@ -387,11 +387,10 @@ export default function ProfilePage() {
                             {child.displayName}
                           </span>
                           <span
-                            className={`text-xs px-2 py-1 rounded ${
-                              child.isActive
+                            className={`text-xs px-2 py-1 rounded ${child.isActive
                                 ? "bg-nordic-meadow/20 text-nordic-midnight"
                                 : "bg-gray-100 text-gray-600"
-                            }`}
+                              }`}
                           >
                             {child.isActive
                               ? t("profile.family.active")

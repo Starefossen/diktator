@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -61,7 +62,7 @@ function FamilyProgressPageContent() {
       const curatedWordSets = (curatedWordSetsResponse.data as WordSet[]) || [];
       setWordSets([...familyWordSets, ...curatedWordSets]);
     } catch (error) {
-      console.error("Failed to load family data:", error);
+      logger.api.error("Failed to load family data", { error });
     } finally {
       setLoading(false);
     }
@@ -118,9 +119,9 @@ function FamilyProgressPageContent() {
               <h1 className="mb-4 text-4xl font-bold text-transparent bg-linear-to-r from-nordic-sky to-nordic-teal bg-clip-text">
                 {isChildView
                   ? (selectedChild?.userName || t("family.progress.unknown")) +
-                    (selectedChild?.role === "child" && selectedChild?.birthYear
-                      ? ` (${calculateAge(selectedChild.birthYear)})`
-                      : "")
+                  (selectedChild?.role === "child" && selectedChild?.birthYear
+                    ? ` (${calculateAge(selectedChild.birthYear)})`
+                    : "")
                   : t("family.title")}
               </h1>
               <p className="text-lg text-gray-600">
@@ -267,8 +268,8 @@ function FamilyProgressPageContent() {
                         <p className="font-bold">
                           {member.totalWords > 0
                             ? Math.round(
-                                (member.correctWords / member.totalWords) * 100,
-                              )
+                              (member.correctWords / member.totalWords) * 100,
+                            )
                             : 0}
                           %
                         </p>

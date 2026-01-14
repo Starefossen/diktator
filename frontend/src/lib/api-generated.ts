@@ -3,6 +3,7 @@
  * This wraps the generated OpenAPI client with OIDC authentication
  */
 
+import { logger } from "@/lib/logger";
 import { getIdToken, isMockMode, getMockToken } from "@/lib/oidc";
 import { OpenAPI } from "@/generated/core/OpenAPI";
 import {
@@ -47,14 +48,14 @@ const setupAuth = async (requireAuth = true): Promise<void> => {
 
     if (token) {
       OpenAPI.TOKEN = token;
-      console.log("[API] Token configured, BASE:", OpenAPI.BASE);
+      logger.api.debug("Token configured", { base: OpenAPI.BASE });
     } else if (!isMockMode) {
-      console.error("[API] User not authenticated");
+      logger.api.error("User not authenticated");
       throw new Error("User not authenticated");
     }
   } else {
     OpenAPI.TOKEN = undefined;
-    console.log("[API] No auth required, BASE:", OpenAPI.BASE);
+    logger.api.debug("No auth required", { base: OpenAPI.BASE });
   }
 };
 

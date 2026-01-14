@@ -3,6 +3,8 @@
  * Provides success, error, and completion tone functions using Web Audio API
  */
 
+import { logger } from "@/lib/logger";
+
 // Type declaration for WebKit AudioContext fallback
 declare global {
   interface Window {
@@ -31,7 +33,7 @@ const getAudioContext = (): AudioContext | null => {
         sharedAudioContext.resume();
       }
     } catch (error) {
-      console.log("Could not create AudioContext:", error);
+      logger.audio.debug("Could not create AudioContext", { error });
       return null;
     }
   }
@@ -76,7 +78,7 @@ export const playSuccessTone = (): void => {
       oscillator.stop(audioContext.currentTime + duration + index * 0.1);
     });
   } catch (error) {
-    console.log("Could not play success tone:", error);
+    logger.audio.debug("Could not play success tone", { error });
   }
 };
 
@@ -117,7 +119,7 @@ export const playErrorSound = (): void => {
       oscillator.stop(audioContext.currentTime + duration + index * 0.15);
     });
   } catch (error) {
-    console.log("Could not play error sound:", error);
+    logger.audio.debug("Could not play error sound", { error });
   }
 };
 
@@ -158,6 +160,6 @@ export const playCompletionTone = (): void => {
       oscillator.stop(audioContext.currentTime + duration + index * 0.2);
     });
   } catch (error) {
-    console.log("Could not play completion tone:", error);
+    logger.audio.debug("Could not play completion tone", { error });
   }
 };

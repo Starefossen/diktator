@@ -8,6 +8,7 @@ import {
 } from "@/types";
 import type { models_SaveResultRequest as SaveResultRequest } from "@/generated";
 import { generatedApiClient } from "@/lib/api-generated";
+import { logger } from "@/lib/logger";
 import {
   playWordAudio as playWordAudioHelper,
   playAudioSync,
@@ -114,7 +115,7 @@ export function useTestMode(): UseTestModeReturn {
       // Safety timeout to reset audio state in case callbacks don't fire
       const safetyTimeout = setTimeout(() => {
         if (isPlayingAudioRef.current) {
-          console.warn("Audio playback timeout - resetting state");
+          logger.audio.warn("Audio playback timeout - resetting state");
           isPlayingAudioRef.current = false;
           setIsAudioPlaying(false);
         }
@@ -131,7 +132,7 @@ export function useTestMode(): UseTestModeReturn {
           setIsAudioPlaying(false);
         },
         onError: (error: Error) => {
-          console.error("Audio playback error:", error);
+          logger.audio.error("Audio playback error:", error);
           clearTimeout(safetyTimeout);
           isPlayingAudioRef.current = false;
           setIsAudioPlaying(false);
@@ -212,7 +213,7 @@ export function useTestMode(): UseTestModeReturn {
     // as the user click. ANY async boundary breaks this (even calling an async function).
     if (config?.autoPlayAudio && words.length > 0) {
       lastAutoPlayIndexRef.current = 0;
-      console.log(
+      logger.audio.debug(
         "[useTestMode] Playing first word SYNCHRONOUSLY in click handler",
       );
 
@@ -229,13 +230,16 @@ export function useTestMode(): UseTestModeReturn {
 
       // Set up callbacks AFTER the synchronous play() call
       audioHandle.onEnd(() => {
-        console.log("[useTestMode] First word audio ended");
+        logger.audio.debug("[useTestMode] First word audio ended");
         isPlayingAudioRef.current = false;
         setIsAudioPlaying(false);
       });
 
       audioHandle.onError((error: Error) => {
-        console.error("[useTestMode] First word audio error:", error.message);
+        logger.audio.error(
+          "[useTestMode] First word audio error:",
+          error.message,
+        );
         isPlayingAudioRef.current = false;
         setIsAudioPlaying(false);
         // Fall back to TTS
@@ -330,7 +334,7 @@ export function useTestMode(): UseTestModeReturn {
           // TODO: Show LevelUpModal if xpData.levelUp === true
         }
       } catch (error) {
-        console.error("Failed to save test result:", error);
+        logger.api.error("Failed to save test result:", error);
       }
 
       playCompletionTone();
@@ -352,19 +356,19 @@ export function useTestMode(): UseTestModeReturn {
       // Get expected answer from mode definition
       const wordObj = activeTest.words.find((w) => w.word === currentWord);
       if (!wordObj) {
-        console.error(`Word not found: ${currentWord}`);
+        logger.api.error(`Word not found: ${currentWord}`);
         return;
       }
 
       const mode = getMode(testMode);
       const expectedAnswer = mode?.getExpectedAnswer
         ? mode.getExpectedAnswer(wordObj, {
-            translationDirection:
-              wordDirections.length > currentWordIndex
-                ? wordDirections[currentWordIndex]
-                : "toTarget",
-            wordSet: activeTest,
-          })
+          translationDirection:
+            wordDirections.length > currentWordIndex
+              ? wordDirections[currentWordIndex]
+              : "toTarget",
+          wordSet: activeTest,
+        })
         : currentWord;
 
       // Use normalized comparison that ignores punctuation and case

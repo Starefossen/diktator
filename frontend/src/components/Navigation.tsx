@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -39,7 +40,7 @@ export function Navigation() {
         router.push("/");
       }, 0);
     } catch (error) {
-      console.error("Logout error occurred:", error);
+      logger.auth.error("Logout error occurred", { error });
     }
   };
 
@@ -153,13 +154,12 @@ export function Navigation() {
             {/* API Status Indicator */}
             <div className="flex items-center pr-4 mr-4 border-r border-gray-200">
               <div
-                className={`w-3 h-3 rounded-full transition-colors ${
-                  status === "connected"
+                className={`w-3 h-3 rounded-full transition-colors ${status === "connected"
                     ? "bg-emerald-500"
                     : status === "error"
                       ? "bg-red-500"
                       : "bg-amber-500 animate-pulse"
-                }`}
+                  }`}
                 title={
                   status === "connected"
                     ? `API Connected: ${message}`
@@ -456,13 +456,12 @@ export function Navigation() {
               <div className="flex items-center space-x-2">
                 <span className="text-xs text-gray-500">API</span>
                 <div
-                  className={`w-2.5 h-2.5 rounded-full transition-colors ${
-                    status === "connected"
+                  className={`w-2.5 h-2.5 rounded-full transition-colors ${status === "connected"
                       ? "bg-emerald-500"
                       : status === "error"
                         ? "bg-red-500"
                         : "bg-amber-500 animate-pulse"
-                  }`}
+                    }`}
                   title={
                     status === "connected"
                       ? `API Connected: ${message}`

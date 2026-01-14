@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -52,7 +53,7 @@ export default function SettingsPage() {
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
-      console.error("Failed to update display name:", err);
+      logger.api.error("Failed to update display name", { error: err });
       setError(t("profile.settings.error"));
     } finally {
       setIsSaving(false);

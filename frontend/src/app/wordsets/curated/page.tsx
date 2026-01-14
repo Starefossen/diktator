@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import React, { useState, useCallback, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -52,7 +53,7 @@ function CuratedPageContent() {
           setCuratedWordSets(response.data as WordSet[]);
         }
       } catch (err) {
-        console.error("Failed to load curated word sets:", err);
+        logger.api.error("Failed to load curated word sets", { error: err });
         setError(t("wordsets.curated.loadError"));
       } finally {
         setLoading(false);
@@ -72,7 +73,7 @@ function CuratedPageContent() {
           setUserResults(resultsResponse.data as TestResult[]);
         }
       } catch (err) {
-        console.error("Failed to load user results:", err);
+        logger.api.error("Failed to load user results", { error: err });
       }
     };
 
@@ -114,7 +115,7 @@ function CuratedPageContent() {
         onEnd: () => setPlayingAudio(null),
         onError: (error: Error) => {
           setPlayingAudio(null);
-          console.error("Failed to play audio for word:", word, error);
+          logger.audio.error("Failed to play audio for word", { word, error });
         },
         preloadNext: true,
       });

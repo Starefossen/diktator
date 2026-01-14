@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import React, { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -39,7 +40,7 @@ export function ChildAssignmentSelector({
         const childrenData = response.data as ChildAccount[] | undefined;
         setChildren(childrenData || []);
       } catch (err) {
-        console.error("Failed to fetch children:", err);
+        logger.api.error("Failed to fetch children", { error: err });
         setError("Failed to load children");
       } finally {
         setLoading(false);
@@ -79,7 +80,7 @@ export function ChildAssignmentSelector({
         onAssignmentChange?.(newAssignedIds);
       }
     } catch (err) {
-      console.error("Failed to update assignment:", err);
+      logger.api.error("Failed to update assignment", { error: err });
       setError(
         isCurrentlyAssigned
           ? t("wordsets.assignment.unassignError")
@@ -129,19 +130,17 @@ export function ChildAssignmentSelector({
               key={child.id}
               type="button"
               onClick={() => handleToggleAssignment(child.id)}
-              className={`w-full flex items-center justify-between p-3 rounded-lg border-2 transition-all ${
-                isAssigned
+              className={`w-full flex items-center justify-between p-3 rounded-lg border-2 transition-all ${isAssigned
                   ? "border-nordic-sky bg-nordic-sky/10 hover:bg-nordic-sky/20"
                   : "border-gray-200 bg-white hover:bg-gray-50"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3">
                 <div
-                  className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                    isAssigned
+                  className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isAssigned
                       ? "border-nordic-sky bg-nordic-sky"
                       : "border-gray-300 bg-white"
-                  }`}
+                    }`}
                 >
                   {isAssigned && (
                     <HeroCheckIcon className="w-3.5 h-3.5 text-white" />
