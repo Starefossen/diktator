@@ -10,13 +10,13 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading, needsRegistration } = useAuth();
+  const { user, loading, needsRegistration, hasPendingInvites } = useAuth();
   const router = useRouter();
 
   // If user is not authenticated, redirect to auth page instead of rendering it inline
   // This prevents React state update errors during logout
   useEffect(() => {
-    if (!loading && needsRegistration) {
+    if (!loading && (needsRegistration || hasPendingInvites)) {
       const currentPath = window.location.pathname;
       const redirectUrl =
         currentPath !== "/"
@@ -35,7 +35,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
           : "/auth";
       router.push(redirectUrl);
     }
-  }, [user, loading, needsRegistration, router]);
+  }, [user, loading, needsRegistration, hasPendingInvites, router]);
 
   // Show loading spinner while checking auth state
   if (loading) {
@@ -43,7 +43,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   // If not authenticated, show loading while redirect happens
-  if (!user || needsRegistration) {
+  if (!user || needsRegistration || hasPendingInvites) {
     return <LoadingPage />;
   }
 
