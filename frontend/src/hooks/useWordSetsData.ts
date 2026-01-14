@@ -3,8 +3,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { WordSet } from "@/types";
 import { generatedApiClient } from "@/lib/api-generated";
 import {
-  ModelsCreateWordSetRequest,
-  ModelsUpdateWordSetRequest,
+  models_CreateWordSetRequest,
+  models_UpdateWordSetRequest,
 } from "@/generated";
 
 export interface UseWordSetsDataReturn {
@@ -14,10 +14,10 @@ export interface UseWordSetsDataReturn {
   updating: boolean;
   deleting: boolean;
   loadWordSets: () => Promise<void>;
-  createWordSet: (data: ModelsCreateWordSetRequest) => Promise<WordSet | null>;
+  createWordSet: (data: models_CreateWordSetRequest) => Promise<WordSet | null>;
   updateWordSet: (
     id: string,
-    data: ModelsUpdateWordSetRequest,
+    data: models_UpdateWordSetRequest,
   ) => Promise<void>;
   deleteWordSet: (id: string) => Promise<void>;
 }
@@ -34,8 +34,8 @@ export function useWordSetsData(): UseWordSetsDataReturn {
     try {
       setLoading(true);
       const response = await generatedApiClient.getWordSets();
-      if (response.data?.data) {
-        setWordSets(response.data.data as WordSet[]);
+      if (response.data) {
+        setWordSets(response.data as WordSet[]);
       }
     } catch (error) {
       console.error("Failed to load word sets:", error);
@@ -45,12 +45,12 @@ export function useWordSetsData(): UseWordSetsDataReturn {
   }, []);
 
   const createWordSet = useCallback(
-    async (data: ModelsCreateWordSetRequest): Promise<WordSet | null> => {
+    async (data: models_CreateWordSetRequest): Promise<WordSet | null> => {
       try {
         setCreating(true);
         const response = await generatedApiClient.createWordSet(data);
-        if (response.data?.data) {
-          const newWordSet = response.data.data as WordSet;
+        if (response.data) {
+          const newWordSet = response.data as WordSet;
           setWordSets((prev) => [newWordSet, ...prev]);
           return newWordSet;
         }
@@ -66,14 +66,14 @@ export function useWordSetsData(): UseWordSetsDataReturn {
   );
 
   const updateWordSet = useCallback(
-    async (id: string, data: ModelsUpdateWordSetRequest) => {
+    async (id: string, data: models_UpdateWordSetRequest) => {
       try {
         setUpdating(true);
         const response = await generatedApiClient.updateWordSet(id, data);
-        if (response.data?.data) {
+        if (response.data) {
           setWordSets((prev) =>
             prev.map((ws) =>
-              ws.id === id ? (response.data.data as WordSet) : ws,
+              ws.id === id ? (response.data as WordSet) : ws,
             ),
           );
         }

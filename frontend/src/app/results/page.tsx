@@ -14,6 +14,7 @@ import {
   HeroTrophyIcon,
   HeroTargetIcon,
 } from "@/components/Icons";
+import { XPIndicator } from "@/components/XPIndicator";
 import {
   ChevronDownIcon,
   ArrowTrendingUpIcon,
@@ -81,20 +82,20 @@ function ResultsPageContent() {
         ),
       ];
 
-      if (resultsResponse.data?.data) {
-        const allResults = resultsResponse.data.data as TestResult[];
+      if (resultsResponse.data) {
+        const allResults = resultsResponse.data as TestResult[];
         setResults(allResults);
         setFilteredResults(allResults);
       }
 
       // Combine family word sets with curated word sets
-      const familyWordSets = (wordSetsResponse.data?.data as WordSet[]) || [];
+      const familyWordSets = (wordSetsResponse.data as WordSet[]) || [];
       const curatedWordSets =
-        (curatedWordSetsResponse.data?.data as WordSet[]) || [];
+        (curatedWordSetsResponse.data as WordSet[]) || [];
       setWordSets([...familyWordSets, ...curatedWordSets]);
 
-      if (familyProgressResponse?.data?.data) {
-        setFamilyProgress(familyProgressResponse.data.data as FamilyProgress[]);
+      if (familyProgressResponse?.data) {
+        setFamilyProgress(familyProgressResponse.data as FamilyProgress[]);
       }
     } catch (error) {
       console.error("Failed to load data:", error);
@@ -161,25 +162,25 @@ function ResultsPageContent() {
   const stats =
     results.length > 0
       ? {
-          totalTests: results.length,
-          averageScore: Math.round(
-            results.reduce((sum, r) => sum + r.score, 0) / results.length,
-          ),
-          bestScore: Math.max(...results.map((r) => r.score)),
-          worstScore: Math.min(...results.map((r) => r.score)),
-          totalTimeSpent: results.reduce((sum, r) => sum + r.timeSpent, 0),
-          totalWords: results.reduce((sum, r) => sum + r.totalWords, 0),
-          totalCorrectWords: results.reduce(
-            (sum, r) => sum + r.correctWords,
-            0,
-          ),
-          improvementTrend: calculateImprovementTrend(),
-          recentResults: results.slice(0, 5),
-          excellentTests: results.filter((r) => r.score >= 90).length,
-          goodTests: results.filter((r) => r.score >= 70 && r.score < 90)
-            .length,
-          needsWorkTests: results.filter((r) => r.score < 70).length,
-        }
+        totalTests: results.length,
+        averageScore: Math.round(
+          results.reduce((sum, r) => sum + r.score, 0) / results.length,
+        ),
+        bestScore: Math.max(...results.map((r) => r.score)),
+        worstScore: Math.min(...results.map((r) => r.score)),
+        totalTimeSpent: results.reduce((sum, r) => sum + r.timeSpent, 0),
+        totalWords: results.reduce((sum, r) => sum + r.totalWords, 0),
+        totalCorrectWords: results.reduce(
+          (sum, r) => sum + r.correctWords,
+          0,
+        ),
+        improvementTrend: calculateImprovementTrend(),
+        recentResults: results.slice(0, 5),
+        excellentTests: results.filter((r) => r.score >= 90).length,
+        goodTests: results.filter((r) => r.score >= 70 && r.score < 90)
+          .length,
+        needsWorkTests: results.filter((r) => r.score < 70).length,
+      }
       : null;
 
   function calculateImprovementTrend() {
@@ -224,6 +225,30 @@ function ResultsPageContent() {
 
           {stats ? (
             <>
+              {" "}
+              {/* XP Summary Card */}
+              {userData &&
+                userData.totalXp !== undefined &&
+                userData.level !== undefined && (
+                  <div className="p-6 mb-8 bg-linear-to-r from-nordic-sky/10 to-nordic-teal/10 shadow-md rounded-xl border border-nordic-sky/20">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900">
+                          {t("test.xpEarned")}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {t("test.totalXp")}: {userData.totalXp} XP
+                        </p>
+                      </div>
+                      <XPIndicator
+                        totalXp={userData.totalXp}
+                        level={userData.level}
+                        size="lg"
+                        showProgress={true}
+                      />
+                    </div>
+                  </div>
+                )}
               {/* Comprehensive Statistics */}
               <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
                 <div className="p-6 bg-white shadow-md rounded-xl">
@@ -278,13 +303,12 @@ function ResultsPageContent() {
                       {t("results.stats.improvementCard")}
                     </h3>
                     <div
-                      className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                        stats.improvementTrend > 0
+                      className={`w-6 h-6 rounded-full flex items-center justify-center ${stats.improvementTrend > 0
                           ? "bg-nordic-meadow/20 text-nordic-meadow"
                           : stats.improvementTrend < 0
                             ? "bg-red-100 text-red-600"
                             : "bg-gray-100 text-gray-600"
-                      }`}
+                        }`}
                     >
                       {stats.improvementTrend > 0 ? (
                         <ArrowTrendingUpIcon className="w-4 h-4" />
@@ -296,13 +320,12 @@ function ResultsPageContent() {
                     </div>
                   </div>
                   <p
-                    className={`text-3xl font-bold ${
-                      stats.improvementTrend > 0
+                    className={`text-3xl font-bold ${stats.improvementTrend > 0
                         ? "text-nordic-meadow"
                         : stats.improvementTrend < 0
                           ? "text-red-600"
                           : "text-gray-600"
-                    }`}
+                      }`}
                   >
                     {stats.improvementTrend > 0 ? "+" : ""}
                     {stats.improvementTrend}%
@@ -312,7 +335,6 @@ function ResultsPageContent() {
                   </p>
                 </div>
               </div>
-
               {/* Performance Distribution */}
               <div className="p-6 mb-8 bg-white shadow-md rounded-xl">
                 <h3 className="mb-6 text-xl font-bold text-gray-900">
@@ -361,7 +383,6 @@ function ResultsPageContent() {
                   </div>
                 </div>
               </div>
-
               {/* Filters and Sorting */}
               <div className="p-6 mb-8 bg-white shadow-md rounded-xl">
                 <h3 className="mb-4 text-xl font-bold text-gray-900">
@@ -383,10 +404,10 @@ function ResultsPageContent() {
                         onChange={(e) =>
                           setFilterScore(
                             e.target.value as
-                              | "all"
-                              | "excellent"
-                              | "good"
-                              | "needs-work",
+                            | "all"
+                            | "excellent"
+                            | "good"
+                            | "needs-work",
                           )
                         }
                         className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-nordic-teal sm:text-sm/6"
@@ -484,7 +505,6 @@ function ResultsPageContent() {
                   })}
                 </div>
               </div>
-
               {/* Detailed Results List */}
               <div className="bg-white shadow-md rounded-xl">
                 <div className="p-6 border-b border-gray-200">
@@ -515,7 +535,6 @@ function ResultsPageContent() {
                   </div>
                 )}
               </div>
-
               {/* Achievement Badges */}
               <div className="grid grid-cols-1 gap-6 mt-8 md:grid-cols-2">
                 {stats.averageScore >= 90 && (

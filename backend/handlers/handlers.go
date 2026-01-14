@@ -776,6 +776,30 @@ func SaveResult(c *gin.Context) {
 		CreatedAt:      time.Now(),
 	}
 
+	// Calculate and award XP before saving the result
+	var xpInfo *models.XPInfo
+	if serviceManager.XP != nil {
+		xpResult, err := serviceManager.XP.AwardXP(userIDStr, result)
+		if err != nil {
+			log.Printf("[SaveResult] Warning: failed to award XP for user %s: %v", userIDStr, err)
+			// Continue without XP - don't fail the whole request
+		} else {
+			result.XPAwarded = xpResult.Awarded
+			xpInfo = &models.XPInfo{
+				Awarded:        xpResult.Awarded,
+				Total:          xpResult.Total,
+				Level:          xpResult.Level,
+				LevelName:      xpResult.LevelName,
+				LevelNameNO:    xpResult.LevelNameNO,
+				LevelIconPath:  xpResult.LevelIconPath,
+				LevelUp:        xpResult.LevelUp,
+				PreviousLevel:  xpResult.PreviousLevel,
+				NextLevelXP:    xpResult.NextLevelXP,
+				CurrentLevelXP: xpResult.CurrentLevelXP,
+			}
+		}
+	}
+
 	err = serviceManager.DB.SaveTestResult(result)
 	if err != nil {
 		log.Printf("[SaveResult] Error saving test result for user %s, wordset %s: %v", userIDStr, req.WordSetID, err)
@@ -785,8 +809,14 @@ func SaveResult(c *gin.Context) {
 		return
 	}
 
+	// Return response with XP info
+	response := models.SaveResultResponse{
+		TestResult: result,
+		XP:         xpInfo,
+	}
+
 	c.JSON(http.StatusCreated, models.APIResponse{
-		Data:    result,
+		Data:    response,
 		Message: "Test result saved successfully",
 	})
 }
@@ -2153,6 +2183,8 @@ func GetUserProfile(c *gin.Context) {
 						"birthYear":    userData.BirthYear,
 						"isActive":     userData.IsActive,
 						"createdAt":    userData.CreatedAt.Format(time.RFC3339),
+						"totalXp":      userData.TotalXP,
+						"level":        userData.Level,
 						"lastActiveAt": userData.LastActiveAt.Format(time.RFC3339),
 					},
 				})

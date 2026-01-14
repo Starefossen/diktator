@@ -10,6 +10,7 @@ import (
 	"github.com/starefossen/diktator/backend/internal/migrate"
 	"github.com/starefossen/diktator/backend/internal/models"
 	"github.com/starefossen/diktator/backend/internal/services"
+	"github.com/starefossen/diktator/backend/internal/services/xp"
 )
 
 var norwegianWords = map[string][]struct {
@@ -79,6 +80,46 @@ var norwegianWords = map[string][]struct {
 	},
 }
 
+// calculateXPForTest calculates XP for a test result using the same formulas as the XP service
+func calculateXPForTest(score float64, mode models.TestMode, isFirstTime bool, completionCount int, daysAgo int) int {
+	// Get base XP for mode
+	baseXP := xp.BaseXPByMode[string(mode)]
+
+	// Apply score multiplier
+	scoreMultiplier := xp.ScoreMultiplier(score)
+
+	// Apply first-time bonus
+	firstTimeBonus := 1.0
+	if isFirstTime {
+		firstTimeBonus = 3.0
+	}
+
+	// Apply repetition decay (only if within 7 days and not first time)
+	repetitionDecay := 1.0
+	if !isFirstTime && daysAgo <= 7 {
+		// completionCount includes THIS attempt, so:
+		// 1 = first time (no decay)
+		// 2 = second time (50% decay)
+		// 3 = third time (25% decay)
+		// 4+ = fourth+ time (10% decay)
+		if completionCount == 2 {
+			repetitionDecay = 0.5
+		} else if completionCount == 3 {
+			repetitionDecay = 0.25
+		} else if completionCount >= 4 {
+			repetitionDecay = 0.1
+		}
+	}
+
+	totalXP := float64(baseXP) * scoreMultiplier * firstTimeBonus * repetitionDecay
+
+	// Round down (int conversion), minimum 1 XP
+	if totalXP < 1.0 {
+		return 1
+	}
+	return int(totalXP)
+}
+
 func main() {
 	log.Println("🌱 Starting database seeding...")
 
@@ -103,358 +144,11 @@ func main() {
 	// Seed random number generator
 	rand.Seed(time.Now().UnixNano())
 
-	// Create test families with users and data
-	families := []struct {
-		parentName   string
-		parentEmail  string
-		familyName   string
-		childrenData []struct {
-			name  string
-			email string
-			age   int
-		}
-	}{
-		{
-			parentName:  "Anna Hansen",
-			parentEmail: "anna@example.no",
-			familyName:  "Hansen Family",
-			childrenData: []struct {
-				name  string
-				email string
-				age   int
-			}{
-				{"Emma Hansen", "emma@example.no", 12},
-				{"Lucas Hansen", "lucas@example.no", 9},
-				{"Mia Hansen", "mia@example.no", 6},
-			},
-		},
-		{
-			parentName:  "Ole Johansen",
-			parentEmail: "ole@example.no",
-			familyName:  "Johansen Family",
-			childrenData: []struct {
-				name  string
-				email string
-				age   int
-			}{
-				{"Sofia Johansen", "sofia@example.no", 9},
-				{"Noah Johansen", "noah@example.no", 11},
-				{"Olivia Johansen", "olivia@example.no", 7},
-			},
-		},
-		{
-			parentName:  "Kari Olsen",
-			parentEmail: "kari@example.no",
-			familyName:  "Olsen Family",
-			childrenData: []struct {
-				name  string
-				email string
-				age   int
-			}{
-				{"Nora Olsen", "nora@example.no", 12},
-			},
-		},
-	}
+	log.Println("📝 Skipping example families - using only development family...")
 
-	log.Println("📝 Creating families and users...")
-
-	for i, familyData := range families {
-		// Create parent user
-		parentID := fmt.Sprintf("parent-%d", i+1)
-		familyID := fmt.Sprintf("family-%d", i+1)
-
-		parent := &models.User{
-			ID:           parentID,
-			AuthID:       parentID,
-			Email:        familyData.parentEmail,
-			DisplayName:  familyData.parentName,
-			FamilyID:     "", // Set after family creation
-			Role:         "parent",
-			IsActive:     true,
-			CreatedAt:    time.Now().Add(-time.Duration(rand.Intn(90)) * 24 * time.Hour),
-			LastActiveAt: time.Now().Add(-time.Duration(rand.Intn(7)) * 24 * time.Hour),
-		}
-
-		if err := serviceManager.DB.CreateUser(parent); err != nil {
-			log.Printf("Warning: Failed to create parent %s: %v", parent.DisplayName, err)
-			continue
-		}
-
-		// Create family
-		family := &models.Family{
-			ID:        familyID,
-			Name:      familyData.familyName,
-			CreatedBy: parentID,
-			Members:   []string{parentID},
-			CreatedAt: parent.CreatedAt,
-			UpdatedAt: parent.CreatedAt,
-		}
-
-		if err := serviceManager.DB.CreateFamily(family); err != nil {
-			log.Printf("Warning: Failed to create family %s: %v", family.Name, err)
-			continue
-		}
-
-		// Update parent with family ID
-		parent.FamilyID = familyID
-		if err := serviceManager.DB.UpdateUser(parent); err != nil {
-			log.Printf("Warning: Failed to update parent with family ID: %v", err)
-			continue
-		}
-
-		log.Printf("  ✓ Created family: %s", family.Name)
-
-		// Create children
-		for j, childData := range familyData.childrenData {
-			childID := fmt.Sprintf("child-%d-%d", i+1, j+1)
-
-			// Calculate birth year from age
-			currentYear := time.Now().Year()
-			birthYear := currentYear - childData.age
-
-			child := &models.User{
-				ID:           childID,
-				AuthID:       childID,
-				Email:        childData.email,
-				DisplayName:  childData.name,
-				FamilyID:     familyID,
-				Role:         "child",
-				ParentID:     &parentID,
-				IsActive:     true,
-				BirthYear:    &birthYear,
-				CreatedAt:    parent.CreatedAt.Add(time.Duration(j+1) * 24 * time.Hour),
-				LastActiveAt: time.Now().Add(-time.Duration(rand.Intn(3)) * 24 * time.Hour),
-			}
-
-			if err := serviceManager.DB.CreateUser(child); err != nil {
-				log.Printf("    Warning: Failed to create child %s: %v", child.DisplayName, err)
-				continue
-			}
-
-			// Add child to family_members table
-			if err := serviceManager.DB.AddFamilyMember(familyID, childID, "child"); err != nil {
-				log.Printf("    Warning: Failed to add child to family_members: %v", err)
-			}
-
-			log.Printf("    ✓ Created child: %s (age %d)", child.DisplayName, childData.age)
-		}
-
-		// Create word sets for this family
-		log.Printf("  📚 Creating word sets...")
-		wordSetCount := 0
-
-		// Define modes for different wordsets
-		wordSetModes := map[string]struct {
-			mode                 string
-			targetLanguage       string
-			translationDirection string
-			includeTranslations  bool
-		}{
-			"Animals": {"translation", "en", "toTarget", true}, // Translation mode: Norwegian → English
-			"Colors":  {"keyboard", "", "", false},             // Keyboard mode (audio-only spelling)
-			"Family":  {"flashcard", "", "", false},            // Flashcard mode (visual exposure)
-			"Food":    {"translation", "en", "toSource", true}, // Translation mode: English → Norwegian
-			"School":  {"keyboard", "", "", false},             // Keyboard mode (audio-only spelling)
-		}
-
-		for category, words := range norwegianWords {
-			wordSetID := fmt.Sprintf("wordset-%d-%s", i+1, category)
-			modeConfig := wordSetModes[category]
-
-			// Build words array for the word set
-			wordsArray := make([]struct {
-				Word         string               `json:"word"`
-				Audio        models.WordAudio     `json:"audio,omitempty"`
-				Definition   string               `json:"definition,omitempty"`
-				Translations []models.Translation `json:"translations,omitempty"`
-			}, len(words))
-
-			for pos, wordData := range words {
-				var translations []models.Translation
-				if modeConfig.includeTranslations && modeConfig.targetLanguage != "" {
-					translations = []models.Translation{
-						{
-							Language: modeConfig.targetLanguage,
-							Text:     wordData.translation,
-						},
-					}
-				}
-
-				wordsArray[pos] = struct {
-					Word         string               `json:"word"`
-					Audio        models.WordAudio     `json:"audio,omitempty"`
-					Definition   string               `json:"definition,omitempty"`
-					Translations []models.Translation `json:"translations,omitempty"`
-				}{
-					Word:         wordData.word,
-					Definition:   wordData.definition,
-					Translations: translations,
-				}
-			}
-
-			// Create test configuration based on mode
-			testConfig := map[string]interface{}{
-				"defaultMode":       modeConfig.mode,
-				"maxAttempts":       3,
-				"autoPlayAudio":     modeConfig.mode == "keyboard", // Auto-play in keyboard mode (audio-only spelling)
-				"enableAutocorrect": false,
-				"showCorrectAnswer": true,
-				"autoAdvance":       false,
-				"shuffleWords":      false,
-			}
-			if modeConfig.targetLanguage != "" {
-				testConfig["targetLanguage"] = modeConfig.targetLanguage
-			}
-			if modeConfig.translationDirection != "" {
-				testConfig["translationDirection"] = modeConfig.translationDirection
-			}
-
-			wordSet := &models.WordSet{
-				ID:                wordSetID,
-				Name:              fmt.Sprintf("Norwegian %s", category),
-				Words:             wordsArray,
-				FamilyID:          &familyID,
-				IsGlobal:          false,
-				CreatedBy:         parentID,
-				Language:          "no",
-				TestConfiguration: &testConfig,
-				CreatedAt:         parent.CreatedAt.Add(time.Duration(wordSetCount+1) * 7 * 24 * time.Hour),
-				UpdatedAt:         parent.CreatedAt.Add(time.Duration(wordSetCount+1) * 7 * 24 * time.Hour),
-			}
-
-			if err := serviceManager.DB.CreateWordSet(wordSet); err != nil {
-				log.Printf("    Warning: Failed to create word set %s: %v", wordSet.Name, err)
-				continue
-			}
-
-			log.Printf("    ✓ Created word set: %s (%d words, mode: %s)", wordSet.Name, len(words), modeConfig.mode)
-			wordSetCount++
-
-			// Create test results for children in this family
-			for j, childData := range familyData.childrenData {
-				childID := fmt.Sprintf("child-%d-%d", i+1, j+1)
-
-				// Create realistic test results based on age and progression
-				// 6 years: 2-3 tests, 40-60% scores (minimal progress)
-				// 7-8 years: 4-6 tests, 55-70% scores (developing)
-				// 9-10 years: 6-9 tests, 65-80% scores (medium progress)
-				// 11-12 years: 10-15 tests, 75-92% scores (lots of progress, realistic)
-				var numTests int
-				var minScore, maxScore float64
-
-				if childData.age <= 6 {
-					numTests = 2 + rand.Intn(2) // 2-3 tests
-					minScore, maxScore = 40.0, 60.0
-				} else if childData.age <= 8 {
-					numTests = 4 + rand.Intn(3) // 4-6 tests
-					minScore, maxScore = 55.0, 70.0
-				} else if childData.age <= 10 {
-					numTests = 6 + rand.Intn(4) // 6-9 tests
-					minScore, maxScore = 65.0, 80.0
-				} else {
-					numTests = 10 + rand.Intn(6) // 10-15 tests
-					minScore, maxScore = 75.0, 92.0
-				}
-
-				for testNum := 0; testNum < numTests; testNum++ {
-					// Calculate score with gradual improvement over tests
-					progressFactor := float64(testNum) / float64(numTests) * 0.7 // 70% improvement range
-					baseScore := minScore + progressFactor*(maxScore-minScore) + float64(rand.Intn(10))
-					if baseScore > maxScore {
-						baseScore = maxScore
-					}
-
-					correctWords := int(float64(len(words)) * baseScore / 100.0)
-
-					// Create word results
-					wordResults := make([]models.WordTestResult, len(words))
-					for wi, word := range words {
-						isCorrect := wi < correctWords
-						attempts := 1
-						userAnswers := []string{word.word}
-						finalAnswer := word.word
-
-						if !isCorrect {
-							// Make some mistakes
-							attempts = 1 + rand.Intn(2)
-							// Simple mistakes: wrong letters
-							runes := []rune(word.word)
-							if len(runes) > 0 {
-								wrongIdx := rand.Intn(len(runes))
-								runes[wrongIdx] = 'x'
-								finalAnswer = string(runes)
-								userAnswers = []string{finalAnswer}
-							}
-						}
-
-						wordResults[wi] = models.WordTestResult{
-							Word:           word.word,
-							UserAnswers:    userAnswers,
-							Attempts:       attempts,
-							Correct:        isCorrect,
-							TimeSpent:      5 + rand.Intn(15), // 5-20 seconds per word
-							FinalAnswer:    finalAnswer,
-							HintsUsed:      0,
-							AudioPlayCount: 1 + rand.Intn(3),
-						}
-					}
-
-					totalTimeSpent := 0
-					for _, wr := range wordResults {
-						totalTimeSpent += wr.TimeSpent
-					}
-
-					testResult := &models.TestResult{
-						ID:          fmt.Sprintf("result-%d-%d-%d-%d", i+1, j+1, wordSetCount, testNum),
-						WordSetID:   wordSetID,
-						UserID:      childID,
-						Mode:        modeConfig.mode,
-						TimeSpent:   totalTimeSpent,
-						CompletedAt: time.Now().Add(-time.Duration(numTests-testNum) * 7 * 24 * time.Hour),
-						CreatedAt:   time.Now().Add(-time.Duration(numTests-testNum) * 7 * 24 * time.Hour),
-					}
-
-					if err := serviceManager.DB.SaveTestResult(testResult); err != nil {
-						log.Printf("      Warning: Failed to create test result for %s: %v", childData.name, err)
-					}
-				}
-
-				// Create mastery records to show learning progress
-				// All ages: letter tiles mastery (shows their progress)
-				// Age 6+: also unlock word bank (2 letter_tiles_correct per word)
-				// Age 7+: also unlock keyboard (2 word_bank_correct per word)
-				for _, word := range words {
-					// All children get letter tiles mastery to show progress
-					if childData.age >= models.WordBankUnlockAge {
-						// Age 6+: Full mastery to unlock word bank
-						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.TestModeLetterTiles)
-						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.TestModeLetterTiles)
-					} else {
-						// Under 6: Partial mastery (shows progress but doesn't unlock)
-						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.TestModeLetterTiles)
-					}
-
-					// Age 7+: Also unlock keyboard mode
-					if childData.age >= models.KeyboardUnlockAge {
-						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.TestModeWordBank)
-						serviceManager.DB.IncrementMastery(childID, wordSetID, word.word, models.TestModeWordBank)
-					}
-				}
-
-				log.Printf("      ✓ Created mastery records for %s (age %d): %s", childData.name, childData.age, func() string {
-					if childData.age >= models.WordBankUnlockAge && childData.age >= models.KeyboardUnlockAge {
-						return "word bank unlocked, keyboard unlocked"
-					} else if childData.age >= models.KeyboardUnlockAge {
-						return "keyboard unlocked"
-					} else if childData.age >= models.WordBankUnlockAge {
-						return "word bank unlocked"
-					} else {
-						return "letter tiles progress tracked"
-					}
-				}())
-			}
-		}
-	}
+	// Track XP for each child across all test results
+	childXP := make(map[string]int)
+	childCompletions := make(map[string]map[string]int) // childID -> wordSetID|mode -> count
 
 	// Create the mock dev user with test data
 	log.Println("🔧 Creating mock development user with test data...")
@@ -730,6 +424,17 @@ func main() {
 						totalTimeSpent += wr.TimeSpent
 					}
 
+					// Calculate XP for this test result
+					completionKey := wordSetID + "|" + modeConfig.mode
+					if childCompletions[childID] == nil {
+						childCompletions[childID] = make(map[string]int)
+					}
+					completionCount := childCompletions[childID][completionKey]
+					isFirstTime := completionCount == 0
+					daysAgo := (numTests - testNum) * 5
+					xpAwarded := calculateXPForTest(baseScore, models.TestMode(modeConfig.mode), isFirstTime, completionCount+1, daysAgo)
+					childCompletions[childID][completionKey]++
+					childXP[childID] += xpAwarded
 					testResult := &models.TestResult{
 						ID:           fmt.Sprintf("result-mock-%d-%d-%d", j+1, wordSetCount, testNum),
 						WordSetID:    wordSetID,
@@ -740,6 +445,7 @@ func main() {
 						CorrectWords: correctWords,
 						Words:        wordResults,
 						TimeSpent:    totalTimeSpent,
+						XPAwarded:    xpAwarded,
 						CompletedAt:  time.Now().Add(-time.Duration(numTests-testNum) * 5 * 24 * time.Hour),
 						CreatedAt:    time.Now().Add(-time.Duration(numTests-testNum) * 5 * 24 * time.Hour),
 					}
@@ -805,16 +511,28 @@ func main() {
 				log.Printf("      ✓ Created mastery records for %s (age %d): realistic varied progress", mockChildren[j].name, childAge)
 			}
 		}
+
+		// Update XP for mock children
+		log.Println("  💎 Updating XP and levels for development children...")
+		for childID, totalXP := range childXP {
+			level := xp.GetLevelNumber(totalXP)
+			if err := serviceManager.DB.UpdateUserXP(childID, 0, totalXP, level); err != nil {
+				log.Printf("    Warning: Failed to update XP for child %s: %v", childID, err)
+			} else {
+				levelInfo := xp.GetLevelInfo(level)
+				log.Printf("    ✓ Child %s: %d XP, Level %d (%s)", childID, totalXP, level, levelInfo.NameNO)
+			}
+		}
 	}
 
 	log.Println("✅ Database seeding completed successfully!")
 	log.Println("")
 	log.Println("📊 Summary:")
-	log.Println("  - 4 families total (3 with realistic data + 1 development family)")
-	log.Println("  - 8 children across all families")
-	log.Println("  - 17 family word sets (5 categories × 3 families + 2 for dev family)")
+	log.Println("  - 1 development family with realistic test data")
+	log.Println("  - 3 children (Mia, Alex, Sam) with varied ages and progress")
+	log.Println("  - 2 word sets (Animals, Colors) for development family")
 	log.Println("  - Curated word sets are created by database migrations (not seed)")
-	log.Println("  - Realistic test results showing improvement over time")
+	log.Println("  - Realistic test results with XP progression")
 	log.Println("")
 	log.Println("🔧 Development User:")
 	log.Println("  - Email: dev@localhost")

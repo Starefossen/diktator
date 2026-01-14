@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import type { ApiUsersPostRequest } from "@/generated";
+// ApiUsersPostRequest type no longer needed - using inline type
 import { generatedApiClient } from "@/lib/api-generated";
 import { useAuth } from "@/contexts/OIDCAuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -126,11 +126,14 @@ export default function RegisterPage() {
         return;
       }
 
-      const payload: ApiUsersPostRequest & { familyName?: string } = {
+      const payload: {
+        authId: string;
+        email: string;
+        displayName: string;
+      } = {
+        authId: user.uid,
         displayName: trimmedDisplayName,
-        role: "parent",
         email: trimmedEmail,
-        familyName: trimmedFamilyName,
       };
 
       console.log("[RegisterPage] handleSubmit: Creating user", payload);

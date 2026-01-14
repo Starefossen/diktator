@@ -48,8 +48,8 @@ function CuratedPageContent() {
       try {
         setLoading(true);
         const response = await generatedApiClient.getCuratedWordSets();
-        if (response.data?.data) {
-          setCuratedWordSets(response.data.data as WordSet[]);
+        if (response.data) {
+          setCuratedWordSets(response.data as WordSet[]);
         }
       } catch (err) {
         console.error("Failed to load curated word sets:", err);
@@ -68,8 +68,8 @@ function CuratedPageContent() {
 
       try {
         const resultsResponse = await generatedApiClient.getResults();
-        if (resultsResponse.data?.data) {
-          setUserResults(resultsResponse.data.data as TestResult[]);
+        if (resultsResponse.data) {
+          setUserResults(resultsResponse.data as TestResult[]);
         }
       } catch (err) {
         console.error("Failed to load user results:", err);
@@ -209,6 +209,7 @@ function CuratedPageContent() {
             }
           }}
           onPlayAudio={testMode.playTestWordAudio}
+          xpInfo={testMode.xpInfo ?? undefined}
         />
       </ProtectedRoute>
     );

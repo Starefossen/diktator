@@ -1065,6 +1065,141 @@ Compare to ParentWordSetCard which includes:
 
 ### Confirmation Dialogs
 
+### XP and Progress Indicators
+
+#### XPIndicator Component
+
+**Purpose**: Display current level, XP progress, and next level goal in the app header.
+
+**Responsive behavior**:
+
+- **Desktop** (`compact={false}`): Full horizontal display with progress bar
+- **Mobile** (`compact={true}`): Compact circular badge design
+
+**Color usage**:
+
+- Level badge: `bg-linear-to-br from-nordic-sunrise to-nordic-cloudberry`
+- Progress bar fill: `bg-linear-to-r from-nordic-sky to-nordic-aurora`
+- XP to next: `text-gray-400` (de-emphasized, replaced with next level name)
+- Tooltip background: `bg-gray-900` with opacity overlay
+
+**Implementation** (`frontend/src/components/XPIndicator.tsx`):
+
+```tsx
+// Desktop view
+<div className="flex items-center gap-4 px-4 py-2 bg-white/50 rounded-full">
+  <div className="flex items-center gap-2">
+    <div className="bg-linear-to-br from-nordic-sunrise to-nordic-cloudberry
+                    text-white text-xl font-bold rounded-full w-12 h-12
+                    flex items-center justify-center">
+      {currentLevel.emoji}
+    </div>
+    <span className="font-semibold text-nordic-midnight">
+      {currentLevel.nameNo}
+    </span>
+  </div>
+
+  <div className="flex-1 min-w-[200px]">
+    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div className="h-full bg-linear-to-r from-nordic-sky to-nordic-aurora
+                      transition-all duration-300" style={{width: `${progress}%`}} />
+    </div>
+  </div>
+
+  <div className="flex items-center gap-2 text-sm">
+    <span className="font-medium text-nordic-midnight">{totalXp}</span>
+    <span className="text-gray-400">→ {nextLevelName}</span>
+  </div>
+</div>
+
+// Mobile compact view
+<div className="relative w-16 h-16">
+  <svg className="transform -rotate-90" viewBox="0 0 64 64">
+    <circle cx="32" cy="32" r="28" fill="none" stroke="#e5e7eb" strokeWidth="4" />
+    <circle cx="32" cy="32" r="28" fill="none"
+            stroke="url(#xpGradient)" strokeWidth="4"
+            strokeDasharray={`${progress * 175.93 / 100} 175.93`} />
+  </svg>
+  <div className="absolute inset-0 flex items-center justify-center">
+    <span className="text-2xl">{currentLevel.emoji}</span>
+  </div>
+</div>
+```
+
+**Key features**:
+
+- **Negative XP prevention**: `Math.max(0, nextLevelInfo.totalXp - totalXp)` ensures no negative countdown
+- **Next level name display**: Shows "→ Rein" instead of "-100 XP to go"
+- **Accessible tooltips**: ARIA labels and keyboard navigation support
+- **Animated progress**: Smooth 300ms transition when XP changes
+- **Nordic gradients**: Consistent with overall design system
+
+#### Test Results XP Display
+
+**Purpose**: Show XP earned immediately after test completion, with clear progress visualization.
+
+**Layout** (appears after score cards):
+
+```tsx
+<div className="p-6 mb-8 border border-nordic-cloudberry/30 rounded-lg
+     bg-linear-to-br from-nordic-sunrise/10 to-nordic-cloudberry/10">
+  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+    <div className="text-center">
+      <div className="text-2xl font-bold text-nordic-midnight">+125</div>
+      <div className="text-sm text-gray-600">XP Earned</div>
+    </div>
+    <div className="text-center">
+      <div className="text-2xl font-bold text-nordic-sky">450</div>
+      <div className="text-sm text-gray-600">Total XP</div>
+    </div>
+    <div className="text-center col-span-2 md:col-span-1">
+      <div className="text-2xl font-bold text-nordic-forest">3</div>
+      <div className="text-sm text-gray-600">Fjellrev</div>
+    </div>
+  </div>
+
+  {/* Progress bar showing advancement */}
+  <div className="mt-4">
+    <div className="flex justify-between text-xs text-gray-600 mb-1">
+      <span>Progress to next level</span>
+      <span>50 XP to go</span>
+    </div>
+    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div className="h-full bg-linear-to-r from-nordic-sky to-nordic-aurora
+                      transition-all duration-800" style={{width: "75%"}} />
+    </div>
+  </div>
+</div>
+```
+
+**Color palette**:
+
+- Background gradient: `from-nordic-sunrise/10 to-nordic-cloudberry/10`
+- Border: `border-nordic-cloudberry/30`
+- XP earned: `text-nordic-midnight` (emphasis)
+- Total XP: `text-nordic-sky` (progression)
+- Level: `text-nordic-forest` (achievement)
+- Progress bar: `from-nordic-sky to-nordic-aurora` (Nordic gradient)
+
+**Animation timing**:
+
+- Progress bar fill: `duration-800` (smooth count-up effect)
+- Card appearance: Fades in after score cards render
+- No jarring animations - gentle celebration
+
+**Accessibility**:
+
+- All numbers have descriptive labels ("XP Earned", not just "+125")
+- Progress bar includes text alternative ("50 XP to go")
+- Color not the only indicator (numbers and text provide context)
+- Touch targets: Card padding ensures comfortable tap zones (48px+)
+
+**Responsive behavior**:
+
+- **Desktop** (`md:grid-cols-3`): 3-column layout with level on right
+- **Mobile** (`grid-cols-2`): Level spans both columns for better readability
+- Text sizes remain consistent (no `text-sm` for primary content)
+
 #### Exit Test Confirmation
 
 When exiting a test mid-session, **always confirm** to prevent accidental progress loss:

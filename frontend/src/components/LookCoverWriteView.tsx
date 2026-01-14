@@ -235,10 +235,11 @@ export function LookCoverWriteView({
       {phase === "check" && (
         <>
           <div
-            className={`rounded-xl px-6 py-2 text-sm font-medium uppercase tracking-wider ${isCorrect
+            className={`rounded-xl px-6 py-2 text-sm font-medium uppercase tracking-wider ${
+              isCorrect
                 ? "bg-green-50 text-green-600"
                 : "bg-amber-50 text-amber-600"
-              }`}
+            }`}
           >
             {t("lookCoverWrite.check")}
           </div>
@@ -250,8 +251,9 @@ export function LookCoverWriteView({
                 {t("lookCoverWrite.yourAnswer")}:
               </span>
               <span
-                className={`text-2xl font-semibold tracking-wider ${isCorrect ? "text-green-600" : "text-red-500"
-                  }`}
+                className={`text-2xl font-semibold tracking-wider ${
+                  isCorrect ? "text-green-600" : "text-red-500"
+                }`}
               >
                 {spacedWord(userInput)}
               </span>
@@ -294,8 +296,9 @@ export function LookCoverWriteView({
               animate
             />
             <p
-              className={`text-lg font-medium ${isCorrect ? "text-green-600" : "text-amber-600"
-                }`}
+              className={`text-lg font-medium ${
+                isCorrect ? "text-green-600" : "text-amber-600"
+              }`}
             >
               {isCorrect
                 ? t("test.feedback.correct")

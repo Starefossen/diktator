@@ -25,9 +25,9 @@ export function useApiStatus() {
         // Use the proper API client which handles auth correctly
         const response = await generatedApiClient.getHealth();
 
-        if (response.data) {
+        if (response.status === "healthy") {
           setStatus("connected");
-          setMessage(response.data.message || "API is healthy");
+          setMessage(response.service || "API is healthy");
         } else {
           setStatus("error");
           setMessage("API returned an error");

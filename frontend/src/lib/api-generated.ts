@@ -4,31 +4,32 @@
  */
 
 import { getIdToken, isMockMode, getMockToken } from "@/lib/oidc";
+import { OpenAPI } from "@/generated/core/OpenAPI";
 import {
-  Configuration,
-  ChildrenApi,
-  DictionaryApi,
-  FamiliesApi,
-  HealthApi,
-  InvitationsApi,
-  MasteryApi,
-  UsersApi,
-  WordsetsApi,
-  ModelsSaveResultRequest,
-  ApiUsersPostRequest,
-  ModelsCreateWordSetRequest,
-  ModelsUpdateWordSetRequest,
-  ModelsAddFamilyMemberRequest,
-  ModelsUpdateChildBirthYearRequest,
+  ChildrenService,
+  DictionaryService,
+  FamiliesService,
+  HealthService,
+  InvitationsService,
+  MasteryService,
+  UsersService,
+  WordsetsService,
+  models_SaveResultRequest,
+  models_CreateWordSetRequest,
+  models_UpdateWordSetRequest,
+  models_AddFamilyMemberRequest,
+  models_UpdateChildBirthYearRequest,
 } from "@/generated";
+import type { models_APIResponse } from "@/generated";
 
-// Create a configuration that automatically includes OIDC auth token
-const createConfiguration = async (
-  requireAuth = true,
-): Promise<Configuration> => {
-  const authHeaders: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
+// Configure OpenAPI with automatic authentication
+const setupAuth = async (requireAuth = true): Promise<void> => {
+  // Set base URL (without /api since generated service methods include full paths)
+  OpenAPI.BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  // Remove trailing /api if present (generated code already includes /api in paths)
+  if (OpenAPI.BASE.endsWith("/api")) {
+    OpenAPI.BASE = OpenAPI.BASE.slice(0, -4);
+  }
 
   if (requireAuth) {
     // Use ID token for API authentication (has correct audience claim from Zitadel)
@@ -45,224 +46,207 @@ const createConfiguration = async (
     }
 
     if (token) {
-      authHeaders["Authorization"] = `Bearer ${token}`;
+      OpenAPI.TOKEN = token;
+      console.log("[API] Token configured, BASE:", OpenAPI.BASE);
     } else if (!isMockMode) {
+      console.error("[API] User not authenticated");
       throw new Error("User not authenticated");
     }
+  } else {
+    OpenAPI.TOKEN = undefined;
+    console.log("[API] No auth required, BASE:", OpenAPI.BASE);
   }
-
-  return new Configuration({
-    basePath: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
-    baseOptions: {
-      headers: authHeaders,
-    },
-  });
-};
-
-// Create API client instances with authentication
-const createApiInstances = async (requireAuth = true) => {
-  const config = await createConfiguration(requireAuth);
-
-  return {
-    childrenApi: new ChildrenApi(config),
-    dictionaryApi: new DictionaryApi(config),
-    familiesApi: new FamiliesApi(config),
-    healthApi: new HealthApi(config),
-    invitationsApi: new InvitationsApi(config),
-    masteryApi: new MasteryApi(config),
-    usersApi: new UsersApi(config),
-    wordsetsApi: new WordsetsApi(config),
-  };
 };
 
 // Main API client with user-friendly method names
 export const generatedApiClient = {
   // User management
   async getUserProfile() {
-    const { usersApi } = await createApiInstances();
-    return usersApi.apiUsersProfileGet();
+    await setupAuth();
+    return UsersService.getApiUsersProfile();
   },
 
   async updateUserDisplayName(request: { displayName: string }) {
-    const { usersApi } = await createApiInstances();
-    return usersApi.apiUsersMeNamePatch(request);
+    await setupAuth();
+    return UsersService.patchApiUsersMeName(request);
   },
 
-  async createUser(request: ApiUsersPostRequest) {
-    const { usersApi } = await createApiInstances();
-    return usersApi.apiUsersPost(request);
+  async createUser(request: {
+    authId: string;
+    email: string;
+    displayName: string;
+  }) {
+    await setupAuth();
+    return UsersService.postApiUsers(request);
   },
 
   // Family management
   async getFamilyChildren() {
-    const { familiesApi } = await createApiInstances();
-    return familiesApi.apiFamiliesChildrenGet();
+    await setupAuth();
+    return FamiliesService.getApiFamiliesChildren();
   },
 
   async getFamilyProgress() {
-    const { familiesApi } = await createApiInstances();
-    return familiesApi.apiFamiliesProgressGet();
+    await setupAuth();
+    return FamiliesService.getApiFamiliesProgress();
   },
 
   async getFamilyStats() {
-    const { familiesApi } = await createApiInstances();
-    return familiesApi.apiFamiliesStatsGet();
+    await setupAuth();
+    return FamiliesService.getApiFamiliesStats();
   },
 
   async getFamily() {
-    const { familiesApi } = await createApiInstances();
-    return familiesApi.apiFamiliesGet();
+    await setupAuth();
+    return FamiliesService.getApiFamilies();
   },
 
   async getFamilyInvitations() {
-    const { familiesApi } = await createApiInstances();
-    return familiesApi.apiFamiliesInvitationsGet();
+    await setupAuth();
+    return FamiliesService.getApiFamiliesInvitations();
   },
 
   async deleteFamilyInvitation(invitationId: string) {
-    const { familiesApi } = await createApiInstances();
-    return familiesApi.apiFamiliesInvitationsInvitationIdDelete(invitationId);
+    await setupAuth();
+    return FamiliesService.deleteApiFamiliesInvitations(invitationId);
   },
 
   async removeFamilyMember(userId: string) {
-    const { familiesApi } = await createApiInstances();
-    return familiesApi.apiFamiliesMembersUserIdDelete(userId);
+    await setupAuth();
+    return FamiliesService.deleteApiFamiliesMembers(userId);
   },
 
   // Invitation management
   async getPendingInvitations() {
-    const { invitationsApi } = await createApiInstances();
-    return invitationsApi.apiInvitationsPendingGet();
+    await setupAuth();
+    return InvitationsService.getApiInvitationsPending();
   },
 
   async acceptInvitation(invitationId: string) {
-    const { invitationsApi } = await createApiInstances();
-    return invitationsApi.apiInvitationsInvitationIdAcceptPost(invitationId);
+    await setupAuth();
+    return InvitationsService.postApiInvitationsAccept(invitationId);
   },
 
   // Child account management
-  async createChildAccount(request: ModelsAddFamilyMemberRequest) {
-    const { familiesApi } = await createApiInstances();
-    return familiesApi.apiFamiliesMembersPost(request);
+  async createChildAccount(request: models_AddFamilyMemberRequest) {
+    await setupAuth();
+    return FamiliesService.postApiFamiliesMembers(request);
   },
 
-  async addFamilyMember(request: ModelsAddFamilyMemberRequest) {
-    const { familiesApi } = await createApiInstances();
-    return familiesApi.apiFamiliesMembersPost(request);
+  async addFamilyMember(request: models_AddFamilyMemberRequest) {
+    await setupAuth();
+    return FamiliesService.postApiFamiliesMembers(request);
   },
 
   async deleteChildAccount(childId: string) {
-    const { childrenApi } = await createApiInstances();
-    return childrenApi.apiFamiliesChildrenChildIdDelete(childId);
+    await setupAuth();
+    return ChildrenService.deleteApiFamiliesChildren(childId);
   },
 
   async updateChildDisplayName(
     childId: string,
     request: { displayName: string },
   ) {
-    const { childrenApi } = await createApiInstances();
-    return childrenApi.apiFamiliesChildrenChildIdPut(childId, request);
+    await setupAuth();
+    return ChildrenService.putApiFamiliesChildren(childId, request);
   },
 
   async getChildProgress(childId: string) {
-    const { childrenApi } = await createApiInstances();
-    return childrenApi.apiFamiliesChildrenChildIdProgressGet(childId);
+    await setupAuth();
+    return ChildrenService.getApiFamiliesChildrenProgress(childId);
   },
 
   async getChildResults(childId: string) {
-    const { childrenApi } = await createApiInstances();
-    return childrenApi.apiFamiliesChildrenChildIdResultsGet(childId);
+    await setupAuth();
+    return ChildrenService.getApiFamiliesChildrenResults(childId);
   },
 
   async updateChildBirthYear(
     childId: string,
-    request: ModelsUpdateChildBirthYearRequest,
+    request: models_UpdateChildBirthYearRequest,
   ) {
-    const { childrenApi } = await createApiInstances();
-    return childrenApi.apiFamiliesChildrenChildIdBirthyearPatch(
-      childId,
-      request,
-    );
+    await setupAuth();
+    return ChildrenService.patchApiFamiliesChildrenBirthyear(childId, request);
   },
 
   // Word sets management
   async getWordSets() {
-    const { wordsetsApi } = await createApiInstances();
-    return wordsetsApi.apiWordsetsGet();
+    await setupAuth();
+    return WordsetsService.getApiWordsets();
   },
 
   async getCuratedWordSets() {
-    const { wordsetsApi } = await createApiInstances();
-    return wordsetsApi.apiWordsetsCuratedGet();
+    await setupAuth();
+    return WordsetsService.getApiWordsetsCurated();
   },
 
-  async createWordSet(request: ModelsCreateWordSetRequest) {
-    const { wordsetsApi } = await createApiInstances();
-    return wordsetsApi.apiWordsetsPost(request);
+  async createWordSet(request: models_CreateWordSetRequest) {
+    await setupAuth();
+    return WordsetsService.postApiWordsets(request);
   },
 
-  async updateWordSet(id: string, request: ModelsUpdateWordSetRequest) {
-    const { wordsetsApi } = await createApiInstances();
-    return wordsetsApi.apiWordsetsIdPut(id, request);
+  async updateWordSet(id: string, request: models_UpdateWordSetRequest) {
+    await setupAuth();
+    return WordsetsService.putApiWordsets(id, request);
   },
 
   async deleteWordSet(id: string) {
-    const { wordsetsApi } = await createApiInstances();
-    return wordsetsApi.apiWordsetsIdDelete(id);
+    await setupAuth();
+    return WordsetsService.deleteApiWordsets(id);
   },
 
   async assignWordSetToUser(wordSetId: string, userId: string) {
-    const { wordsetsApi } = await createApiInstances();
-    return wordsetsApi.apiWordsetsIdAssignmentsUserIdPost(wordSetId, userId);
+    await setupAuth();
+    return WordsetsService.postApiWordsetsAssignments(wordSetId, userId);
   },
 
   async unassignWordSetFromUser(wordSetId: string, userId: string) {
-    const { wordsetsApi } = await createApiInstances();
-    return wordsetsApi.apiWordsetsIdAssignmentsUserIdDelete(wordSetId, userId);
+    await setupAuth();
+    return WordsetsService.deleteApiWordsetsAssignments(wordSetId, userId);
   },
 
   // Results management
   async getResults() {
-    const { usersApi } = await createApiInstances();
-    return usersApi.apiUsersResultsGet();
+    await setupAuth();
+    return UsersService.getApiUsersResults();
   },
 
-  async saveResult(request: ModelsSaveResultRequest) {
-    const { usersApi } = await createApiInstances();
-    return usersApi.apiUsersResultsPost(request);
+  async saveResult(request: models_SaveResultRequest) {
+    await setupAuth();
+    return UsersService.postApiUsersResults(request);
   },
 
   // Family results
   async getFamilyResults() {
-    const { familiesApi } = await createApiInstances();
-    return familiesApi.apiFamiliesResultsGet();
+    await setupAuth();
+    return FamiliesService.getApiFamiliesResults();
   },
 
   // Health check (doesn't require auth)
   async getHealth() {
-    const { healthApi } = await createApiInstances(false);
-    return healthApi.healthGet();
+    await setupAuth(false);
+    return HealthService.getHealth();
   },
 
   // Mastery management
   async getWordSetMastery(wordSetId: string) {
-    const { masteryApi } = await createApiInstances();
-    return masteryApi.apiMasteryWordSetIdGet(wordSetId);
+    await setupAuth();
+    return MasteryService.getApiMastery(wordSetId);
   },
 
   // Dictionary services
   async validateWord(word: string, dict?: string) {
-    const { dictionaryApi } = await createApiInstances();
-    return dictionaryApi.apiDictionaryValidateGet(word, dict);
+    await setupAuth();
+    return DictionaryService.getApiDictionaryValidate(word, dict);
   },
 
   async suggestWords(query: string, dict?: string, limit?: number) {
-    const { dictionaryApi } = await createApiInstances();
-    return dictionaryApi.apiDictionarySuggestGet(query, dict, limit);
+    await setupAuth();
+    return DictionaryService.getApiDictionarySuggest(query, dict, limit);
   },
 
   async getDictionaryStats() {
-    const { dictionaryApi } = await createApiInstances();
-    return dictionaryApi.apiDictionaryStatsGet();
+    await setupAuth();
+    return DictionaryService.getApiDictionaryStats();
   },
 };

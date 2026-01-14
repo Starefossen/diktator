@@ -7,9 +7,6 @@
     "src/test/vitest-axe.d.ts",
     "src/lib/testEngine/**"
   ],
-  "ignoreDependencies": [
-    "@openapitools/openapi-generator-cli",
-    "flag-icons",
-    "axe-core"
-  ]
+  "ignoreDependencies": ["flag-icons", "axe-core"],
+  "ignoreExportsUsedInFile": true
 }

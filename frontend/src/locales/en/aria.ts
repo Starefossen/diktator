@@ -113,4 +113,11 @@ export const aria = {
   "aria.selectedWord": "Selected word",
   "aria.availableWord": "Available word",
   "aria.clearAnswer": "Clear current answer",
+
+  // XP System
+  "aria.xpIndicator": "Experience points and level indicator",
+  "aria.xpProgress": "Progress to next level",
+  "aria.xpGained": "Experience points gained",
+  "aria.levelUp": "Level up celebration",
+  "aria.dismissXpNotification": "Dismiss XP notification",
 };

@@ -34,6 +34,8 @@ export interface UserData {
   birthYear?: number; // Optional birth year for age-adaptive features
   createdAt: string;
   lastActiveAt: string;
+  totalXp?: number; // Total experience points (gamification)
+  level?: number; // Current level (gamification)
 }
 
 export interface FamilyInvitation {
@@ -109,7 +111,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         currentUser.email,
       );
       const userProfileResponse = await generatedApiClient.getUserProfile();
-      const profileData = userProfileResponse.data?.data as
+      const profileData = userProfileResponse.data as
         | (UserData & {
           needsRegistration?: boolean;
           hasPendingInvites?: boolean;
@@ -184,7 +186,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           try {
             const invitationsResponse =
               await generatedApiClient.getPendingInvitations();
-            const invitations = invitationsResponse.data?.data as
+            const invitations = invitationsResponse.data as
               | FamilyInvitation[]
               | undefined;
 

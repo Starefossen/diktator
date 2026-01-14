@@ -1,5 +1,5 @@
 import React from "react";
-import { WordSet, TestAnswer } from "@/types";
+import { WordSet, TestAnswer, XPInfo } from "@/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { HeroVolumeIcon } from "@/components/Icons";
@@ -15,6 +15,7 @@ interface TestResultsViewProps {
   onRestart: () => void;
   onExit: () => void;
   onPlayAudio: (word: string) => void;
+  xpInfo?: XPInfo; // XP data from test completion
 }
 
 type TranslationKey = keyof typeof en;
@@ -38,8 +39,9 @@ export function TestResultsView({
   onRestart,
   onExit,
   onPlayAudio,
+  xpInfo,
 }: TestResultsViewProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { userData } = useAuth();
   const isParent = userData?.role === "parent";
 
@@ -89,6 +91,60 @@ export function TestResultsView({
             <div className="text-gray-600">{t("test.correct")}</div>
           </div>
         </div>
+
+        {/* XP Summary Card */}
+        {xpInfo && (
+          <div className="p-6 mb-8 border border-nordic-cloudberry/30 rounded-lg bg-linear-to-br from-nordic-sunrise/10 to-nordic-cloudberry/10">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-nordic-midnight">
+                  +{xpInfo.awarded}
+                </div>
+                <div className="text-sm text-gray-600">
+                  {t("test.xpEarned")}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-nordic-sky">
+                  {xpInfo.total}
+                </div>
+                <div className="text-sm text-gray-600">{t("test.totalXp")}</div>
+              </div>
+              <div className="col-span-2 md:col-span-1 text-center">
+                <div className="text-2xl font-bold text-nordic-forest">
+                  {xpInfo.level}
+                </div>
+                <div className="text-sm text-gray-600">
+                  {language === "no" ? xpInfo.levelNameNo : xpInfo.levelName}
+                </div>
+              </div>
+            </div>
+            {xpInfo.total < xpInfo.nextLevelXp && (
+              <div className="mt-4">
+                <div className="flex justify-between text-xs text-gray-600 mb-1">
+                  <span>{t("test.progressToNext")}</span>
+                  <span>
+                    {Math.max(0, xpInfo.nextLevelXp - xpInfo.total)}{" "}
+                    {t("test.xpToGo")}
+                  </span>
+                </div>
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-linear-to-r from-nordic-sky to-nordic-aurora transition-all duration-800"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        ((xpInfo.total - xpInfo.currentLevelXp) /
+                          (xpInfo.nextLevelXp - xpInfo.currentLevelXp)) *
+                          100,
+                      )}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="mb-8 text-center">
           <p className="text-lg font-medium text-nordic-midnight">

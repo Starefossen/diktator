@@ -18,8 +18,8 @@ import {
   TestMode,
 } from "@/types";
 import {
-  ModelsUpdateWordSetRequest,
-  ModelsCreateWordSetRequest,
+  models_UpdateWordSetRequest as ModelsUpdateWordSetRequest,
+  models_CreateWordSetRequest as ModelsCreateWordSetRequest,
 } from "@/generated";
 import { playWordAudio as playWordAudioHelper } from "@/lib/audioPlayer";
 import { generatedApiClient } from "@/lib/api-generated";
@@ -130,14 +130,14 @@ function WordSetsPageContent() {
         if (userData.role === "child") {
           // Load user's test results for personalization
           const resultsResponse = await generatedApiClient.getResults();
-          if (resultsResponse.data?.data) {
-            setUserResults(resultsResponse.data.data as TestResult[]);
+          if (resultsResponse.data) {
+            setUserResults(resultsResponse.data as TestResult[]);
           }
         } else if (userData.role === "parent") {
           // Load family progress for parent view
           const progressResponse = await generatedApiClient.getFamilyProgress();
-          if (progressResponse.data?.data) {
-            setFamilyProgress(progressResponse.data.data as FamilyProgress[]);
+          if (progressResponse.data) {
+            setFamilyProgress(progressResponse.data as FamilyProgress[]);
           }
         }
       } catch (error) {
@@ -342,6 +342,7 @@ function WordSetsPageContent() {
             }
           }}
           onPlayAudio={testMode.playTestWordAudio}
+          xpInfo={testMode.xpInfo ?? undefined}
         />
       </ProtectedRoute>
     );

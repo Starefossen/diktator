@@ -36,7 +36,7 @@ export function ChildAssignmentSelector({
       try {
         setLoading(true);
         const response = await generatedApiClient.getFamilyChildren();
-        const childrenData = response.data?.data as ChildAccount[] | undefined;
+        const childrenData = response.data as ChildAccount[] | undefined;
         setChildren(childrenData || []);
       } catch (err) {
         console.error("Failed to fetch children:", err);
@@ -129,19 +129,17 @@ export function ChildAssignmentSelector({
               key={child.id}
               type="button"
               onClick={() => handleToggleAssignment(child.id)}
-              className={`w-full flex items-center justify-between p-3 rounded-lg border-2 transition-all ${
-                isAssigned
+              className={`w-full flex items-center justify-between p-3 rounded-lg border-2 transition-all ${isAssigned
                   ? "border-nordic-sky bg-nordic-sky/10 hover:bg-nordic-sky/20"
                   : "border-gray-200 bg-white hover:bg-gray-50"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3">
                 <div
-                  className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                    isAssigned
+                  className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isAssigned
                       ? "border-nordic-sky bg-nordic-sky"
                       : "border-gray-300 bg-white"
-                  }`}
+                    }`}
                 >
                   {isAssigned && (
                     <HeroCheckIcon className="w-3.5 h-3.5 text-white" />

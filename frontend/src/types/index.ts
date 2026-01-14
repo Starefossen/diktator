@@ -83,6 +83,8 @@ export interface ChildAccount {
   role: "child";
   isActive: boolean; // Parents can deactivate child accounts
   birthYear?: number; // Optional birth year for age-adaptive features
+  totalXp?: number; // Total XP earned
+  level?: number; // Current level based on XP
   createdAt: string;
   lastActiveAt: string;
 }
@@ -128,6 +130,9 @@ export interface FamilyProgress {
   keyboardMasteredWords: number; // Words with keyboardCorrect >= 2
   missingLettersMasteredWords: number; // Words with missingLettersCorrect >= 2
   translationMasteredWords: number; // Words with translationCorrect >= 2
+  // XP and level data
+  totalXp: number;
+  level: number;
 }
 
 // Family statistics
@@ -297,4 +302,198 @@ export function validateTestConfiguration(
     enableAutocorrect:
       config.enableAutocorrect ?? DEFAULT_TEST_CONFIG.enableAutocorrect,
   };
+}
+
+// ======================
+// XP & Level Types
+// ======================
+
+/**
+ * XP information returned after saving a test result
+ */
+export interface XPInfo {
+  awarded: number; // XP earned from this test
+  total: number; // New total XP
+  level: number; // Current level number
+  levelName: string; // Level name in English
+  levelNameNo: string; // Level name in Norwegian
+  levelIconPath: string; // Path to level icon
+  levelUp: boolean; // Whether user leveled up
+  previousLevel?: number; // Previous level (if leveled up)
+  nextLevelXp: number; // XP needed for next level
+  currentLevelXp: number; // XP threshold for current level
+}
+
+/**
+ * Response from saving a test result (includes XP data)
+ */
+interface SaveResultResponse {
+  testResult: TestResult;
+  xp?: XPInfo;
+}
+
+/**
+ * Level definition for the Nordic-themed progression system
+ */
+export interface Level {
+  number: number;
+  name: string; // English name
+  nameNo: string; // Norwegian name
+  xpRequired: number; // XP to reach this level from previous
+  totalXp: number; // Total XP threshold for this level
+  iconPath: string; // Path to level icon
+}
+
+/**
+ * Nordic-themed levels (1-10)
+ * See docs/GAMIFICATION.md for full details
+ */
+const LEVELS: Level[] = [
+  {
+    number: 1,
+    name: "Snow Mouse",
+    nameNo: "Snømus",
+    xpRequired: 0,
+    totalXp: 0,
+    iconPath: "/levels/level-01-snomus.svg",
+  },
+  {
+    number: 2,
+    name: "Arctic Fox",
+    nameNo: "Fjellrev",
+    xpRequired: 100,
+    totalXp: 100,
+    iconPath: "/levels/level-02-fjellrev.svg",
+  },
+  {
+    number: 3,
+    name: "Arctic Hare",
+    nameNo: "Snøhare",
+    xpRequired: 200,
+    totalXp: 300,
+    iconPath: "/levels/level-03-snohare.svg",
+  },
+  {
+    number: 4,
+    name: "Reindeer",
+    nameNo: "Rein",
+    xpRequired: 300,
+    totalXp: 600,
+    iconPath: "/levels/level-04-rein.svg",
+  },
+  {
+    number: 5,
+    name: "Snowy Owl",
+    nameNo: "Snøugle",
+    xpRequired: 400,
+    totalXp: 1000,
+    iconPath: "/levels/level-05-snougle.svg",
+  },
+  {
+    number: 6,
+    name: "Wolverine",
+    nameNo: "Jerv",
+    xpRequired: 500,
+    totalXp: 1500,
+    iconPath: "/levels/level-06-jerv.svg",
+  },
+  {
+    number: 7,
+    name: "Wolf",
+    nameNo: "Ulv",
+    xpRequired: 600,
+    totalXp: 2100,
+    iconPath: "/levels/level-07-ulv.svg",
+  },
+  {
+    number: 8,
+    name: "Polar Bear",
+    nameNo: "Isbjørn",
+    xpRequired: 700,
+    totalXp: 2800,
+    iconPath: "/levels/level-08-isbjorn.svg",
+  },
+  {
+    number: 9,
+    name: "Northern Lights",
+    nameNo: "Nordlys",
+    xpRequired: 800,
+    totalXp: 3600,
+    iconPath: "/levels/level-09-nordlys.svg",
+  },
+  {
+    number: 10,
+    name: "Midnight Sun",
+    nameNo: "Midnattsol",
+    xpRequired: 900,
+    totalXp: 4500,
+    iconPath: "/levels/level-10-midnattsol.svg",
+  },
+];
+
+/**
+ * Level beyond 10 (Polar Explorer)
+ */
+const POLAR_EXPLORER_LEVEL = {
+  name: "Polar Explorer",
+  nameNo: "Polarforsker",
+  iconPath: "/levels/level-11-polarforsker.svg",
+  xpPerLevel: 1000,
+};
+
+/**
+ * Get level info for a given level number
+ */
+export function getLevelInfo(levelNumber: number): Level {
+  if (levelNumber <= 10) {
+    return LEVELS[levelNumber - 1];
+  }
+  // Beyond level 10
+  const level10 = LEVELS[9];
+  return {
+    number: levelNumber,
+    name: POLAR_EXPLORER_LEVEL.name,
+    nameNo: POLAR_EXPLORER_LEVEL.nameNo,
+    xpRequired: POLAR_EXPLORER_LEVEL.xpPerLevel,
+    totalXp:
+      level10.totalXp + (levelNumber - 10) * POLAR_EXPLORER_LEVEL.xpPerLevel,
+    iconPath: POLAR_EXPLORER_LEVEL.iconPath,
+  };
+}
+
+/**
+ * Get the level number for a given total XP
+ */
+function getLevelForXP(totalXp: number): number {
+  // Check if beyond level 10
+  const level10 = LEVELS[9];
+  if (totalXp >= level10.totalXp) {
+    const xpBeyond10 = totalXp - level10.totalXp;
+    return 10 + Math.floor(xpBeyond10 / POLAR_EXPLORER_LEVEL.xpPerLevel);
+  }
+  // Find level in standard range
+  for (let i = LEVELS.length - 1; i >= 0; i--) {
+    if (totalXp >= LEVELS[i].totalXp) {
+      return LEVELS[i].number;
+    }
+  }
+  return 1;
+}
+
+/**
+ * Calculate progress to next level as a percentage (0-100)
+ */
+export function getLevelProgress(totalXp: number): number {
+  const currentLevel = getLevelForXP(totalXp);
+  const currentLevelInfo = getLevelInfo(currentLevel);
+  const nextLevelInfo = getLevelInfo(currentLevel + 1);
+
+  const xpIntoCurrentLevel = totalXp - currentLevelInfo.totalXp;
+  const xpNeededForNext = nextLevelInfo.totalXp - currentLevelInfo.totalXp;
+
+  if (xpNeededForNext <= 0) return 100;
+  return Math.min(
+    100,
+    Math.floor((xpIntoCurrentLevel / xpNeededForNext) * 100),
+  );
 }

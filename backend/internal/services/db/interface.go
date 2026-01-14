@@ -84,6 +84,12 @@ type Repository interface {
 	GetWordMastery(userID, wordSetID, word string) (*models.WordMastery, error)
 	GetWordSetMastery(userID, wordSetID string) ([]models.WordMastery, error)
 	IncrementMastery(userID, wordSetID, word string, mode models.TestMode) (*models.WordMastery, error)
+
+	// XP operations
+	GetUserXP(userID string) (totalXP int, level int, err error)
+	UpdateUserXP(userID string, xpAwarded, newTotalXP, newLevel int) error
+	GetRecentCompletions(userID, wordSetID, mode string, since time.Time) (int, error)
+	IsFirstCompletion(userID, wordSetID, mode string) (bool, error)
 }
 
 // Config holds database configuration

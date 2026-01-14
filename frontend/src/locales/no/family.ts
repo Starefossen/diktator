@@ -71,6 +71,7 @@ export const family = {
   "family.child.birthYear.help":
     "Brukes for alderstilpasset innhold og inndatametoder",
   "family.child.age": "Alder",
+  "family.child.level": "Nivå",
   "family.child.years": "år",
   "family.child.email": "E-postadresse",
   "family.child.email.placeholder": "Skriv inn barnets e-post",

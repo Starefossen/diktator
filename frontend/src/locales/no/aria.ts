@@ -113,4 +113,11 @@ export const aria = {
   "aria.selectedWord": "Valgt ord",
   "aria.availableWord": "Tilgjengelig ord",
   "aria.clearAnswer": "Tøm nåværende svar",
+
+  // XP System
+  "aria.xpIndicator": "Erfaringspoeng og nivåindikator",
+  "aria.xpProgress": "Fremgang til neste nivå",
+  "aria.xpGained": "Erfaringspoeng opptjent",
+  "aria.levelUp": "Nivå opp feiring",
+  "aria.dismissXpNotification": "Lukk XP-varsling",
 };

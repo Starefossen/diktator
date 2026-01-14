@@ -73,6 +73,7 @@ export const family = {
   "family.child.birthYear.help":
     "Used for age-appropriate content and input methods",
   "family.child.age": "Age",
+  "family.child.level": "Level",
   "family.child.years": "years",
   "family.child.email": "Email Address",
   "family.child.email.placeholder": "Enter child's email",

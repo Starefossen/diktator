@@ -1,6 +1,12 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { WordSet, TestAnswer, getEffectiveTestConfig, TestMode } from "@/types";
-import type { ModelsSaveResultRequest as SaveResultRequest } from "@/generated";
+import {
+  WordSet,
+  TestAnswer,
+  getEffectiveTestConfig,
+  TestMode,
+  XPInfo,
+} from "@/types";
+import type { models_SaveResultRequest as SaveResultRequest } from "@/generated";
 import { generatedApiClient } from "@/lib/api-generated";
 import {
   playWordAudio as playWordAudioHelper,
@@ -42,6 +48,7 @@ export interface UseTestModeReturn {
   testMode: TestMode;
   wordDirections: ("toTarget" | "toSource")[]; // For translation mode only
   lastUserAnswer: string; // Most recent answer submitted for spelling feedback (empty string if none)
+  xpInfo: XPInfo | null; // XP data from test completion
 
   // Actions
   startTest: (wordSet: WordSet, mode?: TestMode) => void;
@@ -78,6 +85,7 @@ export function useTestMode(): UseTestModeReturn {
   const [currentWordErrorTypes, setCurrentWordErrorTypes] = useState<
     ErrorType[]
   >([]);
+  const [xpInfo, setXpInfo] = useState<XPInfo | null>(null);
 
   // Refs for stable audio functionality
   const activeTestRef = useRef<WordSet | null>(null);
@@ -312,7 +320,16 @@ export function useTestMode(): UseTestModeReturn {
           timeSpent: totalTimeSpent,
         };
 
-        await generatedApiClient.saveResult(resultData);
+        const response = await generatedApiClient.saveResult(resultData);
+
+        // Extract XP data from response (using type assertion as API response is generic)
+        const responseData = response.data as { xp?: XPInfo } | undefined;
+        const xpData = responseData?.xp;
+        if (xpData) {
+          setXpInfo(xpData);
+          // TODO: Show XPGainToast notification
+          // TODO: Show LevelUpModal if xpData.levelUp === true
+        }
       } catch (error) {
         console.error("Failed to save test result:", error);
       }
@@ -343,12 +360,12 @@ export function useTestMode(): UseTestModeReturn {
       const mode = getMode(testMode);
       const expectedAnswer = mode?.getExpectedAnswer
         ? mode.getExpectedAnswer(wordObj, {
-            translationDirection:
-              wordDirections.length > currentWordIndex
-                ? wordDirections[currentWordIndex]
-                : "toTarget",
-            wordSet: activeTest,
-          })
+          translationDirection:
+            wordDirections.length > currentWordIndex
+              ? wordDirections[currentWordIndex]
+              : "toTarget",
+          wordSet: activeTest,
+        })
         : currentWord;
 
       // Use normalized comparison that ignores punctuation and case
@@ -585,6 +602,7 @@ export function useTestMode(): UseTestModeReturn {
       currentWordAnswers.length > 0
         ? currentWordAnswers[currentWordAnswers.length - 1]
         : "",
+    xpInfo,
 
     // Actions
     startTest,

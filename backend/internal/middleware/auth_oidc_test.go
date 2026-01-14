@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/starefossen/diktator/backend/internal/models"
@@ -110,6 +111,20 @@ func (stubRepo) GetWordSetMastery(userID, wordSetID string) ([]models.WordMaster
 }
 func (stubRepo) IncrementMastery(userID, wordSetID, word string, mode models.TestMode) (*models.WordMastery, error) {
 	return nil, nil
+}
+
+// XP operations
+func (stubRepo) GetUserXP(userID string) (int, int, error) {
+	return 0, 1, nil
+}
+func (stubRepo) UpdateUserXP(userID string, xpAwarded, newTotalXP, newLevel int) error {
+	return nil
+}
+func (stubRepo) GetRecentCompletions(userID, wordSetID, mode string, since time.Time) (int, error) {
+	return 0, nil
+}
+func (stubRepo) IsFirstCompletion(userID, wordSetID, mode string) (bool, error) {
+	return true, nil
 }
 
 func TestOIDCAuthMiddlewareRequiresRegistration(t *testing.T) {

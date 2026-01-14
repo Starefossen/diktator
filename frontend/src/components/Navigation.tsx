@@ -17,6 +17,7 @@ import {
 } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import NavigationLanguageSwitcher from "./NavigationLanguageSwitcher";
+import { XPIndicator } from "./XPIndicator";
 
 export function Navigation() {
   const pathname = usePathname();
@@ -24,6 +25,11 @@ export function Navigation() {
   const { t } = useLanguage();
   const { user, userData, logOut } = useAuth();
   const { status, message } = useApiStatus();
+
+  // Show XP indicator for child users
+  const isChild = userData?.role === "child";
+  const totalXp = userData?.totalXp || 0;
+  const level = userData?.level || 1;
 
   const handleLogout = async () => {
     try {
@@ -92,6 +98,13 @@ export function Navigation() {
                     {t("nav.about")}
                   </Link>
                 </>
+              )}
+
+              {/* XP Indicator for child users */}
+              {user && isChild && (
+                <div className="flex items-center pl-4">
+                  <XPIndicator totalXp={totalXp} level={level} size="sm" />
+                </div>
               )}
 
               {/* Authenticated user navigation links */}

@@ -56,8 +56,8 @@ export default function ProfilePage() {
           generatedApiClient.getFamilyProgress(),
         ]);
 
-        if (resultsResponse.data?.data) {
-          const allResults = resultsResponse.data.data as TestResult[];
+        if (resultsResponse.data) {
+          const allResults = resultsResponse.data as TestResult[];
           // Show only the most recent 10 results
           setRecentResults(
             allResults
@@ -70,23 +70,23 @@ export default function ProfilePage() {
           );
         }
 
-        if (statsResponse.data?.data) {
-          setFamilyStats(statsResponse.data.data as FamilyStats);
+        if (statsResponse.data) {
+          setFamilyStats(statsResponse.data as FamilyStats);
         }
 
-        if (childrenResponse.data?.data) {
-          setChildren(childrenResponse.data.data as ChildAccount[]);
+        if (childrenResponse.data) {
+          setChildren(childrenResponse.data as ChildAccount[]);
         }
 
-        if (progressResponse.data?.data) {
-          setFamilyProgress(progressResponse.data.data as FamilyProgress[]);
+        if (progressResponse.data) {
+          setFamilyProgress(progressResponse.data as FamilyProgress[]);
         }
       } else {
         // Load only results for children
         const resultsResponse = await generatedApiClient.getResults();
 
-        if (resultsResponse.data?.data) {
-          const allResults = resultsResponse.data.data as TestResult[];
+        if (resultsResponse.data) {
+          const allResults = resultsResponse.data as TestResult[];
           // Show only the most recent 10 results
           setRecentResults(
             allResults
@@ -116,9 +116,9 @@ export default function ProfilePage() {
   const averageScore =
     totalTests > 0
       ? Math.round(
-          recentResults.reduce((sum, result) => sum + result.score, 0) /
-            totalTests,
-        )
+        recentResults.reduce((sum, result) => sum + result.score, 0) /
+        totalTests,
+      )
       : 0;
 
   const formatDate = (dateString: string) => {
@@ -321,13 +321,12 @@ export default function ProfilePage() {
                     </div>
                     <div className="text-right">
                       <div
-                        className={`inline-block px-3 py-1 rounded-full font-semibold ${
-                          result.score >= 90
+                        className={`inline-block px-3 py-1 rounded-full font-semibold ${result.score >= 90
                             ? "text-nordic-meadow bg-nordic-meadow/10"
                             : result.score >= 70
                               ? "text-nordic-sunrise bg-nordic-sunrise/10"
                               : "text-nordic-cloudberry bg-nordic-cloudberry/10"
-                        }`}
+                          }`}
                       >
                         {result.score}%
                       </div>
@@ -387,11 +386,10 @@ export default function ProfilePage() {
                             {child.displayName}
                           </span>
                           <span
-                            className={`text-xs px-2 py-1 rounded ${
-                              child.isActive
+                            className={`text-xs px-2 py-1 rounded ${child.isActive
                                 ? "bg-nordic-meadow/20 text-nordic-midnight"
                                 : "bg-gray-100 text-gray-600"
-                            }`}
+                              }`}
                           >
                             {child.isActive
                               ? t("profile.family.active")

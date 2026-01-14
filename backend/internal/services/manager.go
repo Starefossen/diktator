@@ -1,4 +1,3 @@
-// Package services provides the service manager and dependency injection for the application.
 package services
 
 import (
@@ -13,6 +12,7 @@ import (
 	"github.com/starefossen/diktator/backend/internal/services/db"
 	"github.com/starefossen/diktator/backend/internal/services/dictionary"
 	"github.com/starefossen/diktator/backend/internal/services/tts"
+	"github.com/starefossen/diktator/backend/internal/services/xp"
 )
 
 // Manager coordinates all services for the application
@@ -21,6 +21,7 @@ type Manager struct {
 	TTS           tts.Provider
 	AuthValidator auth.SessionValidator
 	Dictionary    *dictionary.Service // Norwegian dictionary proxy service
+	XP            *xp.Service         // XP calculation service
 }
 
 // NewManager creates a new service manager for OIDC/PostgreSQL
@@ -75,12 +76,17 @@ func NewManager() (*Manager, error) {
 	dictService := dictionary.NewService(dictionary.DefaultConfig())
 	log.Println("✅ Dictionary service initialized")
 
+	// Initialize XP service
+	xpService := xp.NewService(repository)
+	log.Println("✅ XP service initialized")
+
 	log.Println("🚀 All services initialized successfully")
 	return &Manager{
 		DB:            repository,
 		TTS:           ttsService,
 		AuthValidator: authValidator,
 		Dictionary:    dictService,
+		XP:            xpService,
 	}, nil
 }
 

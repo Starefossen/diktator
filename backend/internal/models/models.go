@@ -22,6 +22,8 @@ type User struct {
 	Role         string    `json:"role" db:"role"`
 	Children     []string  `json:"children,omitempty" db:"-"`
 	IsActive     bool      `json:"isActive" db:"is_active"`
+	TotalXP      int       `json:"totalXp" db:"total_xp"`
+	Level        int       `json:"level" db:"level"`
 }
 
 // WordMastery tracks progressive challenge unlocking per word per user
@@ -204,6 +206,7 @@ type TestResult struct {
 	TotalWords     int              `json:"totalWords"`
 	CorrectWords   int              `json:"correctWords"`
 	TimeSpent      int              `json:"timeSpent"`
+	XPAwarded      int              `json:"xpAwarded"`
 }
 
 // AudioFile represents a generated TTS audio file
@@ -281,6 +284,8 @@ type ChildAccount struct {
 	FamilyID     string    `json:"familyId"`
 	Role         string    `json:"role"`
 	IsActive     bool      `json:"isActive"`
+	TotalXP      int       `json:"totalXp"`
+	Level        int       `json:"level"`
 }
 
 // FamilyInvitation represents an invitation to join a family
@@ -314,6 +319,8 @@ type FamilyProgress struct {
 	KeyboardMasteredWords       int          `json:"keyboardMasteredWords"`
 	MissingLettersMasteredWords int          `json:"missingLettersMasteredWords"`
 	TranslationMasteredWords    int          `json:"translationMasteredWords"`
+	TotalXP                     int          `json:"totalXp"`
+	Level                       int          `json:"level"`
 }
 
 // DisplayNameUpdateRequest represents a request to update a user's display name
@@ -350,3 +357,23 @@ type UpdateChildBirthYearRequest struct {
 
 // CreateChildAccountRequest is deprecated, use AddFamilyMemberRequest instead
 type CreateChildAccountRequest = AddFamilyMemberRequest
+
+// XPInfo contains XP and level information returned after saving a test result
+type XPInfo struct {
+	LevelName      string `json:"levelName"`
+	LevelNameNO    string `json:"levelNameNo"`
+	LevelIconPath  string `json:"levelIconPath"`
+	Awarded        int    `json:"awarded"`
+	Total          int    `json:"total"`
+	Level          int    `json:"level"`
+	PreviousLevel  int    `json:"previousLevel,omitempty"`
+	NextLevelXP    int    `json:"nextLevelXp"`
+	CurrentLevelXP int    `json:"currentLevelXp"`
+	LevelUp        bool   `json:"levelUp"`
+}
+
+// SaveResultResponse is the response from saving a test result, including XP info
+type SaveResultResponse struct {
+	TestResult *TestResult `json:"testResult"`
+	XP         *XPInfo     `json:"xp"`
+}

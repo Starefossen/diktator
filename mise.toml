@@ -763,11 +763,7 @@ dir = "frontend"
 sources = ["../backend/docs/swagger.json"]
 outputs = ["src/generated/**/*.ts"]
 run = """
-npx @openapitools/openapi-generator-cli generate \
-    -i ../backend/docs/swagger.json \
-    -g typescript-axios \
-    -o src/generated \
-    --additional-properties=supportsES6=true,withInterfaces=true
+npx openapi-typescript-codegen --input ../backend/docs/swagger.json --output src/generated --client axios
 echo "✅ TypeScript client generated"
 """
 

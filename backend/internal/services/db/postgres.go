@@ -96,14 +96,14 @@ func (db *Postgres) GetUserByAuthID(authID string) (*models.User, error) {
 	ctx := context.Background()
 	query := `
 		SELECT id, auth_id, email, display_name, family_id, role,
-		       parent_id, is_active, birth_year, created_at, last_active_at
+		       parent_id, is_active, birth_year, total_xp, level, created_at, last_active_at
 		FROM users WHERE auth_id = $1`
 
 	var user models.User
 
 	err := db.pool.QueryRow(ctx, query, authID).Scan(
 		&user.ID, &user.AuthID, &user.Email, &user.DisplayName, &user.FamilyID,
-		&user.Role, &user.ParentID, &user.IsActive, &user.BirthYear,
+		&user.Role, &user.ParentID, &user.IsActive, &user.BirthYear, &user.TotalXP, &user.Level,
 		&user.CreatedAt, &user.LastActiveAt,
 	)
 	if err == pgx.ErrNoRows {
@@ -438,7 +438,7 @@ func (db *Postgres) GetFamilyChildren(familyID string) ([]models.ChildAccount, e
 	ctx := context.Background()
 	query := `
 		SELECT id, email, display_name, family_id, parent_id, role,
-		       is_active, birth_year, created_at, last_active_at
+		       is_active, birth_year, total_xp, level, created_at, last_active_at
 		FROM users
 		WHERE family_id = $1 AND role = 'child'
 		ORDER BY created_at ASC`
@@ -455,6 +455,7 @@ func (db *Postgres) GetFamilyChildren(familyID string) ([]models.ChildAccount, e
 		err := rows.Scan(
 			&child.ID, &child.Email, &child.DisplayName, &child.FamilyID,
 			&child.ParentID, &child.Role, &child.IsActive, &child.BirthYear,
+			&child.TotalXP, &child.Level,
 			&child.CreatedAt, &child.LastActiveAt,
 		)
 		if err != nil {
@@ -1286,13 +1287,13 @@ func (db *Postgres) SaveTestResult(result *models.TestResult) error {
 
 	query := `
 		INSERT INTO test_results (id, word_set_id, user_id, score, total_words,
-		                          correct_words, time_spent, mode, completed_at, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+		                          correct_words, time_spent, mode, xp_awarded, completed_at, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
 
 	_, err = tx.Exec(ctx, query,
 		result.ID, result.WordSetID, result.UserID, result.Score,
 		result.TotalWords, result.CorrectWords, result.TimeSpent, result.Mode,
-		result.CompletedAt, result.CreatedAt,
+		result.XPAwarded, result.CompletedAt, result.CreatedAt,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to save test result: %w", err)
@@ -1380,9 +1381,9 @@ func (db *Postgres) SaveAudioFile(af *models.AudioFile) error {
 func (db *Postgres) GetFamilyProgress(familyID string) ([]models.FamilyProgress, error) {
 	ctx := context.Background()
 
-	// Get all family members
+	// Get all family members including XP data
 	membersQuery := `
-		SELECT u.id, u.display_name, u.role, u.birth_year
+		SELECT u.id, u.display_name, u.role, u.birth_year, u.total_xp, u.level
 		FROM users u
 		JOIN family_members fm ON u.id = fm.user_id
 		WHERE fm.family_id = $1`
@@ -1396,7 +1397,7 @@ func (db *Postgres) GetFamilyProgress(familyID string) ([]models.FamilyProgress,
 	var progress []models.FamilyProgress
 	for rows.Next() {
 		var fp models.FamilyProgress
-		err := rows.Scan(&fp.UserID, &fp.UserName, &fp.Role, &fp.BirthYear)
+		err := rows.Scan(&fp.UserID, &fp.UserName, &fp.Role, &fp.BirthYear, &fp.TotalXP, &fp.Level)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan member: %w", err)
 		}
@@ -1538,10 +1539,10 @@ func (db *Postgres) GetFamilyStats(familyID string) (*models.FamilyStats, error)
 func (db *Postgres) GetUserProgress(userID string) (*models.FamilyProgress, error) {
 	ctx := context.Background()
 
-	// Get user info
-	userQuery := `SELECT id, display_name, role FROM users WHERE id = $1`
+	// Get user info including XP data
+	userQuery := `SELECT id, display_name, role, total_xp, level FROM users WHERE id = $1`
 	var fp models.FamilyProgress
-	err := db.pool.QueryRow(ctx, userQuery, userID).Scan(&fp.UserID, &fp.UserName, &fp.Role)
+	err := db.pool.QueryRow(ctx, userQuery, userID).Scan(&fp.UserID, &fp.UserName, &fp.Role, &fp.TotalXP, &fp.Level)
 	if err == pgx.ErrNoRows {
 		return nil, ErrUserNotFound
 	}
@@ -2013,4 +2014,71 @@ func (db *Postgres) IncrementMastery(userID, wordSetID, word string, mode models
 	}
 
 	return &m, nil
+}
+
+// ============================================================================
+// XP Operations
+// ============================================================================
+
+// GetUserXP returns the user's current XP and level
+func (db *Postgres) GetUserXP(userID string) (totalXP int, level int, err error) {
+	ctx := context.Background()
+	query := `SELECT total_xp, level FROM users WHERE id = $1`
+
+	err = db.pool.QueryRow(ctx, query, userID).Scan(&totalXP, &level)
+	if err == pgx.ErrNoRows {
+		return 0, 1, ErrUserNotFound
+	}
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to get user XP: %w", err)
+	}
+	return totalXP, level, nil
+}
+
+// UpdateUserXP updates the user's total XP and level
+func (db *Postgres) UpdateUserXP(userID string, xpAwarded, newTotalXP, newLevel int) error {
+	ctx := context.Background()
+	query := `UPDATE users SET total_xp = $2, level = $3 WHERE id = $1`
+
+	result, err := db.pool.Exec(ctx, query, userID, newTotalXP, newLevel)
+	if err != nil {
+		return fmt.Errorf("failed to update user XP: %w", err)
+	}
+	if result.RowsAffected() == 0 {
+		return ErrUserNotFound
+	}
+	return nil
+}
+
+// GetRecentCompletions returns how many times a user has completed a word set + mode
+// combination since the specified time
+func (db *Postgres) GetRecentCompletions(userID, wordSetID, mode string, since time.Time) (int, error) {
+	ctx := context.Background()
+	query := `
+		SELECT COUNT(*) FROM test_results
+		WHERE user_id = $1 AND word_set_id = $2 AND mode = $3 AND completed_at >= $4`
+
+	var count int
+	err := db.pool.QueryRow(ctx, query, userID, wordSetID, mode, since).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get recent completions: %w", err)
+	}
+	return count, nil
+}
+
+// IsFirstCompletion checks if this is the user's first completion of this word set + mode
+func (db *Postgres) IsFirstCompletion(userID, wordSetID, mode string) (bool, error) {
+	ctx := context.Background()
+	query := `
+		SELECT EXISTS(
+			SELECT 1 FROM test_results
+			WHERE user_id = $1 AND word_set_id = $2 AND mode = $3
+		)`
+
+	var exists bool
+	err := db.pool.QueryRow(ctx, query, userID, wordSetID, mode).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("failed to check first completion: %w", err)
+	}
+	return !exists, nil // First completion if NOT exists
 }

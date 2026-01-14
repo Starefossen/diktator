@@ -211,12 +211,13 @@ export function SentenceFeedbackCompact({
           .map((feedback, i) => (
             <span
               key={i}
-              className={`w-2 h-2 rounded-full ${feedback.status === "correct"
+              className={`w-2 h-2 rounded-full ${
+                feedback.status === "correct"
                   ? "bg-green-500"
                   : feedback.status === "misspelled"
                     ? "bg-amber-500"
                     : "bg-red-500"
-                }`}
+              }`}
               title={feedback.word}
             />
           ))}
