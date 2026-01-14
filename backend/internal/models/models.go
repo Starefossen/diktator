@@ -345,7 +345,7 @@ type FamilyStats struct {
 type AddFamilyMemberRequest struct {
 	BirthYear   *int   `json:"birthYear,omitempty"`
 	Email       string `json:"email" binding:"required,email"`
-	DisplayName string `json:"displayName" binding:"required"`
+	DisplayName string `json:"displayName"` // Required for child, optional for parent (they provide on registration)
 	Role        string `json:"role" binding:"required,oneof=parent child"`
 	FamilyID    string `json:"familyId" binding:"required"`
 }

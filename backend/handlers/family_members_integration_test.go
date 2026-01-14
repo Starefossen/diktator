@@ -102,13 +102,13 @@ func TestAddFamilyMember_Integration(t *testing.T) {
 		assert.Contains(t, response["error"], "already exists")
 	})
 
-	t.Run("Success_SendParentInvitation", func(t *testing.T) {
+	t.Run("Success_SendParentInvitation_WithDisplayName", func(t *testing.T) {
 		// Get current invitation count (may have child invitations from previous tests)
 		var currentCount int
 		err := env.Pool.QueryRow(context.Background(), "SELECT COUNT(*) FROM family_invitations").Scan(&currentCount)
 		require.NoError(t, err)
 
-		// Request to invite a parent
+		// Request to invite a parent with a display name
 		payload := map[string]interface{}{
 			"email":       "parent2@example.com",
 			"displayName": "Second Parent",
@@ -128,6 +128,42 @@ func TestAddFamilyMember_Integration(t *testing.T) {
 
 		// Verify one more invitation was created
 		env.AssertRowCount("family_invitations", currentCount+1)
+	})
+
+	t.Run("Success_SendParentInvitation_WithoutDisplayName", func(t *testing.T) {
+		// Get current invitation count
+		var currentCount int
+		err := env.Pool.QueryRow(context.Background(), "SELECT COUNT(*) FROM family_invitations").Scan(&currentCount)
+		require.NoError(t, err)
+
+		// Request to invite a parent WITHOUT a display name
+		// This is the normal flow - parent provides name during registration
+		payload := map[string]interface{}{
+			"email":       "parent3@example.com",
+			"displayName": "", // Empty string - parent will provide name on registration
+			"role":        "parent",
+			"familyId":    familyID,
+		}
+
+		resp := makeRequest(env.Router, "POST", "/api/family/members", payload, nil)
+
+		// Assert response - should succeed even without displayName
+		require.Equal(t, http.StatusAccepted, resp.Code, "Response body: %s", resp.Body.String())
+
+		var response map[string]interface{}
+		err = json.Unmarshal(resp.Body.Bytes(), &response)
+		require.NoError(t, err)
+		assert.Contains(t, response["message"], "invitation sent")
+
+		// Verify one more invitation was created
+		env.AssertRowCount("family_invitations", currentCount+1)
+
+		// Verify the invitation exists in the database
+		invitations, err := env.DB.GetPendingInvitationsByEmail("parent3@example.com")
+		require.NoError(t, err)
+		require.Len(t, invitations, 1)
+		assert.Equal(t, "parent3@example.com", invitations[0].Email)
+		assert.Equal(t, "parent", invitations[0].Role)
 	})
 
 	t.Run("Error_ChildCannotAddMembers", func(t *testing.T) {
@@ -208,6 +244,44 @@ func TestAddFamilyMember_Integration(t *testing.T) {
 
 		// Should fail with bad request
 		assert.Equal(t, http.StatusBadRequest, resp.Code)
+	})
+
+	t.Run("Error_ChildMissingDisplayName", func(t *testing.T) {
+		payload := map[string]interface{}{
+			"email":       "child-no-name@example.com",
+			"displayName": "", // Empty displayName for child should fail
+			"role":        "child",
+			"familyId":    familyID,
+		}
+
+		resp := makeRequest(env.Router, "POST", "/api/family/members", payload, nil)
+
+		// Should fail with bad request - child role requires displayName
+		require.Equal(t, http.StatusBadRequest, resp.Code, "Response body: %s", resp.Body.String())
+
+		var response map[string]interface{}
+		err := json.Unmarshal(resp.Body.Bytes(), &response)
+		require.NoError(t, err)
+		assert.Contains(t, response["error"], "DisplayName is required for child accounts")
+	})
+
+	t.Run("Error_ChildWhitespaceDisplayName", func(t *testing.T) {
+		payload := map[string]interface{}{
+			"email":       "child-whitespace@example.com",
+			"displayName": "   ", // Whitespace-only displayName should fail
+			"role":        "child",
+			"familyId":    familyID,
+		}
+
+		resp := makeRequest(env.Router, "POST", "/api/family/members", payload, nil)
+
+		// Should fail with bad request - whitespace is not valid
+		require.Equal(t, http.StatusBadRequest, resp.Code, "Response body: %s", resp.Body.String())
+
+		var response map[string]interface{}
+		err := json.Unmarshal(resp.Body.Bytes(), &response)
+		require.NoError(t, err)
+		assert.Contains(t, response["error"], "DisplayName is required for child accounts")
 	})
 }
 

@@ -13,6 +13,7 @@ import {
 } from "@/types";
 import { generatedApiClient } from "@/lib/api-generated";
 import { models_AddFamilyMemberRequest } from "@/generated";
+import { logger } from "@/lib/logger";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import {
@@ -80,7 +81,7 @@ export default function FamilyPage() {
       if (invitationsResponse.data)
         setInvitations(invitationsResponse.data as FamilyInvitation[]);
     } catch (error) {
-      console.error("Failed to load family data:", error);
+      logger.api.error("Failed to load family data:", error);
     } finally {
       setLoading(false);
     }
@@ -192,15 +193,26 @@ export default function FamilyPage() {
       // Reload family data
       loadFamilyData();
     } catch (error: unknown) {
-      console.error("Failed to add/edit family member:", error);
+      const errorWithResponse = error as {
+        response?: { data?: { error?: string }; status?: number };
+        message?: string;
+      };
+
+      logger.api.error("Failed to add/edit family member:", {
+        error,
+        status: errorWithResponse?.response?.status,
+        apiError: errorWithResponse?.response?.data?.error,
+        message: errorWithResponse?.message,
+        memberData: {
+          email: memberFormData.email,
+          role: selectedRole,
+          hasDisplayName: !!memberFormData.displayName,
+        },
+      });
+
       const apiError =
-        (
-          error as {
-            response?: { data?: { error?: string } };
-            message?: string;
-          }
-        )?.response?.data?.error ||
-        (error as { message?: string })?.message ||
+        errorWithResponse?.response?.data?.error ||
+        errorWithResponse?.message ||
         (editingChild
           ? t("family.child.editName.error")
           : selectedRole === "child"
@@ -226,7 +238,7 @@ export default function FamilyPage() {
       // Reload family data to get updated stats
       loadFamilyData();
     } catch (error: unknown) {
-      console.error("Failed to delete child account:", error);
+      logger.api.error("Failed to delete child account:", error);
       const apiError =
         (
           error as {
@@ -261,7 +273,7 @@ export default function FamilyPage() {
       await generatedApiClient.deleteFamilyInvitation(invitationId);
       setInvitations(invitations.filter((inv) => inv.id !== invitationId));
     } catch (error: unknown) {
-      console.error("Failed to cancel invitation:", error);
+      logger.api.error("Failed to cancel invitation:", error);
       const apiError =
         (
           error as {

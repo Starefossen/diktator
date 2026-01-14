@@ -1370,8 +1370,21 @@ func AddFamilyMember(c *gin.Context) {
 
 	var req models.AddFamilyMemberRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("ERROR AddFamilyMember: Invalid request data - %v. Request body: %+v", err, req)
 		c.JSON(http.StatusBadRequest, models.APIResponse{
 			Error: "Invalid request data: " + err.Error(),
+		})
+		return
+	}
+
+	log.Printf("INFO AddFamilyMember: Processing request - email=%s, role=%s, displayName=%s, familyId=%s",
+		req.Email, req.Role, req.DisplayName, req.FamilyID)
+
+	// Validate displayName is provided for child role
+	if req.Role == "child" && strings.TrimSpace(req.DisplayName) == "" {
+		log.Printf("ERROR AddFamilyMember: DisplayName is required for child role")
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Error: "DisplayName is required for child accounts",
 		})
 		return
 	}
