@@ -38,25 +38,6 @@ export const TEST_MODES: TestMode[] = [
 
 // Re-export sentence config types for convenience
 // ======================
-// Dictionary Types (ord.uib.no proxy)
-// ======================
-
-// Simplified dictionary word entry from ord.uib.no
-interface DictionaryWord {
-  lemma: string; // Base form of the word
-  wordClass: string; // NOUN, VERB, ADJ, ADV, etc.
-  inflections: string[]; // All inflected forms (e.g., katt, katten, katter, kattene)
-  definition: string; // Primary definition only
-  articleId: number; // For linking to ordbokene.no (e.g., https://ordbokene.no/bm/{articleId})
-}
-
-// Autocomplete suggestion from the dictionary
-interface DictionarySuggestion {
-  word: string;
-  articleId: number;
-}
-
-// ======================
 // Family Types
 // ======================
 
@@ -327,7 +308,7 @@ export interface XPInfo {
 /**
  * Response from saving a test result (includes XP data)
  */
-interface SaveResultResponse {
+interface _SaveResultResponse {
   testResult: TestResult;
   xp?: XPInfo;
 }

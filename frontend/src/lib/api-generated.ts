@@ -20,7 +20,7 @@ import {
   models_AddFamilyMemberRequest,
   models_UpdateChildBirthYearRequest,
 } from "@/generated";
-import type { models_APIResponse } from "@/generated";
+import type { models_APIResponse as _models_APIResponse } from "@/generated";
 
 // Configure OpenAPI with automatic authentication
 const setupAuth = async (requireAuth = true): Promise<void> => {

@@ -260,7 +260,7 @@ describe("WordSetEditor - Mode Selection", () => {
     expect(modeSelect).toBeInTheDocument();
 
     // Check that all mode options are present
-    const options = screen.getAllByRole("option");
+    const _options = screen.getAllByRole("option");
     // Filter to mode options (the select for default-mode)
     const modeOptions = Array.from(modeSelect.options);
     expect(modeOptions).toHaveLength(7);

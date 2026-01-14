@@ -45,7 +45,7 @@ export function SentenceFeedback({
   const { t } = useLanguage();
 
   // Get status icon
-  const StatusIcon = result.isFullyCorrect
+  const _StatusIcon = result.isFullyCorrect
     ? HeroCheckCircleIcon
     : result.correctCount > result.totalExpected / 2
       ? HeroExclamationTriangleIcon

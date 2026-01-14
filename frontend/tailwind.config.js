@@ -22,7 +22,8 @@ const config = {
       },
       animation: {
         "shrink-x": "shrink-x var(--timer-duration, 3500ms) linear forwards",
-        "progress-shrink": "shrink-x var(--progress-duration, 2000ms) linear forwards",
+        "progress-shrink":
+          "shrink-x var(--progress-duration, 2000ms) linear forwards",
       },
       keyframes: {
         "shrink-x": {

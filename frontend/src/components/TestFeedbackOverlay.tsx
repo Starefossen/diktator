@@ -6,7 +6,6 @@ import {
   CorrectFeedback,
 } from "@/components/SpellingFeedback";
 import { SentenceFeedback } from "@/components/SentenceFeedback";
-import { HeroXMarkIcon, HeroArrowRightIcon } from "@/components/Icons";
 import { analyzeSpelling } from "@/lib/spellingAnalysis";
 import { TIMING } from "@/lib/timingConfig";
 import type { SpellingFeedbackConfig } from "@/lib/spellingAnalysis";
@@ -19,8 +18,8 @@ interface TestFeedbackOverlayProps {
   currentTries: number;
   maxAttempts: number;
   showCorrectAnswer: boolean;
-  correctCount: number;
-  totalAnswers: number;
+  _correctCount: number;
+  _totalAnswers: number;
   isLastWord: boolean;
   onNext: () => void;
   onExitTest: () => void;
@@ -44,8 +43,8 @@ export function TestFeedbackOverlay({
   currentTries,
   maxAttempts,
   showCorrectAnswer,
-  correctCount,
-  totalAnswers,
+  _correctCount,
+  _totalAnswers,
   isLastWord,
   onNext,
   onExitTest,

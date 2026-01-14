@@ -72,9 +72,7 @@ export function useWordSetsData(): UseWordSetsDataReturn {
         const response = await generatedApiClient.updateWordSet(id, data);
         if (response.data) {
           setWordSets((prev) =>
-            prev.map((ws) =>
-              ws.id === id ? (response.data as WordSet) : ws,
-            ),
+            prev.map((ws) => (ws.id === id ? (response.data as WordSet) : ws)),
           );
         }
       } catch (error) {

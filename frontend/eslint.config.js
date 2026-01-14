@@ -35,13 +35,15 @@ const config = [
     },
     rules: {
       "@typescript-eslint/no-unused-vars": [
-        "warn",
+        "error",
         {
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",
+          caughtErrors: "all",
+          caughtErrorsIgnorePattern: "^_",
         },
       ],
-      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-explicit-any": "error",
       "react-hooks/set-state-in-effect": "off",
       // Stricter accessibility rules for children's app
       "jsx-a11y/no-static-element-interactions": "error",

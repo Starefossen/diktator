@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { axe } from "vitest-axe";
 import { ModeSelectionModal } from "../ModeSelectionModal";
-import { WordSet, TestMode, TEST_MODES } from "@/types";
+import { WordSet } from "@/types";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 
 // Mock useAuth to avoid requiring AuthProvider

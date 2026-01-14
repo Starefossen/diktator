@@ -124,7 +124,7 @@ export const CHALLENGE_CONFIG = {
   },
 } as const;
 
-const DICTIONARY_CONFIG = {
+const _DICTIONARY_CONFIG = {
   /** Minimum time between dictionary API requests (rate limiting) */
   RATE_LIMIT_MS: 500,
 
@@ -135,7 +135,7 @@ const DICTIONARY_CONFIG = {
   BASE_URL: "/api/dictionary",
 } as const;
 
-const AGE_CONFIG = {
+const _AGE_CONFIG = {
   /** Minimum age for registration */
   MIN_AGE: 5,
 
@@ -154,39 +154,18 @@ export type DifficultyLevel = "beginner" | "intermediate" | "advanced";
 export type GradeLevel = "1-2" | "3-4" | "5-7";
 
 /**
- * Maps grade level to age range for display
- */
-const GRADE_AGE_MAP: Record<GradeLevel, string> = {
-  "1-2": "5-7 år",
-  "3-4": "8-9 år",
-  "5-7": "10-12 år",
-};
-
-/**
- * Maps grade level to difficulty
- */
-const GRADE_DIFFICULTY_MAP: Record<GradeLevel, DifficultyLevel> = {
-  "1-2": "beginner",
-  "3-4": "intermediate",
-  "5-7": "advanced",
-};
-
-/**
  * Spelling focus categories for curated word sets
  */
-const SPELLING_FOCUS_CATEGORIES = {
-  doubleConsonant: "Dobbelt konsonant",
-  silentLetter: "Stumme bokstaver",
-  compoundWord: "Sammensatte ord",
-  diphthong: "Diftonger",
-  skjSound: "Skj-lyden",
-  norwegianChars: "Æ, Ø og Å",
-  ngNk: "Ng og Nk",
-  silentD: "Stum D",
-  vowelLength: "Vokalforlengelse",
-} as const;
-
-export type SpellingFocusCategory = keyof typeof SPELLING_FOCUS_CATEGORIES;
+export type SpellingFocusCategory =
+  | "doubleConsonant"
+  | "silentLetter"
+  | "compoundWord"
+  | "diphthong"
+  | "skjSound"
+  | "norwegianChars"
+  | "ngNk"
+  | "silentD"
+  | "vowelLength";
 
 /**
  * Determines if content is a sentence (more than one word)
@@ -220,7 +199,7 @@ export function classifySentenceDifficulty(
 /**
  * Checks if a sentence exceeds TTS limits
  */
-function checkSentenceLength(text: string): {
+function _checkSentenceLength(text: string): {
   wordCount: number;
   isOverLimit: boolean;
   isWarning: boolean;

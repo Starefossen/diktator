@@ -2,12 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { HeroVolumeIcon } from "@/components/Icons";
-import {
-  SpeakerWaveIcon,
-  CheckIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
+import { SpeakerWaveIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { CheckIcon as CheckIconSolid } from "@heroicons/react/24/solid";
 import Stavle from "@/components/Stavle";
 

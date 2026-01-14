@@ -31,7 +31,6 @@ import type {
   ImportDeclaration,
   TsType,
   CallExpression,
-  Span,
 } from "@swc/core";
 
 const __filename = fileURLToPath(import.meta.url);

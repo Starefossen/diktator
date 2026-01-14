@@ -578,21 +578,3 @@ export function getWordStatusClass(status: WordFeedbackStatus): string {
       return "";
   }
 }
-
-/**
- * Formats word feedback for display.
- */
-function formatWordFeedback(feedback: WordFeedback): string {
-  switch (feedback.status) {
-    case "correct":
-      return feedback.word;
-    case "misspelled":
-      return `${feedback.userWord} → ${feedback.word}`;
-    case "missing":
-      return `[${feedback.word}]`;
-    case "extra":
-      return feedback.word;
-    default:
-      return feedback.word;
-  }
-}

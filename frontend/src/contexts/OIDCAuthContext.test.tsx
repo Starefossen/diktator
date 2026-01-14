@@ -74,7 +74,7 @@ describe("OIDCAuthContext", () => {
 
   it("sets needsRegistration when profile response indicates needsRegistration", async () => {
     mockedGetUserProfile.mockResolvedValueOnce({
-      data: { data: { needsRegistration: true } },
+      data: { needsRegistration: true },
     });
 
     const TestComponent = () => {

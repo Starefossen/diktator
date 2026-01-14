@@ -90,8 +90,7 @@ function ResultsPageContent() {
 
       // Combine family word sets with curated word sets
       const familyWordSets = (wordSetsResponse.data as WordSet[]) || [];
-      const curatedWordSets =
-        (curatedWordSetsResponse.data as WordSet[]) || [];
+      const curatedWordSets = (curatedWordSetsResponse.data as WordSet[]) || [];
       setWordSets([...familyWordSets, ...curatedWordSets]);
 
       if (familyProgressResponse?.data) {
@@ -162,25 +161,25 @@ function ResultsPageContent() {
   const stats =
     results.length > 0
       ? {
-        totalTests: results.length,
-        averageScore: Math.round(
-          results.reduce((sum, r) => sum + r.score, 0) / results.length,
-        ),
-        bestScore: Math.max(...results.map((r) => r.score)),
-        worstScore: Math.min(...results.map((r) => r.score)),
-        totalTimeSpent: results.reduce((sum, r) => sum + r.timeSpent, 0),
-        totalWords: results.reduce((sum, r) => sum + r.totalWords, 0),
-        totalCorrectWords: results.reduce(
-          (sum, r) => sum + r.correctWords,
-          0,
-        ),
-        improvementTrend: calculateImprovementTrend(),
-        recentResults: results.slice(0, 5),
-        excellentTests: results.filter((r) => r.score >= 90).length,
-        goodTests: results.filter((r) => r.score >= 70 && r.score < 90)
-          .length,
-        needsWorkTests: results.filter((r) => r.score < 70).length,
-      }
+          totalTests: results.length,
+          averageScore: Math.round(
+            results.reduce((sum, r) => sum + r.score, 0) / results.length,
+          ),
+          bestScore: Math.max(...results.map((r) => r.score)),
+          worstScore: Math.min(...results.map((r) => r.score)),
+          totalTimeSpent: results.reduce((sum, r) => sum + r.timeSpent, 0),
+          totalWords: results.reduce((sum, r) => sum + r.totalWords, 0),
+          totalCorrectWords: results.reduce(
+            (sum, r) => sum + r.correctWords,
+            0,
+          ),
+          improvementTrend: calculateImprovementTrend(),
+          recentResults: results.slice(0, 5),
+          excellentTests: results.filter((r) => r.score >= 90).length,
+          goodTests: results.filter((r) => r.score >= 70 && r.score < 90)
+            .length,
+          needsWorkTests: results.filter((r) => r.score < 70).length,
+        }
       : null;
 
   function calculateImprovementTrend() {
@@ -303,12 +302,13 @@ function ResultsPageContent() {
                       {t("results.stats.improvementCard")}
                     </h3>
                     <div
-                      className={`w-6 h-6 rounded-full flex items-center justify-center ${stats.improvementTrend > 0
+                      className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                        stats.improvementTrend > 0
                           ? "bg-nordic-meadow/20 text-nordic-meadow"
                           : stats.improvementTrend < 0
                             ? "bg-red-100 text-red-600"
                             : "bg-gray-100 text-gray-600"
-                        }`}
+                      }`}
                     >
                       {stats.improvementTrend > 0 ? (
                         <ArrowTrendingUpIcon className="w-4 h-4" />
@@ -320,12 +320,13 @@ function ResultsPageContent() {
                     </div>
                   </div>
                   <p
-                    className={`text-3xl font-bold ${stats.improvementTrend > 0
+                    className={`text-3xl font-bold ${
+                      stats.improvementTrend > 0
                         ? "text-nordic-meadow"
                         : stats.improvementTrend < 0
                           ? "text-red-600"
                           : "text-gray-600"
-                      }`}
+                    }`}
                   >
                     {stats.improvementTrend > 0 ? "+" : ""}
                     {stats.improvementTrend}%
@@ -404,10 +405,10 @@ function ResultsPageContent() {
                         onChange={(e) =>
                           setFilterScore(
                             e.target.value as
-                            | "all"
-                            | "excellent"
-                            | "good"
-                            | "needs-work",
+                              | "all"
+                              | "excellent"
+                              | "good"
+                              | "needs-work",
                           )
                         }
                         className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-nordic-teal sm:text-sm/6"

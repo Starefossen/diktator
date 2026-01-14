@@ -10,7 +10,6 @@ import {
   scoreSentence,
   getSentenceFeedbackKey,
   getWordStatusClass,
-  DEFAULT_SCORING_CONFIG,
 } from "../sentenceScoring";
 
 describe("normalizeText", () => {

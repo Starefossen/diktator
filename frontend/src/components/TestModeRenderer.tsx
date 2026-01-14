@@ -59,7 +59,7 @@ export function TestModeRenderer({
         key={currentWord.word}
         word={expectedAnswer}
         audioUrl={audioUrl}
-        onSubmit={(answer: string, isCorrect: boolean) => {
+        onSubmit={(answer: string, _isCorrect: boolean) => {
           onUserAnswerChange(answer);
           onSubmitAnswer();
         }}
@@ -76,7 +76,7 @@ export function TestModeRenderer({
         key={currentWord.word}
         word={expectedAnswer}
         audioUrl={audioUrl}
-        onSubmit={(answer: string, isCorrect: boolean) => {
+        onSubmit={(answer: string, _isCorrect: boolean) => {
           onUserAnswerChange(answer);
           onSubmitAnswer();
         }}
@@ -96,7 +96,7 @@ export function TestModeRenderer({
         key={tileKey}
         tiles={challengeData.tiles}
         expectedWord={expectedAnswer}
-        onSubmit={(answer: string, isCorrect: boolean) => {
+        onSubmit={(answer: string, _isCorrect: boolean) => {
           onUserAnswerChange(answer);
           onSubmitAnswer();
         }}
@@ -112,7 +112,7 @@ export function TestModeRenderer({
         key={tileKey}
         items={challengeData.wordBankItems}
         expectedWordCount={expectedAnswer.split(/\s+/).length}
-        onSubmit={(answer: string, isCorrect: boolean) => {
+        onSubmit={(answer: string, _isCorrect: boolean) => {
           onUserAnswerChange(answer);
           onSubmitAnswer();
         }}
@@ -132,7 +132,7 @@ export function TestModeRenderer({
         word={expectedAnswer}
         blankedWord={challengeData.blankedWord}
         missingLetters={challengeData.missingLetters}
-        onSubmit={(answer: string, isCorrect: boolean) => {
+        onSubmit={(answer: string, _isCorrect: boolean) => {
           onUserAnswerChange(answer);
           onSubmitAnswer();
         }}

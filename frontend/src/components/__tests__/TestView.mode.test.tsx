@@ -97,7 +97,7 @@ describe("TestView - Mode-Specific Behavior", () => {
 
     it("shows keyboard placeholder text", () => {
       renderTestView(baseWordSet, "keyboard");
-      const input = screen.getByPlaceholderText("Type the word you heard");
+      const input = screen.getByPlaceholderText("Type the word here...");
       expect(input).toBeInTheDocument();
     });
 
@@ -132,7 +132,7 @@ describe("TestView - Mode-Specific Behavior", () => {
 
     it("shows translation placeholder text", () => {
       renderTestView(translationWordSet, "translation");
-      const input = screen.getByPlaceholderText("Type translation here");
+      const input = screen.getByPlaceholderText("Type the translation here...");
       expect(input).toBeInTheDocument();
     });
 
@@ -160,7 +160,7 @@ describe("TestView - Mode-Specific Behavior", () => {
 
     it("calls onUserAnswerChange when input changes", () => {
       renderTestView(baseWordSet, "keyboard");
-      const input = screen.getByPlaceholderText("Type the word you heard");
+      const input = screen.getByPlaceholderText("Type the word here...");
       fireEvent.change(input, { target: { value: "test" } });
       expect(mockOnUserAnswerChange).toHaveBeenCalledWith("test");
     });
@@ -186,10 +186,14 @@ describe("TestView - Mode-Specific Behavior", () => {
       fireEvent.click(cancelButton);
 
       // Should show confirmation modal
-      expect(screen.getByText(/exit test/i)).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: /take a break/i }),
+      ).toBeInTheDocument();
 
-      // Click "Yes, Exit" button to confirm
-      const confirmButton = screen.getByRole("button", { name: /yes.*exit/i });
+      // Click "Yes, take a break" button to confirm
+      const confirmButton = screen.getByRole("button", {
+        name: /yes.*take a break/i,
+      });
       fireEvent.click(confirmButton);
 
       expect(mockOnExitTest).toHaveBeenCalled();
@@ -458,7 +462,7 @@ describe("TestView - Mode-Specific Behavior", () => {
     it("renders text input in keyboard mode", () => {
       renderTestView(baseWordSet, "keyboard");
       expect(
-        screen.getByPlaceholderText("Type the word you heard"),
+        screen.getByPlaceholderText("Type the word here..."),
       ).toBeInTheDocument();
     });
 
@@ -473,7 +477,7 @@ describe("TestView - Mode-Specific Behavior", () => {
 
     it("calls onUserAnswerChange when typing in keyboard mode", () => {
       renderTestView(baseWordSet, "keyboard");
-      const input = screen.getByPlaceholderText("Type the word you heard");
+      const input = screen.getByPlaceholderText("Type the word here...");
       fireEvent.change(input, { target: { value: "hello" } });
       expect(mockOnUserAnswerChange).toHaveBeenCalledWith("hello");
     });

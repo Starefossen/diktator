@@ -32,27 +32,17 @@ import { TestAudioButton } from "@/components/TestAudioButton";
 import { TestScoreSummary } from "@/components/TestScoreSummary";
 import { TestFeedbackOverlay } from "@/components/TestFeedbackOverlay";
 import { TestModeRenderer } from "@/components/TestModeRenderer";
-import { TIMING } from "@/lib/timingConfig";
 import { Button } from "@/components/Button";
+import Stavle from "@/components/Stavle";
 import {
   BaseModal,
   ModalContent,
   ModalActions,
   ModalButton,
 } from "@/components/modals/BaseModal";
-import { HeroExclamationTriangleIcon } from "@/components/Icons";
 import { TileFeedbackState } from "@/components/LetterTileInput";
-import { WordBankInput } from "@/components/WordBankInput";
-import { SentenceFeedback } from "@/components/SentenceFeedback";
-import { generateLetterTiles, generateWordBank } from "@/lib/challenges";
 import { isSentence } from "@/lib/sentenceConfig";
 import { scoreSentence, SentenceScoringResult } from "@/lib/sentenceScoring";
-import { FlashcardView } from "@/components/FlashcardView";
-import { LookCoverWriteView } from "@/components/LookCoverWriteView";
-import {
-  MissingLettersInput,
-  detectSpellingChallenge,
-} from "@/components/MissingLettersInput";
 
 // ============================================================================
 // Types
@@ -77,13 +67,6 @@ interface TestViewProps {
   onPlayCurrentWord: () => void;
   onExitTest: () => void;
 }
-
-/**
- * Effective input type derived from TestMode
- * letterTiles, wordBank, and keyboard are used for input
- * Other modes (flashcard, lookCoverWrite, missingLetters) have their own components
- */
-type EffectiveInputType = "letterTiles" | "wordBank" | "keyboard";
 
 interface FeedbackState {
   isCurrentSentence: boolean;
@@ -115,21 +98,6 @@ function useSpellingConfig(
       testConfig?.enableKeyboardProximity,
     ],
   );
-}
-
-/**
- * Derives the effective input type from TestMode.
- * letterTiles, wordBank, keyboard modes use those input types directly.
- * Other modes (translation, missingLetters, etc.) default to keyboard input.
- */
-function useEffectiveInputType(testMode: TestMode): EffectiveInputType {
-  return useMemo(() => {
-    if (testMode === "letterTiles") return "letterTiles";
-    if (testMode === "wordBank") return "wordBank";
-    // All other modes (keyboard, flashcard, lookCoverWrite, missingLetters, translation)
-    // use keyboard input for text entry
-    return "keyboard";
-  }, [testMode]);
 }
 
 /**
@@ -331,7 +299,6 @@ export function TestView({
 
   // Custom hooks for derived state
   const spellingConfig = useSpellingConfig(testConfig);
-  const effectiveInputType = useEffectiveInputType(testMode);
   const tileKey = useTileResetKey(currentWordIndex, showFeedback);
   const feedbackState = useFeedbackState(
     showFeedback,
@@ -357,42 +324,12 @@ export function TestView({
     }
   }, [showFeedback]);
 
-  // Generate challenge items (memoized)
-  const letterTiles = useMemo(() => {
-    if (effectiveInputType !== "letterTiles") return [];
-    return generateLetterTiles(expectedAnswer);
-  }, [expectedAnswer, effectiveInputType, tileKey]);
-
-  const wordBankItems = useMemo(() => {
-    if (effectiveInputType !== "wordBank") return [];
-    return generateWordBank(expectedAnswer, activeTest);
-  }, [expectedAnswer, effectiveInputType, activeTest, tileKey]);
-
-  // Event handlers (memoized)
-  const handleTileOrBankSubmit = useCallback(
-    (answer: string, _isCorrect: boolean) => {
-      // Pass answer directly to avoid React state timing issues
-      onUserAnswerChange(answer);
-      onSubmitAnswer(answer);
-    },
-    [onUserAnswerChange, onSubmitAnswer],
-  );
-
   // Generate audio URL for test modes
   const audioUrl = useMemo(() => {
     const apiBaseUrl =
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
     return `${apiBaseUrl}/api/wordsets/${activeTest.id}/words/${encodeURIComponent(expectedAnswer)}/audio?lang=${encodeURIComponent(activeTest.language)}`;
   }, [activeTest.id, activeTest.language, expectedAnswer]);
-
-  // Unified submission handler for all modes
-  const handleSubmit = useCallback(
-    (answer: string, _isCorrect: boolean) => {
-      onUserAnswerChange(answer);
-      onSubmitAnswer(answer);
-    },
-    [onUserAnswerChange, onSubmitAnswer],
-  );
 
   // Computed values for rendering
   const progressPercent =
@@ -419,10 +356,10 @@ export function TestView({
           translationInfo={
             testMode === "translation" && translation
               ? {
-                wordDirection,
-                showWord: showWord!,
-                targetLanguage: targetLanguage!,
-              }
+                  wordDirection,
+                  showWord: showWord!,
+                  targetLanguage: targetLanguage!,
+                }
               : undefined
           }
         />
@@ -483,8 +420,8 @@ export function TestView({
                 currentTries={currentTries}
                 maxAttempts={maxAttempts}
                 showCorrectAnswer={testConfig?.showCorrectAnswer ?? false}
-                correctCount={correctCount}
-                totalAnswers={answers.length}
+                _correctCount={correctCount}
+                _totalAnswers={answers.length}
                 isLastWord={isLastWord}
                 onNext={onNextWord}
                 onExitTest={handleExitClick}
@@ -518,8 +455,8 @@ export function TestView({
                     currentTries={currentTries}
                     maxAttempts={maxAttempts}
                     showCorrectAnswer={testConfig?.showCorrectAnswer ?? false}
-                    correctCount={correctCount}
-                    totalAnswers={answers.length}
+                    _correctCount={correctCount}
+                    _totalAnswers={answers.length}
                     isLastWord={isLastWord}
                     onNext={onNextWord}
                     onExitTest={onExitTest}
@@ -588,59 +525,99 @@ export function TestView({
       </div>
 
       {/* Exit Confirmation Modal */}
-      {showExitConfirm && (
-        <BaseModal
-          isOpen={true}
-          onClose={handleCancelExit}
-          title={t("test.exitConfirm")}
-          size="md"
-        >
-          <ModalContent>
-            <div className="sm:flex sm:items-start">
-              <div className="mt-3 text-center sm:mt-0 sm:text-left">
-                <div className="mt-2">
-                  <p className="text-sm text-gray-500">
-                    {t("test.exitConfirmMessage")
-                      .replace(
-                        "{{correct}}",
-                        String(answers.filter((a) => a.isCorrect).length),
-                      )
-                      .replace("{{total}}", String(answers.length))}
+      {showExitConfirm &&
+        (() => {
+          const correctCount = answers.filter((a) => a.isCorrect).length;
+          const totalAnswers = answers.length;
+          const totalWords = processedWords.length;
+          const scorePercent =
+            totalAnswers > 0 ? (correctCount / totalAnswers) * 100 : 0;
+
+          // Context-aware message
+          let message = "";
+          let encouragement = "";
+
+          if (totalAnswers === 0) {
+            // Just started
+            message = t("test.exitJustStarted");
+            encouragement = t("test.exitEncouragement");
+          } else if (totalAnswers >= totalWords - 1) {
+            // Almost done
+            message = t("test.exitAlmostDone");
+            encouragement = t("test.exitKeepGoing");
+          } else if (scorePercent >= 80) {
+            // Doing great
+            message = t("test.exitConfirmMessage")
+              .replace("{{correct}}", String(correctCount))
+              .replace("{{total}}", String(totalAnswers));
+            encouragement = t("test.exitDoingGreat");
+          } else {
+            // Keep going
+            message = t("test.exitConfirmMessage")
+              .replace("{{correct}}", String(correctCount))
+              .replace("{{total}}", String(totalAnswers));
+            encouragement = t("test.exitKeepGoing");
+          }
+
+          return (
+            <BaseModal
+              isOpen={true}
+              onClose={handleCancelExit}
+              title={t("test.exitConfirm")}
+              size="md"
+            >
+              <ModalContent>
+                <div className="text-center">
+                  {/* Stavle encouraging */}
+                  <div className="mb-4 flex justify-center">
+                    <Stavle pose="encouraging" size={96} animate />
+                  </div>
+
+                  {/* Encouraging message */}
+                  <p className="text-lg text-gray-700 mb-4">{message}</p>
+
+                  {/* Progress indicator (only show if there are answers) */}
+                  {totalAnswers > 0 && (
+                    <div className="p-4 border-2 border-nordic-sky/30 rounded-xl bg-nordic-sky/10 mb-2">
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="text-3xl font-bold text-nordic-sky">
+                          {correctCount}
+                        </span>
+                        <span className="text-xl text-gray-600">/</span>
+                        <span className="text-3xl font-bold text-gray-700">
+                          {totalAnswers}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-sm font-medium text-nordic-midnight mt-3">
+                    {encouragement}
                   </p>
                 </div>
+              </ModalContent>
 
-                <div className="p-3 mt-4 border border-yellow-200 rounded-lg bg-yellow-50">
-                  <div className="flex items-start">
-                    <div className="shrink-0">
-                      <HeroExclamationTriangleIcon className="w-5 h-5 text-yellow-400" />
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm text-yellow-700">
-                        {t("test.correctSoFar")}:{" "}
-                        {answers.filter((a) => a.isCorrect).length} /{" "}
-                        {answers.length}
-                      </p>
-                    </div>
-                  </div>
+              <ModalActions>
+                <div className="flex flex-col-reverse sm:flex-row justify-center gap-3 w-full">
+                  <ModalButton
+                    onClick={handleConfirmExit}
+                    variant="secondary"
+                    className="w-full sm:w-auto"
+                  >
+                    {t("test.exitConfirmButton")}
+                  </ModalButton>
+                  <ModalButton
+                    onClick={handleCancelExit}
+                    variant="primary"
+                    className="w-full sm:w-auto"
+                  >
+                    {t("test.continueTest")}
+                  </ModalButton>
                 </div>
-              </div>
-            </div>
-          </ModalContent>
-
-          <ModalActions>
-            <ModalButton onClick={handleConfirmExit} variant="danger">
-              {t("test.exitConfirmButton")}
-            </ModalButton>
-            <ModalButton
-              onClick={handleCancelExit}
-              variant="secondary"
-              className="mt-3 sm:mt-0 sm:mr-3"
-            >
-              {t("test.continueTest")}
-            </ModalButton>
-          </ModalActions>
-        </BaseModal>
-      )}
+              </ModalActions>
+            </BaseModal>
+          );
+        })()}
     </div>
   );
 }

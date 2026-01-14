@@ -113,10 +113,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const userProfileResponse = await generatedApiClient.getUserProfile();
       const profileData = userProfileResponse.data as
         | (UserData & {
-          needsRegistration?: boolean;
-          hasPendingInvites?: boolean;
-          pendingInvitations?: FamilyInvitation[];
-        })
+            needsRegistration?: boolean;
+            hasPendingInvites?: boolean;
+            pendingInvitations?: FamilyInvitation[];
+          })
         | undefined;
 
       logger.oidc.debug("loadUserData: profile response:", {

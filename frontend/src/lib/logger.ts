@@ -11,7 +11,7 @@
 
 type LogLevel = "debug" | "info" | "warn" | "error";
 
-interface LoggerOptions {
+interface _LoggerOptions {
   namespace: string;
 }
 
@@ -33,9 +33,9 @@ const isProduction = (): boolean => {
 };
 
 // Determine if a log level should be shown
-const shouldLog = (level: LogLevel): boolean => {
+const shouldLog = (_level: LogLevel): boolean => {
   // Always show warnings and errors
-  if (level === "warn" || level === "error") return true;
+  if (_level === "warn" || _level === "error") return true;
 
   // In development, show all logs
   if (!isProduction()) return true;
@@ -45,7 +45,7 @@ const shouldLog = (level: LogLevel): boolean => {
 };
 
 // Format the log prefix
-const formatPrefix = (namespace: string, level: LogLevel): string => {
+const formatPrefix = (namespace: string, _level: LogLevel): string => {
   const timestamp = new Date().toISOString().split("T")[1].split(".")[0];
   return `[${timestamp}] [${namespace}]`;
 };
@@ -86,22 +86,6 @@ export const logger = {
   tts: createLogger("TTS"),
 };
 
-// Helper to enable debug mode
-const enableDebugMode = (): void => {
-  if (typeof window !== "undefined") {
-    localStorage.setItem("diktator_debug", "true");
-    console.log("[Logger] Debug mode enabled. Refresh to see debug logs.");
-  }
-};
-
-// Helper to disable debug mode
-const disableDebugMode = (): void => {
-  if (typeof window !== "undefined") {
-    localStorage.removeItem("diktator_debug");
-    console.log("[Logger] Debug mode disabled.");
-  }
-};
-
 // Track page reload events for debugging
 export const trackReload = (reason: string, userInitiated: boolean): void => {
   if (typeof window === "undefined") return;
@@ -117,7 +101,7 @@ export const trackReload = (reason: string, userInitiated: boolean): void => {
 };
 
 // Get last reload info
-const getLastReload = (): ReloadTrackingData | null => {
+const _getLastReload = (): ReloadTrackingData | null => {
   if (typeof window === "undefined") return null;
 
   const stored = localStorage.getItem("diktator_last_reload");

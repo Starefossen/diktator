@@ -126,9 +126,6 @@ export function LetterTileInput({
 
   const isComplete = placedTileIds.length === expectedWord.length;
   const showingFeedback = feedbackState !== null;
-  const attemptsRemaining = feedbackState
-    ? feedbackState.maxAttempts - feedbackState.currentAttempt
-    : 0;
 
   // Compute tile styling based on feedback state
   function getTileStyle(

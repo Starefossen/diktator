@@ -28,17 +28,12 @@ let userHasInteracted = false;
 let audioUnlocked = false;
 
 // Global audio element for synchronous playback - reused to maintain gesture context
-const globalAudioElement: HTMLAudioElement | null = null;
+const _globalAudioElement: HTMLAudioElement | null = null;
 
 /**
  * Check if user has interacted with the page (enabling autoplay)
  */
-const hasUserInteracted = (): boolean => userHasInteracted;
-
-/**
- * Check if audio has been unlocked (successfully played once)
- */
-export const isAudioUnlocked = (): boolean => audioUnlocked;
+const _hasUserInteracted = (): boolean => userHasInteracted;
 
 /**
  * Mark audio as unlocked after successful playback
@@ -55,7 +50,7 @@ const markAudioUnlocked = (): void => {
 /**
  * Mark that user has interacted - call this from click handlers
  */
-const markUserInteracted = (): void => {
+const _markUserInteracted = (): void => {
   userHasInteracted = true;
   logger.audio.debug("User interaction registered");
 };
@@ -587,7 +582,7 @@ export const playWordAudio = async (
 
             // For other API errors, report but try TTS fallback
             logger.audio.debug("API error, will try TTS fallback");
-          } catch (parseError) {
+          } catch (_parseError) {
             logger.audio.debug("Could not parse error response");
           }
         }

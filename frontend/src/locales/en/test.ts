@@ -62,11 +62,16 @@ export const test = {
   "test.tryAgain": "Again!",
   "test.backToWordSets": "Back to Word Sets",
   "test.cancel": "Cancel",
-  "test.exitConfirm": "Exit Test?",
+  "test.exitConfirm": "Take a break?",
   "test.exitConfirmMessage":
-    "You have {{correct}} out of {{total}} correct so far. If you exit now, you will lose your progress.",
-  "test.exitConfirmButton": "Yes, Exit",
-  "test.continueTest": "No, Continue",
+    "You have {{correct}} out of {{total}} correct! You're doing great!",
+  "test.exitConfirmButton": "Yes, take a break",
+  "test.continueTest": "No, keep going",
+  "test.exitEncouragement": "You can do this!",
+  "test.exitJustStarted": "You just started!",
+  "test.exitDoingGreat": "You're doing amazing!",
+  "test.exitKeepGoing": "You're making great progress!",
+  "test.exitAlmostDone": "You're almost there!",
 
   // Test interface
   "test.listenToWordMobile": "Tap to hear",

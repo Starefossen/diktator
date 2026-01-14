@@ -62,11 +62,16 @@ export const test = {
   "test.tryAgain": "En gang til!",
   "test.backToWordSets": "Tilbake til ordsett",
   "test.cancel": "Avbryt",
-  "test.exitConfirm": "Avslutte testen?",
+  "test.exitConfirm": "Vil du ta en pause?",
   "test.exitConfirmMessage":
-    "Du har {{correct}} av {{total}} riktige så langt. Hvis du avslutter nå, mister du fremgangen din.",
-  "test.exitConfirmButton": "Ja, avslutt",
+    "Du har {{correct}} av {{total}} riktige! Det går kjempebra!",
+  "test.exitConfirmButton": "Ja, ta pause",
   "test.continueTest": "Nei, fortsett",
+  "test.exitEncouragement": "Du klarer dette!",
+  "test.exitJustStarted": "Du har akkurat begynt!",
+  "test.exitDoingGreat": "Du gjør det så bra!",
+  "test.exitKeepGoing": "Du er godt i gang!",
+  "test.exitAlmostDone": "Du er nesten ferdig!",
 
   // Test interface
   "test.listenToWordMobile": "Trykk for å høre",
