@@ -266,12 +266,12 @@ func TestAcceptInvitation_Integration(t *testing.T) {
 		assert.Equal(t, "child", user.Role)
 		assert.Equal(t, familyID, user.FamilyID)
 
-		// Verify invitation status was updated
-		var invStatus string
+		// Verify invitation was deleted (properly cleaned up after acceptance)
+		var count int
 		err = env.Pool.QueryRow(context.Background(),
-			"SELECT status FROM family_invitations WHERE id = $1", invitationID).Scan(&invStatus)
+			"SELECT COUNT(*) FROM family_invitations WHERE id = $1", invitationID).Scan(&count)
 		require.NoError(t, err)
-		assert.Equal(t, "accepted", invStatus)
+		assert.Equal(t, 0, count, "Invitation should be deleted after acceptance")
 	})
 
 	t.Run("Error_InvitationNotFound", func(t *testing.T) {

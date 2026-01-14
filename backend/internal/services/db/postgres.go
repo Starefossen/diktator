@@ -1731,11 +1731,12 @@ func (db *Postgres) AcceptInvitation(invitationID, userID string) error {
 		return fmt.Errorf("failed to add family member: %w", err)
 	}
 
-	// Update invitation status
-	updateInvQuery := `UPDATE family_invitations SET status = 'accepted' WHERE id = $1`
-	_, err = tx.Exec(ctx, updateInvQuery, invitationID)
+	// Delete the invitation now that it's been accepted
+	// No need to keep it around - the family_members table is the source of truth
+	deleteInvQuery := `DELETE FROM family_invitations WHERE id = $1`
+	_, err = tx.Exec(ctx, deleteInvQuery, invitationID)
 	if err != nil {
-		return fmt.Errorf("failed to update invitation status: %w", err)
+		return fmt.Errorf("failed to delete invitation: %w", err)
 	}
 
 	if err = tx.Commit(ctx); err != nil {
