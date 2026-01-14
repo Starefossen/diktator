@@ -91,12 +91,12 @@ Diktator is a family-oriented web application for children to learn Norwegian vo
 
 1. Visit home page → See value proposition
 2. Click "Sign In" → OIDC authentication
-3. First-time user → Redirect to /register
+3. First-time user or user with pending invitation → Automatically redirected to /register
 4. Complete registration form:
    - Email pre-filled from OIDC
    - Enter display name
-   - Create family name
-5. Guided onboarding wizard:
+   - Accept pending invitation to join existing family, or create new family
+5. Guided onboarding wizard (new families):
    - Welcome message explaining family structure
    - "Create Your First Word Set" prompt
    - Quick tutorial on test modes
@@ -166,11 +166,12 @@ Diktator is a family-oriented web application for children to learn Norwegian vo
 
 **US-1.2: Registration Flow** ✅ (P0, 8 pts)
 
-- New OIDC user redirected to /register
+- New OIDC user or user with pending invitation automatically redirected to /register
 - Email pre-filled from OIDC token
-- Enter display name and family name
-- Create parent profile + family
-- Redirect to onboarding wizard
+- If pending invitation exists, family name pre-filled
+- Enter display name (and family name if creating new family)
+- Accept invitation to join existing family, or create parent profile + new family
+- Redirect to onboarding wizard or family dashboard
 
 **US-1.3: Onboarding Wizard** (P0, 8 pts)
 
@@ -384,13 +385,13 @@ Diktator is a family-oriented web application for children to learn Norwegian vo
 
 | Action              | Parent | Child | System          |
 | ------------------- | ------ | ----- | --------------- |
-| Create word set     | ✅     | ❌    | Generates audio |
-| Edit word set       | ✅     | ❌    | Updates audio   |
-| Delete word set     | ✅     | ❌    | Removes data    |
-| Take test           | ✅     | ✅    | Tracks results  |
-| View own results    | ✅     | ✅    | Provides data   |
-| View family results | ✅     | ❌    | Provides data   |
-| Create child        | ✅     | ❌    | Creates account |
+| Create word set     | ✅      | ❌     | Generates audio |
+| Edit word set       | ✅      | ❌     | Updates audio   |
+| Delete word set     | ✅      | ❌     | Removes data    |
+| Take test           | ✅      | ✅     | Tracks results  |
+| View own results    | ✅      | ✅     | Provides data   |
+| View family results | ✅      | ❌     | Provides data   |
+| Create child        | ✅      | ❌     | Creates account |
 
 ---
 

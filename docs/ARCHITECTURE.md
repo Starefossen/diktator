@@ -62,7 +62,7 @@ Family (1) ──────┬──────── (*) FamilyMember ──
 
 **User**: Account authenticated via OIDC. Role (parent/child) determines permissions. Users belong to one family; their `family_id` references the family they're currently in.
 
-**FamilyInvitation**: Pending invitation to join a family as a parent or child. Invitations are matched by email address and accepted when the user registers or logs in. Invitations do not expire.
+**FamilyInvitation**: Pending invitation to join a family as a parent or child. Invitations are matched by email address and presented to users when they register or log in. Users with pending invitations are automatically redirected to the registration page. Once accepted, invitations are deleted as the `family_members` table becomes the source of truth for membership.
 
 **WordSet**: A collection of words for testing. Has a language, optional translations, and test configuration.
 
@@ -201,11 +201,14 @@ Families support multiple parent accounts with equal permissions. Parents can:
 
 **Invitation Flow:**
 
-1. Existing parent enters email address of new parent
-2. System creates pending `FamilyInvitation` record
-3. When invited user logs in (or registers), they see pending invitation
-4. User accepts invitation and joins family as parent
-5. User can only be member of one family (accepting new invitation leaves current family)
+1. Existing parent enters email address of new parent or child
+2. System creates pending `FamilyInvitation` record with status `pending`
+3. When invited user logs in or registers, backend sets `hasPendingInvites` flag
+4. Frontend `ProtectedRoute` automatically redirects users with pending invitations to `/register`
+5. User accepts invitation, creates their profile, and joins family
+6. Accepted invitation is deleted from database (cleanup)
+7. New family member record created in `family_members` junction table
+8. Users can only be in one family at a time (accepting new invitation leaves current family)
 
 ## Key Design Decisions
 
