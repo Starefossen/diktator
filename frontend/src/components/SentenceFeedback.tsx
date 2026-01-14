@@ -13,6 +13,7 @@ import {
   HeroXMarkIcon,
   HeroExclamationTriangleIcon,
 } from "@/components/Icons";
+import Stavle from "@/components/Stavle";
 
 interface SentenceFeedbackProps {
   /** The scoring result from scoreSentence() */
@@ -79,9 +80,19 @@ export function SentenceFeedback({
       role="alert"
       aria-live="polite"
     >
-      {/* Header with icon and summary */}
+      {/* Header with Stavle and summary */}
       <div className="flex items-center gap-3 mb-3">
-        <StatusIcon className={`w-8 h-8 ${statusColor}`} aria-hidden="true" />
+        <Stavle
+          pose={
+            result.isFullyCorrect
+              ? "celebrating"
+              : result.correctCount > result.totalExpected / 2
+                ? "thinking"
+                : "encouraging"
+          }
+          size={result.isFullyCorrect ? 64 : 48}
+          animate
+        />
         <div className="flex-1">
           <p className={`font-semibold text-lg ${statusColor}`}>
             {t(feedbackKey as TranslationKey)}
@@ -200,13 +211,12 @@ export function SentenceFeedbackCompact({
           .map((feedback, i) => (
             <span
               key={i}
-              className={`w-2 h-2 rounded-full ${
-                feedback.status === "correct"
+              className={`w-2 h-2 rounded-full ${feedback.status === "correct"
                   ? "bg-green-500"
                   : feedback.status === "misspelled"
                     ? "bg-amber-500"
                     : "bg-red-500"
-              }`}
+                }`}
               title={feedback.word}
             />
           ))}

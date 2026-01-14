@@ -217,12 +217,11 @@ export function MissingLettersInput({
                 transition-all duration-150
                 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2
                 placeholder:text-gray-400
-                ${
-                  hasSubmitted
-                    ? isCorrect
-                      ? "bg-green-100 text-green-800 border-2 border-green-400"
-                      : "bg-red-100 text-red-700 border-2 border-red-400"
-                    : "bg-nordic-sky/20 border-2 border-dashed border-nordic-sky/50 text-gray-900 focus:border-nordic-sky focus:bg-nordic-sky/30 focus:border-solid"
+                ${hasSubmitted
+                  ? isCorrect
+                    ? "bg-green-100 text-green-800 border-2 border-green-400"
+                    : "bg-red-100 text-red-700 border-2 border-red-400"
+                  : "bg-nordic-sky/20 border-2 border-dashed border-nordic-sky/50 text-gray-900 focus:border-nordic-sky focus:bg-nordic-sky/30 focus:border-solid"
                 }
               `}
             />
@@ -257,11 +256,10 @@ export function MissingLettersInput({
             </p>
           )}
           <div
-            className={`rounded-xl px-6 py-4 ${
-              isCorrect
+            className={`rounded-xl px-6 py-4 ${isCorrect
                 ? "bg-green-100 border border-green-300"
                 : "bg-amber-100 border border-amber-300"
-            }`}
+              }`}
           >
             {isCorrect ? (
               <div className="flex items-center gap-3">
@@ -272,10 +270,13 @@ export function MissingLettersInput({
                 </p>
               </div>
             ) : (
-              <p className="text-lg font-medium text-amber-800 text-center">
-                {t("test.feedback.correctAnswer")}:{" "}
-                <strong>{missingLetters}</strong>
-              </p>
+              <div className="flex items-center gap-3">
+                <Stavle pose="encouraging" size={48} animate />
+                <p className="text-lg font-medium text-amber-800">
+                  {t("test.feedback.correctAnswer")}:{" "}
+                  <strong>{missingLetters}</strong>
+                </p>
+              </div>
             )}
           </div>
         </>

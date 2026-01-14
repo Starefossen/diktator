@@ -121,8 +121,13 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	// Create Gin router
-	r := gin.Default()
+	// Create Gin router with custom logger that skips /health endpoint
+	// to reduce log noise from Kubernetes liveness/readiness probes
+	r := gin.New()
+	r.Use(gin.Recovery())
+	r.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+		SkipPaths: []string{"/health"},
+	}))
 
 	// CORS middleware
 	r.Use(cors.New(cors.Config{

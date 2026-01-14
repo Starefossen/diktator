@@ -19,6 +19,7 @@ import {
 } from "@/lib/oidc";
 import { generatedApiClient } from "@/lib/api-generated";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { logger } from "@/lib/logger";
 
 export interface UserData {
   id: string;
@@ -103,34 +104,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const loadUserData = useCallback(async (currentUser: User) => {
     try {
-      console.log(
-        "[OIDCAuthContext] loadUserData: fetching profile for user:",
+      logger.oidc.debug(
+        "loadUserData: fetching profile for user:",
         currentUser.email,
       );
       const userProfileResponse = await generatedApiClient.getUserProfile();
       const profileData = userProfileResponse.data?.data as
         | (UserData & {
-            needsRegistration?: boolean;
-            hasPendingInvites?: boolean;
-            pendingInvitations?: FamilyInvitation[];
-          })
+          needsRegistration?: boolean;
+          hasPendingInvites?: boolean;
+          pendingInvitations?: FamilyInvitation[];
+        })
         | undefined;
 
-      console.log("[OIDCAuthContext] loadUserData: profile response:", {
+      logger.oidc.debug("loadUserData: profile response:", {
         profileData,
         needsRegistration: profileData?.needsRegistration,
       });
 
       // Check for pending invitations
       if (profileData?.hasPendingInvites && profileData?.pendingInvitations) {
-        console.log(
-          "[OIDCAuthContext] loadUserData: User has pending invitations",
-          {
-            count: (profileData.pendingInvitations as FamilyInvitation[])
-              .length,
-            invitations: profileData.pendingInvitations,
-          },
-        );
+        logger.oidc.debug("loadUserData: User has pending invitations", {
+          count: (profileData.pendingInvitations as FamilyInvitation[]).length,
+          invitations: profileData.pendingInvitations,
+        });
         setHasPendingInvites(true);
         setPendingInvitations(
           profileData.pendingInvitations as FamilyInvitation[],
@@ -141,23 +138,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       if (profileData?.needsRegistration) {
-        console.log(
-          "[OIDCAuthContext] loadUserData: Setting needsRegistration=true",
-        );
+        logger.oidc.debug("loadUserData: Setting needsRegistration=true");
         setNeedsRegistration(true);
         // Don't redirect here - let pages handle it based on needsRegistration flag
         return;
       }
 
       if (profileData) {
-        console.log(
-          "[OIDCAuthContext] loadUserData: Profile loaded, setting needsRegistration=false",
+        logger.oidc.debug(
+          "loadUserData: Profile loaded, setting needsRegistration=false",
         );
         setUserData(profileData as UserData);
         setNeedsRegistration(false);
       }
     } catch (err: unknown) {
-      console.error("[OIDCAuthContext] Error loading user data:", err);
+      logger.oidc.error("Error loading user data:", err);
 
       if (err && typeof err === "object" && "response" in err) {
         const apiError = err as {
@@ -172,7 +167,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           };
         };
 
-        console.log("[OIDCAuthContext] loadUserData: Full error response:", {
+        logger.oidc.debug("loadUserData: Full error response:", {
           status: apiError.response?.status,
           data: apiError.response?.data,
           dataKeys: apiError.response?.data
@@ -181,8 +176,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         });
 
         if (apiError.response?.status === 404) {
-          console.log(
-            "[OIDCAuthContext] loadUserData: Got 404, checking for pending invitations",
+          logger.oidc.debug(
+            "loadUserData: Got 404, checking for pending invitations",
           );
 
           // Check if user has pending invitations (child account created by parent)
@@ -194,8 +189,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
               | undefined;
 
             if (invitations && invitations.length > 0) {
-              console.log(
-                "[OIDCAuthContext] loadUserData: Found pending invitations:",
+              logger.oidc.debug(
+                "loadUserData: Found pending invitations:",
                 invitations.length,
               );
               setHasPendingInvites(true);
@@ -205,15 +200,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
               return;
             }
           } catch (invErr) {
-            console.log(
-              "[OIDCAuthContext] loadUserData: No pending invitations found or error checking:",
+            logger.oidc.debug(
+              "loadUserData: No pending invitations found or error checking:",
               invErr,
             );
           }
 
           // No pending invitations, user truly needs registration
-          console.log(
-            "[OIDCAuthContext] loadUserData: No pending invitations, user needs registration",
+          logger.oidc.debug(
+            "loadUserData: No pending invitations, user needs registration",
           );
           setNeedsRegistration(true);
           setUserData(null);
@@ -222,7 +217,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           return;
         }
       }
-      console.log("[OIDCAuthContext] loadUserData: Setting userdata=null");
+      logger.oidc.debug("loadUserData: Setting userdata=null");
       setUserData(null);
     }
   }, []);
@@ -230,10 +225,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const checkAuth = useCallback(async () => {
     try {
       setLoading(true);
-      console.log("[OIDCAuthContext] checkAuth: starting");
+      logger.oidc.debug("checkAuth: starting");
 
       if (!isAuthenticated()) {
-        console.log("[OIDCAuthContext] checkAuth: Not authenticated");
+        logger.oidc.debug("checkAuth: Not authenticated");
         setUser(null);
         setUserData(null);
         setNeedsRegistration(false);
@@ -242,26 +237,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return;
       }
 
-      console.log(
-        "[OIDCAuthContext] checkAuth: Authenticated, fetching user info",
-      );
+      logger.oidc.debug("checkAuth: Authenticated, fetching user info");
       const oidcUser = await getUserInfo();
       const currentUser = toUser(oidcUser);
-      console.log("[OIDCAuthContext] checkAuth: Got user:", currentUser?.email);
+      logger.oidc.debug("checkAuth: Got user:", currentUser?.email);
       setUser(currentUser);
 
       if (currentUser) {
-        console.log("[OIDCAuthContext] checkAuth: Loading user data");
+        logger.oidc.debug("checkAuth: Loading user data");
         await loadUserData(currentUser);
       }
     } catch (err) {
-      console.error("[OIDCAuthContext] Error checking auth:", err);
+      logger.oidc.error("Error checking auth:", err);
       setUser(null);
       setUserData(null);
       setNeedsRegistration(false);
     } finally {
       setLoading(false);
-      console.log("[OIDCAuthContext] checkAuth: finished");
+      logger.oidc.debug("checkAuth: finished");
     }
   }, [loadUserData]);
 
@@ -281,7 +274,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         await initiateLogin(window.location.href);
       }
     } catch (err) {
-      console.error("Sign in error:", err);
+      logger.oidc.error("Sign in error:", err);
       setError(t("auth.error.loginFailed"));
       throw err;
     }
@@ -297,7 +290,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setHasPendingInvites(false);
       setPendingInvitations([]);
     } catch (err) {
-      console.error("Logout error:", err);
+      logger.oidc.error("Logout error:", err);
       setError(t("auth.error.logoutFailed"));
       throw err;
     }

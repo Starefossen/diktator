@@ -20,6 +20,7 @@
 
 import { WordSet, WordItem } from "@/types";
 import { TIMING } from "@/lib/timingConfig";
+import { logger } from "@/lib/logger";
 
 // Global audio state for browser compatibility
 let audioContext: AudioContext | null = null;
@@ -45,8 +46,8 @@ export const isAudioUnlocked = (): boolean => audioUnlocked;
 const markAudioUnlocked = (): void => {
   if (!audioUnlocked) {
     audioUnlocked = true;
-    console.log(
-      "[Audio] Marked as unlocked - streaming should work for future plays",
+    logger.audio.info(
+      "Marked as unlocked - streaming should work for future plays",
     );
   }
 };
@@ -56,7 +57,7 @@ const markAudioUnlocked = (): void => {
  */
 const markUserInteracted = (): void => {
   userHasInteracted = true;
-  console.log("[Audio] User interaction registered");
+  logger.audio.debug("User interaction registered");
 };
 
 /**
@@ -73,7 +74,7 @@ export const initializeAudioForIOS = (): void => {
 
   userHasInteracted = true;
 
-  console.log("[Audio] initializeAudioForIOS: marking user interaction");
+  logger.audio.debug("initializeAudioForIOS: marking user interaction");
 
   // Initialize AudioContext (but don't play anything - save the gesture token!)
   try {
@@ -82,7 +83,7 @@ export const initializeAudioForIOS = (): void => {
       window.AudioContext || (window as any).webkitAudioContext;
     if (AudioContextConstructor && !audioContext) {
       audioContext = new AudioContextConstructor();
-      console.log("[Audio] AudioContext created, state:", audioContext.state);
+      logger.audio.debug("AudioContext created, state:", audioContext.state);
     }
 
     // Resume context if suspended (this doesn't consume the gesture token)
@@ -92,7 +93,7 @@ export const initializeAudioForIOS = (): void => {
       });
     }
   } catch (error) {
-    console.log("[Audio] AudioContext init error:", error);
+    logger.audio.warn("AudioContext init error:", error);
   }
 };
 
@@ -116,7 +117,7 @@ export const playAudioSync = (
   onError: (callback: (error: Error) => void) => void;
   promise: Promise<void>;
 } => {
-  console.log("[Audio] playAudioSync: Creating audio element SYNCHRONOUSLY");
+  logger.audio.debug("playAudioSync: Creating audio element SYNCHRONOUSLY");
 
   // Create audio element synchronously
   const audio = new Audio();
@@ -138,7 +139,7 @@ export const playAudioSync = (
   };
 
   const onEndHandler = () => {
-    console.log("[Audio] playAudioSync: Audio ended successfully");
+    logger.audio.debug("playAudioSync: Audio ended successfully");
     markAudioUnlocked();
     cleanup();
     endCallback?.();
@@ -146,7 +147,7 @@ export const playAudioSync = (
   };
 
   const onErrorHandler = (event: Event) => {
-    console.log("[Audio] playAudioSync: Audio error event:", event);
+    logger.audio.warn("playAudioSync: Audio error event:", event);
     cleanup();
     const error = new Error("Audio playback failed");
     errorCallback?.(error);
@@ -157,20 +158,20 @@ export const playAudioSync = (
   audio.addEventListener("error", onErrorHandler);
 
   // Call play() SYNCHRONOUSLY - this MUST be in the same call stack as user click!
-  console.log("[Audio] playAudioSync: Calling audio.play() NOW");
+  logger.audio.debug("playAudioSync: Calling audio.play() NOW");
   const playPromise = audio.play();
 
   if (playPromise) {
     playPromise
       .then(() => {
-        console.log(
-          "[Audio] playAudioSync: play() promise resolved - audio is playing!",
+        logger.audio.debug(
+          "playAudioSync: play() promise resolved - audio is playing!",
         );
         markAudioUnlocked();
       })
       .catch((err) => {
-        console.log(
-          "[Audio] playAudioSync: play() promise rejected:",
+        logger.audio.warn(
+          "playAudioSync: play() promise rejected:",
           err.message,
         );
         cleanup();
@@ -205,7 +206,7 @@ const playAudioDirect = (
   // Create Audio element SYNCHRONOUSLY in the user gesture context
   const audio = new Audio();
 
-  console.log("[Audio] playAudioDirect: Creating audio element synchronously");
+  logger.audio.debug("playAudioDirect: Creating audio element synchronously");
 
   const cleanup = () => {
     audio.removeEventListener("ended", onEndHandler);
@@ -224,14 +225,14 @@ const playAudioDirect = (
   };
 
   const onErrorHandler = (event: Event) => {
-    console.log("[Audio] playAudioDirect: error event:", event);
+    logger.audio.warn("playAudioDirect: error event:", event);
     cleanup();
     const errorEvent = event as ErrorEvent;
     rejectPromise(new Error(errorEvent.message || "Audio playback error"));
   };
 
   const onCanPlayHandler = () => {
-    console.log("[Audio] playAudioDirect: canplaythrough event fired");
+    logger.audio.debug("playAudioDirect: canplaythrough event fired");
     markAudioUnlocked();
   };
 
@@ -242,7 +243,7 @@ const playAudioDirect = (
   // Set source SYNCHRONOUSLY
   audio.src = audioUrl;
 
-  console.log("[Audio] playAudioDirect: Calling play() SYNCHRONOUSLY");
+  logger.audio.debug("playAudioDirect: Calling play() SYNCHRONOUSLY");
 
   // Call play() SYNCHRONOUSLY - this MUST happen in the same call stack as user click
   // Do NOT use await or .then() before this point!
@@ -257,10 +258,10 @@ const playAudioDirect = (
       playPromise
         .then(() => {
           markAudioUnlocked();
-          console.log("[Audio] playAudioDirect: play() succeeded!");
+          logger.audio.debug("playAudioDirect: play() succeeded!");
         })
         .catch((err) => {
-          console.log("[Audio] playAudioDirect: play() failed:", err.message);
+          logger.audio.warn("playAudioDirect: play() failed:", err.message);
           cleanup();
           reject(err);
         });
@@ -279,14 +280,12 @@ const playAudioDirectFromURL = async (
   const audio = new Audio();
   audio.preload = "auto";
 
-  console.log("[Audio] iOS: Playing direct URL:", audioUrl);
+  logger.audio.debug("iOS: Playing direct URL:", audioUrl);
 
   return new Promise((resolve, reject) => {
     // Shorter timeout for iOS - if no event fires in 3 seconds, something is wrong
     const loadTimeout = setTimeout(() => {
-      console.log(
-        "[Audio] iOS: Timeout - no events fired, falling back to TTS",
-      );
+      logger.audio.warn("iOS: Timeout - no events fired, falling back to TTS");
       cleanup();
       reject(new Error("Audio loading timeout - no events fired"));
     }, 3000);
@@ -303,23 +302,23 @@ const playAudioDirectFromURL = async (
     };
 
     const onLoadStartHandler = () => {
-      console.log("[Audio] iOS: loadstart event fired");
+      logger.audio.debug("iOS: loadstart event fired");
     };
 
     const onSuspendHandler = () => {
-      console.log("[Audio] iOS: suspend event fired");
+      logger.audio.debug("iOS: suspend event fired");
     };
 
     const onStalledHandler = () => {
-      console.log(
-        "[Audio] iOS: stalled event - network issue, falling back to TTS",
+      logger.audio.warn(
+        "iOS: stalled event - network issue, falling back to TTS",
       );
       cleanup();
       reject(new Error("Audio loading stalled"));
     };
 
     const onEndHandler = () => {
-      console.log("[Audio] iOS: ended event fired");
+      logger.audio.debug("iOS: ended event fired");
       markAudioUnlocked();
       cleanup();
       onEnd?.();
@@ -327,30 +326,30 @@ const playAudioDirectFromURL = async (
     };
 
     const onErrorHandler = (event: ErrorEvent | Event) => {
-      console.log("[Audio] iOS: error event fired:", event);
+      logger.audio.warn("iOS: error event fired:", event);
       cleanup();
       reject(new Error("Audio playback failed"));
     };
 
     const onLoadedDataHandler = async () => {
-      console.log("[Audio] iOS: loadeddata event fired, attempting play");
+      logger.audio.debug("iOS: loadeddata event fired, attempting play");
       try {
         await audio.play();
         markAudioUnlocked();
       } catch (playError) {
-        console.log("[Audio] iOS: play() failed:", playError);
+        logger.audio.warn("iOS: play() failed:", playError);
         cleanup();
         reject(playError);
       }
     };
 
     const onCanPlayHandler = async () => {
-      console.log("[Audio] iOS: canplaythrough event fired, attempting play");
+      logger.audio.debug("iOS: canplaythrough event fired, attempting play");
       try {
         await audio.play();
         markAudioUnlocked();
       } catch (playError) {
-        console.log("[Audio] iOS: play() failed:", playError);
+        logger.audio.warn("iOS: play() failed:", playError);
         cleanup();
         reject(playError);
       }
@@ -367,7 +366,7 @@ const playAudioDirectFromURL = async (
     // Use direct URL instead of blob for iOS Safari
     audio.src = audioUrl;
 
-    console.log("[Audio] iOS: Audio element created, calling load()");
+    logger.audio.debug("iOS: Audio element created, calling load()");
 
     audio.load();
   });
@@ -385,8 +384,8 @@ const playAudioWithiOSSupport = async (
   // iOS Safari has issues with blob URLs for audio - use direct URL instead
   const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-  console.log(
-    "[Audio] Device detection - isIOS:",
+  logger.audio.debug(
+    "Device detection - isIOS:",
     isIOS,
     "UA:",
     navigator.userAgent.substring(0, 50),
@@ -394,7 +393,7 @@ const playAudioWithiOSSupport = async (
 
   if (isIOS) {
     // For iOS, use the direct URL without blob conversion
-    console.log("[Audio] Using iOS direct URL path");
+    logger.audio.debug("Using iOS direct URL path");
     return playAudioDirectFromURL(audioUrl, onEnd);
   }
 
@@ -528,7 +527,7 @@ export const playWordAudio = async (
     try {
       onStart?.();
 
-      console.log("[Audio] playWordAudio:", {
+      logger.audio.debug("playWordAudio:", {
         word: word.substring(0, 30) + (word.length > 30 ? "..." : ""),
         isAutoPlay,
         audioUnlocked,
@@ -546,20 +545,20 @@ export const playWordAudio = async (
         // which calls audio.play() synchronously to capture the user gesture token.
         // For autoplay (after audio is unlocked), we can use the blob-based approach.
         if (!isAutoPlay) {
-          console.log("[Audio] Using direct play (user gesture context)");
+          logger.audio.debug("Using direct play (user gesture context)");
           await playAudioDirect(streamingUrl, onEnd);
         } else if (audioUnlocked) {
           // Audio already unlocked, can use async blob approach
-          console.log("[Audio] Using blob play (audio already unlocked)");
+          logger.audio.debug("Using blob play (audio already unlocked)");
           await playAudioWithiOSSupport(streamingUrl, onEnd);
         } else {
           // Autoplay but not unlocked - this will likely fail, but try anyway
-          console.log("[Audio] Trying direct play for autoplay (may fail)");
+          logger.audio.debug("Trying direct play for autoplay (may fail)");
           await playAudioDirect(streamingUrl, onEnd);
         }
 
-        console.log(
-          "[Audio] Streaming audio succeeded for:",
+        logger.audio.debug(
+          "Streaming audio succeeded for:",
           word.substring(0, 30),
         );
 
@@ -576,7 +575,7 @@ export const playWordAudio = async (
             const errorMessage = errorData.error || "Failed to play audio";
             const errorDetails = errorData.details || streamingError.statusText;
 
-            console.log("[Audio] API error:", { errorMessage, errorDetails });
+            logger.audio.debug("API error:", { errorMessage, errorDetails });
 
             // If it's a service unavailable error, notify the user
             if (streamingError.status === 503) {
@@ -587,14 +586,14 @@ export const playWordAudio = async (
             }
 
             // For other API errors, report but try TTS fallback
-            console.log("[Audio] API error, will try TTS fallback");
+            logger.audio.debug("API error, will try TTS fallback");
           } catch (parseError) {
-            console.log("[Audio] Could not parse error response");
+            logger.audio.debug("Could not parse error response");
           }
         }
 
-        console.log(
-          "[Audio] Streaming failed, using browser TTS:",
+        logger.audio.debug(
+          "Streaming failed, using browser TTS:",
           streamingError instanceof Error
             ? streamingError.message
             : String(streamingError),
@@ -605,7 +604,7 @@ export const playWordAudio = async (
       // Fall back to browser speech synthesis
       await fallbackToSpeechSynthesis();
     } catch (error) {
-      console.log("[Audio] playWordAudio error, using browser TTS:", error);
+      logger.audio.warn("playWordAudio error, using browser TTS:", error);
       await fallbackToSpeechSynthesis();
     }
   };
@@ -633,13 +632,13 @@ export const playWordAudio = async (
         const norwegianVoice = selectBestNorwegianVoice(voices);
         if (norwegianVoice) {
           utterance.voice = norwegianVoice;
-          console.log(
+          logger.audio.debug(
             "Using Norwegian voice:",
             norwegianVoice.name,
             norwegianVoice.lang,
           );
         } else {
-          console.warn("No Norwegian voice found, using default");
+          logger.audio.warn("No Norwegian voice found, using default");
         }
       }
 
@@ -702,7 +701,7 @@ export const requiresUserInteractionForAudio = (): boolean => {
   const majorVersion = parseInt(versionMatch[1], 10);
   const requiresInteraction = majorVersion < 17;
 
-  console.log("Audio detection:", {
+  logger.audio.debug("Audio detection:", {
     userAgent,
     isSafari,
     safariVersion: versionMatch
@@ -806,11 +805,11 @@ const preloadNextWord = (currentWord: string, wordSet: WordSet): void => {
     cache: "force-cache", // Use cached version if available
   })
     .then(() => {
-      console.log("Preloaded audio for next word:", nextWord);
+      logger.audio.debug("Preloaded audio for next word:", nextWord);
     })
     .catch((error) => {
       // Silently fail - this is just an optimization
-      console.log("Failed to preload next word:", error);
+      logger.audio.debug("Failed to preload next word:", error);
     });
 };
 

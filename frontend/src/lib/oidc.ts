@@ -16,6 +16,8 @@
 // - Mock tokens are stored immediately
 // - Supports user switching via localStorage key 'mock_user_id'
 
+import { logger } from "./logger";
+
 // OIDC Configuration from environment
 const oidcConfig = {
   // OIDC issuer URL (e.g., https://auth.example.com)
@@ -351,7 +353,7 @@ export async function getUserInfo(): Promise<OIDCUser | null> {
   if (idToken) {
     const claims = parseJwt(idToken);
     if (claims) {
-      console.log("[OIDC] ID token claims:", {
+      logger.oidc.debug("ID token claims:", {
         sub: claims.sub,
         email: claims.email,
         name: claims.name,
@@ -371,13 +373,13 @@ export async function getUserInfo(): Promise<OIDCUser | null> {
 
       // If we got email from token, return immediately
       if (userFromToken.email) {
-        console.log("[OIDC] Got email from ID token, returning user");
+        logger.oidc.debug("Got email from ID token, returning user");
         return userFromToken;
       }
 
       // Email missing from token, will try userinfo endpoint below
-      console.log(
-        "[OIDC] Email missing from ID token, will fetch from userinfo endpoint",
+      logger.oidc.debug(
+        "Email missing from ID token, will fetch from userinfo endpoint",
       );
     }
   }
@@ -385,8 +387,8 @@ export async function getUserInfo(): Promise<OIDCUser | null> {
   // Fetch from userinfo endpoint to get complete user info (especially email if missing from token)
   const accessToken = getAccessToken();
   if (!accessToken) {
-    console.log(
-      "[OIDC] No access token, returning user from token if available",
+    logger.oidc.debug(
+      "No access token, returning user from token if available",
     );
     return userFromToken;
   }
@@ -394,13 +396,13 @@ export async function getUserInfo(): Promise<OIDCUser | null> {
   try {
     const discovery = await getDiscoveryDocument();
     if (!discovery?.userinfo_endpoint) {
-      console.log(
-        "[OIDC] No userinfo endpoint in discovery, returning user from token",
+      logger.oidc.debug(
+        "No userinfo endpoint in discovery, returning user from token",
       );
       return userFromToken;
     }
 
-    console.log("[OIDC] Fetching user info from userinfo endpoint");
+    logger.oidc.debug("Fetching user info from userinfo endpoint");
     const response = await fetch(discovery.userinfo_endpoint, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -408,15 +410,15 @@ export async function getUserInfo(): Promise<OIDCUser | null> {
     });
 
     if (!response.ok) {
-      console.log(
-        "[OIDC] Userinfo endpoint returned non-OK status:",
+      logger.oidc.debug(
+        "Userinfo endpoint returned non-OK status:",
         response.status,
       );
       return userFromToken;
     }
 
     const userInfo = await response.json();
-    console.log("[OIDC] Userinfo response:", {
+    logger.oidc.debug("Userinfo response:", {
       sub: userInfo.sub,
       email: userInfo.email,
       name: userInfo.name,
@@ -440,14 +442,14 @@ export async function getUserInfo(): Promise<OIDCUser | null> {
       ...userInfo,
     };
 
-    console.log("[OIDC] Returning merged user:", {
+    logger.oidc.debug("Returning merged user:", {
       id: mergedUser.id,
       email: mergedUser.email,
       name: mergedUser.name,
     });
     return mergedUser;
   } catch (error) {
-    console.error("[OIDC] Failed to fetch user info from endpoint:", error);
+    logger.oidc.error("Failed to fetch user info from endpoint:", error);
     return userFromToken;
   }
 }

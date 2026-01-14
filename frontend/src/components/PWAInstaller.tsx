@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { logger, trackReload } from "@/lib/logger";
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -32,17 +33,20 @@ export function PWAInstaller() {
 
       // Handle controller change (when new SW takes control)
       const handleControllerChange = () => {
-        console.log(
-          `[SW] Controller changed - refreshing=${refreshing}, userInitiated=${userInitiatedUpdate}`,
+        logger.sw.info(
+          `Controller changed - refreshing=${refreshing}, userInitiated=${userInitiatedUpdate}`,
         );
+        // Track the reload event for debugging
+        trackReload("controllerchange", userInitiatedUpdate);
+
         // Only reload if user explicitly requested the update
         if (!refreshing && userInitiatedUpdate) {
           refreshing = true;
-          console.log("[SW] User-initiated update - reloading page");
+          logger.sw.info("User-initiated update - reloading page");
           window.location.reload();
         } else if (!userInitiatedUpdate) {
-          console.log(
-            "[SW] Controller changed but NOT user-initiated - skipping reload to prevent data loss",
+          logger.sw.info(
+            "Controller changed but NOT user-initiated - skipping reload to prevent data loss",
           );
         }
       };
@@ -61,24 +65,24 @@ export function PWAInstaller() {
               updateViaCache: "none", // Always check for updates
             },
           );
-          console.log("✓ Service worker registered successfully");
+          logger.sw.info("Service worker registered successfully");
 
           // Helper to show update prompt
           const promptForUpdate = () => {
-            console.log("New service worker available, prompting user");
+            logger.sw.info("New service worker available, prompting user");
             setShowUpdatePrompt(true);
           };
 
           // Listen for user-initiated update events
           const handleUserUpdate = () => {
-            console.log("[SW] User initiated update event received");
+            logger.sw.info("User initiated update event received");
             userInitiatedUpdate = true;
           };
           window.addEventListener("userInitiatedUpdate", handleUserUpdate);
 
           // Check if there's already a waiting service worker
           if (registration.waiting && navigator.serviceWorker.controller) {
-            console.log("Service worker update already waiting");
+            logger.sw.info("Service worker update already waiting");
             promptForUpdate();
           }
 
@@ -105,7 +109,7 @@ export function PWAInstaller() {
           // This only checks - it doesn't force reload
           const updateInterval = setInterval(() => {
             if (!document.hidden) {
-              console.log("[SW] Periodic update check (5min interval)");
+              logger.sw.debug("Periodic update check (5min interval)");
               registration.update();
             }
           }, 300000); // 5 minutes
@@ -116,7 +120,7 @@ export function PWAInstaller() {
             window.removeEventListener("userInitiatedUpdate", handleUserUpdate);
           };
         } catch (registrationError) {
-          console.log("SW registration failed: ", registrationError);
+          logger.sw.error("SW registration failed:", registrationError);
           return null;
         }
       };
@@ -141,25 +145,25 @@ export function PWAInstaller() {
       const reason = !isProduction
         ? "development mode"
         : "feature flag disabled";
-      console.log(`Service worker disabled (${reason})`);
+      logger.sw.info(`Service worker disabled (${reason})`);
       // Unregister any existing service workers
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker.getRegistrations().then((registrations) => {
           if (registrations.length > 0) {
-            console.log(
+            logger.sw.info(
               `Found ${registrations.length} service worker(s), unregistering...`,
             );
             registrations.forEach((registration) => {
               registration.unregister().then((success) => {
                 if (success) {
-                  console.log("✓ Service worker unregistered successfully");
+                  logger.sw.info("Service worker unregistered successfully");
                 } else {
-                  console.warn("⚠ Failed to unregister service worker");
+                  logger.sw.warn("Failed to unregister service worker");
                 }
               });
             });
           } else {
-            console.log("No service workers to unregister");
+            logger.sw.debug("No service workers to unregister");
           }
         });
       }
@@ -177,7 +181,7 @@ export function PWAInstaller() {
 
     // Handle successful installation
     const handleAppInstalled = () => {
-      console.log("PWA was installed");
+      logger.sw.info("PWA was installed");
       setShowInstallPrompt(false);
       setDeferredPrompt(null);
     };
@@ -190,13 +194,13 @@ export function PWAInstaller() {
 
     // Check if app is running in standalone mode
     if (window.matchMedia("(display-mode: standalone)").matches) {
-      console.log("App is running in standalone mode");
+      logger.sw.info("App is running in standalone mode");
     }
 
     // Handle network status changes
     function updateOnlineStatus() {
       const status = navigator.onLine ? "online" : "offline";
-      console.log(`App is ${status}`);
+      logger.sw.info(`App is ${status}`);
 
       // Add/remove offline class to body
       if (!navigator.onLine) {
@@ -225,16 +229,16 @@ export function PWAInstaller() {
   }, []);
 
   const handleUpdateClick = async () => {
-    console.log("[SW] User clicked update button");
+    logger.sw.info("User clicked update button");
     // Get the waiting service worker
     const registration = await navigator.serviceWorker.getRegistration();
     if (!registration?.waiting) {
-      console.warn("[SW] No waiting service worker found - cannot update");
+      logger.sw.warn("No waiting service worker found - cannot update");
       return;
     }
 
-    console.log(
-      "[SW] Found waiting service worker, dispatching userInitiatedUpdate event",
+    logger.sw.info(
+      "Found waiting service worker, dispatching userInitiatedUpdate event",
     );
     // Mark that user initiated this update
     const event = new CustomEvent("userInitiatedUpdate");
@@ -242,7 +246,7 @@ export function PWAInstaller() {
 
     // Tell the waiting service worker to activate
     // The controllerchange listener (set up in useEffect) will handle the reload
-    console.log("[SW] Sending SKIP_WAITING message to service worker");
+    logger.sw.info("Sending SKIP_WAITING message to service worker");
     registration.waiting.postMessage({ type: "SKIP_WAITING" });
   };
 
@@ -260,7 +264,7 @@ export function PWAInstaller() {
     // Wait for the user to respond to the prompt
     const { outcome } = await deferredPrompt.userChoice;
 
-    console.log(`User response to the install prompt: ${outcome}`);
+    logger.sw.info(`User response to the install prompt: ${outcome}`);
 
     // Clear the saved prompt since it can't be used again
     setDeferredPrompt(null);

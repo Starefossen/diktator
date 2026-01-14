@@ -12,7 +12,7 @@ export const test = {
   "modes.flashcard.desc": "Se, nedtelling, selvsjekk",
   "modes.lookCoverWrite": "Huskestaving",
   "modes.lookCoverWrite.desc": "Husk og skriv",
-  "modes.translation": "Bytt Språk",
+  "modes.translation": "Oversett",
   "modes.translation.desc": "Skriv på et annet språk",
 
   // Mode selector
