@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ArrowPathIcon } from "@heroicons/react/24/solid";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { logger, trackReload } from "@/lib/logger";
 
@@ -296,7 +297,9 @@ export function PWAInstaller() {
     return (
       <div className="install-prompt">
         <div className="install-prompt-content">
-          <div className="install-prompt-icon">🔄</div>
+          <div className="install-prompt-icon">
+            <ArrowPathIcon className="h-6 w-6" />
+          </div>
           <div className="install-prompt-text">
             <div className="install-prompt-title">{t("pwa.update.title")}</div>
             <div className="install-prompt-description">
