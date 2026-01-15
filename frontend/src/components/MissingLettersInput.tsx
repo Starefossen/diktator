@@ -2,8 +2,11 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useLanguage, TranslationKey } from "@/contexts/LanguageContext";
-import Stavle from "@/components/Stavle";
-import { HeroCheckSolidIcon } from "@/components/Icons";
+import { CorrectFeedback } from "@/components/SpellingFeedback";
+import type {
+  NavigationActions,
+  StandardFeedbackState,
+} from "@/lib/testEngine/types";
 
 interface MissingLettersInputProps {
   word: string;
@@ -13,6 +16,20 @@ interface MissingLettersInputProps {
   onSkip?: () => void;
   autoFocus?: boolean;
   disabled?: boolean;
+  /** Feedback state from parent (for error feedback) */
+  feedbackState?: StandardFeedbackState | null;
+  /** Whether to show correct feedback animation */
+  showingCorrectFeedback?: boolean;
+  /** Navigation actions for unified button handling */
+  navigation?: NavigationActions;
+  /** Callback to expose clear function to parent */
+  onClearRef?: (clearFn: () => void) => void;
+  /** Callback to expose canClear state to parent */
+  onCanClearChange?: (canClear: boolean) => void;
+  /** Initial submitted state for dev/demo purposes */
+  initialHasSubmitted?: boolean;
+  /** Initial isCorrect state for dev/demo purposes (requires initialHasSubmitted=true) */
+  initialIsCorrect?: boolean;
 }
 
 /**
@@ -48,10 +65,23 @@ export function MissingLettersInput({
   onSkip: _onSkip,
   autoFocus = true,
   disabled = false,
+  feedbackState = null,
+  showingCorrectFeedback = false,
+  navigation: _navigation,
+  onClearRef,
+  onCanClearChange,
+  initialHasSubmitted = false,
+  initialIsCorrect,
 }: MissingLettersInputProps) {
   const { t } = useLanguage();
-  const [hasSubmitted, setHasSubmitted] = useState(false);
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+
+  // Determine if showing feedback based on parent control
+  const showingFeedback = feedbackState !== null;
+  const hasSubmitted =
+    showingFeedback || showingCorrectFeedback || initialHasSubmitted;
+  const isCorrect = showingCorrectFeedback || (initialIsCorrect ?? false);
+
+  const isInitialMount = useRef(true);
 
   // Track individual letter inputs
   const blankCount = (blankedWord.match(/_/g) || []).length;
@@ -67,12 +97,14 @@ export function MissingLettersInput({
     }
   }, [autoFocus]);
 
-  // Reset state when word changes
+  // Reset state when word changes (but not on initial mount)
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     const newBlankCount = (blankedWord.match(/_/g) || []).length;
     setLetterInputs(Array(newBlankCount).fill(""));
-    setHasSubmitted(false);
-    setIsCorrect(null);
     inputRefs.current = [];
     // Focus first input after reset
     setTimeout(() => {
@@ -82,24 +114,52 @@ export function MissingLettersInput({
     }, 0);
   }, [word, blankedWord, autoFocus]);
 
-  const getUserAnswer = useCallback(() => {
+  // Get just the letters the user typed (for internal validation)
+  const getUserLetters = useCallback(() => {
     return letterInputs.join("");
   }, [letterInputs]);
+
+  // Reconstruct the full word by filling blanks with user's letters
+  const getFullWord = useCallback(
+    (letters: string[]) => {
+      let letterIdx = 0;
+      let result = "";
+      for (const char of blankedWord) {
+        if (char === "_") {
+          result += letters[letterIdx] || "";
+          letterIdx++;
+        } else {
+          result += char;
+        }
+      }
+      return result;
+    },
+    [blankedWord],
+  );
 
   const handleSubmit = useCallback(() => {
     if (disabled || hasSubmitted) return;
 
-    const userAnswer = getUserAnswer();
-    if (userAnswer.length !== missingLetters.length) return;
+    const userLetters = getUserLetters();
+    if (userLetters.length !== missingLetters.length) return;
 
-    const normalizedInput = userAnswer.toLowerCase();
+    const normalizedInput = userLetters.toLowerCase();
     const normalizedMissing = missingLetters.toLowerCase();
     const correct = normalizedInput === normalizedMissing;
 
-    setHasSubmitted(true);
-    setIsCorrect(correct);
-    onSubmit(userAnswer, correct);
-  }, [disabled, hasSubmitted, getUserAnswer, missingLetters, onSubmit]);
+    // Submit the full reconstructed word (not just the missing letters)
+    const fullWord = getFullWord(letterInputs);
+
+    onSubmit(fullWord, correct);
+  }, [
+    disabled,
+    hasSubmitted,
+    getUserLetters,
+    missingLetters,
+    getFullWord,
+    letterInputs,
+    onSubmit,
+  ]);
 
   const handleLetterChange = (index: number, value: string) => {
     if (disabled || hasSubmitted) return;
@@ -127,16 +187,28 @@ export function MissingLettersInput({
       if (allFilled) {
         // Use timeout to allow state to update
         setTimeout(() => {
-          const finalAnswer = letterInputs
-            .map((l, i) => (i === index ? newChar : l))
-            .join("");
-          if (finalAnswer.length === missingLetters.length) {
-            const normalizedInput = finalAnswer.toLowerCase();
+          const userLettersArray = letterInputs.map((l, i) =>
+            i === index ? newChar : l,
+          );
+          const userLetters = userLettersArray.join("");
+          if (userLetters.length === missingLetters.length) {
+            const normalizedInput = userLetters.toLowerCase();
             const normalizedMissing = missingLetters.toLowerCase();
             const correct = normalizedInput === normalizedMissing;
-            setHasSubmitted(true);
-            setIsCorrect(correct);
-            onSubmit(finalAnswer, correct);
+
+            // Reconstruct full word for submission
+            let letterIdx = 0;
+            let fullWord = "";
+            for (const char of blankedWord) {
+              if (char === "_") {
+                fullWord += userLettersArray[letterIdx] || "";
+                letterIdx++;
+              } else {
+                fullWord += char;
+              }
+            }
+
+            onSubmit(fullWord, correct);
           }
         }, 50);
       }
@@ -160,10 +232,20 @@ export function MissingLettersInput({
     }
   };
 
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     setLetterInputs(Array(blankCount).fill(""));
     inputRefs.current[0]?.focus();
-  };
+  }, [blankCount]);
+
+  // Expose clear function to parent via ref callback
+  useEffect(() => {
+    onClearRef?.(handleClear);
+  }, [handleClear, onClearRef]);
+
+  // Notify parent of canClear state changes
+  useEffect(() => {
+    onCanClearChange?.(letterInputs.some((l) => l));
+  }, [letterInputs, onCanClearChange]);
 
   // Build character array with blank positions tracked
   const chars: { char: string; isBlank: boolean; blankIndex: number }[] = [];
@@ -247,84 +329,47 @@ export function MissingLettersInput({
         </p>
       )}
 
-      {/* Feedback after submission */}
-      {hasSubmitted && (
+      {/* Success feedback - shows when answer is correct */}
+      {showingCorrectFeedback && <CorrectFeedback />}
+
+      {/* Error feedback - shows attempt count and hints */}
+      {showingFeedback && feedbackState && (
         <>
-          {isCorrect && (
-            /* Show the complete word above the success feedback */
-            <p className="text-2xl font-bold tracking-wider text-green-700">
-              {word.split("").join(" ")}
-            </p>
-          )}
-          <div
-            className={`rounded-xl px-6 py-4 ${
-              isCorrect
-                ? "bg-green-100 border border-green-300"
-                : "bg-amber-100 border border-amber-300"
-            }`}
-          >
-            {isCorrect ? (
-              <div className="flex items-center gap-3">
-                <Stavle pose="celebrating" size={64} animate />
-                <p className="font-semibold text-lg text-green-800 flex items-center gap-2">
-                  <HeroCheckSolidIcon className="w-7 h-7 text-green-600" />
-                  {t("test.feedback.correct")}
-                </p>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <Stavle pose="encouraging" size={48} animate />
-                <p className="text-lg font-medium text-amber-800">
-                  {t("test.feedback.correctAnswer")}:{" "}
-                  <strong>{missingLetters}</strong>
-                </p>
-              </div>
+          {/* Legend for tile colors */}
+          <div className="flex flex-wrap justify-center gap-3 text-xs text-gray-600">
+            <span className="flex items-center gap-1">
+              <span className="inline-block w-3 h-3 bg-green-100 border border-green-400 rounded" />
+              {t("test.feedback.correct" as TranslationKey)}
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block w-3 h-3 bg-red-100 border border-red-400 rounded" />
+              {t("test.feedback.wrong" as TranslationKey)}
+            </span>
+          </div>
+
+          {/* Attempt counter */}
+          <div className="flex items-center justify-center gap-3 text-sm">
+            <span className="font-semibold text-red-700">
+              {t("test.tryAgain")} ({feedbackState.currentAttempt}/
+              {feedbackState.maxAttempts})
+            </span>
+            {feedbackState.analysis.isAlmostCorrect && (
+              <span className="px-2 py-0.5 text-xs font-medium text-orange-700 bg-orange-100 rounded-full">
+                {t("test.feedback.almostThere" as TranslationKey)}
+              </span>
             )}
           </div>
+
+          {/* Hint message - shows during feedback from second attempt */}
+          {feedbackState.hintKey && (
+            <div className="p-2 bg-nordic-sky/10 rounded-lg border border-nordic-sky/30">
+              <p className="text-nordic-midnight text-sm font-medium text-center">
+                {t(feedbackState.hintKey as TranslationKey)}
+              </p>
+            </div>
+          )}
         </>
       )}
-
-      {/* Action buttons - matches LetterTileInput styling */}
-      <div className="flex justify-center gap-4 mt-2">
-        <button
-          type="button"
-          onClick={handleClear}
-          disabled={disabled || hasSubmitted || letterInputs.every((l) => !l)}
-          className={`
-            px-6 py-3 min-h-12
-            rounded-lg font-semibold
-            bg-gray-100 text-gray-700
-            hover:bg-gray-200
-            transition-colors duration-150
-            focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2
-            ${disabled || hasSubmitted || letterInputs.every((l) => !l) ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
-          `}
-          aria-label={t("challenge.clearAll" as TranslationKey)}
-        >
-          {t("challenge.clear")}
-        </button>
-
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={
-            disabled ||
-            hasSubmitted ||
-            getUserAnswer().length !== missingLetters.length
-          }
-          className={`
-            px-6 py-3 min-h-12
-            rounded-lg font-semibold
-            bg-nordic-sky text-white
-            hover:bg-nordic-sky/90
-            transition-colors duration-150
-            focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2
-            ${disabled || hasSubmitted || getUserAnswer().length !== missingLetters.length ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
-          `}
-        >
-          {t("challenge.check")}
-        </button>
-      </div>
     </div>
   );
 }

@@ -1,5 +1,19 @@
 "use client";
 
+/**
+ * Development Page: Word Test Mode Component Showcase
+ *
+ * IMPORTANT: This page should have 0% mocks. All UI shown here must use the
+ * actual production components with their real props. If something looks wrong
+ * here, it will look wrong in production. If this page uses fake/hardcoded UI,
+ * it provides zero value for development.
+ *
+ * Each section demonstrates a test mode in its three states:
+ * - Input: Initial state for user interaction
+ * - Error: Feedback state showing incorrect answer
+ * - Success: Feedback state showing correct answer
+ */
+
 import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
@@ -17,13 +31,15 @@ import {
   SpellingFeedback,
   CorrectFeedback,
 } from "@/components/SpellingFeedback";
+import { TestResultsView } from "@/components/TestResultsView";
 import { HeroVolumeIcon } from "@/components/Icons";
 import { generateLetterTiles, generateWordBank } from "@/lib/challenges";
 import {
   analyzeSpelling,
   DEFAULT_SPELLING_CONFIG,
 } from "@/lib/spellingAnalysis";
-import type { TestMode } from "@/types";
+import { TIMING } from "@/lib/timingConfig";
+import type { TestMode, TestAnswer, XPInfo } from "@/types";
 import type { WordSet } from "@/types";
 
 type ViewState = "input" | "error" | "success";
@@ -138,6 +154,8 @@ function LetterTilesSection() {
             expectedWord={TEST_WORD}
             onSubmit={() => {}}
             disabled={false}
+            feedbackState={null}
+            showingCorrectFeedback={false}
           />
         </ModeCard>
 
@@ -150,6 +168,8 @@ function LetterTilesSection() {
             onSubmit={() => {}}
             disabled={true}
             feedbackState={errorFeedbackState}
+            showingCorrectFeedback={false}
+            timerDurationMs={TIMING.FEEDBACK_DISPLAY_MS}
           />
         </ModeCard>
 
@@ -189,6 +209,7 @@ function WordBankSection() {
           <WordBankInput
             items={items}
             expectedWordCount={2}
+            expectedAnswer={TEST_SENTENCE}
             onSubmit={() => {}}
             disabled={false}
           />
@@ -389,20 +410,15 @@ function MissingLettersSection() {
 
         <ModeCard title="Missing Letters" state="success">
           <MockAudioButton />
-          <Instruction>Fyll inn de manglende bokstavene</Instruction>
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-4 pb-8 min-h-20">
-              {"mann".split("").map((letter, i) => (
-                <span
-                  key={i}
-                  className="inline-flex min-w-12 min-h-12 w-12 h-12 items-center justify-center rounded-lg bg-green-100 text-xl font-bold uppercase text-green-800 border-2 border-green-400 shadow-md"
-                >
-                  {letter}
-                </span>
-              ))}
-            </div>
-            <CorrectFeedback />
-          </div>
+          <MissingLettersInput
+            word="mann"
+            blankedWord={challenge.blankedWord}
+            missingLetters={challenge.missingLetters}
+            onSubmit={() => {}}
+            autoFocus={false}
+            initialHasSubmitted={true}
+            initialIsCorrect={true}
+          />
         </ModeCard>
       </div>
     </section>
@@ -446,12 +462,13 @@ function FlashcardSection() {
         </ModeCard>
 
         <ModeCard title="Flashcard - Verified" state="success">
-          <div className="flex min-h-64 flex-col items-center justify-center gap-4">
-            <p className="text-4xl font-bold tracking-wider text-green-600">
-              {TEST_WORD.split("").join(" ")}
-            </p>
-            <CorrectFeedback />
-          </div>
+          <FlashcardView
+            word={TEST_WORD}
+            onSubmit={() => {}}
+            autoPlayAudio={false}
+            initialPhase="check"
+            initialIsCorrect={true}
+          />
         </ModeCard>
       </div>
     </section>
@@ -459,8 +476,6 @@ function FlashcardSection() {
 }
 
 function LookCoverWriteSection() {
-  const { t } = useLanguage();
-
   return (
     <section className="mb-12">
       <SectionTitle>Look Cover Write (Memory Spell)</SectionTitle>
@@ -478,61 +493,25 @@ function LookCoverWriteSection() {
         </ModeCard>
 
         <ModeCard title="LCW - Check (Wrong)" state="error">
-          <div className="flex min-h-64 flex-col items-center justify-center gap-6">
-            <div className="rounded-xl bg-amber-50 px-6 py-2 text-sm font-medium uppercase tracking-wider text-amber-600">
-              {t("lookCoverWrite.check")}
-            </div>
-            <div className="flex flex-col gap-4 rounded-2xl bg-gray-50 p-6">
-              <div className="flex items-center gap-4">
-                <span className="w-28 text-right text-sm text-gray-500">
-                  {t("lookCoverWrite.yourAnswer")}:
-                </span>
-                <span className="text-2xl font-semibold tracking-wider text-red-500">
-                  s k u l e
-                </span>
-                <span className="text-red-500">✗</span>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className="w-28 text-right text-sm text-gray-500">
-                  {t("lookCoverWrite.correct")}:
-                </span>
-                <span className="text-2xl font-semibold tracking-wider text-gray-800">
-                  s k o l e
-                </span>
-              </div>
-            </div>
-            <p className="text-lg font-medium text-amber-600">
-              {t("test.feedback.almostThere")}
-            </p>
-          </div>
+          <LookCoverWriteView
+            word={TEST_WORD}
+            onSubmit={() => {}}
+            autoPlayAudio={false}
+            initialPhase="check"
+            initialIsCorrect={false}
+            initialUserInput="skule"
+          />
         </ModeCard>
 
         <ModeCard title="LCW - Check (Correct)" state="success">
-          <div className="flex min-h-64 flex-col items-center justify-center gap-4">
-            <div className="rounded-xl bg-green-50 px-6 py-2 text-sm font-medium uppercase tracking-wider text-green-600">
-              {t("lookCoverWrite.check")}
-            </div>
-            <div className="flex flex-col gap-4 rounded-2xl bg-gray-50 p-6">
-              <div className="flex items-center gap-4">
-                <span className="w-28 text-right text-sm text-gray-500">
-                  {t("lookCoverWrite.yourAnswer")}:
-                </span>
-                <span className="text-2xl font-semibold tracking-wider text-green-600">
-                  s k o l e
-                </span>
-                <span className="text-green-500">✓</span>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className="w-28 text-right text-sm text-gray-500">
-                  {t("lookCoverWrite.correct")}:
-                </span>
-                <span className="text-2xl font-semibold tracking-wider text-gray-800">
-                  s k o l e
-                </span>
-              </div>
-            </div>
-            <CorrectFeedback />
-          </div>
+          <LookCoverWriteView
+            word={TEST_WORD}
+            onSubmit={() => {}}
+            autoPlayAudio={false}
+            initialPhase="check"
+            initialIsCorrect={true}
+            initialUserInput={TEST_WORD}
+          />
         </ModeCard>
       </div>
     </section>
@@ -559,7 +538,7 @@ function TranslationSection() {
               <input
                 type="text"
                 className="px-4 py-2 min-h-12 rounded-lg border-2 border-gray-300 text-xl text-center w-32"
-                placeholder="EN"
+                placeholder={t("common.english")}
                 defaultValue=""
               />
             </div>
@@ -608,90 +587,242 @@ function TranslationSection() {
 }
 
 function ResultsSection() {
-  const { t } = useLanguage();
+  // Mock test data for high score scenario (100%)
+  const highScoreAnswers: TestAnswer[] = [
+    {
+      word: "skole",
+      userAnswers: ["skole"],
+      isCorrect: true,
+      timeSpent: 5,
+      attempts: 1,
+      finalAnswer: "skole",
+      audioPlayCount: 1,
+    },
+    {
+      word: "hund",
+      userAnswers: ["hund"],
+      isCorrect: true,
+      timeSpent: 4,
+      attempts: 1,
+      finalAnswer: "hund",
+      audioPlayCount: 1,
+    },
+    {
+      word: "katt",
+      userAnswers: ["katt"],
+      isCorrect: true,
+      timeSpent: 3,
+      attempts: 1,
+      finalAnswer: "katt",
+      audioPlayCount: 1,
+    },
+    {
+      word: "bil",
+      userAnswers: ["bil"],
+      isCorrect: true,
+      timeSpent: 4,
+      attempts: 1,
+      finalAnswer: "bil",
+      audioPlayCount: 1,
+    },
+    {
+      word: "hus",
+      userAnswers: ["hus"],
+      isCorrect: true,
+      timeSpent: 5,
+      attempts: 1,
+      finalAnswer: "hus",
+      audioPlayCount: 1,
+    },
+    {
+      word: "bok",
+      userAnswers: ["bok"],
+      isCorrect: true,
+      timeSpent: 3,
+      attempts: 1,
+      finalAnswer: "bok",
+      audioPlayCount: 1,
+    },
+    {
+      word: "sol",
+      userAnswers: ["sol"],
+      isCorrect: true,
+      timeSpent: 4,
+      attempts: 1,
+      finalAnswer: "sol",
+      audioPlayCount: 1,
+    },
+    {
+      word: "tre",
+      userAnswers: ["tre"],
+      isCorrect: true,
+      timeSpent: 3,
+      attempts: 1,
+      finalAnswer: "tre",
+      audioPlayCount: 1,
+    },
+    {
+      word: "fjell",
+      userAnswers: ["fjell"],
+      isCorrect: true,
+      timeSpent: 5,
+      attempts: 1,
+      finalAnswer: "fjell",
+      audioPlayCount: 1,
+    },
+    {
+      word: "vann",
+      userAnswers: ["vann"],
+      isCorrect: true,
+      timeSpent: 4,
+      attempts: 1,
+      finalAnswer: "vann",
+      audioPlayCount: 1,
+    },
+  ];
+
+  // Mock test data for needs practice scenario (60%)
+  const lowScoreAnswers: TestAnswer[] = [
+    {
+      word: "skole",
+      userAnswers: ["skole"],
+      isCorrect: true,
+      timeSpent: 5,
+      attempts: 1,
+      finalAnswer: "skole",
+      audioPlayCount: 1,
+    },
+    {
+      word: "hund",
+      userAnswers: ["hund"],
+      isCorrect: true,
+      timeSpent: 4,
+      attempts: 1,
+      finalAnswer: "hund",
+      audioPlayCount: 1,
+    },
+    {
+      word: "katt",
+      userAnswers: ["kat", "katt"],
+      isCorrect: true,
+      timeSpent: 8,
+      attempts: 2,
+      finalAnswer: "katt",
+      audioPlayCount: 2,
+    },
+    {
+      word: "bil",
+      userAnswers: ["bil"],
+      isCorrect: true,
+      timeSpent: 4,
+      attempts: 1,
+      finalAnswer: "bil",
+      audioPlayCount: 1,
+    },
+    {
+      word: "hus",
+      userAnswers: ["huss", "hus"],
+      isCorrect: true,
+      timeSpent: 7,
+      attempts: 2,
+      finalAnswer: "hus",
+      audioPlayCount: 2,
+    },
+    {
+      word: "bok",
+      userAnswers: ["bokk", "bok"],
+      isCorrect: true,
+      timeSpent: 6,
+      attempts: 2,
+      finalAnswer: "bok",
+      audioPlayCount: 2,
+    },
+    {
+      word: "sol",
+      userAnswers: ["sol"],
+      isCorrect: true,
+      timeSpent: 3,
+      attempts: 1,
+      finalAnswer: "sol",
+      audioPlayCount: 1,
+    },
+    {
+      word: "tre",
+      userAnswers: ["tre"],
+      isCorrect: true,
+      timeSpent: 4,
+      attempts: 1,
+      finalAnswer: "tre",
+      audioPlayCount: 1,
+    },
+    {
+      word: "fjell",
+      userAnswers: ["fjel", "fjal", "fjell"],
+      isCorrect: true,
+      timeSpent: 12,
+      attempts: 3,
+      finalAnswer: "fjell",
+      audioPlayCount: 3,
+    },
+    {
+      word: "vann",
+      userAnswers: ["van", "vann"],
+      isCorrect: true,
+      timeSpent: 8,
+      attempts: 2,
+      finalAnswer: "vann",
+      audioPlayCount: 2,
+    },
+  ];
+
+  const highScoreXpInfo: XPInfo = {
+    awarded: 150,
+    total: 345,
+    level: 3,
+    levelName: "Snow Hare",
+    levelNameNo: "Snøhare",
+    levelIconPath: "/levels/snow-hare.png",
+    levelUp: false,
+    nextLevelXp: 600,
+    currentLevelXp: 200,
+  };
+
+  const lowScoreXpInfo: XPInfo = {
+    awarded: 60,
+    total: 255,
+    level: 3,
+    levelName: "Snow Hare",
+    levelNameNo: "Snøhare",
+    levelIconPath: "/levels/snow-hare.png",
+    levelUp: false,
+    nextLevelXp: 600,
+    currentLevelXp: 200,
+  };
 
   return (
     <section className="mb-12">
       <SectionTitle>Test Results View</SectionTitle>
       <div className="grid gap-6 md:grid-cols-2">
-        <ModeCard title="Results - High Score" state="success">
-          <div className="text-center">
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">
-              {t("test.results.testComplete")}
-            </h3>
-            <div className="text-6xl font-bold text-green-600 mb-4">95%</div>
-            <p className="text-gray-600 mb-6">
-              {t("test.results.ofCorrect")
-                .replace("{correct}", "19")
-                .replace("{total}", "20")}
-            </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <div className="rounded-lg bg-green-100 px-4 py-2">
-                <div className="text-2xl font-bold text-green-700">15</div>
-                <div className="text-xs text-green-600">
-                  {t("test.results.firstTry")}
-                </div>
-              </div>
-              <div className="rounded-lg bg-blue-100 px-4 py-2">
-                <div className="text-2xl font-bold text-blue-700">3</div>
-                <div className="text-xs text-blue-600">
-                  {t("test.results.secondTry")}
-                </div>
-              </div>
-              <div className="rounded-lg bg-amber-100 px-4 py-2">
-                <div className="text-2xl font-bold text-amber-700">1</div>
-                <div className="text-xs text-amber-600">
-                  {t("test.results.thirdPlusTries")}
-                </div>
-              </div>
-              <div className="rounded-lg bg-red-100 px-4 py-2">
-                <div className="text-2xl font-bold text-red-700">1</div>
-                <div className="text-xs text-red-600">
-                  {t("test.results.failed")}
-                </div>
-              </div>
-            </div>
-          </div>
+        <ModeCard title="Results - High Score (100%)" state="success">
+          <TestResultsView
+            activeTest={MOCK_WORDSET}
+            answers={highScoreAnswers}
+            onRestart={() => {}}
+            onExit={() => {}}
+            onPlayAudio={() => {}}
+            xpInfo={highScoreXpInfo}
+          />
         </ModeCard>
 
         <ModeCard title="Results - Needs Practice" state="error">
-          <div className="text-center">
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">
-              {t("test.results.testComplete")}
-            </h3>
-            <div className="text-6xl font-bold text-amber-600 mb-4">60%</div>
-            <p className="text-gray-600 mb-6">
-              {t("test.results.ofCorrect")
-                .replace("{correct}", "12")
-                .replace("{total}", "20")}
-            </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <div className="rounded-lg bg-green-100 px-4 py-2">
-                <div className="text-2xl font-bold text-green-700">5</div>
-                <div className="text-xs text-green-600">
-                  {t("test.results.firstTry")}
-                </div>
-              </div>
-              <div className="rounded-lg bg-blue-100 px-4 py-2">
-                <div className="text-2xl font-bold text-blue-700">4</div>
-                <div className="text-xs text-blue-600">
-                  {t("test.results.secondTry")}
-                </div>
-              </div>
-              <div className="rounded-lg bg-amber-100 px-4 py-2">
-                <div className="text-2xl font-bold text-amber-700">3</div>
-                <div className="text-xs text-amber-600">
-                  {t("test.results.thirdPlusTries")}
-                </div>
-              </div>
-              <div className="rounded-lg bg-red-100 px-4 py-2">
-                <div className="text-2xl font-bold text-red-700">8</div>
-                <div className="text-xs text-red-600">
-                  {t("test.results.failed")}
-                </div>
-              </div>
-            </div>
-          </div>
+          <TestResultsView
+            activeTest={MOCK_WORDSET}
+            answers={lowScoreAnswers}
+            onRestart={() => {}}
+            onExit={() => {}}
+            onPlayAudio={() => {}}
+            xpInfo={lowScoreXpInfo}
+          />
         </ModeCard>
       </div>
     </section>

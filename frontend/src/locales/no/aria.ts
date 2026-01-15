@@ -120,4 +120,10 @@ export const aria = {
   "aria.xpGained": "Erfaringspoeng opptjent",
   "aria.levelUp": "Nivå opp feiring",
   "aria.dismissXpNotification": "Lukk XP-varsling",
+
+  // Test Navigation
+  "aria.exitTest": "Avslutt test",
+  "aria.replayAudio": "Spill av lyd igjen",
+  "aria.goToNextWord": "Gå til neste ord",
+  "aria.completeTest": "Fullfør test",
 };

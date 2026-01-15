@@ -1,12 +1,15 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { axe } from "vitest-axe";
 import { WordBankInput } from "../WordBankInput";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import type { WordBankItem } from "@/lib/challenges";
+import type { NavigationActions } from "@/lib/testEngine/types";
 
 describe("WordBankInput", () => {
   const mockOnSubmit = vi.fn();
+  const mockOnClearRef = vi.fn();
+  const mockOnCanClearChange = vi.fn();
 
   const createItems = (sentence: string): WordBankItem[] => {
     const words = sentence.split(" ");
@@ -24,6 +27,16 @@ describe("WordBankInput", () => {
     return [...sentenceItems, ...distractors];
   };
 
+  const createNavigation = (): NavigationActions => ({
+    onCancel: vi.fn(),
+    onPlayAudio: vi.fn(),
+    onSubmit: vi.fn(),
+    onNext: vi.fn(),
+    showFeedback: false,
+    isLastWord: false,
+    canSubmit: true,
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -32,14 +45,20 @@ describe("WordBankInput", () => {
     items: WordBankItem[],
     expectedWordCount: number,
     disabled = false,
+    navigation?: NavigationActions,
+    expectedAnswer = "jeg liker",
   ) => {
     return render(
       <LanguageProvider initialLanguage="en">
         <WordBankInput
           items={items}
           expectedWordCount={expectedWordCount}
+          expectedAnswer={expectedAnswer}
           onSubmit={mockOnSubmit}
           disabled={disabled}
+          navigation={navigation}
+          onClearRef={mockOnClearRef}
+          onCanClearChange={mockOnCanClearChange}
         />
       </LanguageProvider>,
     );
@@ -90,18 +109,38 @@ describe("WordBankInput", () => {
     expect(availableArea).toHaveTextContent("jeg");
   });
 
-  it("clears all words when clear button is clicked", () => {
+  it("clears all words when clear function is called", () => {
     const items = createItems("jeg liker");
-    renderComponent(items, 2);
+    let clearFn: (() => void) | null = null;
+    const onClearRef = (fn: () => void) => {
+      clearFn = fn;
+    };
+
+    render(
+      <LanguageProvider initialLanguage="en">
+        <WordBankInput
+          items={items}
+          expectedWordCount={2}
+          onSubmit={mockOnSubmit}
+          onClearRef={onClearRef}
+          onCanClearChange={mockOnCanClearChange}
+        />
+      </LanguageProvider>,
+    );
 
     fireEvent.click(screen.getByText("jeg"));
-    fireEvent.click(screen.getByText("liker"));
 
-    const clearButton = screen.getByRole("button", { name: /clear/i });
-    fireEvent.click(clearButton);
+    // Verify word was selected
+    let sentenceArea = screen.getByRole("group", { name: /sentence/i });
+    expect(sentenceArea.querySelectorAll("button")).toHaveLength(1);
+
+    // Call the clear function exposed via ref
+    act(() => {
+      clearFn!();
+    });
 
     // Should show 2 empty placeholder slots again
-    const sentenceArea = screen.getByRole("group", { name: /sentence/i });
+    sentenceArea = screen.getByRole("group", { name: /sentence/i });
     const placeholders = sentenceArea.querySelectorAll("span");
     expect(placeholders).toHaveLength(2);
   });
@@ -123,33 +162,38 @@ describe("WordBankInput", () => {
     expect(remainingPlaceholders).toHaveLength(2);
   });
 
-  it("calls onSubmit when check is clicked", () => {
+  it("auto-submits when answer is complete with navigation prop", () => {
     const items = createItems("jeg liker");
-    renderComponent(items, 2);
+    const navigation = createNavigation();
+    renderComponent(items, 2, false, navigation);
 
     fireEvent.click(screen.getByText("jeg"));
     fireEvent.click(screen.getByText("liker"));
 
-    const checkButton = screen.getByRole("button", { name: /check/i });
-    fireEvent.click(checkButton);
-
+    // With navigation prop, auto-submits when complete
     expect(mockOnSubmit).toHaveBeenCalledWith("jeg liker", true);
   });
 
-  it("disables check button when no words selected", () => {
+  it("notifies parent when canClear state changes", () => {
     const items = createItems("jeg liker");
     renderComponent(items, 2);
 
-    const checkButton = screen.getByRole("button", { name: /check/i });
-    expect(checkButton).toBeDisabled();
+    // Initially canClear should be false
+    expect(mockOnCanClearChange).toHaveBeenLastCalledWith(false);
+
+    fireEvent.click(screen.getByText("jeg"));
+
+    // After selecting a word, canClear should be true
+    expect(mockOnCanClearChange).toHaveBeenLastCalledWith(true);
   });
 
-  it("disables clear button when no words selected", () => {
+  it("exposes clear function via onClearRef", () => {
     const items = createItems("jeg liker");
     renderComponent(items, 2);
 
-    const clearButton = screen.getByRole("button", { name: /clear/i });
-    expect(clearButton).toBeDisabled();
+    // onClearRef should have been called with a function
+    expect(mockOnClearRef).toHaveBeenCalled();
+    expect(typeof mockOnClearRef.mock.calls[0][0]).toBe("function");
   });
 
   it("disables all interactions when disabled prop is true", () => {
@@ -181,15 +225,14 @@ describe("WordBankInput", () => {
 
   it("maintains word order when building sentence", () => {
     const items = createItems("jeg liker deg");
-    renderComponent(items, 3);
+    const navigation = createNavigation();
+    renderComponent(items, 3, false, navigation, "liker jeg deg");
 
     fireEvent.click(screen.getByText("liker"));
     fireEvent.click(screen.getByText("jeg"));
     fireEvent.click(screen.getByText("deg"));
 
-    const checkButton = screen.getByRole("button", { name: /check/i });
-    fireEvent.click(checkButton);
-
+    // With navigation prop, auto-submits when complete
     expect(mockOnSubmit).toHaveBeenCalledWith("liker jeg deg", true);
   });
 });

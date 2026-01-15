@@ -123,7 +123,7 @@ export function SpellingFeedback({
   const showMissingChar = currentAttempt >= 2;
 
   return (
-    <div className="rounded-xl bg-red-50 border border-red-200 overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-300">
+    <div className="w-full rounded-xl bg-red-50 border border-red-200 overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-300">
       {/* Header with attempt info */}
       <div className="flex items-center justify-between px-4 py-3 bg-red-100/50">
         <div className="flex items-center gap-2">
@@ -220,7 +220,7 @@ export function CorrectFeedback({
   const { t } = useLanguage();
 
   return (
-    <div className="rounded-lg bg-green-100 border border-green-300 overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-300">
+    <div className="w-full rounded-lg bg-green-100 border border-green-300 overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-300">
       <div className="p-4">
         <div className="flex items-center justify-center gap-3">
           <Stavle pose="celebrating" size={64} animate />

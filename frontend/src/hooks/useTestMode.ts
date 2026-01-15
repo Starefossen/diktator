@@ -26,7 +26,7 @@ import {
   ErrorType,
 } from "@/lib/spellingAnalysis";
 import { normalizeText } from "@/lib/sentenceScoring";
-import { TIMING } from "@/lib/timingConfig";
+import { TIMING, getFeedbackDuration } from "@/lib/timingConfig";
 import { calculateScores } from "@/lib/scoreCalculator";
 import { getMode } from "@/lib/testEngine/registry";
 
@@ -49,6 +49,7 @@ export interface UseTestModeReturn {
   wordDirections: ("toTarget" | "toSource")[]; // For translation mode only
   lastUserAnswer: string; // Most recent answer submitted for spelling feedback (empty string if none)
   xpInfo: XPInfo | null; // XP data from test completion
+  feedbackDurationMs: number; // Dynamic feedback duration based on current word length
 
   // Actions
   startTest: (wordSet: WordSet, mode?: TestMode) => void;
@@ -421,51 +422,62 @@ export function useTestMode(): UseTestModeReturn {
         clearTimeout(advancementTimerRef.current);
       }
 
-      advancementTimerRef.current = setTimeout(() => {
-        setShowFeedback(false);
+      advancementTimerRef.current = setTimeout(
+        () => {
+          setShowFeedback(false);
 
-        const testConfig = getEffectiveTestConfig(activeTest);
-        const maxAttempts = testConfig?.maxAttempts ?? 3;
+          const testConfig = getEffectiveTestConfig(activeTest);
+          const maxAttempts = testConfig?.maxAttempts ?? 3;
 
-        if (isCorrect || newTries >= maxAttempts) {
-          const timeSpent = Math.round(
-            (new Date().getTime() - wordStartTime.getTime()) / 1000,
-          );
+          if (isCorrect || newTries >= maxAttempts) {
+            const timeSpent = Math.round(
+              (new Date().getTime() - wordStartTime.getTime()) / 1000,
+            );
 
-          const answer: TestAnswer = {
-            word: currentWord,
-            userAnswers: newAnswers,
-            isCorrect,
-            timeSpent,
-            attempts: newTries,
-            finalAnswer: answerToSubmit.trim(),
-            audioPlayCount: currentWordAudioPlays,
-            errorTypes: newErrorTypes.length > 0 ? newErrorTypes : undefined,
-          };
+            const answer: TestAnswer = {
+              word: currentWord,
+              userAnswers: newAnswers,
+              isCorrect,
+              timeSpent,
+              attempts: newTries,
+              finalAnswer: answerToSubmit.trim(),
+              audioPlayCount: currentWordAudioPlays,
+              errorTypes: newErrorTypes.length > 0 ? newErrorTypes : undefined,
+            };
 
-          const newAnswersList = [...answers, answer];
-          setAnswers(newAnswersList);
+            const newAnswersList = [...answers, answer];
+            setAnswers(newAnswersList);
 
-          if (currentWordIndex < processedWords.length - 1) {
-            setCurrentWordIndex((prev) => prev + 1);
-            setUserAnswer("");
-            setWordStartTime(new Date());
-            setCurrentTries(0);
-            setCurrentWordAnswers([]);
-            setCurrentWordAudioPlays(0);
-            setCurrentWordErrorTypes([]);
-            // Reset audio state for next word to prevent stuck spinner
-            isPlayingAudioRef.current = false;
-            setIsAudioPlaying(false);
+            if (currentWordIndex < processedWords.length - 1) {
+              setCurrentWordIndex((prev) => prev + 1);
+              setUserAnswer("");
+              setWordStartTime(new Date());
+              setCurrentTries(0);
+              setCurrentWordAnswers([]);
+              setCurrentWordAudioPlays(0);
+              setCurrentWordErrorTypes([]);
+              // Reset audio state for next word to prevent stuck spinner
+              isPlayingAudioRef.current = false;
+              setIsAudioPlaying(false);
+            } else {
+              completeTest(newAnswersList);
+            }
           } else {
-            completeTest(newAnswersList);
+            setUserAnswer("");
+            // Auto-replay after wrong answer - mark as autoplay
+            playTestWordAudio(currentWord, TIMING.AUDIO_REPLAY_DELAY_MS, true);
           }
-        } else {
-          setUserAnswer("");
-          // Auto-replay after wrong answer - mark as autoplay
-          playTestWordAudio(currentWord, TIMING.AUDIO_REPLAY_DELAY_MS, true);
-        }
-      }, TIMING.FEEDBACK_DISPLAY_MS);
+        },
+        isCorrect
+          ? TIMING.SUCCESS_FEEDBACK_MS
+          : getFeedbackDuration(
+              Math.max(expectedAnswer.length, answerToSubmit.trim().length) > 0
+                ? expectedAnswer.length > answerToSubmit.trim().length
+                  ? expectedAnswer
+                  : answerToSubmit.trim()
+                : expectedAnswer,
+            ),
+      );
     },
     [
       activeTest,
@@ -584,6 +596,29 @@ export function useTestMode(): UseTestModeReturn {
     }
   }, [currentWordIndex, testInitialized, playTestWordAudio]);
 
+  // Calculate dynamic feedback duration based on current expected answer
+  const feedbackDurationMs = (() => {
+    if (!activeTest || processedWords.length === 0) {
+      return TIMING.FEEDBACK_DISPLAY_MS;
+    }
+    const currentWord = processedWords[currentWordIndex];
+    const wordObj = activeTest.words.find((w) => w.word === currentWord);
+    if (!wordObj) {
+      return TIMING.FEEDBACK_DISPLAY_MS;
+    }
+    const mode = getMode(testMode);
+    const expectedAnswer = mode?.getExpectedAnswer
+      ? mode.getExpectedAnswer(wordObj, {
+          translationDirection:
+            wordDirections.length > currentWordIndex
+              ? wordDirections[currentWordIndex]
+              : "toTarget",
+          wordSet: activeTest,
+        })
+      : currentWord;
+    return getFeedbackDuration(expectedAnswer);
+  })();
+
   return {
     // State
     activeTest,
@@ -606,6 +641,7 @@ export function useTestMode(): UseTestModeReturn {
         ? currentWordAnswers[currentWordAnswers.length - 1]
         : "",
     xpInfo,
+    feedbackDurationMs,
 
     // Actions
     startTest,

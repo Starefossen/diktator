@@ -5,19 +5,22 @@ import { HeroVolumeIcon } from "@/components/Icons";
 interface TestAudioButtonProps {
   onClick: () => void;
   isPlaying: boolean;
-  showInstruction?: boolean;
-  definition?: string;
+  /** Whether to show the instruction text (use false during feedback to hide but preserve space) */
+  showInstruction: boolean;
+  /** Definition/context hint (pass empty string during feedback to hide but preserve space) */
+  definition: string;
 }
 
 /**
  * TestAudioButton - Reusable audio playback button with loading animation
  *
  * Extracted from TestView to eliminate duplication across different test modes.
+ * Always renders instruction and definition containers to prevent layout shift.
  */
 export function TestAudioButton({
   onClick,
   isPlaying,
-  showInstruction = true,
+  showInstruction,
   definition,
 }: TestAudioButtonProps) {
   const { t } = useLanguage();
@@ -39,23 +42,21 @@ export function TestAudioButton({
         </div>
       </div>
 
-      {/* Instruction text */}
-      {showInstruction && (
-        <p className="mt-4 text-gray-600">
-          <span className="sm:hidden">{t("test.listenToWordMobile")}</span>
-          <span className="hidden sm:inline">{t("test.listenToWord")}</span>
-        </p>
-      )}
+      {/* Instruction text - always render to prevent layout shift */}
+      <p className={`mt-4 text-gray-600 ${showInstruction ? "" : "invisible"}`}>
+        <span className="sm:hidden">{t("test.listenToWordMobile")}</span>
+        <span className="hidden sm:inline">{t("test.listenToWord")}</span>
+      </p>
 
-      {/* Definition/context hint */}
-      {definition && (
-        <div className="mx-auto mt-3 max-w-md rounded-lg border border-nordic-sky/30 bg-nordic-sky/10 px-4 py-2 text-sm">
-          <p className="text-nordic-midnight">
-            <span className="font-medium">{t("test.context")}</span>{" "}
-            {definition}
-          </p>
-        </div>
-      )}
+      {/* Definition/context hint - always render to prevent layout shift */}
+      <div
+        className={`mx-auto mt-3 max-w-md rounded-lg border border-nordic-sky/30 bg-nordic-sky/10 px-4 py-2 text-sm ${definition ? "" : "invisible"}`}
+      >
+        <p className="text-nordic-midnight">
+          <span className="font-medium">{t("test.context")}</span>{" "}
+          {definition || "\u00A0"}
+        </p>
+      </div>
     </div>
   );
 }

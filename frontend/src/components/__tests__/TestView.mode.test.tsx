@@ -9,6 +9,7 @@ describe("TestView - Mode-Specific Behavior", () => {
   const mockOnSubmitAnswer = vi.fn();
   const mockOnPlayCurrentWord = vi.fn();
   const mockOnExitTest = vi.fn();
+  const mockOnNextWord = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -71,8 +72,10 @@ describe("TestView - Mode-Specific Behavior", () => {
     isAudioPlaying: false,
     wordDirections: ["toTarget", "toTarget"] as ("toTarget" | "toSource")[],
     lastUserAnswer: "",
+    feedbackDurationMs: 3500,
     onUserAnswerChange: mockOnUserAnswerChange,
     onSubmitAnswer: mockOnSubmitAnswer,
+    onNextWord: mockOnNextWord,
     onPlayCurrentWord: mockOnPlayCurrentWord,
     onExitTest: mockOnExitTest,
   };
@@ -90,9 +93,11 @@ describe("TestView - Mode-Specific Behavior", () => {
   };
 
   describe("Keyboard Mode", () => {
-    it("shows Play Again button in keyboard mode", () => {
+    it("shows audio button in keyboard mode", () => {
       renderTestView(baseWordSet, "keyboard");
-      expect(screen.getByText(/play again/i)).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /click to hear the word/i }),
+      ).toBeInTheDocument();
     });
 
     it("shows keyboard placeholder text", () => {
@@ -125,9 +130,11 @@ describe("TestView - Mode-Specific Behavior", () => {
   });
 
   describe("Translation Mode", () => {
-    it("shows Play Again button in translation mode", () => {
+    it("shows audio button in translation mode", () => {
       renderTestView(translationWordSet, "translation");
-      expect(screen.getByText(/play again/i)).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /click to hear the word/i }),
+      ).toBeInTheDocument();
     });
 
     it("shows translation placeholder text", () => {
@@ -138,12 +145,12 @@ describe("TestView - Mode-Specific Behavior", () => {
 
     it("displays source word to translate", () => {
       renderTestView(translationWordSet, "translation");
-      expect(screen.getByText(/hello/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/hello/i).length).toBeGreaterThan(0);
     });
 
     it("shows correct word in translation mode", () => {
       renderTestView(translationWordSet, "translation");
-      expect(screen.getByText(/hello/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/hello/i).length).toBeGreaterThan(0);
     });
   });
 
@@ -175,14 +182,16 @@ describe("TestView - Mode-Specific Behavior", () => {
 
     it("calls onPlayCurrentWord when play button clicked", () => {
       renderTestView(baseWordSet, "keyboard");
-      const playButton = screen.getByText(/play again/i);
+      const playButton = screen.getByRole("button", {
+        name: /click to hear the word/i,
+      });
       fireEvent.click(playButton);
       expect(mockOnPlayCurrentWord).toHaveBeenCalled();
     });
 
     it("calls onExitTest when cancel button clicked and confirmed", () => {
       renderTestView(baseWordSet, "keyboard");
-      const cancelButton = screen.getByRole("button", { name: /cancel/i });
+      const cancelButton = screen.getByRole("button", { name: /exit test/i });
       fireEvent.click(cancelButton);
 
       // Should show confirmation modal
@@ -265,9 +274,11 @@ describe("TestView - Mode-Specific Behavior", () => {
       expect(spinner).toBeInTheDocument();
     });
 
-    it("does not show audio playing animation when audio is not playing", () => {
+    it("shows audio button when audio is not playing", () => {
       renderTestView(baseWordSet, "keyboard");
-      const playButton = screen.getByText(/play again/i);
+      const playButton = screen.getByRole("button", {
+        name: /click to hear the word/i,
+      });
       expect(playButton).toBeInTheDocument();
     });
   });
@@ -329,11 +340,11 @@ describe("TestView - Mode-Specific Behavior", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("does not show next/finish button in letter tiles mode", () => {
+    it("shows unified navigation bar with submit button in letter tiles mode", () => {
       renderTestView(baseWordSet, "letterTiles");
       expect(
-        screen.queryByText(/next.*word|finish.*test/i),
-      ).not.toBeInTheDocument();
+        screen.getByRole("button", { name: /submit answer/i }),
+      ).toBeInTheDocument();
     });
 
     it("hides attempts remaining message in letter tiles mode", () => {
@@ -382,7 +393,7 @@ describe("TestView - Mode-Specific Behavior", () => {
       ],
     };
 
-    it("shows sentence feedback for sentence content when incorrect", () => {
+    it("shows incorrect feedback for sentence content when incorrect", () => {
       const props = {
         ...baseProps,
         processedWords: ["Katten sover på sofaen", "Hunden løper fort"],
@@ -392,7 +403,7 @@ describe("TestView - Mode-Specific Behavior", () => {
         lastUserAnswer: "Katten sover",
       };
       renderTestView(sentenceWordSet, "keyboard", props);
-      expect(screen.getByRole("alert")).toBeInTheDocument();
+      expect(screen.getByText(/Not quite/)).toBeInTheDocument();
     });
 
     it("shows correct feedback for fully correct sentence", () => {
@@ -407,32 +418,17 @@ describe("TestView - Mode-Specific Behavior", () => {
       expect(screen.getByText(/correct/i)).toBeInTheDocument();
     });
 
-    it("shows word pills in sentence feedback", () => {
+    it("shows character-level diff feedback for incorrect answers", () => {
       const props = {
         ...baseProps,
         processedWords: ["Katten sover på sofaen", "Hunden løper fort"],
         showFeedback: true,
         lastAnswerCorrect: false,
         currentTries: 1,
-        lastUserAnswer: "katten sover",
+        lastUserAnswer: "Katten sover",
       };
       renderTestView(sentenceWordSet, "keyboard", props);
-      expect(screen.getByText("katten")).toBeInTheDocument();
-      expect(screen.getByText("sover")).toBeInTheDocument();
-    });
-
-    it("shows missing words in sentence feedback", () => {
-      const props = {
-        ...baseProps,
-        processedWords: ["Katten sover på sofaen", "Hunden løper fort"],
-        showFeedback: true,
-        lastAnswerCorrect: false,
-        currentTries: 1,
-        lastUserAnswer: "katten sover",
-      };
-      renderTestView(sentenceWordSet, "keyboard", props);
-      expect(screen.getByText("på")).toBeInTheDocument();
-      expect(screen.getByText("sofaen")).toBeInTheDocument();
+      expect(screen.getByText(/your answer/i)).toBeInTheDocument();
     });
 
     it("shows correct answer after max attempts for sentences", () => {
@@ -442,7 +438,7 @@ describe("TestView - Mode-Specific Behavior", () => {
         showFeedback: true,
         lastAnswerCorrect: false,
         currentTries: 3,
-        lastUserAnswer: "katten sover",
+        lastUserAnswer: "Katten sover",
       };
 
       const wordSetWithConfig: WordSet = {

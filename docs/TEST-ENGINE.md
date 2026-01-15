@@ -112,15 +112,162 @@ if (mode.inputType === "tiles") {
 }
 ```
 
+### 3.5. Navigation Integration
+
+All input components integrate with the unified `TestNavigationBar` via the `NavigationActions` interface:
+
+```typescript
+// TestView creates navigation object
+const navigation: NavigationActions = useMemo(
+  () => ({
+    onCancel: handleExitClick,
+    onPlayAudio: onPlayCurrentWord,
+    onSubmit: () => onSubmitAnswer(userAnswer),
+    onNext: onNextWord,
+    showFeedback,
+    isLastWord: currentWordIndex >= processedWords.length - 1,
+    canSubmit: userAnswer.trim().length > 0,
+    isSubmitting,
+    isPlayingAudio: isAudioPlaying,
+    lastAnswerCorrect,
+  }),
+  [/* deps */],
+);
+
+// Passed to TestModeRenderer
+<TestModeRenderer
+  testMode={testMode}
+  navigation={navigation}
+  onClearRef={handleClearRef}
+  onCanClearChange={handleCanClearChange}
+  // ...other props
+/>
+```
+
+**Input Component Pattern**:
+
+Input components (LetterTileInput, WordBankInput, etc.) expose clear functionality via callbacks:
+
+```typescript
+interface TileInputProps {
+  // ... other props
+  navigation?: NavigationActions;
+  onClearRef?: (clearFn: () => void) => void;
+  onCanClearChange?: (canClear: boolean) => void;
+}
+
+// Inside component:
+React.useEffect(() => {
+  onClearRef?.(handleClear);
+}, [handleClear, onClearRef]);
+
+React.useEffect(() => {
+  onCanClearChange?.(placedTileIds.length > 0);
+}, [placedTileIds.length, onCanClearChange]);
+```
+
+**Auto-Submit Behavior**:
+
+When `navigation` prop is provided, tile-based components auto-submit when answer is complete:
+
+```typescript
+React.useEffect(() => {
+  if (navigation && isComplete && !showingFeedback) {
+    const isCorrect = currentAnswer.toLowerCase() === expectedWord.toLowerCase();
+    onSubmit(currentAnswer, isCorrect);
+  }
+}, [isComplete, navigation, showingFeedback, currentAnswer, expectedWord, onSubmit]);
+```
+
 ### 4. Answer Submission
 
 ```typescript
 // User submits answer
 const isCorrect = normalizeText(userAnswer) === normalizeText(expectedAnswer);
 
-// Feedback displayed
+// Feedback displayed (each input component handles its own)
 // Progress tracked (if mode.tracksMastery === true)
 ```
+
+### 4.5. Unified Feedback System
+
+All input components handle their own feedback display using unified feedback state from TestView:
+
+```typescript
+// TestView creates unified feedback state via useUnifiedFeedbackState hook
+const feedbackState = useUnifiedFeedbackState(
+  showFeedback,
+  lastAnswerCorrect,
+  lastUserAnswer,
+  expectedAnswer,
+  currentTries,
+  maxAttempts,
+  spellingConfig,
+  showCorrectAnswer,
+);
+// Returns: { tile: TileFeedbackState | null, standard: StandardFeedbackState | null }
+
+// Passed to TestModeRenderer
+<TestModeRenderer
+  testMode={testMode}
+  tileFeedbackState={feedbackState.tile}
+  standardFeedbackState={feedbackState.standard}
+  // ...other props
+/>
+```
+
+**Feedback State Types:**
+
+```typescript
+// For LetterTileInput (subset of fields)
+interface TileFeedbackState {
+  analysis: SpellingAnalysisResult;
+  currentAttempt: number;
+  maxAttempts: number;
+  hintKey: string | null;
+  lastUserAnswer: string;
+}
+
+// For WordBankInput, KeyboardInput, TranslationInput
+interface StandardFeedbackState extends TileFeedbackState {
+  showCorrectAnswer: boolean;
+  config: SpellingFeedbackConfig;
+}
+```
+
+**Inline Feedback Pattern:**
+
+Each input component renders its own feedback UI when `feedbackState` is provided:
+
+```typescript
+// Example from KeyboardInput
+export function KeyboardInput({ feedbackState, expectedAnswer, ... }) {
+  const showingFeedback = feedbackState !== null;
+  const showingCorrectFeedback =
+    showingFeedback && feedbackState.showCorrectAnswer;
+
+  return (
+    <div>
+      <input disabled={showingFeedback} ... />
+
+      {showingFeedback && !showingCorrectFeedback && (
+        <SpellingFeedback feedbackState={feedbackState} />
+      )}
+
+      {showingCorrectFeedback && (
+        <CorrectFeedback expectedAnswer={expectedAnswer} />
+      )}
+    </div>
+  );
+}
+```
+
+**Benefits of Inline Feedback:**
+
+- No external overlay component needed
+- Feedback appears contextually near the input
+- Each component controls its own feedback layout
+- Consistent behavior across all modes
 
 ### 5. Test Completion
 

@@ -232,6 +232,7 @@ function CuratedPageContent() {
           testMode={testMode.testMode}
           wordDirections={testMode.wordDirections}
           lastUserAnswer={testMode.lastUserAnswer}
+          feedbackDurationMs={testMode.feedbackDurationMs}
           onUserAnswerChange={testMode.setUserAnswer}
           onSubmitAnswer={testMode.handleSubmitAnswer}
           onNextWord={testMode.handleNextWord}

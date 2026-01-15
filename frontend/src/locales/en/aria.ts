@@ -120,4 +120,10 @@ export const aria = {
   "aria.xpGained": "Experience points gained",
   "aria.levelUp": "Level up celebration",
   "aria.dismissXpNotification": "Dismiss XP notification",
+
+  // Test Navigation
+  "aria.exitTest": "Exit test",
+  "aria.replayAudio": "Play audio again",
+  "aria.goToNextWord": "Go to next word",
+  "aria.completeTest": "Complete test",
 };

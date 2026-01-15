@@ -23,6 +23,15 @@ export const test = {
   "modeSelector.unavailable.singleWordOnly": "Single words only",
   "modeSelector.unavailable.sentenceOnly": "Sentences only",
 
+  // Mode availability errors
+  "modes.notAvailable": "Mode Not Available",
+  "modes.incompatibleWordset":
+    "This mode is not compatible with this word set.",
+  "modes.requiresTranslations":
+    "This mode requires words to have translations. Add translations to your words first.",
+  "modes.unknownMode": "Unknown test mode selected.",
+  "common.goBack": "Go Back",
+
   // Flashcard mode specific
   "flashcard.show": "Look at the word...",
   "flashcard.countdown": "Can you spell it?",
@@ -93,6 +102,7 @@ export const test = {
   // Translation mode
   "test.translateWord": "Translate",
   "test.typeTranslationHere": "Type the translation here...",
+  "test.translateTo": "Translate to",
   "test.translateToTarget": "Translate to",
   "test.translateToSource": "Translate to",
 
@@ -150,7 +160,6 @@ export const test = {
   "challenge.emptySlot": "Empty slot",
   "challenge.placeLetter": "Place letter",
   "challenge.clear": "Clear",
-  "challenge.clearAll": "Clear all letters",
   "challenge.check": "Check",
   "challenge.currentAnswer": "Current answer",
   "challenge.noLettersPlaced": "No letters placed yet",

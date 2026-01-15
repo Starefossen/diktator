@@ -7,6 +7,48 @@
 
 import type { TestMode, WordSet, WordItem } from "@/types";
 import type { ComponentType } from "react";
+import type {
+  SpellingAnalysisResult,
+  SpellingFeedbackConfig,
+} from "@/lib/spellingAnalysis";
+
+// ============================================================================
+// Feedback State Types
+// ============================================================================
+
+/**
+ * Base feedback state shared by all input modes.
+ * Contains spelling analysis results and attempt tracking.
+ */
+export interface BaseFeedbackState {
+  /** Spelling analysis result from comparing user answer to expected */
+  analysis: SpellingAnalysisResult;
+  /** Current attempt number (1-based) */
+  currentAttempt: number;
+  /** Maximum allowed attempts */
+  maxAttempts: number;
+  /** i18n key for hint message, or null if no hint */
+  hintKey: string | null;
+  /** The user's last submitted answer */
+  lastUserAnswer: string;
+}
+
+/**
+ * Feedback state for tile-based inputs (LetterTileInput).
+ * Uses base state only - tiles render their own correct/wrong coloring.
+ */
+export type TileFeedbackState = BaseFeedbackState;
+
+/**
+ * Feedback state for standard input modes (WordBankInput, KeyboardInput, TranslationInput).
+ * Extends base state with correct answer display and spelling config.
+ */
+export interface StandardFeedbackState extends BaseFeedbackState {
+  /** Whether to show the correct answer (after max attempts) */
+  showCorrectAnswer: boolean;
+  /** Spelling feedback configuration for hint generation */
+  config: SpellingFeedbackConfig;
+}
 
 /**
  * Challenge data generated for specific test modes
@@ -31,12 +73,12 @@ export interface ChallengeData {
   blankedWord?: string;
   missingLetters?: string;
   challengeType?:
-    | "prefix"
-    | "suffix"
-    | "compound"
-    | "double"
-    | "silent"
-    | "mixed";
+  | "prefix"
+  | "suffix"
+  | "compound"
+  | "double"
+  | "silent"
+  | "mixed";
 }
 
 /**
@@ -160,3 +202,65 @@ export interface TestModeDefinition {
  * Registry map type: TestMode → TestModeDefinition
  */
 export type TestModeRegistry = Map<TestMode, TestModeDefinition>;
+
+/**
+ * Navigation actions interface for consistent button handling across all test modes.
+ * All test input components receive these handlers from TestView for unified navigation.
+ *
+ * Layout follows design system 3-column pattern:
+ * - Left: Cancel/Exit (danger action)
+ * - Center: Mode-specific actions (Clear, Audio, etc.)
+ * - Right: Submit/Next (primary action)
+ */
+export interface NavigationActions {
+  /** Exit test (triggers confirmation modal) */
+  onCancel: () => void;
+
+  /** Play current word audio */
+  onPlayAudio: () => void;
+
+  /** Submit current answer for validation */
+  onSubmit: () => void;
+
+  /** Advance to next word (after feedback) */
+  onNext: () => void;
+
+  /** Clear current answer (mode-specific) */
+  onClear?: () => void;
+
+  /** Whether feedback is currently being shown */
+  showFeedback: boolean;
+
+  /** Whether current word is the last in test */
+  isLastWord: boolean;
+
+  /** Whether submit button should be enabled */
+  canSubmit: boolean;
+
+  /** Whether a submit/next action is in progress */
+  isSubmitting?: boolean;
+
+  /** Whether audio is currently playing */
+  isPlayingAudio?: boolean;
+
+  /** Whether the last answer was correct (for feedback state) */
+  lastAnswerCorrect?: boolean;
+}
+
+/**
+ * Props for mode-specific center actions render function.
+ * Modes can define custom buttons for the center slot of the navigation bar.
+ */
+export interface CenterActionsProps {
+  /** Clear current answer */
+  onClear: () => void;
+
+  /** Whether clear action is available (has content to clear) */
+  canClear: boolean;
+
+  /** Whether input is disabled */
+  disabled: boolean;
+
+  /** Translation function for i18n */
+  t: (key: string) => string;
+}

@@ -1,12 +1,22 @@
-import { useRef } from "react";
+import { useMemo } from "react";
 import { getMode } from "@/lib/testEngine/registry";
+import { TIMING } from "@/lib/timingConfig";
 import type { TestMode, WordItem } from "@/types";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { LetterTileInput, TileFeedbackState } from "./LetterTileInput";
+import type {
+  NavigationActions,
+  TileFeedbackState,
+  StandardFeedbackState,
+} from "@/lib/testEngine/types";
+import { LetterTileInput } from "./LetterTileInput";
 import { WordBankInput } from "./WordBankInput";
 import { MissingLettersInput } from "./MissingLettersInput";
 import { FlashcardView } from "./FlashcardView";
 import { LookCoverWriteView } from "./LookCoverWriteView";
+import { KeyboardInput } from "./KeyboardInput";
+import { TranslationInput } from "./TranslationInput";
+
+// Re-export feedback types for consumers
+export type { TileFeedbackState, StandardFeedbackState };
 
 interface TestModeRendererProps {
   testMode: TestMode;
@@ -15,17 +25,35 @@ interface TestModeRendererProps {
   audioUrl: string;
   userAnswer: string;
   onUserAnswerChange: (answer: string) => void;
-  onSubmitAnswer: () => void;
+  onSubmitAnswer: (directAnswer?: string) => void;
   onExitTest: () => void;
   showFeedback: boolean;
+  lastAnswerCorrect?: boolean;
   tileFeedbackState: TileFeedbackState | null;
+  /** Unified feedback state for standard input modes (wordBank, keyboard, translation) */
+  standardFeedbackState?: StandardFeedbackState | null;
   tileKey: number;
   testConfig?: {
     autoPlayAudio?: boolean;
     enableAutocorrect?: boolean;
     flashcardShowDuration?: number;
     lookCoverWriteLookDuration?: number;
+    showCorrectAnswer?: boolean;
   };
+  /** Translation mode specific props */
+  translationInfo?: {
+    sourceWord: string;
+    direction: "toTarget" | "toSource";
+    targetLanguage: string;
+  };
+  /** Navigation actions for unified button handling */
+  navigation?: NavigationActions;
+  /** Callback to receive clear function from input components */
+  onClearRef?: (clearFn: () => void) => void;
+  /** Callback when canClear state changes in input components */
+  onCanClearChange?: (canClear: boolean) => void;
+  /** Dynamic feedback duration based on word length */
+  feedbackDurationMs?: number;
 }
 
 export function TestModeRenderer({
@@ -38,19 +66,30 @@ export function TestModeRenderer({
   onSubmitAnswer,
   onExitTest,
   showFeedback,
+  lastAnswerCorrect = false,
   tileFeedbackState,
+  standardFeedbackState = null,
   tileKey,
   testConfig,
+  translationInfo,
+  navigation,
+  onClearRef,
+  onCanClearChange,
+  feedbackDurationMs = TIMING.FEEDBACK_DISPLAY_MS,
 }: TestModeRendererProps) {
-  const { t } = useLanguage();
-  const inputRef = useRef<HTMLInputElement>(null);
   const mode = getMode(testMode);
+
+  // Memoize challenge data to prevent regenerating random tiles on every render.
+  // The tileKey is included to allow intentional resets (e.g., on retry).
+  const challengeData = useMemo(() => {
+    if (!mode?.generateChallenge) return null;
+    return mode.generateChallenge(expectedAnswer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expectedAnswer, testMode, tileKey]);
 
   if (!mode) {
     return null;
   }
-
-  const challengeData = mode.generateChallenge?.(expectedAnswer);
 
   // Specialized modes with their own complete views
   if (testMode === "flashcard") {
@@ -66,6 +105,7 @@ export function TestModeRenderer({
         onSkip={onExitTest}
         showDuration={testConfig?.flashcardShowDuration ?? 3000}
         autoPlayAudio={testConfig?.autoPlayAudio ?? true}
+        navigation={navigation}
       />
     );
   }
@@ -83,6 +123,7 @@ export function TestModeRenderer({
         onSkip={onExitTest}
         lookDuration={testConfig?.lookCoverWriteLookDuration ?? 4000}
         autoPlayAudio={testConfig?.autoPlayAudio ?? true}
+        navigation={navigation}
       />
     );
   }
@@ -97,11 +138,15 @@ export function TestModeRenderer({
         tiles={challengeData.tiles}
         expectedWord={expectedAnswer}
         onSubmit={(answer: string, _isCorrect: boolean) => {
-          onUserAnswerChange(answer);
-          onSubmitAnswer();
+          onSubmitAnswer(answer);
         }}
         disabled={showFeedback}
         feedbackState={tileFeedbackState}
+        showingCorrectFeedback={showFeedback && lastAnswerCorrect}
+        timerDurationMs={feedbackDurationMs}
+        navigation={navigation}
+        onClearRef={onClearRef}
+        onCanClearChange={onCanClearChange}
       />
     );
   }
@@ -112,11 +157,16 @@ export function TestModeRenderer({
         key={tileKey}
         items={challengeData.wordBankItems}
         expectedWordCount={expectedAnswer.split(/\s+/).length}
+        expectedAnswer={expectedAnswer}
         onSubmit={(answer: string, _isCorrect: boolean) => {
-          onUserAnswerChange(answer);
-          onSubmitAnswer();
+          onSubmitAnswer(answer);
         }}
         disabled={showFeedback}
+        feedbackState={standardFeedbackState}
+        showingCorrectFeedback={showFeedback && lastAnswerCorrect}
+        navigation={navigation}
+        onClearRef={onClearRef}
+        onCanClearChange={onCanClearChange}
       />
     );
   }
@@ -133,32 +183,55 @@ export function TestModeRenderer({
         blankedWord={challengeData.blankedWord}
         missingLetters={challengeData.missingLetters}
         onSubmit={(answer: string, _isCorrect: boolean) => {
-          onUserAnswerChange(answer);
-          onSubmitAnswer();
+          onSubmitAnswer(answer);
         }}
+        disabled={showFeedback}
+        feedbackState={standardFeedbackState}
+        showingCorrectFeedback={showFeedback && lastAnswerCorrect}
         onSkip={onExitTest}
+        navigation={navigation}
+        onClearRef={onClearRef}
+        onCanClearChange={onCanClearChange}
       />
     );
   }
 
-  // Keyboard input (default for keyboard and translation modes)
+  // Translation mode
+  if (testMode === "translation" && translationInfo) {
+    return (
+      <TranslationInput
+        expectedAnswer={expectedAnswer}
+        userAnswer={userAnswer}
+        onUserAnswerChange={onUserAnswerChange}
+        onSubmit={(answer: string, _isCorrect: boolean) => {
+          onSubmitAnswer(answer);
+        }}
+        disabled={showFeedback}
+        feedbackState={standardFeedbackState}
+        showingCorrectFeedback={showFeedback && lastAnswerCorrect}
+        sourceWord={translationInfo.sourceWord}
+        direction={translationInfo.direction}
+        targetLanguage={translationInfo.targetLanguage}
+        navigation={navigation}
+        testConfig={testConfig}
+      />
+    );
+  }
+
+  // Keyboard input (default mode)
   return (
-    <input
-      ref={inputRef}
-      type="text"
-      value={userAnswer}
-      onChange={(e) => onUserAnswerChange(e.target.value)}
-      onKeyPress={(e) => e.key === "Enter" && onSubmitAnswer()}
-      className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 text-center text-xl transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-nordic-teal sm:px-6 sm:py-4 sm:text-2xl min-h-12"
-      placeholder={
-        testMode === "translation"
-          ? t("test.typeTranslationHere")
-          : t("test.typeWordHere")
-      }
-      autoFocus
-      autoCorrect={testConfig?.enableAutocorrect ? "on" : "off"}
-      autoCapitalize={testConfig?.enableAutocorrect ? "on" : "off"}
-      spellCheck={testConfig?.enableAutocorrect}
+    <KeyboardInput
+      expectedWord={expectedAnswer}
+      userAnswer={userAnswer}
+      onUserAnswerChange={onUserAnswerChange}
+      onSubmit={(answer: string, _isCorrect: boolean) => {
+        onSubmitAnswer(answer);
+      }}
+      disabled={showFeedback}
+      feedbackState={standardFeedbackState}
+      showingCorrectFeedback={showFeedback && lastAnswerCorrect}
+      navigation={navigation}
+      testConfig={testConfig}
     />
   );
 }

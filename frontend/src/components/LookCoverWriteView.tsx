@@ -5,6 +5,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { SpeakerWaveIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { CheckIcon as CheckIconSolid } from "@heroicons/react/24/solid";
 import Stavle from "@/components/Stavle";
+import type { NavigationActions } from "@/lib/testEngine/types";
 
 type LCWPhase = "look" | "cover" | "write" | "check";
 
@@ -15,6 +16,14 @@ interface LookCoverWriteViewProps {
   onSkip?: () => void;
   lookDuration?: number; // Duration to show word in ms (default: 4000)
   autoPlayAudio?: boolean; // Auto-play audio when word shows (default: true)
+  /** Navigation actions for unified button handling */
+  navigation?: NavigationActions;
+  /** Initial phase for dev/demo purposes */
+  initialPhase?: LCWPhase;
+  /** Initial isCorrect state for dev/demo purposes (requires initialPhase="check") */
+  initialIsCorrect?: boolean;
+  /** Initial user input for dev/demo purposes (requires initialPhase="check") */
+  initialUserInput?: string;
 }
 
 /**
@@ -40,14 +49,21 @@ export function LookCoverWriteView({
   onSkip,
   lookDuration = 4000,
   autoPlayAudio = true,
+  navigation,
+  initialPhase = "look",
+  initialIsCorrect,
+  initialUserInput = "",
 }: LookCoverWriteViewProps) {
   const { t } = useLanguage();
-  const [phase, setPhase] = useState<LCWPhase>("look");
-  const [userInput, setUserInput] = useState("");
+  const [phase, setPhase] = useState<LCWPhase>(initialPhase);
+  const [userInput, setUserInput] = useState(initialUserInput);
   const [progress, setProgress] = useState(100);
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(
+    initialIsCorrect ?? null,
+  );
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isInitialMount = useRef(true);
 
   // Play audio
   const playAudio = useCallback(() => {
@@ -92,8 +108,12 @@ export function LookCoverWriteView({
     }
   }, [phase]);
 
-  // Reset when word changes
+  // Reset when word changes (but not on initial mount)
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     setPhase("look");
     setUserInput("");
     setProgress(100);
@@ -228,7 +248,8 @@ export function LookCoverWriteView({
 
       {/* CHECK PHASE - Compare answers */}
       {phase === "check" && (
-        <>
+        <div className="w-full flex flex-col items-center gap-8">
+          {/* Phase header */}
           <div
             className={`rounded-xl px-6 py-2 text-sm font-medium uppercase tracking-wider ${
               isCorrect
@@ -240,7 +261,7 @@ export function LookCoverWriteView({
           </div>
 
           {/* Side-by-side comparison */}
-          <div className="flex flex-col gap-4 rounded-2xl bg-gray-50 p-6">
+          <div className="w-full flex flex-col gap-4 rounded-2xl bg-gray-50 p-6">
             <div className="flex items-center gap-4">
               <span className="w-28 text-right text-sm text-gray-500">
                 {t("lookCoverWrite.yourAnswer")}:
@@ -283,34 +304,55 @@ export function LookCoverWriteView({
             </div>
           </div>
 
-          {/* Stavle mascot feedback */}
-          <div className="flex items-center justify-center gap-3">
-            <Stavle
-              pose={isCorrect ? "celebrating" : "encouraging"}
-              size={isCorrect ? 64 : 48}
-              animate
-            />
-            <p
-              className={`text-lg font-medium ${
-                isCorrect ? "text-green-600" : "text-amber-600"
-              }`}
-            >
-              {isCorrect
-                ? t("test.feedback.correct")
-                : t("test.feedback.almostThere")}
-            </p>
+          {/* Full-width Stavle feedback box */}
+          <div
+            className={`w-full rounded-lg overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-300 ${
+              isCorrect
+                ? "bg-green-100 border border-green-300"
+                : "bg-amber-100 border border-amber-300"
+            }`}
+          >
+            <div className="p-4">
+              <div className="flex items-center justify-center gap-3">
+                <Stavle
+                  pose={isCorrect ? "celebrating" : "encouraging"}
+                  size={64}
+                  animate
+                />
+                <p
+                  className={`text-lg font-semibold flex items-center gap-2 ${
+                    isCorrect ? "text-green-800" : "text-amber-800"
+                  }`}
+                >
+                  {isCorrect ? (
+                    <CheckIconSolid
+                      className="w-7 h-7 text-green-600"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <XMarkIcon
+                      className="w-7 h-7 text-amber-600"
+                      aria-hidden="true"
+                    />
+                  )}
+                  {isCorrect
+                    ? t("test.feedback.correct")
+                    : t("test.feedback.almostThere")}
+                </p>
+              </div>
+            </div>
           </div>
-        </>
+        </div>
       )}
 
       {/* Skip button (not in check phase) */}
-      {onSkip && phase !== "check" && (
+      {(onSkip || navigation?.onCancel) && phase !== "check" && (
         <button
           type="button"
-          onClick={onSkip}
+          onClick={navigation?.onCancel || onSkip}
           className="mt-4 text-sm text-gray-400 hover:text-gray-600"
         >
-          {t("challenge.clear")}
+          {t("test.cancel")}
         </button>
       )}
     </div>

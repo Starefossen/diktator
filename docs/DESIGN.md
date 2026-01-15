@@ -489,11 +489,13 @@ Disabled: Slate at 50% opacity
 #### Interactive States
 
 ```
-Default button: Sky Blue (#7DD3FC)
-Hover: Darken 10% or add subtle shadow
-Active: Darken 15%
+Default button: Sky Blue background (#7DD3FC) with Midnight Blue text (#1E3A5A)
+Hover: Reduce opacity to 80% (bg-nordic-sky/80) + increase shadow
+Active: Reduce opacity to 70%
 Focus ring: Fjord Teal (#2DD4BF) with 2px offset
 ```
+
+**Contrast Guidelines**: Primary action buttons must use dark text (Midnight Blue #1E3A5A) on light backgrounds (Sky Blue #7DD3FC) to ensure WCAG AA compliance. Never use white text on light sky blue - this creates insufficient contrast and makes buttons appear disabled.
 
 #### Button Color Hierarchy
 
@@ -988,13 +990,19 @@ Compare to ParentWordSetCard which includes:
 /* Primary action — "Start Test", "Next Word" */
 .btn-primary-child {
   background: linear-gradient(to right, #7dd3fc, #2dd4bf);
-  color: #1e3a5a;
+  color: #1e3a5a; /* Dark text for contrast */
   padding: 16px 32px;
   border-radius: 16px;
-  font-weight: 600;
+  font-weight: 700; /* Bold for better readability */
   font-size: 18px;
   min-height: 56px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s, opacity 0.2s;
+}
+
+.btn-primary-child:hover {
+  opacity: 0.8;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15);
 }
 
 /* Secondary action — "Skip", "Back" */
@@ -1016,45 +1024,70 @@ Compare to ParentWordSetCard which includes:
 
 #### Consistent Button Layout in Tests
 
-**Critical for muscle memory**: Children benefit from predictable button placement. Test screens use a **three-position layout** (when all buttons are present):
+**Critical for muscle memory**: Children benefit from predictable button placement. Test screens use a **three-column layout** implemented via `TestNavigationBar`:
 
-| Position   | Purpose             | Style       | Icon                             | Label (NO)       | Label (EN)      |
-| ---------- | ------------------- | ----------- | -------------------------------- | ---------------- | --------------- |
-| **Left**   | Exit test (danger)  | `danger`    | X mark (HeroXMarkIcon)           | "Avbryt"         | "Cancel"        |
-| **Middle** | Repeat audio/replay | `secondary` | Speaker (HeroSpeakerWaveIcon)    | "Spill igjen"    | "Play Again"    |
-| **Right**  | Advance/complete    | `primary`   | Arrow right (HeroArrowRightIcon) | "Neste"/"Ferdig" | "Next"/"Finish" |
+| Column     | Purpose               | Style       | Icon                             | Label (NO)       | Label (EN)      |
+| ---------- | --------------------- | ----------- | -------------------------------- | ---------------- | --------------- |
+| **Left**   | Exit test (danger)    | `danger`    | X mark (HeroXMarkIcon)           | "Avbryt"         | "Cancel"        |
+| **Center** | Mode-specific actions | `secondary` | Varies (e.g., Clear button)      | Varies           | Varies          |
+| **Right**  | Advance/complete      | `primary`   | Arrow right (HeroArrowRightIcon) | "Neste"/"Ferdig" | "Next"/"Finish" |
 
-**Layout structure**:
+**Audio Replay**: The audio replay button is **not** in the navigation bar. Instead, children use the prominent speaker icon in the SpellingChallenge content area ("Click to hear the word"). This follows the Audio-First Design principle from LEARNING.md and avoids duplicate buttons.
 
-```jsx
-<div className="flex items-center justify-between gap-4">
-  <ModalButton variant="danger" onClick={handleExitClick}>
-    <HeroXMarkIcon /> Avbryt
-  </ModalButton>
+**TestNavigationBar Component** (`frontend/src/components/TestNavigationBar.tsx`):
 
-  {/* Middle button (when present) */}
-  <ModalButton variant="secondary" onClick={handlePlayAgain}>
-    <HeroSpeakerWaveIcon /> Spill igjen
-  </ModalButton>
+```tsx
+// Usage in TestView
+<TestNavigationBar
+  {...navigation}
+  centerContent={
+    supportsClearButton && canClear && clearFn ? (
+      <ClearButton onClick={clearFn} disabled={showFeedback} />
+    ) : undefined
+  }
+  hideAudioButton  // Audio button is in SpellingChallenge
+/>
 
-  <ModalButton variant="primary" onClick={handleNext}>
-    Neste <HeroArrowRightIcon />
-  </ModalButton>
-</div>
+// Modal buttons (BaseModal.tsx)
+<ModalButton variant="primary">  {/* Sky blue bg, midnight text, bold */}
+  {t("test.continueTest")}
+</ModalButton>
 ```
 
-**Two-button layout** (no middle button):
+**NavigationActions Interface** (`frontend/src/lib/testEngine/types.ts`):
 
-```jsx
-<div className="flex items-center justify-between gap-4">
-  <ModalButton variant="danger" onClick={handleExitClick}>
-    <HeroXMarkIcon /> Avbryt
-  </ModalButton>
+```typescript
+export interface NavigationActions {
+  onCancel: () => void;       // Exit test with confirmation
+  onPlayAudio: () => void;    // Replay current word audio
+  onSubmit: () => void;       // Submit current answer
+  onNext: () => void;         // Advance to next word
+  showFeedback: boolean;      // Currently showing answer feedback
+  isLastWord: boolean;        // On final word (changes button text)
+  canSubmit: boolean;         // Answer valid for submission
+  isSubmitting?: boolean;     // API call in progress
+  isPlayingAudio?: boolean;   // Audio currently playing
+  lastAnswerCorrect?: boolean; // For feedback display
+  onClear?: () => void;       // Clear current answer (mode-specific)
+}
+```
 
-  <ModalButton variant="primary" onClick={handleNext}>
-    Ferdig <HeroArrowRightIcon />
-  </ModalButton>
-</div>
+**Center Slot Actions by Mode**:
+
+| Mode           | Center Content                      |
+| -------------- | ----------------------------------- |
+| letterTiles    | Clear button (when tiles placed)    |
+| wordBank       | Clear button (when words selected)  |
+| missingLetters | Clear button (when letters entered) |
+| keyboard       | None (typing has delete key)        |
+| flashcard      | None                                |
+| lookCoverWrite | None                                |
+| translation    | None (typing has delete key)        |
+
+**Responsive Labels**: Navigation buttons use icons + hidden text on mobile:
+
+```tsx
+<span className="hidden sm:inline">{t("test.cancel")}</span>
 ```
 
 **Why this matters**:
@@ -1062,6 +1095,7 @@ Compare to ParentWordSetCard which includes:
 - **Left = Danger**: Consistent with "back/cancel/exit" patterns, requires deliberate left-hand reach
 - **Right = Progress**: Natural reading flow (Norwegian left-to-right), thumb-friendly on mobile
 - **Predictability**: Same layout across all test modes (standard, specialized, feedback overlay)
+- **Reduced Cognitive Load**: Mode-specific actions in center, universal actions on edges
 
 ### Confirmation Dialogs
 

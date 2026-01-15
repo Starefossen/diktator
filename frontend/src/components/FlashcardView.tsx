@@ -8,8 +8,10 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { CheckIcon as CheckIconSolid } from "@heroicons/react/24/solid";
+import Stavle from "@/components/Stavle";
+import type { NavigationActions } from "@/lib/testEngine/types";
 
-type FlashcardPhase = "show" | "countdown" | "reveal" | "verify";
+type FlashcardPhase = "show" | "countdown" | "reveal" | "verify" | "check";
 
 interface FlashcardViewProps {
   word: string;
@@ -20,6 +22,12 @@ interface FlashcardViewProps {
   countdownFrom?: number; // Countdown start number (default: 3)
   allowVerify?: boolean; // Allow "type to verify" option (default: true)
   autoPlayAudio?: boolean; // Auto-play audio when word shows (default: true)
+  /** Navigation actions for unified button handling */
+  navigation?: NavigationActions;
+  /** Initial phase for dev/demo purposes */
+  initialPhase?: FlashcardPhase;
+  /** Initial isCorrect state for dev/demo purposes (requires initialPhase="check") */
+  initialIsCorrect?: boolean;
 }
 
 /**
@@ -46,15 +54,22 @@ export function FlashcardView({
   countdownFrom = 3,
   allowVerify = true,
   autoPlayAudio = true,
+  navigation,
+  initialPhase = "show",
+  initialIsCorrect,
 }: FlashcardViewProps) {
   const { t } = useLanguage();
-  const [phase, setPhase] = useState<FlashcardPhase>("show");
+  const [phase, setPhase] = useState<FlashcardPhase>(initialPhase);
   const [countdown, setCountdown] = useState(countdownFrom);
   const [showVerifyInput, setShowVerifyInput] = useState(false);
   const [verifyInput, setVerifyInput] = useState("");
   const [progress, setProgress] = useState(100);
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(
+    initialIsCorrect ?? null,
+  );
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isInitialMount = useRef(true);
 
   // Play audio
   const playAudio = useCallback(() => {
@@ -115,13 +130,18 @@ export function FlashcardView({
     }
   }, [showVerifyInput]);
 
-  // Reset when word changes
+  // Reset when word changes (but not on initial mount)
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     setPhase("show");
     setCountdown(countdownFrom);
     setShowVerifyInput(false);
     setVerifyInput("");
     setProgress(100);
+    setIsCorrect(null);
   }, [word, countdownFrom]);
 
   const handleKnewIt = (knewIt: boolean) => {
@@ -130,9 +150,11 @@ export function FlashcardView({
   };
 
   const handleVerify = () => {
-    const isCorrect =
+    const correct =
       verifyInput.toLowerCase().trim() === word.toLowerCase().trim();
-    onSubmit(verifyInput, isCorrect);
+    setIsCorrect(correct);
+    setPhase("check");
+    onSubmit(verifyInput, correct);
   };
 
   const handleVerifyKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -289,16 +311,67 @@ export function FlashcardView({
         </>
       )}
 
-      {/* Skip button (available in all phases except verify) */}
-      {onSkip && !showVerifyInput && (
-        <button
-          type="button"
-          onClick={onSkip}
-          className="mt-4 text-sm text-gray-400 hover:text-gray-600"
-        >
-          {t("challenge.clear")}
-        </button>
+      {/* CHECK PHASE - Show success/fail after verify */}
+      {phase === "check" && isCorrect !== null && (
+        <div className="w-full flex flex-col items-center gap-8">
+          {/* Word display */}
+          <span className="text-4xl font-bold tracking-wider text-green-600">
+            {word.split("").join(" ")}
+          </span>
+
+          {/* Full-width feedback box matching CorrectFeedback pattern */}
+          <div
+            className={`w-full rounded-lg overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-300 ${
+              isCorrect
+                ? "bg-green-100 border border-green-300"
+                : "bg-amber-100 border border-amber-300"
+            }`}
+          >
+            <div className="p-4">
+              <div className="flex items-center justify-center gap-3">
+                <Stavle
+                  pose={isCorrect ? "celebrating" : "encouraging"}
+                  size={64}
+                  animate
+                />
+                <p
+                  className={`text-lg font-semibold flex items-center gap-2 ${
+                    isCorrect ? "text-green-800" : "text-amber-800"
+                  }`}
+                >
+                  {isCorrect ? (
+                    <CheckIconSolid
+                      className="w-7 h-7 text-green-600"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <XMarkIcon
+                      className="w-7 h-7 text-amber-600"
+                      aria-hidden="true"
+                    />
+                  )}
+                  {isCorrect
+                    ? t("test.feedback.correct")
+                    : t("test.feedback.almostThere")}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
+
+      {/* Skip button (available in all phases except verify and check) */}
+      {(onSkip || navigation?.onCancel) &&
+        !showVerifyInput &&
+        phase !== "check" && (
+          <button
+            type="button"
+            onClick={navigation?.onCancel || onSkip}
+            className="mt-4 text-sm text-gray-400 hover:text-gray-600"
+          >
+            {t("test.cancel")}
+          </button>
+        )}
     </div>
   );
 }

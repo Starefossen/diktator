@@ -1,25 +1,33 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useLanguage, TranslationKey } from "@/contexts/LanguageContext";
 import type { LetterTile } from "@/lib/challenges";
-import type { SpellingAnalysisResult } from "@/lib/spellingAnalysis";
 import { HeroLightBulbIcon } from "@/components/Icons";
+import { CorrectFeedback } from "@/components/SpellingFeedback";
+import type {
+  NavigationActions,
+  TileFeedbackState,
+} from "@/lib/testEngine/types";
 
-export interface TileFeedbackState {
-  analysis: SpellingAnalysisResult;
-  currentAttempt: number;
-  maxAttempts: number;
-  hintKey: string | null;
-  lastUserAnswer: string;
-}
+export type { TileFeedbackState };
 
 interface LetterTileInputProps {
   tiles: LetterTile[];
   expectedWord: string;
   onSubmit: (answer: string, isCorrect: boolean) => void;
+  onAnswerChange?: (answer: string, isComplete: boolean) => void;
   disabled?: boolean;
   feedbackState?: TileFeedbackState | null;
+  showingCorrectFeedback?: boolean;
+  /** Duration for the countdown timer bar in milliseconds */
+  timerDurationMs?: number;
+  /** Navigation actions for unified button handling */
+  navigation?: NavigationActions;
+  /** Callback to expose clear function to parent */
+  onClearRef?: (clearFn: () => void) => void;
+  /** Callback to expose canClear state to parent */
+  onCanClearChange?: (canClear: boolean) => void;
 }
 
 /**
@@ -32,18 +40,50 @@ interface LetterTileInputProps {
  * - Visual feedback with nordic color scheme
  * - Inline error feedback without layout shift
  * - Keyboard accessible with proper ARIA labels
+ *
+ * Navigation is handled externally via TestNavigationBar when navigation prop is provided.
  */
 export function LetterTileInput({
   tiles,
   expectedWord,
   onSubmit,
+  onAnswerChange,
   disabled = false,
   feedbackState = null,
+  showingCorrectFeedback = false,
+  timerDurationMs,
+  navigation,
+  onClearRef,
+  onCanClearChange,
 }: LetterTileInputProps) {
   const { t } = useLanguage();
 
   // Track which tiles have been placed and in what order
   const [placedTileIds, setPlacedTileIds] = useState<string[]>([]);
+
+  // Track previous feedback state to detect retry transitions
+  const prevFeedbackStateRef = React.useRef<TileFeedbackState | null>(null);
+
+  // Flag to skip auto-submit for one render after clearing for retry
+  const skipAutoSubmitRef = React.useRef(false);
+
+  // Track the last submitted answer to prevent double-submit
+  const lastSubmittedAnswerRef = React.useRef<string | null>(null);
+
+  // Clear tiles when transitioning from feedback to retry (not on initial mount)
+  React.useEffect(() => {
+    const wasFeedback = prevFeedbackStateRef.current !== null;
+    const isFeedback = feedbackState !== null;
+
+    // If we had feedback and now we don't (retry), clear the tiles and reset submit tracking
+    if (wasFeedback && !isFeedback && !showingCorrectFeedback) {
+      skipAutoSubmitRef.current = true; // Prevent auto-submit race condition
+      lastSubmittedAnswerRef.current = null; // Allow new submission
+      setPlacedTileIds([]);
+    }
+
+    prevFeedbackStateRef.current = feedbackState;
+  }, [feedbackState, showingCorrectFeedback]);
 
   // Get available (unplaced) tiles
   const availableTiles = tiles.filter(
@@ -104,19 +144,31 @@ export function LetterTileInput({
   }
 
   // Handle clearing all placed tiles
-  function handleClear() {
+  const handleClear = useCallback(() => {
     if (disabled) return;
     setPlacedTileIds([]);
-  }
+  }, [disabled]);
 
-  // Handle submit
-  function handleSubmit() {
-    if (disabled) return;
-    if (placedTileIds.length !== expectedWord.length) return;
-    const isCorrect =
-      currentAnswer.toLowerCase() === expectedWord.toLowerCase();
-    onSubmit(currentAnswer, isCorrect);
-  }
+  // Expose clear function to parent via ref callback
+  React.useEffect(() => {
+    onClearRef?.(handleClear);
+  }, [handleClear, onClearRef]);
+
+  // Notify parent of canClear state changes
+  React.useEffect(() => {
+    onCanClearChange?.(placedTileIds.length > 0);
+  }, [placedTileIds.length, onCanClearChange]);
+
+  // Notify parent of answer changes
+  React.useEffect(() => {
+    const isComplete = placedTileIds.length === expectedWord.length;
+    onAnswerChange?.(currentAnswer, isComplete);
+  }, [
+    currentAnswer,
+    placedTileIds.length,
+    expectedWord.length,
+    onAnswerChange,
+  ]);
 
   // Create empty slots for visual guidance
   const slots = Array.from({ length: expectedWord.length }, (_, i) => ({
@@ -127,11 +179,53 @@ export function LetterTileInput({
   const isComplete = placedTileIds.length === expectedWord.length;
   const showingFeedback = feedbackState !== null;
 
+  // Auto-submit when navigation prop is provided and answer is complete
+  React.useEffect(() => {
+    // Skip if we just cleared tiles for retry (prevents race condition)
+    if (skipAutoSubmitRef.current) {
+      skipAutoSubmitRef.current = false;
+      return;
+    }
+
+    // Skip if we already submitted this exact answer (prevents double-submit)
+    if (lastSubmittedAnswerRef.current === currentAnswer) {
+      return;
+    }
+
+    if (
+      navigation &&
+      isComplete &&
+      !showingFeedback &&
+      !showingCorrectFeedback
+    ) {
+      lastSubmittedAnswerRef.current = currentAnswer;
+      const isCorrect =
+        currentAnswer.toLowerCase() === expectedWord.toLowerCase();
+      onSubmit(currentAnswer, isCorrect);
+    }
+  }, [
+    isComplete,
+    currentAnswer,
+    expectedWord,
+    navigation,
+    showingFeedback,
+    showingCorrectFeedback,
+    onSubmit,
+  ]);
+
   // Compute tile styling based on feedback state
   function getTileStyle(
     slotIndex: number,
     hasTile: boolean,
   ): { base: string; correction: string | null } {
+    // Success state - all tiles green
+    if (showingCorrectFeedback && hasTile) {
+      return {
+        base: "bg-green-100 text-green-800 border-2 border-green-400 shadow-md",
+        correction: null,
+      };
+    }
+
     if (!showingFeedback || !feedbackColors) {
       // Normal state styling
       if (hasTile) {
@@ -176,9 +270,11 @@ export function LetterTileInput({
       {/* Answer slots area */}
       <div
         className={`flex flex-wrap justify-center gap-2 p-4 pb-8 rounded-xl min-h-20 transition-colors duration-200 ${
-          showingFeedback
-            ? "bg-red-50 border-2 border-red-200"
-            : "bg-gray-50 border-2 border-dashed border-gray-300"
+          showingCorrectFeedback
+            ? "bg-gray-50 border-2 border-gray-300"
+            : showingFeedback
+              ? "bg-red-50 border-2 border-red-200"
+              : "bg-gray-50 border-2 border-gray-300"
         }`}
         role="group"
         aria-label={t("challenge.answerArea" as TranslationKey)}
@@ -230,7 +326,10 @@ export function LetterTileInput({
         })}
       </div>
 
-      {/* Legend - only shows during feedback */}
+      {/* Success feedback - shows when answer is correct */}
+      {showingCorrectFeedback && <CorrectFeedback />}
+
+      {/* Legend - only shows during error feedback */}
       {showingFeedback && (
         <div className="flex flex-wrap justify-center gap-3 text-xs text-gray-600">
           <span className="flex items-center gap-1">
@@ -273,6 +372,20 @@ export function LetterTileInput({
         </div>
       )}
 
+      {/* Timer countdown bar - shows during feedback */}
+      {showingFeedback && timerDurationMs && timerDurationMs > 0 && (
+        <div className="h-1.5 bg-red-200 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-red-500 animate-shrink-x"
+            style={
+              {
+                "--timer-duration": `${timerDurationMs}ms`,
+              } as React.CSSProperties
+            }
+          />
+        </div>
+      )}
+
       {/* Available tiles - hidden during feedback */}
       {!showingFeedback && (
         <div
@@ -304,44 +417,6 @@ export function LetterTileInput({
           ))}
         </div>
       )}
-
-      {/* Action buttons */}
-      <div className="flex justify-center gap-4 mt-2">
-        <button
-          type="button"
-          onClick={handleClear}
-          disabled={disabled || placedTileIds.length === 0 || showingFeedback}
-          className={`
-            px-6 py-3 min-h-12
-            rounded-lg font-semibold
-            bg-gray-100 text-gray-700
-            hover:bg-gray-200
-            transition-colors duration-150
-            focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2
-            ${disabled || placedTileIds.length === 0 || showingFeedback ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
-          `}
-          aria-label={t("challenge.clearAll" as TranslationKey)}
-        >
-          {t("challenge.clear" as TranslationKey)}
-        </button>
-
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={disabled || !isComplete || showingFeedback}
-          className={`
-            px-6 py-3 min-h-12
-            rounded-lg font-semibold
-            bg-nordic-sky text-white
-            hover:bg-nordic-sky/90
-            transition-colors duration-150
-            focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2
-            ${disabled || !isComplete || showingFeedback ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
-          `}
-        >
-          {t("challenge.check" as TranslationKey)}
-        </button>
-      </div>
 
       {/* Screen reader status */}
       <div className="sr-only" role="status" aria-live="polite">

@@ -76,7 +76,7 @@ export function SentenceFeedback({
 
   return (
     <div
-      className={`p-4 rounded-lg border ${bgColor} animate-in fade-in-0 slide-in-from-top-2 duration-300`}
+      className={`w-full p-4 rounded-lg border ${bgColor} animate-in fade-in-0 slide-in-from-top-2 duration-300`}
       role="alert"
       aria-live="polite"
     >

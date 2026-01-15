@@ -23,6 +23,15 @@ export const test = {
   "modeSelector.unavailable.singleWordOnly": "Bare enkeltord",
   "modeSelector.unavailable.sentenceOnly": "Bare setninger",
 
+  // Mode availability errors
+  "modes.notAvailable": "Modus ikke tilgjengelig",
+  "modes.incompatibleWordset":
+    "Denne modusen er ikke kompatibel med dette ordsettet.",
+  "modes.requiresTranslations":
+    "Denne modusen krever at ordene har oversettelser. Legg til oversettelser først.",
+  "modes.unknownMode": "Ukjent testmodus valgt.",
+  "common.goBack": "Gå tilbake",
+
   // Flashcard mode specific
   "flashcard.show": "Se på ordet...",
   "flashcard.countdown": "Kan du stave det?",
@@ -93,6 +102,7 @@ export const test = {
   // Translation mode
   "test.translateWord": "Oversett",
   "test.typeTranslationHere": "Skriv oversettelsen her...",
+  "test.translateTo": "Oversett til",
   "test.translateToTarget": "Oversett til",
   "test.translateToSource": "Oversett til",
 
@@ -149,7 +159,6 @@ export const test = {
   "challenge.emptySlot": "Tom plass",
   "challenge.placeLetter": "Plasser bokstav",
   "challenge.clear": "Tøm",
-  "challenge.clearAll": "Tøm alle bokstaver",
   "challenge.check": "Sjekk",
   "challenge.currentAnswer": "Nåværende svar",
   "challenge.noLettersPlaced": "Ingen bokstaver plassert ennå",
