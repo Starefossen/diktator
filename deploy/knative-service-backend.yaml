@@ -10,6 +10,10 @@ spec:
       annotations:
         # Keep only latest 2 revisions
         serving.knative.dev/revisionHistoryLimit: "2"
+        # Scale to zero when idle
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "10"
+        autoscaling.knative.dev/scaleDownDelay: "30s"
     spec:
       containers:
         - name: api
