@@ -13,6 +13,8 @@ pnpm = "10"
 # Environment Configuration
 # ============================================================================
 [env]
+KUBECONFIG = "/Users/hans/.kube/home.conf"
+
 # Static configuration - same across all environments
 DIKTATOR_APP_NAME = "diktator"
 DIKTATOR_API_SERVICE_NAME = "diktator-api"
