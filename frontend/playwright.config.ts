@@ -17,6 +17,8 @@ export default defineConfig({
   reporter: process.env.CI || process.env.HEADLESS ? "list" : "html",
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
+    /* Run tests in headless mode by default. Override with --headed via CLI. */
+    headless: true,
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: "http://localhost:3000",
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */

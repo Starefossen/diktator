@@ -79,6 +79,35 @@ func TestXP_GetUserProfile_Integration(t *testing.T) {
 		assert.Equal(t, float64(level), userData["level"], "level should match")
 	})
 
+	t.Run("Profile_IncludesXPConfig", func(t *testing.T) {
+		childRouter := gin.New()
+		childRouter.Use(func(c *gin.Context) {
+			c.Set("serviceManager", env.ServiceManager)
+			c.Set("userID", child.ID)
+			c.Set("authIdentityID", child.AuthID)
+			c.Set("userRole", "child")
+			c.Set("familyID", familyID)
+			c.Set("validatedFamilyID", familyID)
+			c.Next()
+		})
+		childRouter.GET("/api/users/profile", GetUserProfile)
+
+		resp := makeRequest(childRouter, "GET", "/api/users/profile", nil, nil)
+		require.Equal(t, http.StatusOK, resp.Code)
+
+		var apiResp models.APIResponse
+		err := json.Unmarshal(resp.Body.Bytes(), &apiResp)
+		require.NoError(t, err)
+
+		userData := apiResp.Data.(map[string]interface{})
+		assert.NotNil(t, userData["xpConfig"], "Profile should include xpConfig")
+		
+		xpConfig, ok := userData["xpConfig"].(map[string]interface{})
+		require.True(t, ok, "xpConfig should be a map")
+		assert.Greater(t, len(xpConfig), 0, "xpConfig should not be empty")
+		assert.NotNil(t, xpConfig["keyboard"], "xpConfig should contain keyboard mode")
+	})
+
 	t.Run("ParentProfile_IncludesXPAndLevel", func(t *testing.T) {
 		// Create a new router with parent auth for this test
 		parentRouter := gin.New()

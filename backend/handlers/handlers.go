@@ -14,6 +14,7 @@ import (
 	"github.com/starefossen/diktator/backend/internal/services"
 	"github.com/starefossen/diktator/backend/internal/services/auth"
 	"github.com/starefossen/diktator/backend/internal/services/db"
+	"github.com/starefossen/diktator/backend/internal/services/xp"
 )
 
 var serviceManager *services.Manager
@@ -2199,6 +2200,7 @@ func GetUserProfile(c *gin.Context) {
 						"totalXp":      userData.TotalXP,
 						"level":        userData.Level,
 						"lastActiveAt": userData.LastActiveAt.Format(time.RFC3339),
+						"xpConfig":     xp.BaseXPByMode,
 					},
 				})
 				return
@@ -2276,6 +2278,7 @@ func GetUserProfile(c *gin.Context) {
 			"isActive":     userData.IsActive,
 			"createdAt":    userData.CreatedAt.Format(time.RFC3339),
 			"lastActiveAt": userData.LastActiveAt.Format(time.RFC3339),
+			"xpConfig":     xp.BaseXPByMode,
 		},
 	})
 }

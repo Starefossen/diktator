@@ -98,6 +98,7 @@ export function ModeSelectionModal({
               modeDefinition.isAvailable(wordSet);
             const isRecommended = mode === recommendedMode;
             const IconComponent = metadata.icon;
+            const xpValue = userData?.xpConfig?.[mode];
 
             return (
               <button
@@ -122,6 +123,13 @@ export function ModeSelectionModal({
                   }
                 `}
               >
+                {/* XP Badge */}
+                {available && xpValue && (
+                  <span className="absolute -top-2 -left-2 flex items-center gap-0.5 rounded-full bg-nordic-midnight px-2 py-0.5 text-xs font-semibold text-white shadow-sm border border-white">
+                    <span>{xpValue} XP</span>
+                  </span>
+                )}
+
                 {/* Recommended badge */}
                 {isRecommended && available && (
                   <span className="absolute -top-2 -right-2 flex items-center gap-0.5 rounded-full bg-nordic-sunrise px-2 py-0.5 text-xs font-semibold text-white">

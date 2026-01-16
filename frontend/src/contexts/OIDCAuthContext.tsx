@@ -36,6 +36,7 @@ export interface UserData {
   lastActiveAt: string;
   totalXp?: number; // Total experience points (gamification)
   level?: number; // Current level (gamification)
+  xpConfig?: Record<string, number>; // XP configuration for each test mode
 }
 
 export interface FamilyInvitation {
