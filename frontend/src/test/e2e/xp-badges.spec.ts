@@ -10,12 +10,17 @@ test.describe("Mode Selection XP Badges", () => {
   test("should display XP badges on mode selection cards", async ({ page }) => {
     // Go to wordsets page
     await page.goto("/wordsets");
-    
+
     // Wait for the wordsets to load by checking for a known heading
-    await expect(page.getByRole("heading", { name: "Norwegian Colors" })).toBeVisible();
-    
+    await expect(
+      page.getByRole("heading", { name: "Norwegian Colors" }),
+    ).toBeVisible();
+
     // Click the "Start" button for the first wordset to open mode selection
-    await page.getByRole("button", { name: /start|go/i }).first().click();
+    await page
+      .getByRole("button", { name: /start|go/i })
+      .first()
+      .click();
 
     // Verify modal is open
     const modal = page.locator("[role='dialog']");
@@ -25,7 +30,7 @@ test.describe("Mode Selection XP Badges", () => {
     // We expect the keyboard mode to have 25 XP based on backend config
     const keyboardButton = modal.locator("button:has-text('Skriv Selv')"); // Type It / Keyboard
     await expect(keyboardButton).toBeVisible();
-    
+
     // Look for the XP badge within the button
     const xpBadge = keyboardButton.getByText(/\d+ XP/);
     await expect(xpBadge).toBeVisible();

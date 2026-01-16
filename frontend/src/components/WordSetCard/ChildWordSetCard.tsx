@@ -13,6 +13,7 @@ import {
 import { FlagIcon } from "@/components/FlagIcon";
 import { hasAudioAvailable } from "@/lib/audioPlayer";
 import { Button } from "@/components/Button";
+import { useButtonVariant } from "@/hooks/useButtonVariant";
 
 interface ChildWordSetCardProps {
   wordSet: WordSet;
@@ -68,6 +69,8 @@ export function ChildWordSetCard({
   const performance = latestResult
     ? getPerformanceLevel(latestResult.score)
     : null;
+
+  const buttonText = useButtonVariant(wordSet.id, !!latestResult);
 
   return (
     <div className="card-child relative flex flex-col h-full p-5 transition-all duration-300 hover:shadow-2xl hover:border-nordic-sky hover:bg-nordic-sky/5">
@@ -159,7 +162,7 @@ export function ChildWordSetCard({
           className="flex-1"
         >
           <HeroPlayIcon className="w-5 h-5 shrink-0" />
-          {latestResult ? t("test.tryAgain") : t("wordsets.go")}
+          {buttonText}
         </Button>
 
         <Button

@@ -101,7 +101,7 @@ func TestXP_GetUserProfile_Integration(t *testing.T) {
 
 		userData := apiResp.Data.(map[string]interface{})
 		assert.NotNil(t, userData["xpConfig"], "Profile should include xpConfig")
-		
+
 		xpConfig, ok := userData["xpConfig"].(map[string]interface{})
 		require.True(t, ok, "xpConfig should be a map")
 		assert.Greater(t, len(xpConfig), 0, "xpConfig should not be empty")

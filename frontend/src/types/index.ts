@@ -6,6 +6,8 @@ import type {
   SpellingFocusCategory,
 } from "@/lib/sentenceConfig";
 
+export type { DifficultyLevel, GradeLevel, SpellingFocusCategory };
+
 // ======================
 // Test Mode Types (Unified)
 // ======================

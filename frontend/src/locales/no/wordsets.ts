@@ -1,7 +1,8 @@
 export const wordsets = {
   "wordsets.title": "Ordsett",
-  "wordsets.subtitle": "Opprett og administrer dine staveordsamlinger",
+  "wordsets.subtitle": "Hva vil du øve på i dag?",
   "wordsets.unknownWordSet": "Ukjent ordsett",
+  "wordsets.seeAll": "Se alle",
   "wordsets.loading": "Finner ordsettene dine...",
   "wordsets.create": "Opprett nytt ordsett",
   "wordsets.cancel": "Avbryt",
@@ -99,7 +100,10 @@ export const wordsets = {
   "wordsets.status.new": "Ny!",
   "wordsets.status.tryIt": "Prøv!",
   "wordsets.status.neverTaken": "Aldri tatt",
-  "wordsets.go": "Start!",
+  "wordsets.go.v1": "Start!",
+  "wordsets.go.v2": "Sett i gang!",
+  "wordsets.go.v3": "Jeg er klar!",
+  "wordsets.go.v4": "Hopp ut i det!",
   "wordsets.sentence": "setning",
   "wordsets.sentences": "setninger",
   "wordsets.grade": "klasse",
@@ -172,5 +176,6 @@ export const wordsets = {
     "Kom tilbake senere for offisielle ordsett fra Stavle!",
   "wordsets.curated.loadError":
     "Kunne ikke laste offisielle ordsett. Vennligst prøv igjen.",
-  "wordsets.curated.browse": "Se offisielle tester",
+  "wordsets.curated.suggestedTitle": "Anbefalt for deg",
+  "wordsets.myWordSets": "Mine ordsett",
 };

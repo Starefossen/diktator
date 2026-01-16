@@ -82,8 +82,9 @@ export function BaseModal({
       <div className="flex items-end justify-center min-h-full p-4 text-center sm:items-center sm:p-0">
         <div
           ref={modalRef}
-          className={`relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all duration-300 ease-out w-full mx-4 ${sizeClasses[size]} ${size === "xl" ? "max-h-[90vh] overflow-hidden" : ""
-            }`}
+          className={`relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all duration-300 ease-out w-full mx-4 ${sizeClasses[size]} ${
+            size === "xl" ? "max-h-[90vh] overflow-hidden" : ""
+          }`}
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.key === "Escape" && onClose()}
           role="dialog"

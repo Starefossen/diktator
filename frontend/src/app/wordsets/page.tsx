@@ -25,7 +25,6 @@ import {
 import { playWordAudio as playWordAudioHelper } from "@/lib/audioPlayer";
 import { generatedApiClient } from "@/lib/api-generated";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import Link from "next/link";
 import WordSetEditor from "@/components/WordSetEditor";
 import { WordSetsListView } from "@/components/WordSetsListView";
 import { TestView } from "@/components/TestView";
@@ -35,7 +34,8 @@ import { SettingsModal } from "@/components/modals/SettingsModal";
 import { DeleteConfirmationModal } from "@/components/modals/DeleteConfirmationModal";
 import { ModeSelectionModal } from "@/components/ModeSelectionModal";
 import { StavleCompanion } from "@/components/StavleCompanion";
-import { HeroPlusIcon, HeroSparklesIcon } from "@/components/Icons";
+import { SuggestedWordSets } from "@/components/SuggestedWordSets";
+import { HeroPlusIcon } from "@/components/Icons";
 
 // Custom hooks
 import { useWordSetsData } from "@/hooks/useWordSetsData";
@@ -391,29 +391,10 @@ function WordSetsPageContent() {
       <div className="bg-nordic-birch">
         <div className="container px-4 py-8 mx-auto">
           <div className="mb-8">
-            <h1 className="mb-4 text-4xl font-bold text-transparent bg-linear-to-r from-nordic-sky to-nordic-teal bg-clip-text">
+            <h1 className="mb-2 text-4xl font-bold text-transparent bg-linear-to-r from-nordic-sky to-nordic-teal bg-clip-text">
               {t("wordsets.title")}
             </h1>
             <p className="text-lg text-gray-600">{t("wordsets.subtitle")}</p>
-          </div>
-
-          {/* Create New Word Set Button */}
-          <div className="mb-8 flex flex-wrap gap-4">
-            <button
-              onClick={modalState.openCreateForm}
-              className="flex items-center px-6 py-3 font-semibold text-nordic-midnight transition-all duration-200 rounded-lg shadow-lg bg-linear-to-r from-nordic-meadow to-nordic-sky hover:from-nordic-meadow/90 hover:to-nordic-sky/90 hover:shadow-xl hover:scale-105"
-            >
-              <HeroPlusIcon className="w-5 h-5 mr-2" />
-              {t("wordsets.create")}
-            </button>
-            <Link
-              href="/wordsets/curated"
-              className="flex items-center px-6 py-3 font-semibold text-nordic-midnight transition-all duration-200 rounded-lg shadow-lg bg-nordic-sunrise/20 hover:bg-nordic-sunrise/30 hover:shadow-xl hover:scale-105"
-              aria-label={t("aria.browseCuratedSets")}
-            >
-              <HeroSparklesIcon className="w-5 h-5 mr-2 text-nordic-sunrise" />
-              {t("wordsets.curated.browse")}
-            </Link>
           </div>
 
           {/* Create Form */}
@@ -426,6 +407,42 @@ function WordSetsPageContent() {
               error={modalState.formError}
             />
           )}
+
+          {/* Suggested/Official Tests */}
+          <SuggestedWordSets
+            userResults={userResults}
+            userProfile={
+              userData
+                ? { birthYear: userData.birthYear, level: userData.level }
+                : undefined
+            }
+            playingAudio={playingAudio}
+            onStartTest={(wordSet) => {
+              setSelectedWordSetForTest(wordSet);
+              setModeSelectionOpen(true);
+            }}
+            onStartPractice={(wordSet) => {
+              router.push(`/wordsets?view=practice&id=${wordSet.id}`);
+            }}
+            onWordClick={handleWordClick}
+          />
+
+          <div className="flex items-center justify-between mb-4">
+            {wordSets.length > 0 ? (
+              <h2 className="text-2xl font-bold text-nordic-midnight">
+                {t("wordsets.myWordSets")}
+              </h2>
+            ) : (
+              <div /> /* Spacer if no title needed */
+            )}
+            <button
+              onClick={modalState.openCreateForm}
+              className="flex items-center px-4 py-2 font-semibold text-sm text-nordic-midnight transition-all duration-200 rounded-lg shadow-md bg-linear-to-r from-nordic-meadow to-nordic-sky hover:from-nordic-meadow/90 hover:to-nordic-sky/90 hover:shadow-lg hover:scale-105"
+            >
+              <HeroPlusIcon className="w-5 h-5 mr-2" />
+              {t("wordsets.create")}
+            </button>
+          </div>
 
           {/* Word Sets List */}
           <WordSetsListView
