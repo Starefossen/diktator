@@ -6,18 +6,29 @@ import * as matchers from "vitest-axe/matchers";
 // Extend Vitest matchers with axe-core accessibility matchers
 expect.extend(matchers);
 
-// Suppress console.log and console.warn during tests to reduce noise
+// Suppress console.log, console.warn, and console.error during tests to reduce noise
 const originalConsoleLog = console.log;
 const originalConsoleWarn = console.warn;
+const originalConsoleError = console.error;
 
 beforeAll(() => {
-  console.log = () => {}; // Suppress console.log
-  console.warn = () => {}; // Suppress console.warn
+  console.log = () => { }; // Suppress console.log
+  console.warn = () => { }; // Suppress console.warn
+  // Suppress React act() warnings and other console.error noise
+  console.error = (...args: unknown[]) => {
+    const message = typeof args[0] === 'string' ? args[0] : '';
+    // Filter out React act() warnings - these are expected in tests with async updates
+    if (message.includes('was not wrapped in act(')) return;
+    if (message.includes('wrap-tests-with-act')) return;
+    // Call original for other errors
+    originalConsoleError(...args);
+  };
 });
 
 afterAll(() => {
   console.log = originalConsoleLog;
   console.warn = originalConsoleWarn;
+  console.error = originalConsoleError;
 });
 
 // Cleanup after each test
