@@ -265,8 +265,8 @@ const playAudioDirect = (
 };
 
 /**
- * Plays audio directly from URL without blob conversion (for iOS Safari).
- * iOS Safari has issues with blob URLs, so we use the direct URL instead.
+ * Plays audio directly from URL without blob conversion (for Safari).
+ * Safari has issues with blob URLs, so we use the direct URL instead.
  */
 const playAudioDirectFromURL = async (
   audioUrl: string,
@@ -275,12 +275,12 @@ const playAudioDirectFromURL = async (
   const audio = new Audio();
   audio.preload = "auto";
 
-  logger.audio.debug("iOS: Playing direct URL:", audioUrl);
+  logger.audio.debug("Safari: Playing direct URL:", audioUrl);
 
   return new Promise((resolve, reject) => {
-    // Shorter timeout for iOS - if no event fires in 3 seconds, something is wrong
+    // Shorter timeout for Safari - if no event fires in 3 seconds, something is wrong
     const loadTimeout = setTimeout(() => {
-      logger.audio.warn("iOS: Timeout - no events fired, falling back to TTS");
+      logger.audio.warn("Safari: Timeout - no events fired, falling back to TTS");
       cleanup();
       reject(new Error("Audio loading timeout - no events fired"));
     }, 3000);
@@ -297,23 +297,23 @@ const playAudioDirectFromURL = async (
     };
 
     const onLoadStartHandler = () => {
-      logger.audio.debug("iOS: loadstart event fired");
+      logger.audio.debug("Safari: loadstart event fired");
     };
 
     const onSuspendHandler = () => {
-      logger.audio.debug("iOS: suspend event fired");
+      logger.audio.debug("Safari: suspend event fired");
     };
 
     const onStalledHandler = () => {
       logger.audio.warn(
-        "iOS: stalled event - network issue, falling back to TTS",
+        "Safari: stalled event - network issue, falling back to TTS",
       );
       cleanup();
       reject(new Error("Audio loading stalled"));
     };
 
     const onEndHandler = () => {
-      logger.audio.debug("iOS: ended event fired");
+      logger.audio.debug("Safari: ended event fired");
       markAudioUnlocked();
       cleanup();
       onEnd?.();
@@ -321,30 +321,30 @@ const playAudioDirectFromURL = async (
     };
 
     const onErrorHandler = (event: ErrorEvent | Event) => {
-      logger.audio.warn("iOS: error event fired:", event);
+      logger.audio.warn("Safari: error event fired:", event);
       cleanup();
       reject(new Error("Audio playback failed"));
     };
 
     const onLoadedDataHandler = async () => {
-      logger.audio.debug("iOS: loadeddata event fired, attempting play");
+      logger.audio.debug("Safari: loadeddata event fired, attempting play");
       try {
         await audio.play();
         markAudioUnlocked();
       } catch (playError) {
-        logger.audio.warn("iOS: play() failed:", playError);
+        logger.audio.warn("Safari: play() failed:", playError);
         cleanup();
         reject(playError);
       }
     };
 
     const onCanPlayHandler = async () => {
-      logger.audio.debug("iOS: canplaythrough event fired, attempting play");
+      logger.audio.debug("Safari: canplaythrough event fired, attempting play");
       try {
         await audio.play();
         markAudioUnlocked();
       } catch (playError) {
-        logger.audio.warn("iOS: play() failed:", playError);
+        logger.audio.warn("Safari: play() failed:", playError);
         cleanup();
         reject(playError);
       }
@@ -358,17 +358,17 @@ const playAudioDirectFromURL = async (
     audio.addEventListener("suspend", onSuspendHandler);
     audio.addEventListener("stalled", onStalledHandler);
 
-    // Use direct URL instead of blob for iOS Safari
+    // Use direct URL instead of blob for Safari
     audio.src = audioUrl;
 
-    logger.audio.debug("iOS: Audio element created, calling load()");
+    logger.audio.debug("Safari: Audio element created, calling load()");
 
     audio.load();
   });
 };
 
 /**
- * Plays audio with iOS Safari compatibility handling and Firefox Blob URL support.
+ * Plays audio with Safari compatibility handling and Firefox Blob URL support.
  * NOTE: This function uses fetch/blob which is async - call playAudioDirect() instead
  * when you need to play from a user gesture context.
  */
@@ -376,19 +376,20 @@ const playAudioWithiOSSupport = async (
   audioUrl: string,
   onEnd?: () => void,
 ): Promise<void> => {
-  // iOS Safari has issues with blob URLs for audio - use direct URL instead
-  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  // Safari on all platforms (iOS, iPadOS, macOS) has issues with blob URLs for audio - use direct URL instead
+  // Detect Safari but exclude Chrome (which also contains "Safari" in UA)
+  const isSafari = /Safari/i.test(navigator.userAgent) && !/Chrome/i.test(navigator.userAgent);
 
   logger.audio.debug(
-    "Device detection - isIOS:",
-    isIOS,
+    "Device detection - isSafari:",
+    isSafari,
     "UA:",
     navigator.userAgent.substring(0, 50),
   );
 
-  if (isIOS) {
-    // For iOS, use the direct URL without blob conversion
-    logger.audio.debug("Using iOS direct URL path");
+  if (isSafari) {
+    // For Safari, use the direct URL without blob conversion
+    logger.audio.debug("Using Safari direct URL path");
     return playAudioDirectFromURL(audioUrl, onEnd);
   }
 
