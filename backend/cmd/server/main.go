@@ -144,11 +144,16 @@ func main() {
 	// Swagger documentation
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// On-demand streaming for word/translation audio (public, cached by browser, no auth required)
-	// Support both GET and HEAD for iOS Safari compatibility
-	// Use ?lang=xx to get translation audio (e.g., ?lang=en for English translation)
-	r.GET("/api/wordsets/:id/words/:word/audio", handlers.StreamWordAudio)
-	r.HEAD("/api/wordsets/:id/words/:word/audio", handlers.StreamWordAudio)
+	// Public API routes (no authentication required)
+	public := r.Group("/api")
+	{
+		// On-demand streaming for word/translation audio (public, cached by browser, no auth required)
+		// Support both GET and HEAD for iOS Safari compatibility
+		// Use ?lang=xx to get translation audio (e.g., ?lang=en for English translation)
+		// IMPORTANT: These must be registered before the protected /wordsets/* routes
+		public.GET("/wordsets/:id/words/:word/audio", handlers.StreamWordAudio)
+		public.HEAD("/wordsets/:id/words/:word/audio", handlers.StreamWordAudio)
+	}
 
 	// Dictionary lookup endpoints (public, no auth required for word validation)
 	dictionary := r.Group("/api/dictionary")
