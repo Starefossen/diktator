@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mileusna/useragent"
 	"github.com/starefossen/diktator/backend/internal/models"
 	"github.com/starefossen/diktator/backend/internal/services/tts"
 )
@@ -48,11 +49,12 @@ func StreamWordAudio(c *gin.Context) {
 
 	// For HEAD requests, just validate and return headers without generating audio
 	if isHeadRequest {
-		userAgent := c.GetHeader("User-Agent")
-		isIOSSafari := strings.Contains(userAgent, "iPhone") || strings.Contains(userAgent, "iPad")
+		ua := useragent.Parse(c.GetHeader("User-Agent"))
+		// Safari on all platforms (iOS, iPadOS, macOS) doesn't fully support OGG Opus, requires MP3
+		isSafari := ua.IsSafari()
 
 		contentType := "audio/ogg; codecs=opus"
-		if isIOSSafari {
+		if isSafari {
 			contentType = "audio/mpeg"
 		}
 
@@ -142,25 +144,26 @@ func StreamWordAudio(c *gin.Context) {
 		}
 	}
 
-	// Detect if client is iOS Safari (requires MP3, not OGG Opus)
-	userAgent := c.GetHeader("User-Agent")
-	isIOSSafari := strings.Contains(userAgent, "iPhone") || strings.Contains(userAgent, "iPad")
+	// Detect if client is Safari (requires MP3, not OGG Opus)
+	// Safari on all platforms (iOS, iPadOS, macOS) has only partial support for OGG Opus
+	ua := useragent.Parse(c.GetHeader("User-Agent"))
+	isSafari := ua.IsSafari()
 
 	isSentence := tts.IsSentence(textToSpeak)
 	if isTranslation {
-		log.Printf("StreamWordAudio: Generating translation audio for '%s' -> '%s' in language '%s' for %s",
-			word, textToSpeak, language, map[bool]string{true: "iOS", false: "other"}[isIOSSafari])
+		log.Printf("StreamWordAudio: Generating translation audio for '%s' -> '%s' in language '%s' for %s (v%s)",
+			word, textToSpeak, language, ua.Name, ua.Version)
 	} else if isSentence {
-		log.Printf("StreamWordAudio: Generating sentence audio (%d words) in language '%s' for %s",
-			tts.GetWordCount(textToSpeak), language, map[bool]string{true: "iOS", false: "other"}[isIOSSafari])
+		log.Printf("StreamWordAudio: Generating sentence audio (%d words) in language '%s' for %s (v%s)",
+			tts.GetWordCount(textToSpeak), language, ua.Name, ua.Version)
 	} else {
-		log.Printf("StreamWordAudio: Generating word audio for '%s' in language '%s' for %s",
-			textToSpeak, language, map[bool]string{true: "iOS", false: "other"}[isIOSSafari])
+		log.Printf("StreamWordAudio: Generating word audio for '%s' in language '%s' for %s (v%s)",
+			textToSpeak, language, ua.Name, ua.Version)
 	}
 
 	// Generate audio using TTS service - automatically detects sentence vs word
-	// iOS Safari requires MP3 format (doesn't support OGG Opus)
-	audioData, audioFile, contentType, err := sm.TTS.GenerateTextAudioWithFormat(textToSpeak, language, isIOSSafari)
+	// Safari requires MP3 format (only partial OGG Opus support)
+	audioData, audioFile, contentType, err := sm.TTS.GenerateTextAudioWithFormat(textToSpeak, language, isSafari)
 	if err != nil {
 		log.Printf("StreamWordAudio: Error generating audio: %v", err)
 
