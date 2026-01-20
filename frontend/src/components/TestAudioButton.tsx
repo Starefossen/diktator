@@ -17,6 +17,8 @@ interface TestAudioButtonProps {
   playTrigger?: number;
   /** Whether audio is being played externally (e.g., by parent for iOS autoplay) - shows spinner */
   isExternallyPlaying?: boolean;
+  /** Auto-play audio on mount or when audioUrl changes */
+  autoPlay?: boolean;
 }
 
 /**
@@ -34,6 +36,7 @@ export function TestAudioButton({
   onAudioStart,
   playTrigger,
   isExternallyPlaying,
+  autoPlay = false,
 }: TestAudioButtonProps) {
   const { t } = useLanguage();
 
@@ -48,6 +51,7 @@ export function TestAudioButton({
           size="lg"
           playTrigger={playTrigger}
           isExternallyPlaying={isExternallyPlaying}
+          autoPlay={autoPlay}
         />
       </div>
 

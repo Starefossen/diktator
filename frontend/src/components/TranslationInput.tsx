@@ -35,6 +35,8 @@ interface TranslationInputProps {
   testConfig?: {
     enableAutocorrect?: boolean;
   };
+  /** Increment to trigger focus on input (e.g., after audio ends) */
+  focusTrigger?: number;
 }
 
 /**
@@ -60,17 +62,18 @@ export function TranslationInput({
   targetLanguage,
   navigation: _navigation,
   testConfig,
+  focusTrigger,
 }: TranslationInputProps) {
   const { t } = useLanguage();
   const inputRef = useRef<HTMLInputElement>(null);
   const showingFeedback = feedbackState !== null;
 
-  // Focus input when not showing feedback
+  // Focus input when not showing feedback or when focusTrigger changes (e.g., after audio ends)
   useEffect(() => {
     if (!showingFeedback && !showingCorrectFeedback && inputRef.current) {
       inputRef.current.focus();
     }
-  }, [showingFeedback, showingCorrectFeedback]);
+  }, [showingFeedback, showingCorrectFeedback, focusTrigger]);
 
   // Handle Enter key submission
   function handleKeyPress(e: React.KeyboardEvent) {
@@ -86,13 +89,13 @@ export function TranslationInput({
     direction === "toTarget"
       ? t("common.norwegian")
       : t(
-          `common.${targetLanguage === "en" ? "english" : targetLanguage}` as TranslationKey,
-        );
+        `common.${targetLanguage === "en" ? "english" : targetLanguage}` as TranslationKey,
+      );
   const targetLang =
     direction === "toTarget"
       ? t(
-          `common.${targetLanguage === "en" ? "english" : targetLanguage}` as TranslationKey,
-        )
+        `common.${targetLanguage === "en" ? "english" : targetLanguage}` as TranslationKey,
+      )
       : t("common.norwegian");
 
   // Show correct feedback

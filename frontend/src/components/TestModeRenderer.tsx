@@ -234,6 +234,7 @@ export function TestModeRenderer({
         targetLanguage={translationInfo.targetLanguage}
         navigation={navigation}
         testConfig={testConfig}
+        focusTrigger={focusTrigger}
       />
     );
   }
@@ -259,8 +260,7 @@ export function TestModeRenderer({
         wordSetId={translationInfo.wordSetId || ""}
         navigation={navigation}
         testConfig={testConfig}
-        onAudioStart={onAudioStart}
-        onAudioEnd={onAudioEnd}
+        focusTrigger={focusTrigger}
       />
     );
   }

@@ -382,7 +382,7 @@ export function TestView({
 
   const translation =
     (testMode === "translation" || testMode === "listeningTranslation") &&
-    targetLanguage
+      targetLanguage
       ? currentWord?.translations?.find((tr) => tr.language === targetLanguage)
       : undefined;
 
@@ -541,8 +541,8 @@ export function TestView({
       isLastWord,
       canSubmit:
         testMode === "keyboard" ||
-        testMode === "translation" ||
-        testMode === "listeningTranslation"
+          testMode === "translation" ||
+          testMode === "listeningTranslation"
           ? !!userAnswer.trim()
           : true,
       isSubmitting: false,
@@ -577,10 +577,10 @@ export function TestView({
           translationInfo={
             testMode === "translation" && translation
               ? {
-                  wordDirection,
-                  showWord: showWord!,
-                  targetLanguage: targetLanguage!,
-                }
+                wordDirection,
+                showWord: showWord!,
+                targetLanguage: targetLanguage!,
+              }
               : undefined
           }
         />
@@ -703,18 +703,21 @@ export function TestView({
         {modeAvailability.available && !isSpecializedMode && (
           <div className="mx-auto max-w-2xl">
             <div className="rounded-lg bg-white p-4 text-center shadow-xl sm:p-8">
-              {/* Audio Button - visible for all modes except listeningTranslation (which has its own) */}
-              {testMode !== "listeningTranslation" && (
-                <TestAudioButton
-                  audioUrl={audioUrl}
-                  onAudioEnd={handleAudioEnd}
-                  onAudioStart={handleAudioStart}
-                  showInstruction={true}
-                  definition={currentWord.definition ?? ""}
-                  playTrigger={playTrigger}
-                  isExternallyPlaying={isParentAudioPlaying}
-                />
-              )}
+              {/* Audio Button - visible for all standard modes */}
+              <TestAudioButton
+                audioUrl={audioUrl}
+                onAudioEnd={handleAudioEnd}
+                onAudioStart={handleAudioStart}
+                showInstruction={testMode !== "listeningTranslation"}
+                definition={
+                  testMode === "listeningTranslation"
+                    ? ""
+                    : (currentWord.definition ?? "")
+                }
+                playTrigger={playTrigger}
+                isExternallyPlaying={isParentAudioPlaying}
+                autoPlay={testMode === "listeningTranslation"}
+              />
 
               {/* Input/Feedback Area - all modes handle their own feedback internally */}
               <div className="mb-6 flex flex-col justify-center">
@@ -751,7 +754,7 @@ export function TestView({
                   centerContent={
                     supportsClearButton ? (
                       <ClearButton
-                        onClick={clearFn || (() => {})}
+                        onClick={clearFn || (() => { })}
                         disabled={showFeedback || !canClear || !clearFn}
                       />
                     ) : undefined

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect, useState, useCallback } from "react";
+import React, { useRef, useEffect } from "react";
 import { useLanguage, TranslationKey } from "@/contexts/LanguageContext";
 import type {
   NavigationActions,
@@ -11,7 +11,6 @@ import {
   CorrectFeedback,
 } from "@/components/SpellingFeedback";
 import { TIMING, getFeedbackDuration } from "@/lib/timingConfig";
-import { AudioPlayButton } from "@/components/AudioPlayButton";
 
 interface ListeningTranslationInputProps {
   expectedAnswer: string;
@@ -38,12 +37,9 @@ interface ListeningTranslationInputProps {
   /** Test configuration */
   testConfig?: {
     enableAutocorrect?: boolean;
-    autoPlayAudio?: boolean;
   };
-  /** Callback when audio starts playing */
-  onAudioStart?: () => void;
-  /** Callback when audio ends */
-  onAudioEnd?: () => void;
+  /** Increment to trigger focus on input (e.g., after audio ends) */
+  focusTrigger?: number;
 }
 
 /**
@@ -68,61 +64,19 @@ export function ListeningTranslationInput({
   disabled = false,
   feedbackState = null,
   showingCorrectFeedback = false,
-  sourceWord,
-  originalWord,
+  sourceWord: _sourceWord,
+  originalWord: _originalWord,
   direction,
   targetLanguage,
   sourceLanguage,
-  wordSetId,
+  wordSetId: _wordSetId,
   navigation: _navigation,
   testConfig,
-  onAudioStart,
-  onAudioEnd,
+  focusTrigger,
 }: ListeningTranslationInputProps) {
   const { t } = useLanguage();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [audioError, setAudioError] = useState(false);
   const showingFeedback = feedbackState !== null;
-
-  // The word to use in the audio URL path - always the original wordset word
-  // This is needed because the backend looks up translations by the original word
-  const wordForUrl = originalWord || sourceWord;
-
-  // Construct audio URL based on direction
-  // toTarget: play source word in source language (e.g., Norwegian word)
-  // toSource: play translation in target language (e.g., English word)
-  const audioUrl = (() => {
-    const apiBaseUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-    if (direction === "toTarget") {
-      // Play the Norwegian word, user types English translation
-      return `${apiBaseUrl}/api/wordsets/${wordSetId}/words/${encodeURIComponent(wordForUrl)}/audio?lang=${encodeURIComponent(sourceLanguage)}`;
-    } else {
-      // Play the English translation, user types Norwegian word
-      return `${apiBaseUrl}/api/wordsets/${wordSetId}/words/${encodeURIComponent(wordForUrl)}/audio?lang=${encodeURIComponent(targetLanguage)}`;
-    }
-  })();
-
-  // Track if we've shown feedback for this word - prevents double audio play
-  // when returning from feedback (useTestMode already handles replay after wrong answer)
-  // Use state instead of ref so we can read it during render
-  const [hasShownFeedback, setHasShownFeedback] = useState(false);
-
-  // Update state when feedback is shown
-  useEffect(() => {
-    if (showingFeedback || showingCorrectFeedback) {
-      setHasShownFeedback(true);
-    }
-  }, [showingFeedback, showingCorrectFeedback]);
-
-  // Reset the feedback tracking when the word changes (new audioUrl = new word)
-  const prevAudioUrlRef = useRef(audioUrl);
-  useEffect(() => {
-    if (audioUrl !== prevAudioUrlRef.current) {
-      setHasShownFeedback(false);
-      prevAudioUrlRef.current = audioUrl;
-    }
-  }, [audioUrl]);
 
   // Language being spoken (what user hears)
   const spokenLanguage =
@@ -131,31 +85,12 @@ export function ListeningTranslationInput({
   const typingLanguage =
     direction === "toTarget" ? targetLanguage : sourceLanguage;
 
-  // Callback to restore focus after audio ends (mandatory for AudioPlayButton)
-  const handleAudioEnd = useCallback(() => {
-    // Always restore focus to input after audio finishes
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 0);
-    onAudioEnd?.();
-  }, [onAudioEnd]);
-
-  // Callback when audio fails
-  const handleAudioError = useCallback(() => {
-    setAudioError(true);
-  }, []);
-
-  // Reset audio error when word changes
-  useEffect(() => {
-    setAudioError(false);
-  }, [audioUrl]);
-
-  // Focus input when not showing feedback
+  // Focus input when not showing feedback or when focusTrigger changes (e.g., after audio ends)
   useEffect(() => {
     if (!showingFeedback && !showingCorrectFeedback && inputRef.current) {
       inputRef.current.focus();
     }
-  }, [showingFeedback, showingCorrectFeedback]);
+  }, [showingFeedback, showingCorrectFeedback, focusTrigger]);
 
   // Handle Enter key submission
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -196,47 +131,18 @@ export function ListeningTranslationInput({
 
   // Show listening input interface
   return (
-    <div className="flex flex-col gap-6 items-center">
-      {/* Audio Play Area - Primary interaction */}
-      <div className="flex flex-col items-center gap-3">
-        <span className="text-sm text-gray-600">
-          {t("test.listenAndTranslate")}
+    <div className="flex flex-col gap-4 items-center">
+      {/* Language context - shows what language user heard and should type */}
+      <div className="flex items-center gap-3 text-gray-500">
+        <span className="text-sm">{getLanguageName(spokenLanguage)}</span>
+        <span className="text-lg">→</span>
+        <span className="text-sm font-medium text-gray-700">
+          {getLanguageName(typingLanguage)}
         </span>
-
-        {/* Large audio button */}
-        <div className={audioError ? "ring-2 ring-red-300 rounded-full" : ""}>
-          <AudioPlayButton
-            audioUrl={audioUrl}
-            onAudioEnd={handleAudioEnd}
-            onAudioStart={onAudioStart}
-            onAudioError={handleAudioError}
-            ariaLabel={t("aria.playAudio")}
-            size="lg"
-            autoPlay={
-              !showingFeedback && !showingCorrectFeedback && !hasShownFeedback
-            }
-          />
-        </div>
-
-        {/* Language indicator for what's being spoken */}
-        <span className="text-sm text-gray-600">
-          {getLanguageName(spokenLanguage)}
-        </span>
-
-        {audioError && (
-          <span className="text-xs text-red-500">{t("test.audioError")}</span>
-        )}
       </div>
 
       {/* Translation Input Area */}
       <div className="flex flex-col items-center gap-2 w-full max-w-xs">
-        <div className="flex items-center gap-2 text-gray-400">
-          <span className="text-xs">{t("test.typeIn")}</span>
-          <span className="text-sm font-medium text-gray-600">
-            {getLanguageName(typingLanguage)}
-          </span>
-        </div>
-
         <input
           ref={inputRef}
           type="text"
