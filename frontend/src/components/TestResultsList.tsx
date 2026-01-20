@@ -3,13 +3,13 @@ import { TestResult, WordSet } from "@/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  SpeakerWaveIcon,
   CheckCircleIcon,
   XCircleIcon,
   StarIcon,
   HandThumbUpIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/16/solid";
+import { HeroVolumeIcon } from "@/components/Icons";
 import Stavle from "@/components/Stavle";
 import ChildResultCard from "@/components/ChildResultCard";
 
@@ -281,7 +281,7 @@ export default function TestResultsList({
                           {wordResult.audioPlayCount &&
                             wordResult.audioPlayCount > 0 && (
                               <div className="flex items-center gap-1 text-sm text-gray-600">
-                                <SpeakerWaveIcon className="w-4 h-4" />
+                                <HeroVolumeIcon className="w-4 h-4" />
                                 {t("results.words.audioPlayed")}{" "}
                                 {wordResult.audioPlayCount}{" "}
                                 {wordResult.audioPlayCount === 1

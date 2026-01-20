@@ -15,6 +15,7 @@ import {
   flashcardMode,
   lookCoverWriteMode,
   translationMode,
+  listeningTranslationMode,
 } from "./modes";
 
 /**
@@ -35,6 +36,7 @@ function initializeRegistry(): void {
     flashcardMode,
     lookCoverWriteMode,
     translationMode,
+    listeningTranslationMode,
   ];
 
   modes.forEach((mode) => {

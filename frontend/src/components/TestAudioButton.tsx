@@ -1,45 +1,54 @@
 import React from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { HeroVolumeIcon } from "@/components/Icons";
+import { AudioPlayButton } from "@/components/AudioPlayButton";
 
 interface TestAudioButtonProps {
-  onClick: () => void;
-  isPlaying: boolean;
+  /** URL of the audio file to play */
+  audioUrl: string;
+  /** Callback when audio finishes - use for focus restoration */
+  onAudioEnd: () => void;
   /** Whether to show the instruction text (use false during feedback to hide but preserve space) */
   showInstruction: boolean;
   /** Definition/context hint (pass empty string during feedback to hide but preserve space) */
   definition: string;
+  /** Optional callback when audio starts playing */
+  onAudioStart?: () => void;
+  /** Increment to trigger playback externally (e.g., from "play again" button) */
+  playTrigger?: number;
+  /** Whether audio is being played externally (e.g., by parent for iOS autoplay) - shows spinner */
+  isExternallyPlaying?: boolean;
 }
 
 /**
- * TestAudioButton - Reusable audio playback button with loading animation
+ * TestAudioButton - Audio playback button with instruction text and definition hint
  *
  * Extracted from TestView to eliminate duplication across different test modes.
+ * Uses AudioPlayButton for the actual button, adds instruction and definition containers.
  * Always renders instruction and definition containers to prevent layout shift.
  */
 export function TestAudioButton({
-  onClick,
-  isPlaying,
+  audioUrl,
+  onAudioEnd,
   showInstruction,
   definition,
+  onAudioStart,
+  playTrigger,
+  isExternallyPlaying,
 }: TestAudioButtonProps) {
   const { t } = useLanguage();
 
   return (
     <div className="mb-8">
       <div className="flex items-center justify-center gap-4">
-        <div className="relative inline-block">
-          {isPlaying && (
-            <div className="absolute -inset-3 animate-spin rounded-full border-4 border-transparent border-r-nordic-sky/80 border-t-nordic-sky" />
-          )}
-          <button
-            onClick={onClick}
-            className="relative transform rounded-full bg-linear-to-r from-nordic-meadow to-nordic-sky p-4 text-4xl text-nordic-midnight shadow-lg transition-all duration-200 hover:scale-105 hover:from-nordic-meadow/90 hover:to-nordic-sky/90 hover:shadow-xl sm:p-6 sm:text-6xl"
-            aria-label={t("test.listenToWord")}
-          >
-            <HeroVolumeIcon className="h-12 w-12 text-nordic-midnight sm:h-16 sm:w-16" />
-          </button>
-        </div>
+        <AudioPlayButton
+          audioUrl={audioUrl}
+          onAudioEnd={onAudioEnd}
+          onAudioStart={onAudioStart}
+          ariaLabel={t("test.listenToWord")}
+          size="lg"
+          playTrigger={playTrigger}
+          isExternallyPlaying={isExternallyPlaying}
+        />
       </div>
 
       {/* Instruction text - always render to prevent layout shift */}

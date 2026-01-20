@@ -93,11 +93,50 @@ Diktator offers three test modes, each targeting different aspects of spelling a
 
 **Learning purpose**: Vocabulary expansion across languages. Requires semantic understanding, not just orthographic memory.
 
+**Direction options**:
+
+- **toTarget**: See Norwegian word → type English translation
+- **toSource**: See English translation → type Norwegian word
+- **mixed**: Randomly alternates between both directions
+
+**Configuration**: The `translationMixRatio` setting (0.0-1.0) controls the probability of toTarget direction when using mixed mode. Default is 0.5 (50/50 split). This can be adjusted in TestConfiguration to emphasize one direction over another.
+
 **When to use**:
 
 - Bilingual learning contexts
 - Vocabulary building (not just spelling)
 - Advanced learners
+
+### Listening Translation Mode
+
+**What the child hears**: Word spoken via text-to-speech (source hidden)
+**What the child types**: Translation in target language
+
+**Learning purpose**: Develops listening comprehension alongside vocabulary. The child must understand the spoken word and produce the translation without seeing the written form.
+
+**Direction options**: Same as Translation Mode (toTarget, toSource, mixed).
+
+**How it works**:
+
+1. **Listen**: Large audio button plays the source word
+2. **Type**: Child types the translation
+3. **Check**: Answer compared to expected translation
+
+**Key differences from Translation Mode**:
+
+| Aspect              | Translation Mode      | Listening Translation Mode |
+| ------------------- | --------------------- | -------------------------- |
+| Source presentation | Visual (written word) | Audio only (TTS)           |
+| Skills tested       | Reading + vocabulary  | Listening + vocabulary     |
+| Cognitive load      | Lower (can re-read)   | Higher (must retain audio) |
+| Audio support       | Optional play button  | Primary interaction        |
+
+**When to use**:
+
+- Training listening comprehension
+- Preparing for oral language contexts
+- Children who process audio better than text
+- After mastering visual Translation mode
 
 ### Look-Cover-Write-Check Mode
 
@@ -132,6 +171,7 @@ Recommended progression for new word sets:
 4. **Letter Tiles / Word Bank** → Supported spelling practice
 5. **Keyboard** → Full spelling production
 6. **Translation** → Expand vocabulary (if applicable)
+7. **Listening Translation** → Advanced listening comprehension (after Translation mastery)
 
 ### Adaptive Mode Selection
 
@@ -167,15 +207,16 @@ The recommendation appears as a "⭐ Recommended" badge on one tile. Children ca
 
 Diktator presents **seven modes** as equal choices. What were previously called "input methods" (Letter Tiles, Word Bank, Keyboard) and "test modes" (Dictation, Translation) are now unified into a single selection:
 
-| Mode                 | Child Name                    | Description                       |
-| -------------------- | ----------------------------- | --------------------------------- |
-| **Letter Tiles**     | Build It / Bygg Ordet         | Arrange scrambled letters         |
-| **Word Bank**        | Pick Words / Velg Ord         | Tap words to build sentence       |
-| **Keyboard**         | Type It / Skriv Selv          | Type the full spelling            |
-| **Missing Letters**  | Fill the Gap / Fyll Inn       | Complete the blanks               |
-| **Flashcard**        | Quick Look / Hurtigblikk      | See word → countdown → self-check |
-| **Look-Cover-Write** | Memory Spell / Huskestaving   | See → hide → type from memory     |
-| **Translation**      | Switch Languages / Bytt Språk | Type in other language            |
+| Mode                      | Child Name                         | Description                       |
+| ------------------------- | ---------------------------------- | --------------------------------- |
+| **Letter Tiles**          | Build It / Bygg Ordet              | Arrange scrambled letters         |
+| **Word Bank**             | Pick Words / Velg Ord              | Tap words to build sentence       |
+| **Keyboard**              | Type It / Skriv Selv               | Type the full spelling            |
+| **Missing Letters**       | Fill the Gap / Fyll Inn            | Complete the blanks               |
+| **Flashcard**             | Quick Look / Hurtigblikk           | See word → countdown → self-check |
+| **Look-Cover-Write**      | Memory Spell / Huskestaving        | See → hide → type from memory     |
+| **Translation**           | Switch Languages / Oversett        | See word, type in other language  |
+| **Listening Translation** | Hear & Translate / Hør og Oversett | Hear word, type translation       |
 
 ### Scaffolding Model
 

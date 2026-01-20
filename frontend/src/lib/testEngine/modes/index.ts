@@ -18,3 +18,4 @@ export { missingLettersMode } from "./missingLettersMode";
 export { flashcardMode } from "./flashcardMode";
 export { lookCoverWriteMode } from "./lookCoverWriteMode";
 export { translationMode } from "./translationMode";
+export { listeningTranslationMode } from "./listeningTranslationMode";

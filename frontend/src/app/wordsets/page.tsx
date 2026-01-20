@@ -98,19 +98,51 @@ function WordSetsPageContent() {
       return;
     }
 
-    if (view === "test" && wordSetId && mode) {
-      // Find and start test
-      const wordSet = wordSets.find((ws) => ws.id === wordSetId);
-      if (wordSet && !testMode.activeTest) {
-        testMode.startTest(wordSet, mode);
+    const findAndStartMode = async () => {
+      if (view === "test" && wordSetId && mode) {
+        // First try to find in family wordsets
+        let wordSet = wordSets.find((ws) => ws.id === wordSetId);
+
+        // If not found, try fetching from curated/global wordsets
+        if (!wordSet && wordSetId.startsWith("global-wordset-")) {
+          try {
+            const response = await generatedApiClient.getCuratedWordSets();
+            if (response.data) {
+              const curatedWordSets = response.data as WordSet[];
+              wordSet = curatedWordSets.find((ws) => ws.id === wordSetId);
+            }
+          } catch (error) {
+            logger.api.error("Failed to fetch curated wordsets", { error });
+          }
+        }
+
+        if (wordSet && !testMode.activeTest) {
+          testMode.startTest(wordSet, mode);
+        }
+      } else if (view === "practice" && wordSetId) {
+        // First try to find in family wordsets
+        let wordSet = wordSets.find((ws) => ws.id === wordSetId);
+
+        // If not found, try fetching from curated/global wordsets
+        if (!wordSet && wordSetId.startsWith("global-wordset-")) {
+          try {
+            const response = await generatedApiClient.getCuratedWordSets();
+            if (response.data) {
+              const curatedWordSets = response.data as WordSet[];
+              wordSet = curatedWordSets.find((ws) => ws.id === wordSetId);
+            }
+          } catch (error) {
+            logger.api.error("Failed to fetch curated wordsets", { error });
+          }
+        }
+
+        if (wordSet && !practiceMode.practiceMode) {
+          practiceMode.startPractice(wordSet);
+        }
       }
-    } else if (view === "practice" && wordSetId) {
-      // Find and start practice
-      const wordSet = wordSets.find((ws) => ws.id === wordSetId);
-      if (wordSet && !practiceMode.practiceMode) {
-        practiceMode.startPractice(wordSet);
-      }
-    }
+    };
+
+    findAndStartMode();
   }, [view, wordSetId, mode, wordSets, testMode, practiceMode]);
 
   // Reset exiting flag when URL params clear
@@ -362,7 +394,6 @@ function WordSetsPageContent() {
           lastAnswerCorrect={testMode.lastAnswerCorrect}
           currentTries={testMode.currentTries}
           answers={testMode.answers}
-          isAudioPlaying={testMode.isAudioPlaying}
           testMode={testMode.testMode}
           wordDirections={testMode.wordDirections}
           lastUserAnswer={testMode.lastUserAnswer}
@@ -370,7 +401,9 @@ function WordSetsPageContent() {
           onUserAnswerChange={testMode.setUserAnswer}
           onSubmitAnswer={testMode.handleSubmitAnswer}
           onNextWord={testMode.handleNextWord}
-          onPlayCurrentWord={testMode.playCurrentWord}
+          onAudioStart={testMode.onAudioStart}
+          onAudioEnd={testMode.onAudioEnd}
+          isParentAudioPlaying={testMode.isAudioPlaying}
           onExitTest={() => {
             // Set flag to prevent useEffect from re-starting test
             isExitingRef.current = true;

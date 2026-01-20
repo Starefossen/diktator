@@ -48,7 +48,6 @@ interface TestViewProps {
   lastAnswerCorrect: boolean;
   currentTries: number;
   answers: TestAnswer[];
-  isAudioPlaying: boolean;
   testMode: TestMode;
   wordDirections: ("toTarget" | "toSource")[];
   lastUserAnswer: string;
@@ -56,8 +55,13 @@ interface TestViewProps {
   onUserAnswerChange: (answer: string) => void;
   onSubmitAnswer: (directAnswer?: string) => void;
   onNextWord: () => void;
-  onPlayCurrentWord: () => void;
   onExitTest: () => void;
+  /** Optional callback when audio starts playing (for parent state tracking) */
+  onAudioStart?: () => void;
+  /** Optional callback when audio finishes playing (for parent state tracking) */
+  onAudioEnd?: () => void;
+  /** Whether parent is playing audio (for iOS first-word autoplay spinner) */
+  isParentAudioPlaying?: boolean;
 }
 
 // ============================================================================
@@ -218,7 +222,6 @@ export function TestView({
   lastAnswerCorrect,
   currentTries,
   answers,
-  isAudioPlaying,
   testMode,
   wordDirections,
   lastUserAnswer,
@@ -226,12 +229,34 @@ export function TestView({
   onUserAnswerChange,
   onSubmitAnswer,
   onNextWord,
-  onPlayCurrentWord,
   onExitTest,
+  onAudioStart,
+  onAudioEnd,
+  isParentAudioPlaying = false,
 }: TestViewProps) {
   const { t } = useLanguage();
-  const inputRef = useRef<HTMLInputElement>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [playTrigger, setPlayTrigger] = useState(0);
+  const [focusTrigger, setFocusTrigger] = useState(0);
+
+  // Audio callbacks - update local state and notify parent
+  const handleAudioStart = useCallback(() => {
+    setIsAudioPlaying(true);
+    onAudioStart?.();
+  }, [onAudioStart]);
+
+  const handleAudioEnd = useCallback(() => {
+    setIsAudioPlaying(false);
+    onAudioEnd?.();
+    // Trigger focus restoration on input after audio ends
+    setFocusTrigger((prev) => prev + 1);
+  }, [onAudioEnd]);
+
+  // Handler for "play again" button in navigation bar
+  const handlePlayAudio = useCallback(() => {
+    setPlayTrigger((prev) => prev + 1);
+  }, []);
 
   // Handler for exit confirmation
   const handleExitClick = useCallback(() => {
@@ -348,7 +373,8 @@ export function TestView({
       : "toTarget";
 
   const translation =
-    testMode === "translation" && targetLanguage
+    (testMode === "translation" || testMode === "listeningTranslation") &&
+      targetLanguage
       ? currentWord?.translations?.find((tr) => tr.language === targetLanguage)
       : undefined;
 
@@ -384,22 +410,40 @@ export function TestView({
       testConfig?.showCorrectAnswer ?? false,
     );
 
-  // Translation info for TranslationInput
+  // Translation info for TranslationInput and ListeningTranslationInput
   const translationInfo = useMemo(() => {
-    if (testMode !== "translation" || !translation || !targetLanguage) {
+    if (
+      (testMode !== "translation" && testMode !== "listeningTranslation") ||
+      !translation ||
+      !targetLanguage
+    ) {
       return undefined;
     }
     return {
+      // For TranslationInput: showWord is displayed to user
       sourceWord: showWord!,
+      // For ListeningTranslationInput: original word is needed for audio URL lookup
+      originalWord: currentWord.word,
       direction: wordDirection,
       targetLanguage,
+      sourceLanguage: activeTest.language,
+      wordSetId: activeTest.id,
     };
-  }, [testMode, translation, targetLanguage, showWord, wordDirection]);
+  }, [
+    testMode,
+    translation,
+    targetLanguage,
+    showWord,
+    currentWord.word,
+    wordDirection,
+    activeTest.language,
+    activeTest.id,
+  ]);
 
   // Focus input when feedback is hidden (ready for new input)
   useEffect(() => {
-    if (!showFeedback && inputRef.current) {
-      inputRef.current.focus();
+    if (!showFeedback) {
+      setFocusTrigger((prev) => prev + 1);
     }
   }, [showFeedback]);
 
@@ -439,6 +483,7 @@ export function TestView({
     testMode === "wordBank" ||
     testMode === "keyboard" ||
     testMode === "translation" ||
+    testMode === "listeningTranslation" ||
     testMode === "missingLetters";
 
   // Modes that support clear button
@@ -451,14 +496,16 @@ export function TestView({
   const navigation: NavigationActions = useMemo(
     () => ({
       onCancel: handleExitClick,
-      onPlayAudio: onPlayCurrentWord,
+      onPlayAudio: handlePlayAudio,
       onSubmit: () => onSubmitAnswer(),
       onNext: onNextWord,
       onClear: clearFn || undefined,
       showFeedback,
       isLastWord,
       canSubmit:
-        testMode === "keyboard" || testMode === "translation"
+        testMode === "keyboard" ||
+          testMode === "translation" ||
+          testMode === "listeningTranslation"
           ? !!userAnswer.trim()
           : true,
       isSubmitting: false,
@@ -467,7 +514,7 @@ export function TestView({
     }),
     [
       handleExitClick,
-      onPlayCurrentWord,
+      handlePlayAudio,
       onSubmitAnswer,
       onNextWord,
       clearFn,
@@ -493,10 +540,10 @@ export function TestView({
           translationInfo={
             testMode === "translation" && translation
               ? {
-                  wordDirection,
-                  showWord: showWord!,
-                  targetLanguage: targetLanguage!,
-                }
+                wordDirection,
+                showWord: showWord!,
+                targetLanguage: targetLanguage!,
+              }
               : undefined
           }
         />
@@ -571,6 +618,9 @@ export function TestView({
                 onClearRef={handleClearRef}
                 onCanClearChange={handleCanClearChange}
                 feedbackDurationMs={feedbackDurationMs}
+                focusTrigger={focusTrigger}
+                onAudioStart={handleAudioStart}
+                onAudioEnd={handleAudioEnd}
               />
 
               {!showFeedback && (
@@ -616,13 +666,18 @@ export function TestView({
         {modeAvailability.available && !isSpecializedMode && (
           <div className="mx-auto max-w-2xl">
             <div className="rounded-lg bg-white p-4 text-center shadow-xl sm:p-8">
-              {/* Audio Button - always visible with instruction and definition */}
-              <TestAudioButton
-                onClick={onPlayCurrentWord}
-                isPlaying={isAudioPlaying}
-                showInstruction={true}
-                definition={currentWord.definition ?? ""}
-              />
+              {/* Audio Button - visible for all modes except listeningTranslation (which has its own) */}
+              {testMode !== "listeningTranslation" && (
+                <TestAudioButton
+                  audioUrl={audioUrl}
+                  onAudioEnd={handleAudioEnd}
+                  onAudioStart={handleAudioStart}
+                  showInstruction={true}
+                  definition={currentWord.definition ?? ""}
+                  playTrigger={playTrigger}
+                  isExternallyPlaying={isParentAudioPlaying}
+                />
+              )}
 
               {/* Input/Feedback Area - all modes handle their own feedback internally */}
               <div className="mb-6 flex flex-col justify-center">
@@ -646,6 +701,9 @@ export function TestView({
                   onClearRef={handleClearRef}
                   onCanClearChange={handleCanClearChange}
                   feedbackDurationMs={feedbackDurationMs}
+                  focusTrigger={focusTrigger}
+                  onAudioStart={handleAudioStart}
+                  onAudioEnd={handleAudioEnd}
                 />
               </div>
 
@@ -656,7 +714,7 @@ export function TestView({
                   centerContent={
                     supportsClearButton ? (
                       <ClearButton
-                        onClick={clearFn || (() => {})}
+                        onClick={clearFn || (() => { })}
                         disabled={showFeedback || !canClear || !clearFn}
                       />
                     ) : undefined

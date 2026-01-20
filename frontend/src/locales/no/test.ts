@@ -14,6 +14,8 @@ export const test = {
   "modes.lookCoverWrite.desc": "Husk og skriv",
   "modes.translation": "Oversett",
   "modes.translation.desc": "Skriv på et annet språk",
+  "modes.listeningTranslation": "Hør og Oversett",
+  "modes.listeningTranslation.desc": "Lytt og skriv oversettelsen",
 
   // Mode selector
   "modeSelector.title": "Velg hvordan du vil øve",
@@ -109,6 +111,11 @@ export const test = {
   "test.translateTo": "Oversett til",
   "test.translateToTarget": "Oversett til",
   "test.translateToSource": "Oversett til",
+
+  // Listening translation mode
+  "test.listenAndTranslate": "Lytt og oversett",
+  "test.typeIn": "Skriv på",
+  "test.audioError": "Kunne ikke spille av lyd",
 
   // Graduated success messages (with {score} interpolation)
   "test.results.excellent":

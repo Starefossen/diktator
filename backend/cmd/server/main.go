@@ -144,8 +144,9 @@ func main() {
 	// Swagger documentation
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// On-demand streaming for word audio (public, cached by browser, no auth required)
+	// On-demand streaming for word/translation audio (public, cached by browser, no auth required)
 	// Support both GET and HEAD for iOS Safari compatibility
+	// Use ?lang=xx to get translation audio (e.g., ?lang=en for English translation)
 	r.GET("/api/wordsets/:id/words/:word/audio", handlers.StreamWordAudio)
 	r.HEAD("/api/wordsets/:id/words/:word/audio", handlers.StreamWordAudio)
 

@@ -228,7 +228,6 @@ function CuratedPageContent() {
           lastAnswerCorrect={testMode.lastAnswerCorrect}
           currentTries={testMode.currentTries}
           answers={testMode.answers}
-          isAudioPlaying={testMode.isAudioPlaying}
           testMode={testMode.testMode}
           wordDirections={testMode.wordDirections}
           lastUserAnswer={testMode.lastUserAnswer}
@@ -236,7 +235,9 @@ function CuratedPageContent() {
           onUserAnswerChange={testMode.setUserAnswer}
           onSubmitAnswer={testMode.handleSubmitAnswer}
           onNextWord={testMode.handleNextWord}
-          onPlayCurrentWord={testMode.playCurrentWord}
+          onAudioStart={testMode.onAudioStart}
+          onAudioEnd={testMode.onAudioEnd}
+          isParentAudioPlaying={testMode.isAudioPlaying}
           onExitTest={() => {
             isExitingRef.current = true;
             testMode.exitTest();

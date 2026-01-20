@@ -20,7 +20,7 @@ The Test Engine provides a centralized, extensible system for managing test mode
 
 ## Architecture Diagram
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                      Test Registry                          │
 │  Map<TestMode, TestModeDefinition>                         │
@@ -121,13 +121,14 @@ All input components integrate with the unified `TestNavigationBar` via the `Nav
 const navigation: NavigationActions = useMemo(
   () => ({
     onCancel: handleExitClick,
-    onPlayAudio: onPlayCurrentWord,
-    onSubmit: () => onSubmitAnswer(userAnswer),
+    onPlayAudio: handlePlayAudio,
+    onSubmit: () => onSubmitAnswer(),
     onNext: onNextWord,
+    onClear: clearFn || undefined,
     showFeedback,
     isLastWord: currentWordIndex >= processedWords.length - 1,
     canSubmit: userAnswer.trim().length > 0,
-    isSubmitting,
+    isSubmitting: false,
     isPlayingAudio: isAudioPlaying,
     lastAnswerCorrect,
   }),
@@ -346,15 +347,16 @@ interface TestModeDefinition {
 
 ## Current Modes
 
-| Mode           | Input Type  | Tracks Mastery | Content Requirements |
-| -------------- | ----------- | -------------- | -------------------- |
-| letterTiles    | tiles       | ✅ Yes          | Single words         |
-| wordBank       | wordBank    | ✅ Yes          | Sentences            |
-| keyboard       | keyboard    | ✅ Yes          | Any                  |
-| missingLetters | specialized | ✅ Yes          | Single words         |
-| flashcard      | specialized | ❌ No           | Any                  |
-| lookCoverWrite | specialized | ❌ No           | Any                  |
-| translation    | keyboard    | ✅ Yes          | Translations present |
+| Mode                 | Input Type  | Tracks Mastery | Content Requirements |
+| -------------------- | ----------- | -------------- | -------------------- |
+| letterTiles          | tiles       | Yes            | Single words         |
+| wordBank             | wordBank    | Yes            | Sentences            |
+| keyboard             | keyboard    | Yes            | Any                  |
+| missingLetters       | specialized | Yes            | Single words         |
+| flashcard            | specialized | No             | Any                  |
+| lookCoverWrite       | specialized | No             | Any                  |
+| translation          | keyboard    | Yes            | Translations present |
+| listeningTranslation | keyboard    | Yes            | Translations present |
 
 ### Mastery Tracking vs Self-Report
 
@@ -637,6 +639,135 @@ getExpectedAnswer: (word: WordItem, context?: TestModeContext) => {
 1. Check `getExpectedAnswer()` logic
 2. Ensure context is passed correctly from TestView
 3. Use `normalizeText()` for comparison to handle case/punctuation
+
+---
+
+## Audio Architecture
+
+The test engine uses a unified audio system with callbacks for state tracking and focus restoration.
+
+### Audio Component Diagram
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              useTestMode Hook                                │
+│  • Manages isAudioPlaying state                                              │
+│  • Handles first-word autoplay via playAudioSync() for iOS Safari           │
+│  • Exposes onAudioStart/onAudioEnd handlers for child components            │
+│  • Tracks currentWordAudioPlays count                                        │
+└──────────────────────────────────┬──────────────────────────────────────────┘
+                                   │ isAudioPlaying, onAudioStart, onAudioEnd
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                               TestView                                       │
+│  • Tracks local isAudioPlaying, playTrigger, focusTrigger states            │
+│  • handleAudioStart: sets isAudioPlaying=true, notifies parent              │
+│  • handleAudioEnd: sets isAudioPlaying=false, triggers focus restore        │
+│  • Receives isParentAudioPlaying for iOS first-word spinner                 │
+└──────────────┬───────────────────────────────┬──────────────────────────────┘
+               │                               │
+    Standard Modes                   Specialized/Translation Modes
+               │                               │
+               ▼                               ▼
+┌──────────────────────────┐    ┌────────────────────────────────────────────┐
+│     TestAudioButton      │    │            TestModeRenderer                 │
+│  • Wrapper with          │    │  • Routes to correct input component        │
+│    instruction text      │    │  • Passes onAudioStart/onAudioEnd through   │
+│  • Shows definition      │    │    to specialized modes                     │
+│  • Uses AudioPlayButton  │    └──────────────────┬─────────────────────────┘
+└───────────┬──────────────┘                       │
+            │                       ┌──────────────┼──────────────┐
+            ▼                       ▼              ▼              ▼
+┌──────────────────────────┐   Flashcard    LookCoverWrite  Listening
+│     AudioPlayButton      │◄─────View────────View────────Translation
+│  CORE REUSABLE           │                                 Input
+│  • Self-contained audio  │
+│  • Manages isPlaying     │
+│  • Shows spinner         │
+└──────────────────────────┘
+```
+
+### Component Responsibilities
+
+**AudioPlayButton** (Core Reusable Component)
+
+Self-contained audio button managing its own `<Audio>` element and playback state.
+
+```typescript
+interface AudioPlayButtonProps {
+  audioUrl: string;
+  onAudioEnd: () => void;        // Mandatory - for focus restoration
+  onAudioStart?: () => void;     // Optional - for state tracking
+  playTrigger?: number;          // Increment to trigger playback externally
+  isExternallyPlaying?: boolean; // Show spinner when parent plays audio
+  autoPlay?: boolean;
+  size?: "sm" | "md" | "lg";
+}
+```
+
+**TestAudioButton** (Wrapper)
+
+Wraps `AudioPlayButton` with test-specific UI: instruction text and definition hint. Used by TestView for standard modes.
+
+**TestView** (Orchestrator)
+
+Central coordinator that:
+
+- Tracks `isAudioPlaying`, `playTrigger`, `focusTrigger` locally
+- Creates `handleAudioStart`/`handleAudioEnd` callbacks
+- Passes callbacks to TestModeRenderer for all modes
+- Manages focus restoration via `focusTrigger` counter
+
+**TestModeRenderer** (Router)
+
+Routes to correct input component and passes audio callbacks to:
+
+- FlashcardView / LookCoverWriteView: Specialized modes with own AudioPlayButton
+- ListeningTranslationInput: Audio-first mode with own AudioPlayButton
+
+### iOS Safari First-Word Autoplay
+
+iOS Safari requires audio.play() to be in the same synchronous call stack as the user click. The `useTestMode` hook handles this:
+
+```typescript
+// In startTest() - called synchronously from button click
+if (shouldAutoPlayFirstWord) {
+  // Mark audio as playing BEFORE calling playAudioSync
+  isPlayingAudioRef.current = true;
+  setIsAudioPlaying(true);
+
+  // Call playAudioSync SYNCHRONOUSLY - NO await!
+  const audioHandle = playAudioSync(audioUrl);
+
+  audioHandle.onEnd(() => {
+    isPlayingAudioRef.current = false;
+    setIsAudioPlaying(false);
+  });
+}
+```
+
+TestView receives `isParentAudioPlaying` prop to show spinner on AudioPlayButton during this external playback.
+
+### Focus Restoration Pattern
+
+After audio ends, focus must return to the input field:
+
+```typescript
+// TestView
+const handleAudioEnd = useCallback(() => {
+  setIsAudioPlaying(false);
+  onAudioEnd?.();
+  // Trigger focus restoration
+  setFocusTrigger((prev) => prev + 1);
+}, [onAudioEnd]);
+
+// KeyboardInput receives focusTrigger prop
+useEffect(() => {
+  if (focusTrigger > 0 && inputRef.current) {
+    inputRef.current.focus();
+  }
+}, [focusTrigger]);
+```
 
 ---
 

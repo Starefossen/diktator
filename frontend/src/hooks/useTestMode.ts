@@ -58,7 +58,11 @@ export interface UseTestModeReturn {
   setUserAnswer: (answer: string) => void;
   handleSubmitAnswer: (directAnswer?: string) => void;
   handleNextWord: () => void;
-  playCurrentWord: () => void;
+  /** Handler to call when audio starts (for tracking state and play counts) */
+  onAudioStart: () => void;
+  /** Handler to call when audio ends (for tracking state) */
+  onAudioEnd: () => void;
+  /** Play audio for a specific word (used in test results view) */
   playTestWordAudio: (word: string, autoDelay?: number) => void;
 }
 
@@ -147,13 +151,18 @@ export function useTestMode(): UseTestModeReturn {
     [],
   );
 
-  const playCurrentWord = useCallback(() => {
-    const words = processedWordsRef.current;
-    if (words.length > currentWordIndex) {
-      // Manual click - not autoplay
-      playTestWordAudio(words[currentWordIndex], 0, false);
-    }
-  }, [playTestWordAudio, currentWordIndex]);
+  // Handlers for TestView to call when audio starts/ends
+  // These update the local isAudioPlaying state and track play counts
+  const onAudioStart = useCallback(() => {
+    isPlayingAudioRef.current = true;
+    setIsAudioPlaying(true);
+    setCurrentWordAudioPlays((prev) => prev + 1);
+  }, []);
+
+  const onAudioEnd = useCallback(() => {
+    isPlayingAudioRef.current = false;
+    setIsAudioPlaying(false);
+  }, []);
 
   const startTest = useCallback((wordSet: WordSet, mode?: TestMode) => {
     // Mark user interaction (but don't waste gesture token on silent audio)
@@ -172,13 +181,19 @@ export function useTestMode(): UseTestModeReturn {
 
     setProcessedWords(words);
 
-    // For translation mode, generate direction for each word
-    if (selectedMode === "translation") {
+    // For translation-based modes, generate direction for each word
+    if (
+      selectedMode === "translation" ||
+      selectedMode === "listeningTranslation"
+    ) {
       const translationDirection =
         wordSet.testConfiguration?.translationDirection || "toTarget";
+      // Use configurable mix ratio (default 0.5 = 50% toTarget)
+      // Values closer to 1.0 favor toTarget direction
+      const mixRatio = wordSet.testConfiguration?.translationMixRatio ?? 0.5;
       const directions = words.map(() => {
         if (translationDirection === "mixed") {
-          return Math.random() < 0.5 ? "toTarget" : "toSource";
+          return Math.random() < mixRatio ? "toTarget" : "toSource";
         }
         return translationDirection as "toTarget" | "toSource";
       });
@@ -212,7 +227,15 @@ export function useTestMode(): UseTestModeReturn {
     //
     // iOS Safari requires audio.play() to be in the EXACT same synchronous call stack
     // as the user click. ANY async boundary breaks this (even calling an async function).
-    if (config?.autoPlayAudio && words.length > 0) {
+    //
+    // EXCEPTION: listeningTranslation mode handles its own audio playback via the
+    // speaker button - user clicks that button directly for audio, so we skip auto-play.
+    const shouldAutoPlayFirstWord =
+      config?.autoPlayAudio &&
+      words.length > 0 &&
+      selectedMode !== "listeningTranslation";
+
+    if (shouldAutoPlayFirstWord) {
       lastAutoPlayIndexRef.current = 0;
       logger.audio.debug(
         "[useTestMode] Playing first word SYNCHRONOUSLY in click handler",
@@ -364,12 +387,12 @@ export function useTestMode(): UseTestModeReturn {
       const mode = getMode(testMode);
       const expectedAnswer = mode?.getExpectedAnswer
         ? mode.getExpectedAnswer(wordObj, {
-            translationDirection:
-              wordDirections.length > currentWordIndex
-                ? wordDirections[currentWordIndex]
-                : "toTarget",
-            wordSet: activeTest,
-          })
+          translationDirection:
+            wordDirections.length > currentWordIndex
+              ? wordDirections[currentWordIndex]
+              : "toTarget",
+          wordSet: activeTest,
+        })
         : currentWord;
 
       // Use normalized comparison that ignores punctuation and case
@@ -471,12 +494,12 @@ export function useTestMode(): UseTestModeReturn {
         isCorrect
           ? TIMING.SUCCESS_FEEDBACK_MS
           : getFeedbackDuration(
-              Math.max(expectedAnswer.length, answerToSubmit.trim().length) > 0
-                ? expectedAnswer.length > answerToSubmit.trim().length
-                  ? expectedAnswer
-                  : answerToSubmit.trim()
-                : expectedAnswer,
-            ),
+            Math.max(expectedAnswer.length, answerToSubmit.trim().length) > 0
+              ? expectedAnswer.length > answerToSubmit.trim().length
+                ? expectedAnswer
+                : answerToSubmit.trim()
+              : expectedAnswer,
+          ),
       );
     },
     [
@@ -575,18 +598,22 @@ export function useTestMode(): UseTestModeReturn {
   }, [activeTest, processedWords, testInitialized]);
 
   // Auto-play when moving to next word
+  // Skip for listeningTranslation mode - it has its own audio controls
   useEffect(() => {
     const currentConfig = activeTestRef.current
       ? getEffectiveTestConfig(activeTestRef.current)
       : null;
 
-    if (
+    // Don't auto-play for listeningTranslation - user clicks speaker button
+    const shouldAutoPlay =
       testInitialized &&
       currentWordIndex > 0 &&
       currentConfig?.autoPlayAudio &&
       processedWordsRef.current.length > currentWordIndex &&
-      lastAutoPlayIndexRef.current !== currentWordIndex
-    ) {
+      lastAutoPlayIndexRef.current !== currentWordIndex &&
+      testMode !== "listeningTranslation";
+
+    if (shouldAutoPlay) {
       lastAutoPlayIndexRef.current = currentWordIndex;
       playTestWordAudio(
         processedWordsRef.current[currentWordIndex],
@@ -594,7 +621,7 @@ export function useTestMode(): UseTestModeReturn {
         true, // isAutoPlay
       );
     }
-  }, [currentWordIndex, testInitialized, playTestWordAudio]);
+  }, [currentWordIndex, testInitialized, playTestWordAudio, testMode]);
 
   // Calculate dynamic feedback duration based on current expected answer
   const feedbackDurationMs = (() => {
@@ -609,12 +636,12 @@ export function useTestMode(): UseTestModeReturn {
     const mode = getMode(testMode);
     const expectedAnswer = mode?.getExpectedAnswer
       ? mode.getExpectedAnswer(wordObj, {
-          translationDirection:
-            wordDirections.length > currentWordIndex
-              ? wordDirections[currentWordIndex]
-              : "toTarget",
-          wordSet: activeTest,
-        })
+        translationDirection:
+          wordDirections.length > currentWordIndex
+            ? wordDirections[currentWordIndex]
+            : "toTarget",
+        wordSet: activeTest,
+      })
       : currentWord;
     return getFeedbackDuration(expectedAnswer);
   })();
@@ -650,7 +677,8 @@ export function useTestMode(): UseTestModeReturn {
     setUserAnswer,
     handleSubmitAnswer,
     handleNextWord,
-    playCurrentWord,
+    onAudioStart,
+    onAudioEnd,
     playTestWordAudio,
   };
 }

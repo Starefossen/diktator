@@ -14,6 +14,7 @@ pnpm = "10"
 # ============================================================================
 [env]
 KUBECONFIG = "/Users/hans/.kube/home.conf"
+CLOUDSDK_ACTIVE_CONFIG_NAME = "personal"
 
 # Static configuration - same across all environments
 DIKTATOR_APP_NAME = "diktator"

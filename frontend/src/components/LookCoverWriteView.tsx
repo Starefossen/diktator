@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { SpeakerWaveIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 import { CheckIcon as CheckIconSolid } from "@heroicons/react/24/solid";
+import { AudioPlayButton } from "@/components/AudioPlayButton";
 import Stavle from "@/components/Stavle";
 import type { NavigationActions } from "@/lib/testEngine/types";
 
@@ -24,6 +25,10 @@ interface LookCoverWriteViewProps {
   initialIsCorrect?: boolean;
   /** Initial user input for dev/demo purposes (requires initialPhase="check") */
   initialUserInput?: string;
+  /** Optional callback when audio starts playing (for parent state tracking) */
+  onAudioStart?: () => void;
+  /** Optional callback when audio finishes playing (for parent state tracking) */
+  onAudioEnd?: () => void;
 }
 
 /**
@@ -53,6 +58,8 @@ export function LookCoverWriteView({
   initialPhase = "look",
   initialIsCorrect,
   initialUserInput = "",
+  onAudioStart,
+  onAudioEnd: onAudioEndProp,
 }: LookCoverWriteViewProps) {
   const { t } = useLanguage();
   const [phase, setPhase] = useState<LCWPhase>(initialPhase);
@@ -61,26 +68,18 @@ export function LookCoverWriteView({
   const [isCorrect, setIsCorrect] = useState<boolean | null>(
     initialIsCorrect ?? null,
   );
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const isInitialMount = useRef(true);
 
-  // Play audio
-  const playAudio = useCallback(() => {
-    if (audioUrl && audioRef.current) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => {
-        // Audio play failed
-      });
+  // Callback to restore focus after audio ends
+  const handleAudioEnd = useCallback(() => {
+    if (phase === "write" && inputRef.current) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
     }
-  }, [audioUrl]);
-
-  // Auto-play audio on look phase
-  useEffect(() => {
-    if (phase === "look" && autoPlayAudio) {
-      playAudio();
-    }
-  }, [phase, autoPlayAudio, playAudio]);
+    onAudioEndProp?.();
+  }, [phase, onAudioEndProp]);
 
   // Look phase timer with progress bar
   useEffect(() => {
@@ -146,9 +145,6 @@ export function LookCoverWriteView({
 
   return (
     <div className="flex min-h-96 flex-col items-center justify-center gap-8">
-      {/* Audio element */}
-      {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" />}
-
       {/* LOOK PHASE - Show the word */}
       {phase === "look" && (
         <>
@@ -158,14 +154,16 @@ export function LookCoverWriteView({
 
           {/* Word display with audio button */}
           <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={playAudio}
-              className="flex h-14 w-14 items-center justify-center rounded-full bg-linear-to-r from-nordic-meadow to-nordic-sky text-nordic-midnight shadow-md hover:shadow-lg transition-all duration-200"
-              aria-label={t("test.listenToWord")}
-            >
-              <SpeakerWaveIcon className="h-7 w-7" aria-hidden="true" />
-            </button>
+            {audioUrl && (
+              <AudioPlayButton
+                audioUrl={audioUrl}
+                onAudioEnd={handleAudioEnd}
+                onAudioStart={onAudioStart}
+                ariaLabel={t("test.listenToWord")}
+                size="md"
+                autoPlay={autoPlayAudio && phase === "look"}
+              />
+            )}
             <span className="text-4xl font-bold tracking-wider text-gray-800">
               {spacedWord(word)}
             </span>
@@ -251,11 +249,10 @@ export function LookCoverWriteView({
         <div className="w-full flex flex-col items-center gap-8">
           {/* Phase header */}
           <div
-            className={`rounded-xl px-6 py-2 text-sm font-medium uppercase tracking-wider ${
-              isCorrect
-                ? "bg-green-50 text-green-600"
-                : "bg-amber-50 text-amber-600"
-            }`}
+            className={`rounded-xl px-6 py-2 text-sm font-medium uppercase tracking-wider ${isCorrect
+              ? "bg-green-50 text-green-600"
+              : "bg-amber-50 text-amber-600"
+              }`}
           >
             {t("lookCoverWrite.check")}
           </div>
@@ -267,9 +264,8 @@ export function LookCoverWriteView({
                 {t("lookCoverWrite.yourAnswer")}:
               </span>
               <span
-                className={`text-2xl font-semibold tracking-wider ${
-                  isCorrect ? "text-green-600" : "text-red-500"
-                }`}
+                className={`text-2xl font-semibold tracking-wider ${isCorrect ? "text-green-600" : "text-red-500"
+                  }`}
               >
                 {spacedWord(userInput)}
               </span>
@@ -293,24 +289,24 @@ export function LookCoverWriteView({
               <span className="text-2xl font-semibold tracking-wider text-gray-800">
                 {spacedWord(word)}
               </span>
-              <button
-                type="button"
-                onClick={playAudio}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-r from-nordic-meadow to-nordic-sky text-nordic-midnight hover:shadow-md transition-all duration-200"
-                aria-label={t("test.listenToWord")}
-              >
-                <SpeakerWaveIcon className="h-5 w-5" aria-hidden="true" />
-              </button>
+              {audioUrl && (
+                <AudioPlayButton
+                  audioUrl={audioUrl}
+                  onAudioEnd={handleAudioEnd}
+                  onAudioStart={onAudioStart}
+                  ariaLabel={t("test.listenToWord")}
+                  size="sm"
+                />
+              )}
             </div>
           </div>
 
           {/* Full-width Stavle feedback box */}
           <div
-            className={`w-full rounded-lg overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-300 ${
-              isCorrect
-                ? "bg-green-100 border border-green-300"
-                : "bg-amber-100 border border-amber-300"
-            }`}
+            className={`w-full rounded-lg overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-300 ${isCorrect
+              ? "bg-green-100 border border-green-300"
+              : "bg-amber-100 border border-amber-300"
+              }`}
           >
             <div className="p-4">
               <div className="flex items-center justify-center gap-3">
@@ -320,9 +316,8 @@ export function LookCoverWriteView({
                   animate
                 />
                 <p
-                  className={`text-lg font-semibold flex items-center gap-2 ${
-                    isCorrect ? "text-green-800" : "text-amber-800"
-                  }`}
+                  className={`text-lg font-semibold flex items-center gap-2 ${isCorrect ? "text-green-800" : "text-amber-800"
+                    }`}
                 >
                   {isCorrect ? (
                     <CheckIconSolid

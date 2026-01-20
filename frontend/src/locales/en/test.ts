@@ -14,6 +14,8 @@ export const test = {
   "modes.lookCoverWrite.desc": "Memorize then type",
   "modes.translation": "Switch Languages",
   "modes.translation.desc": "Type in other language",
+  "modes.listeningTranslation": "Hear & Translate",
+  "modes.listeningTranslation.desc": "Listen and type the translation",
 
   // Mode selector
   "modeSelector.title": "Choose how to practice",
@@ -109,6 +111,11 @@ export const test = {
   "test.translateTo": "Translate to",
   "test.translateToTarget": "Translate to",
   "test.translateToSource": "Translate to",
+
+  // Listening translation mode
+  "test.listenAndTranslate": "Listen and translate",
+  "test.typeIn": "Type in",
+  "test.audioError": "Could not play audio",
 
   // Graduated success messages (with {score} interpolation)
   "test.results.excellent":

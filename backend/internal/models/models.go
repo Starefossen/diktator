@@ -28,17 +28,18 @@ type User struct {
 
 // WordMastery tracks progressive challenge unlocking per word per user
 type WordMastery struct {
-	CreatedAt             time.Time `json:"createdAt" db:"created_at"`
-	UpdatedAt             time.Time `json:"updatedAt" db:"updated_at"`
-	ID                    string    `json:"id" db:"id"`
-	UserID                string    `json:"userId" db:"user_id"`
-	WordSetID             string    `json:"wordSetId" db:"word_set_id"`
-	Word                  string    `json:"word" db:"word"`
-	LetterTilesCorrect    int       `json:"letterTilesCorrect" db:"letter_tiles_correct"`
-	WordBankCorrect       int       `json:"wordBankCorrect" db:"word_bank_correct"`
-	KeyboardCorrect       int       `json:"keyboardCorrect" db:"keyboard_correct"`
-	MissingLettersCorrect int       `json:"missingLettersCorrect" db:"missing_letters_correct"`
-	TranslationCorrect    int       `json:"translationCorrect" db:"translation_correct"`
+	CreatedAt                   time.Time `json:"createdAt" db:"created_at"`
+	UpdatedAt                   time.Time `json:"updatedAt" db:"updated_at"`
+	ID                          string    `json:"id" db:"id"`
+	UserID                      string    `json:"userId" db:"user_id"`
+	WordSetID                   string    `json:"wordSetId" db:"word_set_id"`
+	Word                        string    `json:"word" db:"word"`
+	LetterTilesCorrect          int       `json:"letterTilesCorrect" db:"letter_tiles_correct"`
+	WordBankCorrect             int       `json:"wordBankCorrect" db:"word_bank_correct"`
+	KeyboardCorrect             int       `json:"keyboardCorrect" db:"keyboard_correct"`
+	MissingLettersCorrect       int       `json:"missingLettersCorrect" db:"missing_letters_correct"`
+	TranslationCorrect          int       `json:"translationCorrect" db:"translation_correct"`
+	ListeningTranslationCorrect int       `json:"listeningTranslationCorrect" db:"listening_translation_correct"`
 }
 
 // TestMode represents the unified test/input mode
@@ -46,13 +47,14 @@ type WordMastery struct {
 type TestMode string
 
 const (
-	TestModeLetterTiles    TestMode = "letterTiles"    // Build It: arrange scrambled letters
-	TestModeWordBank       TestMode = "wordBank"       // Pick Words: tap words to build sentence
-	TestModeKeyboard       TestMode = "keyboard"       // Type It: full spelling production
-	TestModeMissingLetters TestMode = "missingLetters" // Fill the Gap: complete the blanks
-	TestModeFlashcard      TestMode = "flashcard"      // Quick Look: see word, countdown, self-check
-	TestModeLookCoverWrite TestMode = "lookCoverWrite" // Memory Spell: see, hide, type from memory
-	TestModeTranslation    TestMode = "translation"    // Switch Languages: type in other language
+	TestModeLetterTiles          TestMode = "letterTiles"          // Build It: arrange scrambled letters
+	TestModeWordBank             TestMode = "wordBank"             // Pick Words: tap words to build sentence
+	TestModeKeyboard             TestMode = "keyboard"             // Type It: full spelling production
+	TestModeMissingLetters       TestMode = "missingLetters"       // Fill the Gap: complete the blanks
+	TestModeFlashcard            TestMode = "flashcard"            // Quick Look: see word, countdown, self-check
+	TestModeLookCoverWrite       TestMode = "lookCoverWrite"       // Memory Spell: see, hide, type from memory
+	TestModeTranslation          TestMode = "translation"          // Switch Languages: type in other language
+	TestModeListeningTranslation TestMode = "listeningTranslation" // Listen & Translate: hear word, type translation
 )
 
 // ValidTestModes returns all valid test mode values for validation
@@ -65,6 +67,7 @@ func ValidTestModes() []TestMode {
 		TestModeFlashcard,
 		TestModeLookCoverWrite,
 		TestModeTranslation,
+		TestModeListeningTranslation,
 	}
 }
 
@@ -245,7 +248,7 @@ type UpdateWordSetRequest struct {
 // SaveResultRequest represents the request to save a test result
 type SaveResultRequest struct {
 	WordSetID      string           `json:"wordSetId" binding:"required"`
-	Mode           string           `json:"mode" binding:"required,oneof=letterTiles wordBank keyboard missingLetters flashcard lookCoverWrite translation"`
+	Mode           string           `json:"mode" binding:"required,oneof=letterTiles wordBank keyboard missingLetters flashcard lookCoverWrite translation listeningTranslation"`
 	IncorrectWords []string         `json:"incorrectWords,omitempty"`
 	Words          []WordTestResult `json:"words"`
 	Score          float64          `json:"score" binding:"required"`
@@ -303,24 +306,25 @@ type FamilyInvitation struct {
 
 // FamilyProgress represents progress tracking for family members
 type FamilyProgress struct {
-	LastActivity                time.Time    `json:"lastActivity"`
-	BirthYear                   *int         `json:"birthYear,omitempty"`
-	UserName                    string       `json:"userName"`
-	Role                        string       `json:"role"`
-	UserID                      string       `json:"userId"`
-	RecentResults               []TestResult `json:"recentResults"`
-	TotalTests                  int          `json:"totalTests"`
-	CorrectWords                int          `json:"correctWords"`
-	TotalWords                  int          `json:"totalWords"`
-	AverageScore                float64      `json:"averageScore"`
-	TotalWordsWithMastery       int          `json:"totalWordsWithMastery"`
-	LetterTilesMasteredWords    int          `json:"letterTilesMasteredWords"`
-	WordBankMasteredWords       int          `json:"wordBankMasteredWords"`
-	KeyboardMasteredWords       int          `json:"keyboardMasteredWords"`
-	MissingLettersMasteredWords int          `json:"missingLettersMasteredWords"`
-	TranslationMasteredWords    int          `json:"translationMasteredWords"`
-	TotalXP                     int          `json:"totalXp"`
-	Level                       int          `json:"level"`
+	LastActivity                      time.Time    `json:"lastActivity"`
+	BirthYear                         *int         `json:"birthYear,omitempty"`
+	UserName                          string       `json:"userName"`
+	Role                              string       `json:"role"`
+	UserID                            string       `json:"userId"`
+	RecentResults                     []TestResult `json:"recentResults"`
+	TotalTests                        int          `json:"totalTests"`
+	CorrectWords                      int          `json:"correctWords"`
+	TotalWords                        int          `json:"totalWords"`
+	AverageScore                      float64      `json:"averageScore"`
+	TotalWordsWithMastery             int          `json:"totalWordsWithMastery"`
+	LetterTilesMasteredWords          int          `json:"letterTilesMasteredWords"`
+	WordBankMasteredWords             int          `json:"wordBankMasteredWords"`
+	KeyboardMasteredWords             int          `json:"keyboardMasteredWords"`
+	MissingLettersMasteredWords       int          `json:"missingLettersMasteredWords"`
+	TranslationMasteredWords          int          `json:"translationMasteredWords"`
+	ListeningTranslationMasteredWords int          `json:"listeningTranslationMasteredWords"`
+	TotalXP                           int          `json:"totalXp"`
+	Level                             int          `json:"level"`
 }
 
 // DisplayNameUpdateRequest represents a request to update a user's display name

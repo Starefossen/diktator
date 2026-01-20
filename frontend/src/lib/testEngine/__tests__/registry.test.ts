@@ -360,7 +360,7 @@ describe("Test Mode Registry", () => {
   });
 
   describe("All Modes Registered", () => {
-    it("registers exactly 7 modes", () => {
+    it("registers exactly 8 modes", () => {
       const modes: TestMode[] = [
         "letterTiles",
         "wordBank",
@@ -369,6 +369,7 @@ describe("Test Mode Registry", () => {
         "flashcard",
         "lookCoverWrite",
         "translation",
+        "listeningTranslation",
       ];
 
       modes.forEach((modeId) => {

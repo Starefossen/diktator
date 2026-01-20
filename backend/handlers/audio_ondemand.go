@@ -12,23 +12,24 @@ import (
 	"github.com/starefossen/diktator/backend/internal/services/tts"
 )
 
-// @Summary		Stream Audio for Word or Sentence
-// @Description	Stream TTS audio for a specific word or sentence in a word set (generates on-demand, cached by browser). Automatically uses appropriate speaking rate for single words (0.8x) vs sentences (0.9x). Supports both GET and HEAD methods for iOS Safari compatibility.
+// @Summary		Stream Audio for Word, Sentence, or Translation
+// @Description	Stream TTS audio for a specific word, sentence, or translation in a word set (generates on-demand, cached by browser). If lang parameter matches the wordset's language, plays the word itself. If lang differs, looks up and plays the translation in that language. Used by all test modes including translation and listeningTranslation modes. Automatically uses appropriate speaking rate for single words (0.8x) vs sentences (0.9x). Supports both GET and HEAD methods for iOS Safari compatibility.
 // @Tags			wordsets
 // @Accept			json
 // @Produce		audio/ogg
 // @Param			id		path		string	true	"Word Set ID"
 // @Param			word	path		string	true	"Word or sentence to generate audio for"
-// @Success		200		{file}		audio	"Audio file content (OGG Opus)"
+// @Param			lang	query		string	false	"Target language code (e.g., 'no' for Norwegian, 'en' for English). If omitted or matches wordset language, plays the word. If different, plays the translation."
+// @Success		200		{file}		audio	"Audio file content (OGG Opus or MP3 for iOS)"
 // @Failure		400		{object}	models.APIResponse	"Invalid request"
-// @Failure		404		{object}	models.APIResponse	"Word set not found"
+// @Failure		404		{object}	models.APIResponse	"Word set, word, or translation not found"
 // @Failure		500		{object}	models.APIResponse	"Failed to generate audio"
 // @Router			/api/wordsets/{id}/words/{word}/audio [get]
 // @Router			/api/wordsets/{id}/words/{word}/audio [head]
 func StreamWordAudio(c *gin.Context) {
 	wordSetID := c.Param("id")
 	word := c.Param("word")
-	language := c.Query("lang") // Optional language parameter
+	requestedLang := c.Query("lang") // Optional language parameter
 	isHeadRequest := c.Request.Method == "HEAD"
 
 	if wordSetID == "" {
@@ -45,20 +46,8 @@ func StreamWordAudio(c *gin.Context) {
 		return
 	}
 
-	// Validate sentence length if it's a sentence
-	if tts.IsSentence(word) {
-		wordCount := tts.GetWordCount(word)
-		if wordCount > tts.MaxSentenceWords {
-			c.JSON(http.StatusBadRequest, models.APIResponse{
-				Error: fmt.Sprintf("Sentence exceeds maximum word limit of %d (has %d words)", tts.MaxSentenceWords, wordCount),
-			})
-			return
-		}
-	}
-
 	// For HEAD requests, just validate and return headers without generating audio
 	if isHeadRequest {
-		// Detect if client is iOS Safari (requires MP3, not OGG Opus)
 		userAgent := c.GetHeader("User-Agent")
 		isIOSSafari := strings.Contains(userAgent, "iPhone") || strings.Contains(userAgent, "iPad")
 
@@ -75,7 +64,6 @@ func StreamWordAudio(c *gin.Context) {
 		return
 	}
 
-	// Check if serviceManager is properly initialized
 	if serviceManager == nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Error: "Service manager not initialized",
@@ -85,50 +73,94 @@ func StreamWordAudio(c *gin.Context) {
 
 	sm := serviceManager
 
-	// If language not provided in query, fall back to fetching word set
-	if language == "" {
-		wordSet, err := sm.DB.GetWordSet(wordSetID)
-		if err != nil {
-			log.Printf("StreamWordAudio: Error getting word set '%s': %v", wordSetID, err)
-			c.JSON(http.StatusNotFound, models.APIResponse{
-				Error: "Word set not found",
-			})
-			return
-		}
+	// Fetch word set to determine language and find word/translation
+	wordSet, err := sm.DB.GetWordSet(wordSetID)
+	if err != nil {
+		log.Printf("StreamWordAudio: Error getting word set '%s': %v", wordSetID, err)
+		c.JSON(http.StatusNotFound, models.APIResponse{
+			Error: "Word set not found",
+		})
+		return
+	}
 
-		// Verify the word exists in this word set
-		wordExists := false
-		for _, wordItem := range wordSet.Words {
-			if wordItem.Word == word {
-				wordExists = true
+	// Find the word in this word set
+	var wordIdx = -1
+	for i := range wordSet.Words {
+		if wordSet.Words[i].Word == word {
+			wordIdx = i
+			break
+		}
+	}
+
+	if wordIdx < 0 {
+		c.JSON(http.StatusNotFound, models.APIResponse{
+			Error: fmt.Sprintf("Word '%s' not found in word set", word),
+		})
+		return
+	}
+	wordItem := wordSet.Words[wordIdx]
+
+	// Determine what text to generate audio for:
+	// - If no lang specified or lang matches wordset language: play the word itself
+	// - If lang differs: look up translation and play that
+	var textToSpeak string
+	var language string
+	var isTranslation bool
+
+	if requestedLang == "" || requestedLang == wordSet.Language {
+		// Play the word itself in the wordset's language
+		textToSpeak = word
+		language = wordSet.Language
+		isTranslation = false
+	} else {
+		// Look up translation in the requested language
+		for _, translation := range wordItem.Translations {
+			if translation.Language == requestedLang {
+				textToSpeak = translation.Text
+				language = requestedLang
+				isTranslation = true
 				break
 			}
 		}
 
-		if !wordExists {
+		if textToSpeak == "" {
 			c.JSON(http.StatusNotFound, models.APIResponse{
-				Error: fmt.Sprintf("Word '%s' not found in word set", word),
+				Error: fmt.Sprintf("Translation for word '%s' in language '%s' not found", word, requestedLang),
 			})
 			return
 		}
+	}
 
-		language = wordSet.Language
+	// Validate sentence length if it's a sentence
+	if tts.IsSentence(textToSpeak) {
+		wordCount := tts.GetWordCount(textToSpeak)
+		if wordCount > tts.MaxSentenceWords {
+			c.JSON(http.StatusBadRequest, models.APIResponse{
+				Error: fmt.Sprintf("Sentence exceeds maximum word limit of %d (has %d words)", tts.MaxSentenceWords, wordCount),
+			})
+			return
+		}
 	}
 
 	// Detect if client is iOS Safari (requires MP3, not OGG Opus)
 	userAgent := c.GetHeader("User-Agent")
 	isIOSSafari := strings.Contains(userAgent, "iPhone") || strings.Contains(userAgent, "iPad")
 
-	isSentence := tts.IsSentence(word)
-	if isSentence {
-		log.Printf("StreamWordAudio: Generating sentence audio (%d words) in language '%s' for %s", tts.GetWordCount(word), language, map[bool]string{true: "iOS", false: "other"}[isIOSSafari])
+	isSentence := tts.IsSentence(textToSpeak)
+	if isTranslation {
+		log.Printf("StreamWordAudio: Generating translation audio for '%s' -> '%s' in language '%s' for %s",
+			word, textToSpeak, language, map[bool]string{true: "iOS", false: "other"}[isIOSSafari])
+	} else if isSentence {
+		log.Printf("StreamWordAudio: Generating sentence audio (%d words) in language '%s' for %s",
+			tts.GetWordCount(textToSpeak), language, map[bool]string{true: "iOS", false: "other"}[isIOSSafari])
 	} else {
-		log.Printf("StreamWordAudio: Generating word audio for '%s' in language '%s' for %s", word, language, map[bool]string{true: "iOS", false: "other"}[isIOSSafari])
+		log.Printf("StreamWordAudio: Generating word audio for '%s' in language '%s' for %s",
+			textToSpeak, language, map[bool]string{true: "iOS", false: "other"}[isIOSSafari])
 	}
 
 	// Generate audio using TTS service - automatically detects sentence vs word
 	// iOS Safari requires MP3 format (doesn't support OGG Opus)
-	audioData, audioFile, contentType, err := sm.TTS.GenerateTextAudioWithFormat(word, language, isIOSSafari)
+	audioData, audioFile, contentType, err := sm.TTS.GenerateTextAudioWithFormat(textToSpeak, language, isIOSSafari)
 	if err != nil {
 		log.Printf("StreamWordAudio: Error generating audio: %v", err)
 
@@ -160,6 +192,11 @@ func StreamWordAudio(c *gin.Context) {
 	c.Header("Content-Disposition", fmt.Sprintf("inline; filename=\"%s\"", audioFile.ID))
 	c.Header("X-Generated-On-Demand", "true")
 	c.Header("X-Is-Sentence", fmt.Sprintf("%t", isSentence))
+	c.Header("X-Is-Translation", fmt.Sprintf("%t", isTranslation))
+	if isTranslation {
+		c.Header("X-Translation-Source", word)
+		c.Header("X-Translation-Target", textToSpeak)
+	}
 	c.Header("Accept-Ranges", "bytes")           // Enable range requests for better browser compatibility
 	c.Header("Access-Control-Allow-Origin", "*") // CORS for audio playback
 
@@ -171,7 +208,7 @@ func StreamWordAudio(c *gin.Context) {
 		_, err := fmt.Sscanf(rangeHeader, "bytes=%d-%d", &start, &end)
 		if err != nil || start < 0 || start >= int64(len(audioData)) {
 			// Invalid range, return full content
-			c.Data(http.StatusOK, "audio/ogg", audioData)
+			c.Data(http.StatusOK, contentType, audioData)
 			return
 		}
 

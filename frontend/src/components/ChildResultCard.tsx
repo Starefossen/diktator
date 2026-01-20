@@ -12,8 +12,8 @@ import {
   ChevronUpIcon,
   CheckCircleIcon,
   XCircleIcon,
-  SpeakerWaveIcon,
 } from "@heroicons/react/16/solid";
+import { HeroVolumeIcon } from "@/components/Icons";
 import { celebratePerfectScore, celebrateExcellentScore } from "@/lib/confetti";
 
 interface ChildResultCardProps {
@@ -260,7 +260,7 @@ export default function ChildResultCard({
                   {wordResult.audioPlayCount &&
                     wordResult.audioPlayCount > 0 && (
                       <div className="mt-2 flex items-center gap-1 text-sm text-gray-600">
-                        <SpeakerWaveIcon
+                        <HeroVolumeIcon
                           className="w-4 h-4"
                           aria-hidden="true"
                         />

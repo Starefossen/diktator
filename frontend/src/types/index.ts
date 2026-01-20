@@ -23,7 +23,8 @@ export type TestMode =
   | "missingLetters" // Fill the Gap: complete the blanks
   | "flashcard" // Quick Look: see word, countdown, self-check
   | "lookCoverWrite" // Memory Spell: see, hide, type from memory
-  | "translation"; // Switch Languages: type in other language
+  | "translation" // Switch Languages: type in other language
+  | "listeningTranslation"; // Listen & Translate: hear word, type translation
 
 /**
  * All valid test modes for iteration and validation
@@ -36,6 +37,7 @@ export const TEST_MODES: TestMode[] = [
   "flashcard",
   "lookCoverWrite",
   "translation",
+  "listeningTranslation",
 ];
 
 // Re-export sentence config types for convenience
@@ -90,6 +92,7 @@ export interface WordMastery {
   keyboardCorrect: number;
   missingLettersCorrect: number;
   translationCorrect: number;
+  listeningTranslationCorrect: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -113,6 +116,7 @@ export interface FamilyProgress {
   keyboardMasteredWords: number; // Words with keyboardCorrect >= 2
   missingLettersMasteredWords: number; // Words with missingLettersCorrect >= 2
   translationMasteredWords: number; // Words with translationCorrect >= 2
+  listeningTranslationMasteredWords: number; // Words with listeningTranslationCorrect >= 2
   // XP and level data
   totalXp: number;
   level: number;
@@ -235,6 +239,7 @@ export interface TestConfiguration {
   defaultMode?: TestMode; // Default test mode (default: keyboard)
   targetLanguage?: string; // Target language for translation mode
   translationDirection?: "toTarget" | "toSource" | "mixed"; // Direction for translation mode: toTarget (source→target), toSource (target→source), mixed (random)
+  translationMixRatio?: number; // Ratio for mixed direction (0.0-1.0, default 0.5 = 50% toTarget). Values closer to 1.0 favor toTarget direction.
   // Spelling feedback configuration
   almostCorrectThreshold?: number; // Levenshtein distance to consider "almost correct" (default: 2)
   showHintOnAttempt?: number; // Which attempt to show specific hints (default: 2 = progressive)

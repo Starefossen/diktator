@@ -2,12 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import {
-  SpeakerWaveIcon,
-  CheckIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
+import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { CheckIcon as CheckIconSolid } from "@heroicons/react/24/solid";
+import { AudioPlayButton } from "@/components/AudioPlayButton";
 import Stavle from "@/components/Stavle";
 import type { NavigationActions } from "@/lib/testEngine/types";
 
@@ -28,6 +25,10 @@ interface FlashcardViewProps {
   initialPhase?: FlashcardPhase;
   /** Initial isCorrect state for dev/demo purposes (requires initialPhase="check") */
   initialIsCorrect?: boolean;
+  /** Optional callback when audio starts playing (for parent state tracking) */
+  onAudioStart?: () => void;
+  /** Optional callback when audio finishes playing (for parent state tracking) */
+  onAudioEnd?: () => void;
 }
 
 /**
@@ -57,6 +58,8 @@ export function FlashcardView({
   navigation,
   initialPhase = "show",
   initialIsCorrect,
+  onAudioStart,
+  onAudioEnd: onAudioEndProp,
 }: FlashcardViewProps) {
   const { t } = useLanguage();
   const [phase, setPhase] = useState<FlashcardPhase>(initialPhase);
@@ -67,26 +70,18 @@ export function FlashcardView({
   const [isCorrect, setIsCorrect] = useState<boolean | null>(
     initialIsCorrect ?? null,
   );
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const isInitialMount = useRef(true);
 
-  // Play audio
-  const playAudio = useCallback(() => {
-    if (audioUrl && audioRef.current) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => {
-        // Audio play failed - user interaction required or audio not available
-      });
+  // Callback to restore focus after audio ends
+  const handleAudioEnd = useCallback(() => {
+    if (showVerifyInput && inputRef.current) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
     }
-  }, [audioUrl]);
-
-  // Auto-play audio on show phase
-  useEffect(() => {
-    if (phase === "show" && autoPlayAudio) {
-      playAudio();
-    }
-  }, [phase, autoPlayAudio, playAudio]);
+    onAudioEndProp?.();
+  }, [showVerifyInput, onAudioEndProp]);
 
   // Show phase timer with progress bar
   useEffect(() => {
@@ -166,9 +161,6 @@ export function FlashcardView({
 
   return (
     <div className="flex min-h-100 flex-col items-center justify-center gap-8">
-      {/* Audio element */}
-      {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" />}
-
       {/* SHOW PHASE */}
       {phase === "show" && (
         <>
@@ -176,14 +168,16 @@ export function FlashcardView({
 
           {/* Word display with audio button */}
           <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={playAudio}
-              className="flex h-14 w-14 items-center justify-center rounded-full bg-linear-to-r from-nordic-meadow to-nordic-sky text-nordic-midnight shadow-md hover:shadow-lg transition-all duration-200"
-              aria-label={t("test.listenToWord")}
-            >
-              <SpeakerWaveIcon className="h-7 w-7" aria-hidden="true" />
-            </button>
+            {audioUrl && (
+              <AudioPlayButton
+                audioUrl={audioUrl}
+                onAudioEnd={handleAudioEnd}
+                onAudioStart={onAudioStart}
+                ariaLabel={t("test.listenToWord")}
+                size="md"
+                autoPlay={autoPlayAudio && phase === "show"}
+              />
+            )}
             <span className="text-4xl font-bold tracking-wider text-gray-800">
               {word.split("").join(" ")}
             </span>
@@ -217,14 +211,15 @@ export function FlashcardView({
         <>
           {/* Word revealed */}
           <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={playAudio}
-              className="flex h-14 w-14 items-center justify-center rounded-full bg-linear-to-r from-nordic-meadow to-nordic-sky text-nordic-midnight shadow-md hover:shadow-lg transition-all duration-200"
-              aria-label={t("test.listenToWord")}
-            >
-              <SpeakerWaveIcon className="h-7 w-7" aria-hidden="true" />
-            </button>
+            {audioUrl && (
+              <AudioPlayButton
+                audioUrl={audioUrl}
+                onAudioEnd={handleAudioEnd}
+                onAudioStart={onAudioStart}
+                ariaLabel={t("test.listenToWord")}
+                size="md"
+              />
+            )}
             <span className="text-4xl font-bold tracking-wider text-gray-800">
               {word.split("").join(" ")}
             </span>
@@ -321,11 +316,10 @@ export function FlashcardView({
 
           {/* Full-width feedback box matching CorrectFeedback pattern */}
           <div
-            className={`w-full rounded-lg overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-300 ${
-              isCorrect
-                ? "bg-green-100 border border-green-300"
-                : "bg-amber-100 border border-amber-300"
-            }`}
+            className={`w-full rounded-lg overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-300 ${isCorrect
+              ? "bg-green-100 border border-green-300"
+              : "bg-amber-100 border border-amber-300"
+              }`}
           >
             <div className="p-4">
               <div className="flex items-center justify-center gap-3">
@@ -335,9 +329,8 @@ export function FlashcardView({
                   animate
                 />
                 <p
-                  className={`text-lg font-semibold flex items-center gap-2 ${
-                    isCorrect ? "text-green-800" : "text-amber-800"
-                  }`}
+                  className={`text-lg font-semibold flex items-center gap-2 ${isCorrect ? "text-green-800" : "text-amber-800"
+                    }`}
                 >
                   {isCorrect ? (
                     <CheckIconSolid

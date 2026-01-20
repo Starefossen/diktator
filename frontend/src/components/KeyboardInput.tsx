@@ -29,6 +29,8 @@ interface KeyboardInputProps {
   testConfig?: {
     enableAutocorrect?: boolean;
   };
+  /** Increment to trigger focus on input (e.g., after audio ends) */
+  focusTrigger?: number;
 }
 
 /**
@@ -50,9 +52,11 @@ export function KeyboardInput({
   showingCorrectFeedback = false,
   navigation: _navigation,
   testConfig,
+  focusTrigger = 0,
 }: KeyboardInputProps) {
   const { t } = useLanguage();
   const inputRef = useRef<HTMLInputElement>(null);
+  const lastFocusTriggerRef = useRef(focusTrigger);
   const showingFeedback = feedbackState !== null;
 
   // Focus input when not showing feedback
@@ -61,6 +65,14 @@ export function KeyboardInput({
       inputRef.current.focus();
     }
   }, [showingFeedback, showingCorrectFeedback]);
+
+  // Focus input when focusTrigger changes (e.g., after audio ends)
+  useEffect(() => {
+    if (focusTrigger !== lastFocusTriggerRef.current) {
+      lastFocusTriggerRef.current = focusTrigger;
+      inputRef.current?.focus();
+    }
+  }, [focusTrigger]);
 
   // Handle Enter key submission
   function handleKeyPress(e: React.KeyboardEvent) {

@@ -52,15 +52,15 @@ describe("WordSetEditor - Mode Selection", () => {
     );
   };
 
-  it("shows mode selection dropdown with all 7 modes", () => {
+  it("shows mode selection dropdown with all 8 modes", () => {
     renderEditor("create");
     const modeSelect = screen.getByLabelText(
       /default test mode/i,
     ) as HTMLSelectElement;
     expect(modeSelect).toBeInTheDocument();
 
-    // Verify all 7 modes are present as options by checking option values
-    expect(modeSelect.options).toHaveLength(7);
+    // Verify all 8 modes are present as options by checking option values
+    expect(modeSelect.options).toHaveLength(8);
 
     // Get all option values
     const optionValues = Array.from(modeSelect.options).map((opt) => opt.value);
@@ -252,7 +252,7 @@ describe("WordSetEditor - Mode Selection", () => {
     expect(modeSelect.value).toBe("translation");
   });
 
-  it("shows all 7 mode options in the dropdown", () => {
+  it("shows all 8 mode options in the dropdown", () => {
     renderEditor("create");
     const modeSelect = screen.getByLabelText(
       /default test mode/i,
@@ -263,6 +263,6 @@ describe("WordSetEditor - Mode Selection", () => {
     const _options = screen.getAllByRole("option");
     // Filter to mode options (the select for default-mode)
     const modeOptions = Array.from(modeSelect.options);
-    expect(modeOptions).toHaveLength(7);
+    expect(modeOptions).toHaveLength(8);
   });
 });

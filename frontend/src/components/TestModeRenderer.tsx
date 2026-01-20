@@ -14,6 +14,7 @@ import { FlashcardView } from "./FlashcardView";
 import { LookCoverWriteView } from "./LookCoverWriteView";
 import { KeyboardInput } from "./KeyboardInput";
 import { TranslationInput } from "./TranslationInput";
+import { ListeningTranslationInput } from "./ListeningTranslationInput";
 
 // Re-export feedback types for consumers
 export type { TileFeedbackState, StandardFeedbackState };
@@ -43,8 +44,14 @@ interface TestModeRendererProps {
   /** Translation mode specific props */
   translationInfo?: {
     sourceWord: string;
+    /** Original word from wordset (always the wordset's word, for audio URL lookup) */
+    originalWord?: string;
     direction: "toTarget" | "toSource";
     targetLanguage: string;
+    /** Source language code (wordset language) for audio */
+    sourceLanguage?: string;
+    /** Word set ID for audio URL construction */
+    wordSetId?: string;
   };
   /** Navigation actions for unified button handling */
   navigation?: NavigationActions;
@@ -52,8 +59,14 @@ interface TestModeRendererProps {
   onClearRef?: (clearFn: () => void) => void;
   /** Callback when canClear state changes in input components */
   onCanClearChange?: (canClear: boolean) => void;
+  /** Increment to trigger focus on input (e.g., after audio ends) */
+  focusTrigger?: number;
   /** Dynamic feedback duration based on word length */
   feedbackDurationMs?: number;
+  /** Optional callback when audio starts playing (for parent state tracking) */
+  onAudioStart?: () => void;
+  /** Optional callback when audio finishes playing (for parent state tracking) */
+  onAudioEnd?: () => void;
 }
 
 export function TestModeRenderer({
@@ -75,7 +88,10 @@ export function TestModeRenderer({
   navigation,
   onClearRef,
   onCanClearChange,
+  focusTrigger,
   feedbackDurationMs = TIMING.FEEDBACK_DISPLAY_MS,
+  onAudioStart,
+  onAudioEnd,
 }: TestModeRendererProps) {
   const mode = getMode(testMode);
 
@@ -106,6 +122,8 @@ export function TestModeRenderer({
         showDuration={testConfig?.flashcardShowDuration ?? 3000}
         autoPlayAudio={testConfig?.autoPlayAudio ?? true}
         navigation={navigation}
+        onAudioStart={onAudioStart}
+        onAudioEnd={onAudioEnd}
       />
     );
   }
@@ -124,6 +142,8 @@ export function TestModeRenderer({
         lookDuration={testConfig?.lookCoverWriteLookDuration ?? 4000}
         autoPlayAudio={testConfig?.autoPlayAudio ?? true}
         navigation={navigation}
+        onAudioStart={onAudioStart}
+        onAudioEnd={onAudioEnd}
       />
     );
   }
@@ -218,6 +238,33 @@ export function TestModeRenderer({
     );
   }
 
+  // Listening Translation mode - audio-first translation
+  if (testMode === "listeningTranslation" && translationInfo) {
+    return (
+      <ListeningTranslationInput
+        expectedAnswer={expectedAnswer}
+        userAnswer={userAnswer}
+        onUserAnswerChange={onUserAnswerChange}
+        onSubmit={(answer: string, _isCorrect: boolean) => {
+          onSubmitAnswer(answer);
+        }}
+        disabled={showFeedback}
+        feedbackState={standardFeedbackState}
+        showingCorrectFeedback={showFeedback && lastAnswerCorrect}
+        sourceWord={translationInfo.sourceWord}
+        originalWord={translationInfo.originalWord}
+        direction={translationInfo.direction}
+        targetLanguage={translationInfo.targetLanguage}
+        sourceLanguage={translationInfo.sourceLanguage || "no"}
+        wordSetId={translationInfo.wordSetId || ""}
+        navigation={navigation}
+        testConfig={testConfig}
+        onAudioStart={onAudioStart}
+        onAudioEnd={onAudioEnd}
+      />
+    );
+  }
+
   // Keyboard input (default mode)
   return (
     <KeyboardInput
@@ -232,6 +279,7 @@ export function TestModeRenderer({
       showingCorrectFeedback={showFeedback && lastAnswerCorrect}
       navigation={navigation}
       testConfig={testConfig}
+      focusTrigger={focusTrigger}
     />
   );
 }
