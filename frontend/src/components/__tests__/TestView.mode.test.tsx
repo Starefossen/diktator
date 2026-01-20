@@ -153,6 +153,27 @@ describe("TestView - Mode-Specific Behavior", () => {
       renderTestView(translationWordSet, "translation");
       expect(screen.getAllByText(/hello/i).length).toBeGreaterThan(0);
     });
+
+    it("displays correct word even when processedWords are shuffled", () => {
+      // Test that processedWords order is used to find the correct word object
+      // This catches the bug where currentWord was incorrectly fetched by index
+      // from activeTest.words instead of matching by processedWords[currentWordIndex]
+      const shuffledProps = {
+        ...baseProps,
+        currentWordIndex: 0,
+        // processedWords is in REVERSED order compared to activeTest.words
+        processedWords: ["goodbye", "hello"],
+        wordDirections: ["toTarget", "toTarget"] as ("toTarget" | "toSource")[],
+      };
+
+      renderTestView(translationWordSet, "translation", shuffledProps);
+
+      // Should show "goodbye" (the first shuffled word), not "hello" (activeTest.words[0])
+      // The word appears in both the main display and possibly the header
+      expect(screen.getAllByText(/goodbye/i).length).toBeGreaterThan(0);
+      // The first word in activeTest.words is "hello" - if we incorrectly used index-based lookup,
+      // we would show hello instead of goodbye
+    });
   });
 
   describe("Common Functionality", () => {

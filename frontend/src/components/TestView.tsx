@@ -322,10 +322,18 @@ export function TestView({
   // Derived configuration
   const testConfig = getEffectiveTestConfig(activeTest);
   const maxAttempts = testConfig?.maxAttempts ?? 3;
-  const currentWord = activeTest.words[currentWordIndex];
+
+  // When words are shuffled, processedWords order differs from activeTest.words order.
+  // We must find the word object that matches the current processed word string.
+  const currentProcessedWord = processedWords[currentWordIndex];
+  const currentWord = activeTest.words.find(
+    (w) => w.word === currentProcessedWord,
+  );
 
   if (!currentWord) {
-    throw new Error(`TestView: No word found at index ${currentWordIndex}`);
+    throw new Error(
+      `TestView: No word found matching "${currentProcessedWord}" at index ${currentWordIndex}`,
+    );
   }
 
   // Translation mode state

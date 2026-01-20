@@ -250,6 +250,51 @@ describe("ListeningTranslationInput", () => {
       // toSource: plays target language (English translation)
       expect(MockAudio.lastInstance?.src).toContain("lang=en");
     });
+
+    it("uses originalWord in URL path regardless of direction", () => {
+      // When direction is toSource, sourceWord might be the English translation
+      // but the URL path must ALWAYS use originalWord (Norwegian) for backend lookup
+      renderComponent({
+        direction: "toSource",
+        sourceWord: "Two robots", // English word shown to user
+        originalWord: "To robotter", // Norwegian word for URL
+        targetLanguage: "en",
+        sourceLanguage: "no",
+      });
+      const playButton = screen.getByRole("button", { name: /play audio/i });
+
+      fireEvent.click(playButton);
+
+      // URL path must contain the Norwegian original word, not English
+      expect(MockAudio.lastInstance?.src).toContain(
+        encodeURIComponent("To robotter"),
+      );
+      expect(MockAudio.lastInstance?.src).not.toContain(
+        encodeURIComponent("Two robots"),
+      );
+      // And lang should be 'en' for toSource (playing English audio)
+      expect(MockAudio.lastInstance?.src).toContain("lang=en");
+    });
+
+    it("uses originalWord in URL path for toTarget direction", () => {
+      renderComponent({
+        direction: "toTarget",
+        sourceWord: "To robotter", // Norwegian word shown to user
+        originalWord: "To robotter", // Norwegian word for URL
+        targetLanguage: "en",
+        sourceLanguage: "no",
+      });
+      const playButton = screen.getByRole("button", { name: /play audio/i });
+
+      fireEvent.click(playButton);
+
+      // URL path must contain the Norwegian original word
+      expect(MockAudio.lastInstance?.src).toContain(
+        encodeURIComponent("To robotter"),
+      );
+      // And lang should be 'no' for toTarget (playing Norwegian audio)
+      expect(MockAudio.lastInstance?.src).toContain("lang=no");
+    });
   });
 
   describe("Feedback States", () => {
