@@ -456,11 +456,40 @@ export function TestView({
   }, [showFeedback]);
 
   // Generate audio URL for test modes
+  // For translation modes, the URL path must ALWAYS use the original wordset word (currentWord.word)
+  // because the backend indexes words by their original text, not by translations.
+  // The `lang` parameter then determines which language to speak:
+  // - For most modes: speak the original word in the wordset's language
+  // - For translation toTarget: speak original word (Norwegian) - user types translation
+  // - For translation toSource: speak translation (English) - user types original
   const audioUrl = useMemo(() => {
     const apiBaseUrl =
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-    return `${apiBaseUrl}/api/wordsets/${activeTest.id}/words/${encodeURIComponent(expectedAnswer)}/audio?lang=${encodeURIComponent(activeTest.language)}`;
-  }, [activeTest.id, activeTest.language, expectedAnswer]);
+
+    // Always use the original word in the URL path (backend looks up by original word)
+    const wordForPath = currentWord.word;
+
+    // Determine which language to speak
+    let langToSpeak: string = activeTest.language;
+    if (
+      (testMode === "translation" || testMode === "listeningTranslation") &&
+      targetLanguage
+    ) {
+      // toTarget: user hears original (source), types translation (target)
+      // toSource: user hears translation (target), types original (source)
+      langToSpeak =
+        wordDirection === "toTarget" ? activeTest.language : targetLanguage;
+    }
+
+    return `${apiBaseUrl}/api/wordsets/${activeTest.id}/words/${encodeURIComponent(wordForPath)}/audio?lang=${encodeURIComponent(langToSpeak)}`;
+  }, [
+    activeTest.id,
+    activeTest.language,
+    currentWord.word,
+    testMode,
+    targetLanguage,
+    wordDirection,
+  ]);
 
   // Computed values for rendering
   const progressPercent =
