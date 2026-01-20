@@ -103,6 +103,27 @@ export function ListeningTranslationInput({
     }
   })();
 
+  // Track if we've shown feedback for this word - prevents double audio play
+  // when returning from feedback (useTestMode already handles replay after wrong answer)
+  // Use state instead of ref so we can read it during render
+  const [hasShownFeedback, setHasShownFeedback] = useState(false);
+
+  // Update state when feedback is shown
+  useEffect(() => {
+    if (showingFeedback || showingCorrectFeedback) {
+      setHasShownFeedback(true);
+    }
+  }, [showingFeedback, showingCorrectFeedback]);
+
+  // Reset the feedback tracking when the word changes (new audioUrl = new word)
+  const prevAudioUrlRef = useRef(audioUrl);
+  useEffect(() => {
+    if (audioUrl !== prevAudioUrlRef.current) {
+      setHasShownFeedback(false);
+      prevAudioUrlRef.current = audioUrl;
+    }
+  }, [audioUrl]);
+
   // Language being spoken (what user hears)
   const spokenLanguage =
     direction === "toTarget" ? sourceLanguage : targetLanguage;
@@ -191,7 +212,9 @@ export function ListeningTranslationInput({
             onAudioError={handleAudioError}
             ariaLabel={t("aria.playAudio")}
             size="lg"
-            autoPlay={!showingFeedback && !showingCorrectFeedback}
+            autoPlay={
+              !showingFeedback && !showingCorrectFeedback && !hasShownFeedback
+            }
           />
         </div>
 
