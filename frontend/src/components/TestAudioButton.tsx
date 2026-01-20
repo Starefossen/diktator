@@ -21,12 +21,12 @@ interface TestAudioButtonProps {
   autoPlay?: boolean;
   /** Custom i18n key for instruction text (defaults to test.listenToWord) */
   instructionKey?:
-    | "test.listenToWord"
-    | "test.translateWord"
-    | "test.instruction.letterTiles"
-    | "test.instruction.wordBank"
-    | "test.instruction.keyboard"
-    | "test.instruction.missingLetters";
+  | "test.listenToWord"
+  | "test.translateWord"
+  | "test.instruction.letterTiles"
+  | "test.instruction.wordBank"
+  | "test.instruction.keyboard"
+  | "test.instruction.missingLetters";
   /** Whether to completely hide instruction and definition (not just invisible) */
   hideInstructionArea?: boolean;
 }
@@ -84,14 +84,12 @@ export function TestAudioButton({
         </p>
       )}
 
-      {/* Definition/context hint - hide completely if hideInstructionArea */}
-      {!hideInstructionArea && (
-        <div
-          className={`mx-auto mt-3 max-w-md rounded-lg border border-nordic-sky/30 bg-nordic-sky/10 px-4 py-2 text-sm ${definition ? "" : "invisible"}`}
-        >
+      {/* Definition/context hint - only render if we have a definition and not hiding instruction area */}
+      {!hideInstructionArea && definition && (
+        <div className="mx-auto mt-3 max-w-md rounded-lg border border-nordic-sky/30 bg-nordic-sky/10 px-4 py-2 text-sm">
           <p className="text-nordic-midnight">
             <span className="font-medium">{t("test.context")}</span>{" "}
-            {definition || "\u00A0"}
+            {definition}
           </p>
         </div>
       )}
