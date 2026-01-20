@@ -601,17 +601,22 @@ async function refreshAccessToken(): Promise<boolean> {
   if (typeof window === "undefined") return false;
   if (isMockMode) return true;
 
+  logger.oidc.debug("refreshAccessToken: starting token refresh");
+
   const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
   if (!refreshToken) {
+    logger.oidc.debug("refreshAccessToken: no refresh token available");
     return false;
   }
 
   try {
     const discovery = await getDiscoveryDocument();
     if (!discovery?.token_endpoint) {
+      logger.oidc.debug("refreshAccessToken: no token endpoint in discovery");
       return false;
     }
 
+    logger.oidc.debug("refreshAccessToken: calling token endpoint");
     const response = await fetch(discovery.token_endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -624,14 +629,20 @@ async function refreshAccessToken(): Promise<boolean> {
 
     if (!response.ok) {
       // Refresh failed, clear tokens
+      logger.oidc.warn(
+        "refreshAccessToken: refresh failed with status",
+        response.status,
+      );
       clearTokens();
       return false;
     }
 
     const tokens: TokenResponse = await response.json();
     storeTokens(tokens);
+    logger.oidc.debug("refreshAccessToken: tokens refreshed successfully");
 
     // Trigger storage event for AuthContext synchronization
+    logger.oidc.debug("refreshAccessToken: dispatching storage event");
     window.dispatchEvent(new Event("storage"));
 
     return true;

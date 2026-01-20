@@ -114,10 +114,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const userProfileResponse = await generatedApiClient.getUserProfile();
       const profileData = userProfileResponse.data as
         | (UserData & {
-            needsRegistration?: boolean;
-            hasPendingInvites?: boolean;
-            pendingInvitations?: FamilyInvitation[];
-          })
+          needsRegistration?: boolean;
+          hasPendingInvites?: boolean;
+          pendingInvitations?: FamilyInvitation[];
+        })
         | undefined;
 
       logger.oidc.debug("loadUserData: profile response:", {
@@ -228,10 +228,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const checkAuth = useCallback(async () => {
     try {
       setLoading(true);
-      logger.oidc.debug("checkAuth: starting");
+      logger.oidc.debug("checkAuth: starting", {
+        timestamp: new Date().toISOString(),
+        currentPath:
+          typeof window !== "undefined" ? window.location.pathname : "SSR",
+      });
 
       if (!isAuthenticated()) {
-        logger.oidc.debug("checkAuth: Not authenticated");
+        logger.oidc.debug("checkAuth: Not authenticated - clearing state");
         setUser(null);
         setUserData(null);
         setNeedsRegistration(false);
@@ -250,8 +254,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         logger.oidc.debug("checkAuth: Loading user data");
         await loadUserData(currentUser);
       }
+      logger.oidc.debug("checkAuth: completed successfully - no reload");
     } catch (err) {
-      logger.oidc.error("Error checking auth:", err);
+      logger.oidc.error("checkAuth: Error during auth check:", err);
       setUser(null);
       setUserData(null);
       setNeedsRegistration(false);
@@ -308,12 +313,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   useEffect(() => {
+    logger.oidc.debug("Initial checkAuth on mount");
     checkAuth();
   }, [checkAuth]);
 
   // Listen for storage events to detect token changes (cross-tab and manual triggers)
   useEffect(() => {
     const handleStorageChange = () => {
+      logger.oidc.debug("Storage event detected - triggering checkAuth");
       checkAuth();
     };
 
@@ -325,14 +332,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [checkAuth]);
 
   useEffect(() => {
+    logger.oidc.debug("Setting up 5-minute auth check interval");
     const interval = setInterval(
       () => {
+        logger.oidc.debug("5-minute interval triggered - calling checkAuth");
         checkAuth();
       },
       5 * 60 * 1000,
     );
 
-    return () => clearInterval(interval);
+    return () => {
+      logger.oidc.debug("Clearing 5-minute auth check interval");
+      clearInterval(interval);
+    };
   }, [checkAuth]);
 
   const value = {
