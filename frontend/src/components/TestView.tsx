@@ -334,8 +334,8 @@ export function TestView({
     const configured = activeTest.testConfiguration?.targetLanguage;
     if (configured) return configured;
 
-    // For translation mode, find the most common translation language across all words
-    if (testMode === "translation") {
+    // For translation and listeningTranslation modes, find the most common translation language across all words
+    if (testMode === "translation" || testMode === "listeningTranslation") {
       const languageCounts = new Map<string, number>();
 
       // Count how many words have translations in each language
@@ -374,7 +374,7 @@ export function TestView({
 
   const translation =
     (testMode === "translation" || testMode === "listeningTranslation") &&
-    targetLanguage
+      targetLanguage
       ? currentWord?.translations?.find((tr) => tr.language === targetLanguage)
       : undefined;
 
@@ -504,8 +504,8 @@ export function TestView({
       isLastWord,
       canSubmit:
         testMode === "keyboard" ||
-        testMode === "translation" ||
-        testMode === "listeningTranslation"
+          testMode === "translation" ||
+          testMode === "listeningTranslation"
           ? !!userAnswer.trim()
           : true,
       isSubmitting: false,
@@ -540,10 +540,10 @@ export function TestView({
           translationInfo={
             testMode === "translation" && translation
               ? {
-                  wordDirection,
-                  showWord: showWord!,
-                  targetLanguage: targetLanguage!,
-                }
+                wordDirection,
+                showWord: showWord!,
+                targetLanguage: targetLanguage!,
+              }
               : undefined
           }
         />
@@ -714,7 +714,7 @@ export function TestView({
                   centerContent={
                     supportsClearButton ? (
                       <ClearButton
-                        onClick={clearFn || (() => {})}
+                        onClick={clearFn || (() => { })}
                         disabled={showFeedback || !canClear || !clearFn}
                       />
                     ) : undefined
