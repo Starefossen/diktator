@@ -97,7 +97,7 @@ describe("TestView - Mode-Specific Behavior", () => {
     it("shows audio button in keyboard mode", () => {
       renderTestView(baseWordSet, "keyboard");
       expect(
-        screen.getByRole("button", { name: /click to hear the word/i }),
+        screen.getByRole("button", { name: /type the word you hear/i }),
       ).toBeInTheDocument();
     });
 
@@ -134,7 +134,7 @@ describe("TestView - Mode-Specific Behavior", () => {
     it("shows audio button in translation mode", () => {
       renderTestView(translationWordSet, "translation");
       expect(
-        screen.getByRole("button", { name: /click to hear the word/i }),
+        screen.getByRole("button", { name: /translate/i }),
       ).toBeInTheDocument();
     });
 
@@ -205,7 +205,7 @@ describe("TestView - Mode-Specific Behavior", () => {
     it("audio button is clickable in keyboard mode", () => {
       renderTestView(baseWordSet, "keyboard");
       const playButton = screen.getByRole("button", {
-        name: /click to hear the word/i,
+        name: /type the word you hear/i,
       });
       // AudioPlayButton manages its own audio playback internally
       // Verify the button exists and is clickable
@@ -297,7 +297,7 @@ describe("TestView - Mode-Specific Behavior", () => {
       // and has the structure that would show a spinner during playback
       renderTestView(baseWordSet, "keyboard");
       const playButton = screen.getByRole("button", {
-        name: /click to hear the word/i,
+        name: /type the word you hear/i,
       });
       expect(playButton).toBeInTheDocument();
       // The spinner element is conditionally rendered by AudioPlayButton based on internal isPlaying state
@@ -306,7 +306,7 @@ describe("TestView - Mode-Specific Behavior", () => {
     it("shows audio button when audio is not playing", () => {
       renderTestView(baseWordSet, "keyboard");
       const playButton = screen.getByRole("button", {
-        name: /click to hear the word/i,
+        name: /type the word you hear/i,
       });
       expect(playButton).toBeInTheDocument();
     });

@@ -101,12 +101,16 @@ export const test = {
   "test.finishTest": "Finish Test",
   "test.backMobile": "Back",
   "test.correctSoFar": "Correct so far",
-
+  // Mode-specific instructions
+  "test.instruction.letterTiles": "Arrange the letters to spell the word",
+  "test.instruction.wordBank": "Tap the words to build the sentence",
+  "test.instruction.keyboard": "Type the word you hear",
+  "test.instruction.missingLetters": "Fill in the missing letters",
   // Context/definition
   "test.context": "Context:",
 
   // Translation mode
-  "test.translateWord": "Translate",
+  "test.translateWord": "Translate the word",
   "test.typeTranslationHere": "Type the translation here...",
   "test.translateTo": "Translate to",
   "test.translateToTarget": "Translate to",

@@ -19,6 +19,16 @@ interface TestAudioButtonProps {
   isExternallyPlaying?: boolean;
   /** Auto-play audio on mount or when audioUrl changes */
   autoPlay?: boolean;
+  /** Custom i18n key for instruction text (defaults to test.listenToWord) */
+  instructionKey?:
+    | "test.listenToWord"
+    | "test.translateWord"
+    | "test.instruction.letterTiles"
+    | "test.instruction.wordBank"
+    | "test.instruction.keyboard"
+    | "test.instruction.missingLetters";
+  /** Whether to completely hide instruction and definition (not just invisible) */
+  hideInstructionArea?: boolean;
 }
 
 /**
@@ -37,17 +47,26 @@ export function TestAudioButton({
   playTrigger,
   isExternallyPlaying,
   autoPlay = false,
+  instructionKey = "test.listenToWord",
+  hideInstructionArea = false,
 }: TestAudioButtonProps) {
   const { t } = useLanguage();
 
+  // Get instruction text based on key
+  const instructionText = t(instructionKey);
+  const mobileInstructionText =
+    instructionKey === "test.listenToWord"
+      ? t("test.listenToWordMobile")
+      : instructionText;
+
   return (
-    <div className="mb-8">
+    <div className={hideInstructionArea ? "mb-4" : "mb-8"}>
       <div className="flex items-center justify-center gap-4">
         <AudioPlayButton
           audioUrl={audioUrl}
           onAudioEnd={onAudioEnd}
           onAudioStart={onAudioStart}
-          ariaLabel={t("test.listenToWord")}
+          ariaLabel={instructionText}
           size="lg"
           playTrigger={playTrigger}
           isExternallyPlaying={isExternallyPlaying}
@@ -55,21 +74,27 @@ export function TestAudioButton({
         />
       </div>
 
-      {/* Instruction text - always render to prevent layout shift */}
-      <p className={`mt-4 text-gray-600 ${showInstruction ? "" : "invisible"}`}>
-        <span className="sm:hidden">{t("test.listenToWordMobile")}</span>
-        <span className="hidden sm:inline">{t("test.listenToWord")}</span>
-      </p>
-
-      {/* Definition/context hint - always render to prevent layout shift */}
-      <div
-        className={`mx-auto mt-3 max-w-md rounded-lg border border-nordic-sky/30 bg-nordic-sky/10 px-4 py-2 text-sm ${definition ? "" : "invisible"}`}
-      >
-        <p className="text-nordic-midnight">
-          <span className="font-medium">{t("test.context")}</span>{" "}
-          {definition || "\u00A0"}
+      {/* Instruction text - hide completely if hideInstructionArea, otherwise use invisible for layout */}
+      {!hideInstructionArea && (
+        <p
+          className={`mt-4 text-gray-600 ${showInstruction ? "" : "invisible"}`}
+        >
+          <span className="sm:hidden">{mobileInstructionText}</span>
+          <span className="hidden sm:inline">{instructionText}</span>
         </p>
-      </div>
+      )}
+
+      {/* Definition/context hint - hide completely if hideInstructionArea */}
+      {!hideInstructionArea && (
+        <div
+          className={`mx-auto mt-3 max-w-md rounded-lg border border-nordic-sky/30 bg-nordic-sky/10 px-4 py-2 text-sm ${definition ? "" : "invisible"}`}
+        >
+          <p className="text-nordic-midnight">
+            <span className="font-medium">{t("test.context")}</span>{" "}
+            {definition || "\u00A0"}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

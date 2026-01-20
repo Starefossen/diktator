@@ -108,30 +108,14 @@ export function ListeningTranslationInput({
     return t(key);
   };
 
-  // Show correct feedback
-  if (showingCorrectFeedback) {
-    return <CorrectFeedback timerDurationMs={TIMING.SUCCESS_FEEDBACK_MS} />;
-  }
+  // Common header for all states (instruction + language direction)
+  const header = (
+    <>
+      {/* Instruction text */}
+      <p className="text-center text-lg text-gray-600">
+        {t("test.listenAndTranslate")}
+      </p>
 
-  // Show error feedback with SpellingFeedback component
-  if (showingFeedback && feedbackState) {
-    return (
-      <SpellingFeedback
-        userAnswer={feedbackState.lastUserAnswer}
-        expectedWord={expectedAnswer}
-        analysis={feedbackState.analysis}
-        currentAttempt={feedbackState.currentAttempt}
-        maxAttempts={feedbackState.maxAttempts}
-        config={feedbackState.config}
-        showCorrectAnswer={feedbackState.showCorrectAnswer}
-        timerDurationMs={getFeedbackDuration(expectedAnswer)}
-      />
-    );
-  }
-
-  // Show listening input interface
-  return (
-    <div className="flex flex-col gap-4 items-center">
       {/* Language context - shows what language user heard and should type */}
       <div className="flex items-center gap-3 text-gray-500">
         <span className="text-sm">{getLanguageName(spokenLanguage)}</span>
@@ -140,6 +124,42 @@ export function ListeningTranslationInput({
           {getLanguageName(typingLanguage)}
         </span>
       </div>
+    </>
+  );
+
+  // Show correct feedback
+  if (showingCorrectFeedback) {
+    return (
+      <div className="flex flex-col gap-4 items-center">
+        {header}
+        <CorrectFeedback timerDurationMs={TIMING.SUCCESS_FEEDBACK_MS} />
+      </div>
+    );
+  }
+
+  // Show error feedback with SpellingFeedback component
+  if (showingFeedback && feedbackState) {
+    return (
+      <div className="flex flex-col gap-4 items-center">
+        {header}
+        <SpellingFeedback
+          userAnswer={feedbackState.lastUserAnswer}
+          expectedWord={expectedAnswer}
+          analysis={feedbackState.analysis}
+          currentAttempt={feedbackState.currentAttempt}
+          maxAttempts={feedbackState.maxAttempts}
+          config={feedbackState.config}
+          showCorrectAnswer={feedbackState.showCorrectAnswer}
+          timerDurationMs={getFeedbackDuration(expectedAnswer)}
+        />
+      </div>
+    );
+  }
+
+  // Show listening input interface
+  return (
+    <div className="flex flex-col gap-4 items-center">
+      {header}
 
       {/* Translation Input Area */}
       <div className="flex flex-col items-center gap-2 w-full max-w-xs">

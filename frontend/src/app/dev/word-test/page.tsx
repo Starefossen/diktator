@@ -27,6 +27,7 @@ import {
 } from "@/components/MissingLettersInput";
 import { FlashcardView } from "@/components/FlashcardView";
 import { LookCoverWriteView } from "@/components/LookCoverWriteView";
+import { ListeningTranslationInput } from "@/components/ListeningTranslationInput";
 import {
   SpellingFeedback,
   CorrectFeedback,
@@ -586,6 +587,75 @@ function TranslationSection() {
   );
 }
 
+function ListeningTranslationSection() {
+  const { t } = useLanguage();
+
+  return (
+    <section className="mb-12">
+      <SectionTitle>Listening Translation (Hear & Translate)</SectionTitle>
+      <p className="mb-4 text-gray-600">
+        User hears audio and types translation. Source word is hidden - audio is
+        the only stimulus.
+      </p>
+      <div className="grid gap-6 md:grid-cols-3">
+        <ModeCard title="Listening Translation" state="input">
+          <MockAudioButton />
+          <ListeningTranslationInput
+            expectedAnswer="school"
+            userAnswer=""
+            onUserAnswerChange={() => {}}
+            onSubmit={() => {}}
+            sourceWord="skole"
+            originalWord="skole"
+            direction="toTarget"
+            targetLanguage="en"
+            sourceLanguage="no"
+            wordSetId="test-wordset-id"
+          />
+        </ModeCard>
+
+        <ModeCard title="Listening Translation" state="error">
+          <MockAudioButton />
+          <Instruction>Lytt og oversett</Instruction>
+          <SpellingFeedback
+            userAnswer="scool"
+            expectedWord="school"
+            analysis={analyzeSpelling(
+              "scool",
+              "school",
+              DEFAULT_SPELLING_CONFIG,
+            )}
+            currentAttempt={1}
+            maxAttempts={3}
+          />
+        </ModeCard>
+
+        <ModeCard title="Listening Translation" state="success">
+          <MockAudioButton />
+          <Instruction>Lytt og oversett</Instruction>
+          <div className="flex flex-col gap-4">
+            {/* Language direction indicator */}
+            <div className="flex items-center justify-center gap-3 text-gray-500">
+              <span className="text-sm">{t("common.norwegian")}</span>
+              <span className="text-lg">→</span>
+              <span className="text-sm font-medium text-gray-700">
+                {t("common.english")}
+              </span>
+            </div>
+            {/* Success answer display */}
+            <div className="flex justify-center">
+              <span className="px-4 py-2 min-h-12 rounded-lg font-bold text-xl bg-green-100 text-green-800 border-2 border-green-400 shadow-md flex items-center justify-center">
+                school
+              </span>
+            </div>
+            <CorrectFeedback />
+          </div>
+        </ModeCard>
+      </div>
+    </section>
+  );
+}
+
 function ResultsSection() {
   // Mock test data for high score scenario (100%)
   const highScoreAnswers: TestAnswer[] = [
@@ -841,6 +911,7 @@ export default function WordTestPage() {
     { id: "flashcard", label: "Flashcard" },
     { id: "lookCoverWrite", label: "Look Cover Write" },
     { id: "translation", label: "Translation" },
+    { id: "listeningTranslation", label: "Listening Translation" },
   ];
 
   return (
@@ -892,6 +963,10 @@ export default function WordTestPage() {
         )}
         {(selectedMode === "all" || selectedMode === "translation") && (
           <TranslationSection />
+        )}
+        {(selectedMode === "all" ||
+          selectedMode === "listeningTranslation") && (
+          <ListeningTranslationSection />
         )}
         {selectedMode === "all" && <ResultsSection />}
       </div>

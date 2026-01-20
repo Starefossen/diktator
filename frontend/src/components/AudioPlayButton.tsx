@@ -109,7 +109,15 @@ export function AudioPlayButton({
   }, [audioUrl, isPlaying, onAudioStart, onAudioEnd, onAudioError]);
 
   // Auto-play on mount or when audioUrl changes
+  // Reset the flag first, then check if we should autoplay
+  const prevAudioUrlRef = useRef(audioUrl);
   useEffect(() => {
+    // If URL changed, reset the hasAutoPlayed flag and trigger autoplay if enabled
+    if (audioUrl !== prevAudioUrlRef.current) {
+      prevAudioUrlRef.current = audioUrl;
+      hasAutoPlayedRef.current = false;
+    }
+
     if (autoPlay && !hasAutoPlayedRef.current) {
       hasAutoPlayedRef.current = true;
       const timer = setTimeout(playAudio, 100);
@@ -125,11 +133,6 @@ export function AudioPlayButton({
       playAudio();
     }
   }, [playTrigger, playAudio]);
-
-  // Reset auto-play flag when audioUrl changes
-  useEffect(() => {
-    hasAutoPlayedRef.current = false;
-  }, [audioUrl]);
 
   // Cleanup on unmount
   useEffect(() => {

@@ -382,7 +382,7 @@ export function TestView({
 
   const translation =
     (testMode === "translation" || testMode === "listeningTranslation") &&
-      targetLanguage
+    targetLanguage
       ? currentWord?.translations?.find((tr) => tr.language === targetLanguage)
       : undefined;
 
@@ -541,8 +541,8 @@ export function TestView({
       isLastWord,
       canSubmit:
         testMode === "keyboard" ||
-          testMode === "translation" ||
-          testMode === "listeningTranslation"
+        testMode === "translation" ||
+        testMode === "listeningTranslation"
           ? !!userAnswer.trim()
           : true,
       isSubmitting: false,
@@ -577,10 +577,10 @@ export function TestView({
           translationInfo={
             testMode === "translation" && translation
               ? {
-                wordDirection,
-                showWord: showWord!,
-                targetLanguage: targetLanguage!,
-              }
+                  wordDirection,
+                  showWord: showWord!,
+                  targetLanguage: targetLanguage!,
+                }
               : undefined
           }
         />
@@ -717,6 +717,20 @@ export function TestView({
                 playTrigger={playTrigger}
                 isExternallyPlaying={isParentAudioPlaying}
                 autoPlay={testMode === "listeningTranslation"}
+                instructionKey={
+                  testMode === "translation"
+                    ? "test.translateWord"
+                    : testMode === "letterTiles"
+                      ? "test.instruction.letterTiles"
+                      : testMode === "wordBank"
+                        ? "test.instruction.wordBank"
+                        : testMode === "keyboard"
+                          ? "test.instruction.keyboard"
+                          : testMode === "missingLetters"
+                            ? "test.instruction.missingLetters"
+                            : "test.listenToWord"
+                }
+                hideInstructionArea={testMode === "listeningTranslation"}
               />
 
               {/* Input/Feedback Area - all modes handle their own feedback internally */}
@@ -754,7 +768,7 @@ export function TestView({
                   centerContent={
                     supportsClearButton ? (
                       <ClearButton
-                        onClick={clearFn || (() => { })}
+                        onClick={clearFn || (() => {})}
                         disabled={showFeedback || !canClear || !clearFn}
                       />
                     ) : undefined

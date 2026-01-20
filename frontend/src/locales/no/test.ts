@@ -102,11 +102,17 @@ export const test = {
   "test.backMobile": "Tilbake",
   "test.correctSoFar": "Riktige så langt",
 
+  // Mode-specific instructions
+  "test.instruction.letterTiles": "Sett sammen bokstavene til ordet",
+  "test.instruction.wordBank": "Trykk på ordene for å bygge setningen",
+  "test.instruction.keyboard": "Skriv ordet du hører",
+  "test.instruction.missingLetters": "Fyll inn de manglende bokstavene",
+
   // Context/definition
   "test.context": "Sammenheng:",
 
   // Translation mode
-  "test.translateWord": "Oversett",
+  "test.translateWord": "Oversett ordet",
   "test.typeTranslationHere": "Skriv oversettelsen her...",
   "test.translateTo": "Oversett til",
   "test.translateToTarget": "Oversett til",

@@ -89,13 +89,13 @@ export function TranslationInput({
     direction === "toTarget"
       ? t("common.norwegian")
       : t(
-        `common.${targetLanguage === "en" ? "english" : targetLanguage}` as TranslationKey,
-      );
+          `common.${targetLanguage === "en" ? "english" : targetLanguage}` as TranslationKey,
+        );
   const targetLang =
     direction === "toTarget"
       ? t(
-        `common.${targetLanguage === "en" ? "english" : targetLanguage}` as TranslationKey,
-      )
+          `common.${targetLanguage === "en" ? "english" : targetLanguage}` as TranslationKey,
+        )
       : t("common.norwegian");
 
   // Show correct feedback
