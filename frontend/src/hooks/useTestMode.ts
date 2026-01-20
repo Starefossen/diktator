@@ -387,12 +387,12 @@ export function useTestMode(): UseTestModeReturn {
       const mode = getMode(testMode);
       const expectedAnswer = mode?.getExpectedAnswer
         ? mode.getExpectedAnswer(wordObj, {
-          translationDirection:
-            wordDirections.length > currentWordIndex
-              ? wordDirections[currentWordIndex]
-              : "toTarget",
-          wordSet: activeTest,
-        })
+            translationDirection:
+              wordDirections.length > currentWordIndex
+                ? wordDirections[currentWordIndex]
+                : "toTarget",
+            wordSet: activeTest,
+          })
         : currentWord;
 
       // Use normalized comparison that ignores punctuation and case
@@ -494,12 +494,12 @@ export function useTestMode(): UseTestModeReturn {
         isCorrect
           ? TIMING.SUCCESS_FEEDBACK_MS
           : getFeedbackDuration(
-            Math.max(expectedAnswer.length, answerToSubmit.trim().length) > 0
-              ? expectedAnswer.length > answerToSubmit.trim().length
-                ? expectedAnswer
-                : answerToSubmit.trim()
-              : expectedAnswer,
-          ),
+              Math.max(expectedAnswer.length, answerToSubmit.trim().length) > 0
+                ? expectedAnswer.length > answerToSubmit.trim().length
+                  ? expectedAnswer
+                  : answerToSubmit.trim()
+                : expectedAnswer,
+            ),
       );
     },
     [
@@ -636,12 +636,12 @@ export function useTestMode(): UseTestModeReturn {
     const mode = getMode(testMode);
     const expectedAnswer = mode?.getExpectedAnswer
       ? mode.getExpectedAnswer(wordObj, {
-        translationDirection:
-          wordDirections.length > currentWordIndex
-            ? wordDirections[currentWordIndex]
-            : "toTarget",
-        wordSet: activeTest,
-      })
+          translationDirection:
+            wordDirections.length > currentWordIndex
+              ? wordDirections[currentWordIndex]
+              : "toTarget",
+          wordSet: activeTest,
+        })
       : currentWord;
     return getFeedbackDuration(expectedAnswer);
   })();

@@ -249,10 +249,11 @@ export function LookCoverWriteView({
         <div className="w-full flex flex-col items-center gap-8">
           {/* Phase header */}
           <div
-            className={`rounded-xl px-6 py-2 text-sm font-medium uppercase tracking-wider ${isCorrect
-              ? "bg-green-50 text-green-600"
-              : "bg-amber-50 text-amber-600"
-              }`}
+            className={`rounded-xl px-6 py-2 text-sm font-medium uppercase tracking-wider ${
+              isCorrect
+                ? "bg-green-50 text-green-600"
+                : "bg-amber-50 text-amber-600"
+            }`}
           >
             {t("lookCoverWrite.check")}
           </div>
@@ -264,8 +265,9 @@ export function LookCoverWriteView({
                 {t("lookCoverWrite.yourAnswer")}:
               </span>
               <span
-                className={`text-2xl font-semibold tracking-wider ${isCorrect ? "text-green-600" : "text-red-500"
-                  }`}
+                className={`text-2xl font-semibold tracking-wider ${
+                  isCorrect ? "text-green-600" : "text-red-500"
+                }`}
               >
                 {spacedWord(userInput)}
               </span>
@@ -303,10 +305,11 @@ export function LookCoverWriteView({
 
           {/* Full-width Stavle feedback box */}
           <div
-            className={`w-full rounded-lg overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-300 ${isCorrect
-              ? "bg-green-100 border border-green-300"
-              : "bg-amber-100 border border-amber-300"
-              }`}
+            className={`w-full rounded-lg overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-300 ${
+              isCorrect
+                ? "bg-green-100 border border-green-300"
+                : "bg-amber-100 border border-amber-300"
+            }`}
           >
             <div className="p-4">
               <div className="flex items-center justify-center gap-3">
@@ -316,8 +319,9 @@ export function LookCoverWriteView({
                   animate
                 />
                 <p
-                  className={`text-lg font-semibold flex items-center gap-2 ${isCorrect ? "text-green-800" : "text-amber-800"
-                    }`}
+                  className={`text-lg font-semibold flex items-center gap-2 ${
+                    isCorrect ? "text-green-800" : "text-amber-800"
+                  }`}
                 >
                   {isCorrect ? (
                     <CheckIconSolid

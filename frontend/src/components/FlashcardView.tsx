@@ -316,10 +316,11 @@ export function FlashcardView({
 
           {/* Full-width feedback box matching CorrectFeedback pattern */}
           <div
-            className={`w-full rounded-lg overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-300 ${isCorrect
-              ? "bg-green-100 border border-green-300"
-              : "bg-amber-100 border border-amber-300"
-              }`}
+            className={`w-full rounded-lg overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-300 ${
+              isCorrect
+                ? "bg-green-100 border border-green-300"
+                : "bg-amber-100 border border-amber-300"
+            }`}
           >
             <div className="p-4">
               <div className="flex items-center justify-center gap-3">
@@ -329,8 +330,9 @@ export function FlashcardView({
                   animate
                 />
                 <p
-                  className={`text-lg font-semibold flex items-center gap-2 ${isCorrect ? "text-green-800" : "text-amber-800"
-                    }`}
+                  className={`text-lg font-semibold flex items-center gap-2 ${
+                    isCorrect ? "text-green-800" : "text-amber-800"
+                  }`}
                 >
                   {isCorrect ? (
                     <CheckIconSolid

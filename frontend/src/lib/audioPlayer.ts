@@ -280,7 +280,9 @@ const playAudioDirectFromURL = async (
   return new Promise((resolve, reject) => {
     // Shorter timeout for Safari - if no event fires in 3 seconds, something is wrong
     const loadTimeout = setTimeout(() => {
-      logger.audio.warn("Safari: Timeout - no events fired, falling back to TTS");
+      logger.audio.warn(
+        "Safari: Timeout - no events fired, falling back to TTS",
+      );
       cleanup();
       reject(new Error("Audio loading timeout - no events fired"));
     }, 3000);
@@ -378,7 +380,8 @@ const playAudioWithiOSSupport = async (
 ): Promise<void> => {
   // Safari on all platforms (iOS, iPadOS, macOS) has issues with blob URLs for audio - use direct URL instead
   // Detect Safari but exclude Chrome (which also contains "Safari" in UA)
-  const isSafari = /Safari/i.test(navigator.userAgent) && !/Chrome/i.test(navigator.userAgent);
+  const isSafari =
+    /Safari/i.test(navigator.userAgent) && !/Chrome/i.test(navigator.userAgent);
 
   logger.audio.debug(
     "Device detection - isSafari:",
