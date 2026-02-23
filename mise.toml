@@ -418,6 +418,11 @@ echo ""
 echo "✅ Security scans complete"
 """
 
+[tasks.vuln]
+description = "Check for known vulnerabilities in Go dependencies"
+dir = "backend"
+run = "govulncheck ./..."
+
 [tasks."backend:race"]
 description = "Run tests with race detector"
 depends = ["_ensure-postgres"]
