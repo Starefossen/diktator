@@ -983,6 +983,72 @@ dir = "terraform"
 run = "tofu fmt"
 
 # ============================================================================
+# Upgrade
+# ============================================================================
+
+[tasks."upgrade:check"]
+description = "Check for outdated dependencies"
+raw = true
+run = """
+echo "=== Diktator Dependency Check ==="
+echo ""
+
+echo "--- Backend (Go) ---"
+(cd ${BACKEND_DIR} && go list -m -u -json all 2>/dev/null | \
+  python3 -c "
+import sys, json
+updates = []
+decoder = json.JSONDecoder()
+data = sys.stdin.read()
+pos = 0
+while pos < len(data):
+    data = data[pos:].lstrip()
+    if not data: break
+    try:
+        obj, idx = decoder.raw_decode(data)
+        pos = idx
+    except: break
+    if obj.get('Indirect') or not obj.get('Update'): continue
+    updates.append('  %s: %s -> %s' % (obj['Path'], obj['Version'], obj['Update']['Version']))
+if updates:
+    print('\\n'.join(updates))
+else:
+    print('  ✅ all up to date')
+")
+echo ""
+
+echo "--- Frontend (pnpm) ---"
+(cd ${FRONTEND_DIR} && pnpm outdated 2>/dev/null || echo "  ✅ all up to date")
+echo ""
+
+echo "--- Mise tools ---"
+mise outdated 2>/dev/null || echo "  ✅ all up to date"
+"""
+
+[tasks.upgrade]
+description = "Upgrade all dependencies (Go, pnpm, mise tools)"
+raw = true
+run = """
+echo "=== Diktator Dependency Upgrade ==="
+echo ""
+
+echo "--- Mise tools ---"
+mise upgrade
+echo ""
+
+echo "--- Backend (Go) ---"
+(cd ${BACKEND_DIR} && go get -u ./... && go mod tidy && echo "✅ Go deps updated")
+echo ""
+
+echo "--- Frontend (pnpm) ---"
+(cd ${FRONTEND_DIR} && pnpm update && echo "✅ pnpm deps updated")
+echo ""
+
+echo "=== Done ==="
+echo "Next: mise run homelab:deploy:full"
+"""
+
+# ============================================================================
 # Homelab Deployment (Knative)
 # ============================================================================
 
