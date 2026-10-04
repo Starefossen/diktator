@@ -78,8 +78,8 @@ FRONTEND_SERVICE = "www"
 # Homelab OIDC configuration
 HOMELAB_API_URL = "https://api.diktator.fn.flaatten.org"
 HOMELAB_APP_URL = "https://www.diktator.fn.flaatten.org"
-HOMELAB_OIDC_ISSUER_URL = "https://zitadel.zitadel.fn.flaatten.org"
-HOMELAB_OIDC_CLIENT_ID = "353809168672555052"
+HOMELAB_OIDC_ISSUER_URL = "https://id.flaatten.org/oauth2/openid/diktator"
+HOMELAB_OIDC_CLIENT_ID = "diktator"
 
 # ============================================================================
 # Private Helper Tasks

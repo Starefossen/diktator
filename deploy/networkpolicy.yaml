@@ -76,20 +76,12 @@ spec:
             - port: "5432"
               protocol: TCP
 
-    # Allow Zitadel OIDC via HTTPS
-    - toFQDNs:
-        - matchName: "zitadel.zitadel.fn.flaatten.org"
-      toPorts:
-        - ports:
-            - port: "443"
-              protocol: TCP
-
-    # Cilium translates the Kourier LB IP to the pod IP (port 443 -> 8443),
-    # so the FQDN rule above never matches. Allow the Kourier pods directly.
+    # Kanidm OIDC (id.flaatten.org, LB 192.168.40.45). Cilium translates the
+    # LB IP to the pod IP (443 -> 8443), so allow the Kanidm pod directly.
     - toEndpoints:
         - matchLabels:
-            io.kubernetes.pod.namespace: kourier-system
-            app: 3scale-kourier-gateway
+            io.kubernetes.pod.namespace: kanidm
+            app: kanidm
       toPorts:
         - ports:
             - port: "8443"

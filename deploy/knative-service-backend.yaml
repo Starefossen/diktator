@@ -38,11 +38,9 @@ spec:
             - name: AUTH_MODE
               value: "oidc"
             - name: OIDC_ISSUER_URL
-              value: "https://zitadel.zitadel.fn.flaatten.org"
+              value: "https://id.flaatten.org/oauth2/openid/diktator"
             - name: OIDC_AUDIENCE
-              value: "353809168672555052"
-            - name: OIDC_INSECURE_SKIP_VERIFY
-              value: "true"  # TODO: Remove when proper cert is in place
+              value: "diktator"
             - name: GIN_MODE
               value: "release"
             # Text-to-Speech credentials (only GCP dependency - app is self-hosted)

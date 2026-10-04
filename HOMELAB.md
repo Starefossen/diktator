@@ -6,7 +6,7 @@ Homelab deployment of [Diktator](https://github.com/starefossen/diktator) - Norw
 
 - Knative Serving with auto-TLS
 - CloudNativePG operator
-- Zitadel for OIDC authentication
+- Kanidm for OIDC authentication (`id.flaatten.org`)
 - QNAP iSCSI storage class (qnap-iscsi)
 
 ## Quick Deploy
@@ -29,19 +29,28 @@ mise run homelab:full-deploy
 
 ## Configuration
 
-### Zitadel OIDC Setup
+### Kanidm OIDC Setup
 
-1. Create application in Zitadel:
-   - Name: `diktator`
-   - Type: Web application
-   - Authentication Method: **PKCE** (recommended)
-     - Response Types: Code
-     - Grant Types: Authorization Code
-     - Authentication Method: None
-   - Redirect URIs: `https://www.diktator.fn.flaatten.org/*`
-   - Post logout: `https://www.diktator.fn.flaatten.org`
+Public client with PKCE, created with `kanidm ... -D idm_admin`:
 
-2. Update backend manifest with client ID
+```bash
+kanidm system oauth2 create-public diktator Diktator https://www.diktator.fn.flaatten.org
+kanidm system oauth2 add-redirect-url diktator https://www.diktator.fn.flaatten.org/auth/callback
+kanidm system oauth2 warning-enable-legacy-crypto diktator   # backend only verifies RS256
+kanidm system oauth2 prefer-short-username diktator
+kanidm system oauth2 update-scope-map diktator diktator-users openid profile email
+```
+
+Access is granted through the Kanidm group `diktator-users`. The backend
+needs the person's `mail` attribute set, since users register by email.
+
+### Migration from Zitadel (2026-10-04)
+
+`users.auth_id` holds the OIDC `sub`. Zitadel used numeric IDs; Kanidm uses
+the person UUID. Each existing user's `auth_id` was rewritten to the matching
+Kanidm person UUID, and the email from the diktator database was copied to the
+person's `mail` attribute. No other data changed. A `pg_dump` was taken first
+(kept outside git).
 
 ### Environment Variables
 
@@ -49,8 +58,8 @@ mise run homelab:full-deploy
 
 - `DATABASE_URL`: From secret `diktator-db-app`
 - `AUTH_MODE`: `oidc`
-- `OIDC_ISSUER_URL`: `https://zitadel.zitadel.fn.flaatten.org`
-- `OIDC_AUDIENCE`: Zitadel client ID
+- `OIDC_ISSUER_URL`: `https://id.flaatten.org/oauth2/openid/diktator`
+- `OIDC_AUDIENCE`: `diktator`
 
 **Frontend** ([deploy/knative-service-frontend.yaml](deploy/knative-service-frontend.yaml)):
 
@@ -135,7 +144,7 @@ kubectl get cluster -n diktator diktator-db
 **Auth issues:**
 
 ```bash
-curl https://zitadel.zitadel.fn.flaatten.org/.well-known/openid-configuration
+curl https://id.flaatten.org/oauth2/openid/diktator/.well-known/openid-configuration
 mise run homelab:logs-backend | grep -i oidc
 ```
 
