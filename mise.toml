@@ -1074,6 +1074,7 @@ echo "📦 Building and pushing Docker image..."
 BUILD_TAG=$(date +%s)
 
 # Build multi-arch image
+if [ -x ../../scripts/registry-login.sh ]; then ../../scripts/registry-login.sh; fi
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
   --build-arg TARGETARCH=amd64 \
@@ -1117,6 +1118,7 @@ echo "📦 Building and pushing Docker image..."
 BUILD_TAG=$(date +%s)
 
 # Build multi-arch image
+if [ -x ../../scripts/registry-login.sh ]; then ../../scripts/registry-login.sh; fi
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
   -t ${REGISTRY_URL}/${FRONTEND_SERVICE}:${BUILD_TAG} \
