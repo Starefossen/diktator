@@ -84,6 +84,17 @@ spec:
             - port: "443"
               protocol: TCP
 
+    # Cilium translates the Kourier LB IP to the pod IP (port 443 -> 8443),
+    # so the FQDN rule above never matches. Allow the Kourier pods directly.
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kourier-system
+            app: 3scale-kourier-gateway
+      toPorts:
+        - ports:
+            - port: "8443"
+              protocol: TCP
+
     # Allow Google Cloud APIs (Text-to-Speech)
     - toFQDNs:
         - matchPattern: "*.googleapis.com"
