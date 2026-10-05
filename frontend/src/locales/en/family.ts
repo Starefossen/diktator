@@ -78,7 +78,7 @@ export const family = {
   "family.child.email": "Email Address",
   "family.child.email.placeholder": "Enter child's email",
   "family.child.email.help":
-    "The child must already have an account in Zitadel. They will be linked when they log in.",
+    "The child must already have an account in Kanidm. They will be linked when they log in.",
   "family.child.email.cannotEdit":
     "Email cannot be changed after account creation",
   "family.child.edit.title": "Edit Child Information",

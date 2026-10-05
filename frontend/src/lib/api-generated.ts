@@ -33,8 +33,8 @@ const setupAuth = async (requireAuth = true): Promise<void> => {
   }
 
   if (requireAuth) {
-    // Use ID token for API authentication (has correct audience claim from Zitadel)
-    // Access tokens from Zitadel may not include the client ID in aud claim
+    // Use ID token for API authentication (audience is the client ID)
+    // Access tokens may not include the client ID in aud claim
     let token = isMockMode ? getMockToken() : getIdToken();
 
     // If no token initially, wait briefly for auth to complete (max 2 seconds)

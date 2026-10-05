@@ -76,7 +76,7 @@ export const family = {
   "family.child.email": "E-postadresse",
   "family.child.email.placeholder": "Skriv inn barnets e-post",
   "family.child.email.help":
-    "Barnet må allerede ha en konto i Zitadel. De vil bli koblet når de logger inn.",
+    "Barnet må allerede ha en konto i Kanidm. De vil bli koblet når de logger inn.",
   "family.child.email.cannotEdit":
     "E-postadressen kan ikke endres etter kontoopprettelse",
   "family.child.edit.title": "Rediger barneinformasjon",

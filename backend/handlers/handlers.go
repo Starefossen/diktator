@@ -1432,42 +1432,9 @@ func AddFamilyMember(c *gin.Context) {
 
 	// Handle child creation (role == "child")
 
-	// TODO: IMPLEMENT PROPER ZITADEL INTEGRATION
-	// ==========================================
-	// This current implementation creates a "pending" child record that will be
-	// linked when the child logs in via OIDC for the first time.
-	//
-	// For proper integration, implement ONE of these approaches:
-	//
-	// OPTION 1: Zitadel Admin API - Create account directly
-	// ------------------------------------------------------
-	// 1. Use Zitadel Admin API to create user account:
-	//    POST https://{instance}.zitadel.cloud/management/v1/users/human
-	//    {
-	//      "userName": req.Email,
-	//      "profile": { "displayName": req.DisplayName },
-	//      "email": { "email": req.Email, "isEmailVerified": false }
-	//    }
-	// 2. Get the user ID from the response
-	// 3. Optionally send password reset email via Zitadel
-	// 4. Store the Zitadel user ID as authID in our database
-	//
-	// OPTION 2: Invitation Link - Let Zitadel handle registration
-	// -----------------------------------------------------------
-	// 1. Generate an invitation code/token in your system
-	// 2. Send email to child with registration link:
-	//    https://yourapp.com/accept-invite?token=xxx
-	// 3. When clicked, redirect to Zitadel registration with prefilled email
-	// 4. After successful registration, link the authID from JWT to family
-	//
-	// OPTION 3: Email Matching - Current implementation (INTERIM)
-	// -----------------------------------------------------------
-	// 1. Parent adds child by email (no password)
-	// 2. Create "pending" child record with placeholder authID
-	// 3. When child logs in via OIDC, match by email and update authID
-	// 4. This requires additional middleware to handle the linking
-	//
-	// RECOMMENDED: Use Option 1 (Admin API) for immediate account creation
+	// Creates a "pending" child record with a placeholder authID. When the
+	// child first logs in via OIDC (Kanidm), the record is matched by email
+	// and the authID is updated. The Kanidm account is created separately.
 	// or Option 2 (Invitation) for better UX and security.
 
 	// Check if user already exists with this email
@@ -1873,9 +1840,7 @@ func DeleteChildAccount(c *gin.Context) {
 
 	childID := c.Param("childId")
 
-	// TODO: In full OIDC setup, also delete from identity provider (Zitadel)
-	// For now, we only delete from our database
-	// The child's OIDC account (if it exists) can be cleaned up separately via Zitadel admin
+	// Deletes from our database only; the child's Kanidm account is removed separately.
 
 	// First delete from users table
 

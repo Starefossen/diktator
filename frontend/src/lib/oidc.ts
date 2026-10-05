@@ -1,5 +1,5 @@
 // Generic OIDC authentication configuration
-// Works with any OIDC-compliant identity provider (Zitadel, Keycloak, Auth0, etc.)
+// Works with any OIDC-compliant identity provider (Kanidm in production)
 //
 // OIDC Authentication Flow (when NEXT_PUBLIC_AUTH_MODE=oidc):
 // 1. User clicks "Login" button → initiateLogin() is called
@@ -267,7 +267,7 @@ export function getAccessToken(): string | null {
 
 /**
  * Get stored ID token (for API authentication)
- * ID tokens from Zitadel have the correct audience claim for the client
+ * ID tokens carry the client ID as audience
  */
 export function getIdToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -333,7 +333,7 @@ function parseJwt(token: string): Record<string, unknown> | null {
 
 /**
  * Get user info from token or userinfo endpoint
- * Zitadel may not include email in ID token if not properly scoped,
+ * The ID token may lack email if not scoped,
  * so we fall back to userinfo endpoint
  */
 export async function getUserInfo(): Promise<OIDCUser | null> {

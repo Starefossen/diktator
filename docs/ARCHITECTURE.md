@@ -21,7 +21,7 @@ Diktator helps children learn vocabulary through audio-based spelling tests. Par
          ▼
   ┌─────────────────┐
   │  OIDC Provider  │
-  │   (Zitadel)     │
+  │   (Kanidm)      │
   └─────────────────┘
 ```
 
@@ -31,7 +31,7 @@ Diktator helps children learn vocabulary through audio-based spelling tests. Par
 | Backend    | Go + Gin             | Knative   | API, business logic, TTS generation          |
 | Database   | PostgreSQL           | Cloud SQL | User data, word sets, results                |
 | TTS        | Cloud TTS API        | GCP (JIT) | Generate audio on-demand (words & sentences) |
-| Auth       | OIDC (Zitadel)       | External  | User authentication                          |
+| Auth       | OIDC (Kanidm)        | External  | User authentication                          |
 | Dictionary | ord.uib.no           | External  | Norwegian word validation and inflections    |
 | Storage    | GCS/R2               | Cloud     | Audio file caching                           |
 
@@ -163,7 +163,7 @@ word_answers (
 User ──▶ OIDC Provider ──▶ JWT Token ──▶ Backend validates ──▶ PostgreSQL (family-scoped)
 ```
 
-1. **Authentication**: OIDC (Zitadel) issues JWT tokens
+1. **Authentication**: OIDC (Kanidm) issues JWT tokens
 2. **Authorization**: Backend validates JWT, extracts user identity
 3. **Data Isolation**: All queries scoped to user's family ID
 
