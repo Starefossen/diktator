@@ -182,10 +182,9 @@ mise run typecheck        # TypeScript check + Go build check
 
 ## Deployment
 
-See [deploy/HOMELAB.md](deploy/HOMELAB.md) for Knative deployment instructions.
+See [HOMELAB.md](HOMELAB.md) for Knative deployment instructions.
 
-**Infrastructure**: OpenTofu (`mise run tofu:init/plan/apply`)
-**Secrets**: `GCP_SA_KEY`, `GCP_PROJECT_ID` (TTS service)
+**Text-to-Speech**: Google Cloud TTS is the only GCP dependency; `terraform/` provisions its service account (`mise run tofu:init/plan/apply`).
 
 ## Contributing
 

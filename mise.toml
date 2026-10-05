@@ -18,7 +18,6 @@ CLOUDSDK_ACTIVE_CONFIG_NAME = "personal"
 
 # Static configuration - same across all environments
 DIKTATOR_APP_NAME = "diktator"
-DIKTATOR_API_SERVICE_NAME = "diktator-api"
 
 # Development environment defaults
 TTS_PROJECT = "diktator-dev"
@@ -784,7 +783,7 @@ echo "✅ TypeScript client generated"
 description = "Build for production"
 run = """
 mise run backend:swagger-gen
-mise run config:prod
+mise run frontend:config-homelab
 (cd ${FRONTEND_DIR} && cp .env.production .env.local && pnpm run build) &
 (cd ${BACKEND_DIR} && go build -o bin/server cmd/server/main.go) &
 wait
@@ -849,7 +848,6 @@ mise run backend:stop 2>/dev/null || true
 rm -rf ${FRONTEND_DIR}/.next ${FRONTEND_DIR}/out ${FRONTEND_DIR}/src/generated ${FRONTEND_DIR}/dist
 rm -rf ${BACKEND_DIR}/bin
 rm -f ${FRONTEND_DIR}/.env.local ${BACKEND_DIR}/.env.* ${FRONTEND_DIR}/.env.*
-rm -f .mise.env
 rm -rf ${TMP_DIR}
 echo "✅ Build artifacts cleaned"
 """
@@ -899,58 +897,6 @@ echo "📝 Generating development configuration..."
 envsubst < ${BACKEND_DIR}/.env.development.tmpl > ${BACKEND_DIR}/.env.development
 envsubst < ${FRONTEND_DIR}/.env.development.tmpl > ${FRONTEND_DIR}/.env.development
 echo "✅ Development config created"
-"""
-
-[tasks."config:prod"]
-description = "Generate production configuration"
-depends = ["_validate-env"]
-run = """
-if [ ! -f .mise.env ]; then
-    echo "ERROR: .mise.env not found. Run 'mise run config:load' first."
-    exit 1
-fi
-source .mise.env
-
-echo "📝 Generating production configuration..."
-
-# Note: Production config uses different variables than development
-# Some vars like OIDC URLs need to be set in .mise.env before running this
-cat > ${BACKEND_DIR}/.env.production << EOF
-TTS_PROJECT=${DIKTATOR_PROJECT_ID}
-TTS_QUOTA_PROJECT=${TTS_QUOTA_PROJECT:-${DIKTATOR_PROJECT_ID}}
-GIN_MODE=release
-PORT=8080
-DATABASE_URL=${DATABASE_URL}
-AUTH_MODE=oidc
-OIDC_ISSUER_URL=${OIDC_ISSUER_URL:-https://auth.diktator.app}
-OIDC_AUDIENCE=${OIDC_AUDIENCE:-diktator}
-EOF
-
-cat > ${FRONTEND_DIR}/.env.production << EOF
-NEXT_PUBLIC_API_URL=${DIKTATOR_API_URL:-https://${DIKTATOR_API_SERVICE_NAME}-${DIKTATOR_REGION:-${DIKTATOR_DEFAULT_REGION}}.run.app}
-NEXT_PUBLIC_AUTH_MODE=oidc
-NEXT_PUBLIC_OIDC_ISSUER_URL=${OIDC_ISSUER_URL:-https://auth.diktator.app}
-NEXT_PUBLIC_OIDC_CLIENT_ID=${OIDC_CLIENT_ID:-diktator-frontend}
-NEXT_TELEMETRY_DISABLED=1
-NODE_ENV=production
-EOF
-
-echo "✅ Production config created"
-"""
-
-[tasks."config:load"]
-description = "Load configuration from terraform"
-dir = "terraform"
-run = """
-if [ ! -d .terraform ]; then
-    echo "Terraform not initialized. Run 'mise run tofu:init'"
-    exit 1
-fi
-
-cat > ../.mise.env << EOF
-DIKTATOR_PROJECT_ID=$(tofu output -raw project_id 2>/dev/null || echo "")
-EOF
-echo "Configuration loaded to .mise.env"
 """
 
 # ============================================================================
