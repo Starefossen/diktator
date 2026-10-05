@@ -89,10 +89,10 @@ mise run homelab:full-deploy
 
 ```bash
 # Export TTS credentials from Terraform
-mise run homelab:gcp-export-credentials
+mise run homelab:gcp:export-credentials
 
 # Create/update Kubernetes secret for TTS
-mise run homelab:gcp-create-secret
+mise run homelab:gcp:create-secret
 ```
 
 The backend deployment is already configured to use these credentials. See [deploy/knative-service-backend.yaml](deploy/knative-service-backend.yaml) for volume mount and environment variable configuration.

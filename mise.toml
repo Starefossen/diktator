@@ -1180,6 +1180,17 @@ echo "✅ Secret 'gcp-credentials' created in namespace ${NAMESPACE}"
 echo "🗑️  Credentials file removed from disk"
 """
 
+[tasks."homelab:gcp:ensure-secret"]
+description = "Create gcp-credentials secret only if missing (rotate: mise run homelab:gcp:create-secret)"
+depends = ["homelab:namespace:create"]
+run = """
+if kubectl get secret gcp-credentials -n ${NAMESPACE} >/dev/null 2>&1; then
+  echo "✓ Secret gcp-credentials exists (rotate with: mise run homelab:gcp:create-secret)"
+else
+  mise run homelab:gcp:create-secret
+fi
+"""
+
 [tasks."homelab:namespace:create"]
 description = "Create namespace if it doesn't exist"
 run = """
@@ -1202,7 +1213,7 @@ echo "✅ Network policies applied"
 
 [tasks."homelab:backend:deploy"]
 description = "Deploy backend to Knative"
-depends = ["homelab:gcp:create-secret"]
+depends = ["homelab:gcp:ensure-secret"]
 run = """
 if [ ! -f ".build-tag-backend" ]; then
   echo "❌ No build tag found. Run 'mise run homelab:backend:build' first."
@@ -1255,7 +1266,7 @@ echo "✅ Frontend deployed successfully"
 description = "Deploy both backend and frontend to homelab"
 depends = [
   "homelab:namespace:create",
-  "homelab:gcp:create-secret",
+  "homelab:gcp:ensure-secret",
   "homelab:network:apply",
   "homelab:backend:deploy",
   "homelab:frontend:deploy",
