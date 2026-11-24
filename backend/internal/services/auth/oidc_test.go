@@ -218,3 +218,67 @@ func TestNbfWithinLeewayAccepted(t *testing.T) {
 		t.Fatalf("nbf 1s ahead rejected: %v", err)
 	}
 }
+
+func TestParallelColdStartFetchesOnce(t *testing.T) {
+	p := newTestProvider(t)
+	v := p.validator()
+	v.minRefresh = time.Minute
+	tok := p.sign(t, "k1", validClaims())
+	var wg sync.WaitGroup
+	errs := make(chan error, 20)
+	for range 20 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_, err := v.ValidateSession(context.Background(), tok)
+			errs <- err
+		}()
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Fatalf("cold-start request rejected: %v", err)
+		}
+	}
+	if n := p.fetches.Load(); n != 1 {
+		t.Fatalf("JWKS fetches = %d, want 1", n)
+	}
+}
+
+func TestFailedFirstFetchRecoversOnRetry(t *testing.T) {
+	p := newTestProvider(t)
+	var fail atomic.Bool
+	fail.Store(true)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if fail.Load() {
+			w.WriteHeader(http.StatusBadGateway)
+			return
+		}
+		p.srv.Config.Handler.ServeHTTP(w, r)
+	}))
+	t.Cleanup(srv.Close)
+	v := p.validator()
+	v.jwksURL = srv.URL
+	tok := p.sign(t, "k1", validClaims())
+	if _, err := v.ValidateSession(context.Background(), tok); err == nil {
+		t.Fatal("token accepted without JWKS")
+	}
+	fail.Store(false)
+	if _, err := v.ValidateSession(context.Background(), tok); err != nil {
+		t.Fatalf("retry after failed first fetch rejected: %v", err)
+	}
+}
+
+func TestAgeRefreshFailureUsesCachedKeys(t *testing.T) {
+	p := newTestProvider(t)
+	v := p.validator()
+	if _, err := v.getKey(context.Background(), "k1"); err != nil {
+		t.Fatal(err)
+	}
+	v.jwks.FetchedAt = time.Now().Add(-time.Hour)
+	p.srv.Close()
+	if _, err := v.ValidateSession(context.Background(), p.sign(t, "k1", validClaims())); err != nil {
+		t.Fatalf("cached key rejected while provider down: %v", err)
+	}
+}

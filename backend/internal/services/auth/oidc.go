@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/sync/singleflight"
 )
 
 // OIDCValidator validates JWT tokens against an OIDC provider
@@ -32,6 +33,9 @@ type OIDCValidator struct {
 	// lastAttempt is stamped on every JWKS fetch, failed or not, so a down
 	// provider is not hammered by unknown-kid tokens
 	lastAttempt time.Time
+	lastFailed  bool
+	// fetches collapses concurrent downloads; callers without keys wait on it
+	fetches singleflight.Group
 }
 
 // JWKS represents a JSON Web Key Set
@@ -110,6 +114,9 @@ func NewOIDCValidator(cfg *OIDCConfig) (*OIDCValidator, error) {
 	if err := validator.discoverJWKS(context.Background()); err != nil {
 		return nil, fmt.Errorf("failed to discover OIDC configuration: %w", err)
 	}
+	if err := validator.fetchJWKS(context.Background(), false); err != nil {
+		log.Printf("[OIDC] Initial JWKS fetch failed, retrying on first request: %v", err)
+	}
 
 	return validator, nil
 }
@@ -149,34 +156,46 @@ func (o *OIDCValidator) discoverJWKS(ctx context.Context) error {
 }
 
 // fetchJWKS fetches the JSON Web Key Set from the OIDC provider. With force,
-// the cache is bypassed unless a fetch was attempted within minRefresh. The
-// HTTP call runs outside the lock so cached-key lookups never wait on it.
+// the cache is bypassed unless a fetch was attempted within minRefresh.
+// Concurrent callers share one download; cached-key lookups never wait on a
+// forced refetch. Without keys, only a recent failed attempt is rate-limited.
 func (o *OIDCValidator) fetchJWKS(ctx context.Context, force bool) error {
 	o.jwksMutex.Lock()
-	if o.jwks != nil && !force && time.Since(o.jwks.FetchedAt) < 5*time.Minute {
+	haveKeys := o.jwks != nil
+	if haveKeys && !force && time.Since(o.jwks.FetchedAt) < 5*time.Minute {
 		o.jwksMutex.Unlock()
 		return nil
 	}
 	if time.Since(o.lastAttempt) < o.minRefresh {
-		haveKeys := o.jwks != nil
-		o.jwksMutex.Unlock()
 		if haveKeys {
+			o.jwksMutex.Unlock()
 			return nil
 		}
-		return fmt.Errorf("JWKS fetch rate-limited after recent failure")
+		if o.lastFailed {
+			o.jwksMutex.Unlock()
+			return fmt.Errorf("JWKS fetch rate-limited after recent failure")
+		}
 	}
-	o.lastAttempt = time.Now()
 	o.jwksMutex.Unlock()
 
-	jwks, err := o.downloadJWKS(ctx)
-	if err != nil {
-		return err
+	_, err, _ := o.fetches.Do("jwks", func() (interface{}, error) {
+		o.jwksMutex.Lock()
+		o.lastAttempt = time.Now()
+		o.jwksMutex.Unlock()
+		jwks, err := o.downloadJWKS(ctx)
+		o.jwksMutex.Lock()
+		defer o.jwksMutex.Unlock()
+		o.lastFailed = err != nil
+		if err == nil {
+			o.jwks = jwks
+		}
+		return nil, err
+	})
+	if err != nil && haveKeys && !force {
+		log.Printf("[OIDC] JWKS refresh failed, using cached keys: %v", err)
+		return nil
 	}
-
-	o.jwksMutex.Lock()
-	o.jwks = jwks
-	o.jwksMutex.Unlock()
-	return nil
+	return err
 }
 
 func (o *OIDCValidator) downloadJWKS(ctx context.Context) (*JWKS, error) {
