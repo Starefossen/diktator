@@ -29,6 +29,9 @@ type OIDCValidator struct {
 	jwksMutex   sync.RWMutex
 	// minRefresh rate-limits forced JWKS refetches triggered by unknown kids
 	minRefresh time.Duration
+	// lastAttempt is stamped on every JWKS fetch, failed or not, so a down
+	// provider is not hammered by unknown-kid tokens
+	lastAttempt time.Time
 }
 
 // JWKS represents a JSON Web Key Set
@@ -146,42 +149,60 @@ func (o *OIDCValidator) discoverJWKS(ctx context.Context) error {
 }
 
 // fetchJWKS fetches the JSON Web Key Set from the OIDC provider. With force,
-// the cache is bypassed unless it was fetched within minRefresh.
+// the cache is bypassed unless a fetch was attempted within minRefresh. The
+// HTTP call runs outside the lock so cached-key lookups never wait on it.
 func (o *OIDCValidator) fetchJWKS(ctx context.Context, force bool) error {
 	o.jwksMutex.Lock()
-	defer o.jwksMutex.Unlock()
-
-	if o.jwks != nil {
-		age := time.Since(o.jwks.FetchedAt)
-		if age < o.minRefresh || (!force && age < 5*time.Minute) {
+	if o.jwks != nil && !force && time.Since(o.jwks.FetchedAt) < 5*time.Minute {
+		o.jwksMutex.Unlock()
+		return nil
+	}
+	if time.Since(o.lastAttempt) < o.minRefresh {
+		haveKeys := o.jwks != nil
+		o.jwksMutex.Unlock()
+		if haveKeys {
 			return nil
 		}
+		return fmt.Errorf("JWKS fetch rate-limited after recent failure")
+	}
+	o.lastAttempt = time.Now()
+	o.jwksMutex.Unlock()
+
+	jwks, err := o.downloadJWKS(ctx)
+	if err != nil {
+		return err
 	}
 
+	o.jwksMutex.Lock()
+	o.jwks = jwks
+	o.jwksMutex.Unlock()
+	return nil
+}
+
+func (o *OIDCValidator) downloadJWKS(ctx context.Context) (*JWKS, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", o.jwksURL, nil)
 	if err != nil {
-		return fmt.Errorf("failed to create JWKS request: %w", err)
+		return nil, fmt.Errorf("failed to create JWKS request: %w", err)
 	}
 
 	resp, err := o.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to fetch JWKS: %w", err)
+		return nil, fmt.Errorf("failed to fetch JWKS: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("JWKS returned status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf("JWKS returned status %d: %s", resp.StatusCode, string(body))
 	}
 
 	var jwks JWKS
 	if err := json.NewDecoder(resp.Body).Decode(&jwks); err != nil {
-		return fmt.Errorf("failed to decode JWKS: %w", err)
+		return nil, fmt.Errorf("failed to decode JWKS: %w", err)
 	}
 
 	jwks.FetchedAt = time.Now()
-	o.jwks = &jwks
-	return nil
+	return &jwks, nil
 }
 
 // getKey retrieves the signing key for a given key ID, refetching the JWKS
@@ -261,6 +282,7 @@ func (o *OIDCValidator) validateToken(ctx context.Context, tokenString string) (
 		jwt.WithIssuer(o.issuer),
 		jwt.WithAudience(o.audience),
 		jwt.WithExpirationRequired(),
+		jwt.WithLeeway(30*time.Second),
 		jwt.WithValidMethods([]string{"RS256", "RS384", "RS512"}),
 	)
 

@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -152,5 +153,68 @@ func TestUnknownKidRefetchIsRateLimited(t *testing.T) {
 func TestNewOIDCValidatorRequiresAudience(t *testing.T) {
 	if _, err := NewOIDCValidator(&OIDCConfig{IssuerURL: testIssuer}); err == nil {
 		t.Fatal("empty audience accepted")
+	}
+}
+
+func TestHangingJWKSDoesNotBlockCachedKid(t *testing.T) {
+	p := newTestProvider(t)
+	v := p.validator()
+	if _, err := v.getKey(context.Background(), "k1"); err != nil {
+		t.Fatal(err)
+	}
+	release := make(chan struct{})
+	var once sync.Once
+	hang := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-release:
+		case <-r.Context().Done():
+		}
+	}))
+	t.Cleanup(hang.Close)
+	t.Cleanup(func() { once.Do(func() { close(release) }) })
+	v.jwksURL = hang.URL
+
+	go func() { _, _ = v.getKey(context.Background(), "unknown") }()
+	time.Sleep(100 * time.Millisecond) // let the unknown-kid fetch reach the hanging server
+
+	done := make(chan error, 1)
+	go func() {
+		_, err := v.ValidateSession(context.Background(), p.sign(t, "k1", validClaims()))
+		done <- err
+	}()
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("cached kid rejected: %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("cached-kid validation blocked by hanging JWKS fetch")
+	}
+}
+
+func TestFailedJWKSFetchIsRateLimited(t *testing.T) {
+	var fetches atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		fetches.Add(1)
+		w.WriteHeader(http.StatusBadGateway)
+	}))
+	t.Cleanup(srv.Close)
+	v := &OIDCValidator{httpClient: srv.Client(), jwksURL: srv.URL, minRefresh: time.Minute}
+	for range 3 {
+		if _, err := v.getKey(context.Background(), "k1"); err == nil {
+			t.Fatal("key returned from failing JWKS")
+		}
+	}
+	if n := fetches.Load(); n != 1 {
+		t.Fatalf("JWKS fetches = %d, want 1", n)
+	}
+}
+
+func TestNbfWithinLeewayAccepted(t *testing.T) {
+	p := newTestProvider(t)
+	c := validClaims()
+	c["nbf"] = time.Now().Add(time.Second).Unix()
+	if _, err := p.validator().ValidateSession(context.Background(), p.sign(t, "k1", c)); err != nil {
+		t.Fatalf("nbf 1s ahead rejected: %v", err)
 	}
 }
