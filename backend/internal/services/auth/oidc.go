@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/sync/singleflight"
 )
 
 // OIDCValidator validates JWT tokens against an OIDC provider
@@ -27,6 +28,14 @@ type OIDCValidator struct {
 	userinfoURL string
 	jwksURL     string
 	jwksMutex   sync.RWMutex
+	// minRefresh rate-limits forced JWKS refetches triggered by unknown kids
+	minRefresh time.Duration
+	// lastAttempt is stamped on every JWKS fetch, failed or not, so a down
+	// provider is not hammered by unknown-kid tokens
+	lastAttempt time.Time
+	lastFailed  bool
+	// fetches collapses concurrent downloads; callers without keys wait on it
+	fetches singleflight.Group
 }
 
 // JWKS represents a JSON Web Key Set
@@ -76,6 +85,9 @@ func NewOIDCValidator(cfg *OIDCConfig) (*OIDCValidator, error) {
 	if cfg.IssuerURL == "" {
 		return nil, fmt.Errorf("OIDC issuer URL is required")
 	}
+	if cfg.Audience == "" {
+		return nil, fmt.Errorf("OIDC audience is required")
+	}
 
 	// Create HTTP client with optional TLS config
 	httpClient := &http.Client{
@@ -95,11 +107,15 @@ func NewOIDCValidator(cfg *OIDCConfig) (*OIDCValidator, error) {
 		issuer:     strings.TrimSuffix(cfg.IssuerURL, "/"),
 		audience:   cfg.Audience,
 		httpClient: httpClient,
+		minRefresh: 30 * time.Second,
 	}
 
 	// Discover JWKS URL from OIDC discovery document
 	if err := validator.discoverJWKS(context.Background()); err != nil {
 		return nil, fmt.Errorf("failed to discover OIDC configuration: %w", err)
+	}
+	if err := validator.fetchJWKS(context.Background(), false); err != nil {
+		log.Printf("[OIDC] Initial JWKS fetch failed, retrying on first request: %v", err)
 	}
 
 	return validator, nil
@@ -139,75 +155,105 @@ func (o *OIDCValidator) discoverJWKS(ctx context.Context) error {
 	return nil
 }
 
-// fetchJWKS fetches the JSON Web Key Set from the OIDC provider
-func (o *OIDCValidator) fetchJWKS(ctx context.Context) error {
+// fetchJWKS fetches the JSON Web Key Set from the OIDC provider. With force,
+// the cache is bypassed unless a fetch was attempted within minRefresh.
+// Concurrent callers share one download; cached-key lookups never wait on a
+// forced refetch. Without keys, only a recent failed attempt is rate-limited.
+func (o *OIDCValidator) fetchJWKS(ctx context.Context, force bool) error {
 	o.jwksMutex.Lock()
-	defer o.jwksMutex.Unlock()
-
-	// Check if we have a recent cache
-	if o.jwks != nil && time.Since(o.jwks.FetchedAt) < 5*time.Minute {
+	haveKeys := o.jwks != nil
+	if haveKeys && !force && time.Since(o.jwks.FetchedAt) < 5*time.Minute {
+		o.jwksMutex.Unlock()
 		return nil
 	}
+	if time.Since(o.lastAttempt) < o.minRefresh {
+		if haveKeys {
+			o.jwksMutex.Unlock()
+			return nil
+		}
+		if o.lastFailed {
+			o.jwksMutex.Unlock()
+			return fmt.Errorf("JWKS fetch rate-limited after recent failure")
+		}
+	}
+	o.jwksMutex.Unlock()
 
+	_, err, _ := o.fetches.Do("jwks", func() (interface{}, error) {
+		o.jwksMutex.Lock()
+		o.lastAttempt = time.Now()
+		o.jwksMutex.Unlock()
+		jwks, err := o.downloadJWKS(ctx)
+		o.jwksMutex.Lock()
+		defer o.jwksMutex.Unlock()
+		o.lastFailed = err != nil
+		if err == nil {
+			o.jwks = jwks
+		}
+		return nil, err
+	})
+	if err != nil && haveKeys && !force {
+		log.Printf("[OIDC] JWKS refresh failed, using cached keys: %v", err)
+		return nil
+	}
+	return err
+}
+
+func (o *OIDCValidator) downloadJWKS(ctx context.Context) (*JWKS, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", o.jwksURL, nil)
 	if err != nil {
-		return fmt.Errorf("failed to create JWKS request: %w", err)
+		return nil, fmt.Errorf("failed to create JWKS request: %w", err)
 	}
 
 	resp, err := o.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to fetch JWKS: %w", err)
+		return nil, fmt.Errorf("failed to fetch JWKS: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("JWKS returned status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf("JWKS returned status %d: %s", resp.StatusCode, string(body))
 	}
 
 	var jwks JWKS
 	if err := json.NewDecoder(resp.Body).Decode(&jwks); err != nil {
-		return fmt.Errorf("failed to decode JWKS: %w", err)
+		return nil, fmt.Errorf("failed to decode JWKS: %w", err)
 	}
 
 	jwks.FetchedAt = time.Now()
-	o.jwks = &jwks
-	return nil
+	return &jwks, nil
 }
 
-// getKey retrieves the signing key for a given key ID
+// getKey retrieves the signing key for a given key ID, refetching the JWKS
+// at most once when the kid is unknown.
 func (o *OIDCValidator) getKey(ctx context.Context, kid string) (*JWK, error) {
-	if err := o.fetchJWKS(ctx); err != nil {
+	if err := o.fetchJWKS(ctx, false); err != nil {
 		return nil, err
 	}
+	if key := o.findKey(kid); key != nil {
+		return key, nil
+	}
+	if err := o.fetchJWKS(ctx, true); err != nil {
+		return nil, err
+	}
+	if key := o.findKey(kid); key != nil {
+		return key, nil
+	}
+	return nil, fmt.Errorf("key with kid %s not found in JWKS", kid)
+}
 
+func (o *OIDCValidator) findKey(kid string) *JWK {
 	o.jwksMutex.RLock()
 	defer o.jwksMutex.RUnlock()
-
+	if o.jwks == nil {
+		return nil
+	}
 	for _, key := range o.jwks.Keys {
 		if key.Kid == kid {
-			return &key, nil
+			return &key
 		}
 	}
-
-	// Key not found, force refresh and try again
-	o.jwksMutex.RUnlock()
-	o.jwksMutex.Lock()
-	o.jwks = nil // Force refresh
-	o.jwksMutex.Unlock()
-	o.jwksMutex.RLock()
-
-	if err := o.fetchJWKS(ctx); err != nil {
-		return nil, err
-	}
-
-	for _, key := range o.jwks.Keys {
-		if key.Kid == kid {
-			return &key, nil
-		}
-	}
-
-	return nil, fmt.Errorf("key with kid %s not found in JWKS", kid)
+	return nil
 }
 
 // ValidateSession validates a JWT token (implements SessionValidator interface)
@@ -251,7 +297,13 @@ func (o *OIDCValidator) validateToken(ctx context.Context, tokenString string) (
 
 		// Convert JWK to RSA public key
 		return jwkToRSAPublicKey(jwk)
-	})
+	},
+		jwt.WithIssuer(o.issuer),
+		jwt.WithAudience(o.audience),
+		jwt.WithExpirationRequired(),
+		jwt.WithLeeway(30*time.Second),
+		jwt.WithValidMethods([]string{"RS256", "RS384", "RS512"}),
+	)
 
 	if err != nil {
 		log.Printf("[OIDC] Token parsing failed: %v", err)
@@ -267,46 +319,6 @@ func (o *OIDCValidator) validateToken(ctx context.Context, tokenString string) (
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		return nil, fmt.Errorf("invalid token claims")
-	}
-
-	// Validate issuer
-	if iss, ok := claims["iss"].(string); !ok || iss != o.issuer {
-		if !ok {
-			log.Printf("[OIDC] Token validation failed: missing issuer claim")
-		} else {
-			log.Printf("[OIDC] Token validation failed: invalid issuer (got=%s, expected=%s)", iss, o.issuer)
-		}
-		return nil, fmt.Errorf("%w: invalid issuer", ErrInvalidSession)
-	}
-
-	// Validate audience if configured
-	if o.audience != "" {
-		audValid := false
-		switch aud := claims["aud"].(type) {
-		case string:
-			audValid = aud == o.audience
-		case []interface{}:
-			for _, a := range aud {
-				if aStr, ok := a.(string); ok && aStr == o.audience {
-					audValid = true
-					break
-				}
-			}
-		}
-		if !audValid {
-			audValue := claims["aud"]
-			log.Printf("[OIDC] Token validation failed: invalid audience (got=%v, expected=%s)", audValue, o.audience)
-			return nil, fmt.Errorf("%w: invalid audience", ErrInvalidSession)
-		}
-	}
-
-	// Validate expiration
-	if exp, ok := claims["exp"].(float64); ok {
-		expTime := time.Unix(int64(exp), 0)
-		if expTime.Before(time.Now()) {
-			log.Printf("[OIDC] Token validation failed: token expired (exp=%s, now=%s)", expTime.Format(time.RFC3339), time.Now().Format(time.RFC3339))
-			return nil, fmt.Errorf("%w: token expired", ErrInvalidSession)
-		}
 	}
 
 	// Extract identity information
